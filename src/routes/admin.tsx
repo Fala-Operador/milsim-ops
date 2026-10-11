@@ -12,7 +12,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import { mascararCpf } from "@/lib/domain/validators";
-import { AreaTexto, Badge, Botao, Cartao, Modal, Spinner } from "@/components/ui";
+import { AreaTexto, Badge, Botao, Cartao, Modal, SkeletonPagina } from "@/components/ui";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -38,7 +38,7 @@ function PainelAdmin() {
     if (usuario && usuario.perfil !== "admin") navigate({ to: "/app" });
   }, [usuario, navigate]);
 
-  if (!usuario) return <Spinner />;
+  if (!usuario) return <SkeletonPagina />;
   if (usuario.perfil !== "admin") return null;
 
   const base = carregarBase();
