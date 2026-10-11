@@ -24,6 +24,7 @@ import { Route as AppOrganizadorRouteImport } from './routes/app.organizador'
 import { Route as AppPerfilRouteImport } from './routes/app.perfil'
 import { Route as AppPrivacidadeRouteImport } from './routes/app.privacidade'
 import { Route as AppSuporteRouteImport } from './routes/app.suporte'
+import { Route as ComunidadeEventoIdRouteImport } from './routes/comunidade.$eventoId'
 import { Route as EventosEventoIdRouteImport } from './routes/eventos.$eventoId'
 import { Route as InscricaoEventoIdRouteImport } from './routes/inscricao.$eventoId'
 
@@ -102,6 +103,11 @@ const AppSuporteRoute = AppSuporteRouteImport.update({
   path: '/suporte',
   getParentRoute: () => AppRoute,
 } as any)
+const ComunidadeEventoIdRoute = ComunidadeEventoIdRouteImport.update({
+  id: '/comunidade/$eventoId',
+  path: '/comunidade/$eventoId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EventosEventoIdRoute = EventosEventoIdRouteImport.update({
   id: '/eventos/$eventoId',
   path: '/eventos/$eventoId',
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/app/perfil': typeof AppPerfilRoute
   '/app/privacidade': typeof AppPrivacidadeRoute
   '/app/suporte': typeof AppSuporteRoute
+  '/comunidade/$eventoId': typeof ComunidadeEventoIdRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
   '/app/': typeof AppIndexRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/app/perfil': typeof AppPerfilRoute
   '/app/privacidade': typeof AppPrivacidadeRoute
   '/app/suporte': typeof AppSuporteRoute
+  '/comunidade/$eventoId': typeof ComunidadeEventoIdRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
   '/app': typeof AppIndexRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/app/perfil': typeof AppPerfilRoute
   '/app/privacidade': typeof AppPrivacidadeRoute
   '/app/suporte': typeof AppSuporteRoute
+  '/comunidade/$eventoId': typeof ComunidadeEventoIdRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
   '/app/': typeof AppIndexRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/app/perfil'
     | '/app/privacidade'
     | '/app/suporte'
+    | '/comunidade/$eventoId'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
     | '/app/'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/app/perfil'
     | '/app/privacidade'
     | '/app/suporte'
+    | '/comunidade/$eventoId'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
     | '/app'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/app/perfil'
     | '/app/privacidade'
     | '/app/suporte'
+    | '/comunidade/$eventoId'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
     | '/app/'
@@ -237,6 +249,7 @@ export interface RootRouteChildren {
   PrivacidadeRoute: typeof PrivacidadeRoute
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   TermosRoute: typeof TermosRoute
+  ComunidadeEventoIdRoute: typeof ComunidadeEventoIdRoute
   EventosEventoIdRoute: typeof EventosEventoIdRoute
   InscricaoEventoIdRoute: typeof InscricaoEventoIdRoute
 }
@@ -348,6 +361,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSuporteRouteImport
       parentRoute: typeof AppRoute
     }
+    '/comunidade/$eventoId': {
+      id: '/comunidade/$eventoId'
+      path: '/comunidade/$eventoId'
+      fullPath: '/comunidade/$eventoId'
+      preLoaderRoute: typeof ComunidadeEventoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/eventos/$eventoId': {
       id: '/eventos/$eventoId'
       path: '/eventos/$eventoId'
@@ -397,6 +417,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacidadeRoute: PrivacidadeRoute,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   TermosRoute: TermosRoute,
+  ComunidadeEventoIdRoute: ComunidadeEventoIdRoute,
   EventosEventoIdRoute: EventosEventoIdRoute,
   InscricaoEventoIdRoute: InscricaoEventoIdRoute,
 }
