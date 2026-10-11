@@ -20,6 +20,9 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppIngressosRouteImport } from './routes/app.ingressos'
 import { Route as AppMissoesRouteImport } from './routes/app.missoes'
 import { Route as AppNotificacoesRouteImport } from './routes/app.notificacoes'
+import { Route as AppOrganizadorRouteImport } from './routes/app.organizador'
+import { Route as AppPerfilRouteImport } from './routes/app.perfil'
+import { Route as AppPrivacidadeRouteImport } from './routes/app.privacidade'
 import { Route as AppSuporteRouteImport } from './routes/app.suporte'
 import { Route as EventosEventoIdRouteImport } from './routes/eventos.$eventoId'
 import { Route as InscricaoEventoIdRouteImport } from './routes/inscricao.$eventoId'
@@ -79,6 +82,21 @@ const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
   path: '/notificacoes',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOrganizadorRoute = AppOrganizadorRouteImport.update({
+  id: '/organizador',
+  path: '/organizador',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPerfilRoute = AppPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrivacidadeRoute = AppPrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSuporteRoute = AppSuporteRouteImport.update({
   id: '/suporte',
   path: '/suporte',
@@ -106,6 +124,9 @@ export interface FileRoutesByFullPath {
   '/app/ingressos': typeof AppIngressosRoute
   '/app/missoes': typeof AppMissoesRoute
   '/app/notificacoes': typeof AppNotificacoesRoute
+  '/app/organizador': typeof AppOrganizadorRoute
+  '/app/perfil': typeof AppPerfilRoute
+  '/app/privacidade': typeof AppPrivacidadeRoute
   '/app/suporte': typeof AppSuporteRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
@@ -121,6 +142,9 @@ export interface FileRoutesByTo {
   '/app/ingressos': typeof AppIngressosRoute
   '/app/missoes': typeof AppMissoesRoute
   '/app/notificacoes': typeof AppNotificacoesRoute
+  '/app/organizador': typeof AppOrganizadorRoute
+  '/app/perfil': typeof AppPerfilRoute
+  '/app/privacidade': typeof AppPrivacidadeRoute
   '/app/suporte': typeof AppSuporteRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
@@ -138,6 +162,9 @@ export interface FileRoutesById {
   '/app/ingressos': typeof AppIngressosRoute
   '/app/missoes': typeof AppMissoesRoute
   '/app/notificacoes': typeof AppNotificacoesRoute
+  '/app/organizador': typeof AppOrganizadorRoute
+  '/app/perfil': typeof AppPerfilRoute
+  '/app/privacidade': typeof AppPrivacidadeRoute
   '/app/suporte': typeof AppSuporteRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
@@ -156,6 +183,9 @@ export interface FileRouteTypes {
     | '/app/ingressos'
     | '/app/missoes'
     | '/app/notificacoes'
+    | '/app/organizador'
+    | '/app/perfil'
+    | '/app/privacidade'
     | '/app/suporte'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
@@ -171,6 +201,9 @@ export interface FileRouteTypes {
     | '/app/ingressos'
     | '/app/missoes'
     | '/app/notificacoes'
+    | '/app/organizador'
+    | '/app/perfil'
+    | '/app/privacidade'
     | '/app/suporte'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
@@ -187,6 +220,9 @@ export interface FileRouteTypes {
     | '/app/ingressos'
     | '/app/missoes'
     | '/app/notificacoes'
+    | '/app/organizador'
+    | '/app/perfil'
+    | '/app/privacidade'
     | '/app/suporte'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
@@ -284,6 +320,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNotificacoesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/organizador': {
+      id: '/app/organizador'
+      path: '/organizador'
+      fullPath: '/app/organizador'
+      preLoaderRoute: typeof AppOrganizadorRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/perfil': {
+      id: '/app/perfil'
+      path: '/perfil'
+      fullPath: '/app/perfil'
+      preLoaderRoute: typeof AppPerfilRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/privacidade': {
+      id: '/app/privacidade'
+      path: '/privacidade'
+      fullPath: '/app/privacidade'
+      preLoaderRoute: typeof AppPrivacidadeRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/suporte': {
       id: '/app/suporte'
       path: '/suporte'
@@ -312,6 +369,9 @@ interface AppRouteChildren {
   AppIngressosRoute: typeof AppIngressosRoute
   AppMissoesRoute: typeof AppMissoesRoute
   AppNotificacoesRoute: typeof AppNotificacoesRoute
+  AppOrganizadorRoute: typeof AppOrganizadorRoute
+  AppPerfilRoute: typeof AppPerfilRoute
+  AppPrivacidadeRoute: typeof AppPrivacidadeRoute
   AppSuporteRoute: typeof AppSuporteRoute
   AppIndexRoute: typeof AppIndexRoute
 }
@@ -320,6 +380,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppIngressosRoute: AppIngressosRoute,
   AppMissoesRoute: AppMissoesRoute,
   AppNotificacoesRoute: AppNotificacoesRoute,
+  AppOrganizadorRoute: AppOrganizadorRoute,
+  AppPerfilRoute: AppPerfilRoute,
+  AppPrivacidadeRoute: AppPrivacidadeRoute,
   AppSuporteRoute: AppSuporteRoute,
   AppIndexRoute: AppIndexRoute,
 }
