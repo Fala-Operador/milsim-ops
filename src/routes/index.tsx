@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { carregarBase } from "@/services/db";
 import { vagasRestantes } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";

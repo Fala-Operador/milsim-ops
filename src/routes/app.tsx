@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Spinner } from "@/components/ui";
+import { SkeletonPagina } from "@/components/ui";
 
 export const Route = createFileRoute("/app")({
   component: LayoutApp,
