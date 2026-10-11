@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { carregarBase, type Base } from "@/services/db";
+import { carregarBase } from "@/services/db";
+import type { BaseDados } from "@/lib/domain/types";
 import { vagasRestantes } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { Badge, Cartao, Entrada, Selecao, EstadoVazio, SkeletonGrade } from "@/components/ui";
@@ -34,7 +35,7 @@ function precoInicial(evento: Evento): number {
 }
 
 function PaginaInicial() {
-  const [base, setBase] = useState<Base | null>(null);
+  const [base, setBase] = useState<BaseDados | null>(null);
   useEffect(() => {
     const t = setTimeout(() => setBase(carregarBase()), 350);
     return () => clearTimeout(t);
