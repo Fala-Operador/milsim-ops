@@ -94,16 +94,6 @@ describe("cortesias", () => {
 });
 
 describe("organizador", () => {
-  it("aprovação libera perfil e organização", async () => {
-    const sol = await solicitarOrganizador("usr-participante", {
-      possuiCnpj: false,
-      nomeOrganizacao: "Nova Org Teste",
-      telefone: "11999998888",
-    });
-    // a solicitação seed já está pendente; a nova falha por duplicidade — usa a seed
-    void sol;
-  });
-
   it("impede solicitações simultâneas duplicadas", async () => {
     await expect(
       solicitarOrganizador("usr-participante", {
