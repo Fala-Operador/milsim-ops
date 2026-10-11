@@ -34,12 +34,12 @@ function precoInicial(evento: Evento): number {
 }
 
 function PaginaInicial() {
-  const base = useMemo(() => carregarBase(), []);
-  const [carregando, setCarregando] = useState(true);
+  const [base, setBase] = useState<Base | null>(null);
   useEffect(() => {
-    const t = setTimeout(() => setCarregando(false), 450);
+    const t = setTimeout(() => setBase(carregarBase()), 350);
     return () => clearTimeout(t);
   }, []);
+  const carregando = base === null;
   const [busca, setBusca] = useState("");
   const [uf, setUf] = useState("");
   const [periodo, setPeriodo] = useState("");
