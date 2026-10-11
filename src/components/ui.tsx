@@ -55,7 +55,7 @@ export function Campo({
   htmlFor,
 }: {
   rotulo: string;
-  erro?: string;
+  erro?: string | undefined;
   children: ReactNode;
   htmlFor?: string;
 }) {

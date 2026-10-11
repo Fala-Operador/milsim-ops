@@ -140,7 +140,7 @@ export interface Evento {
   tipos: TipoIngresso[];
   lotes: Lote[];
   cronograma: AtividadeCronograma[];
-  regras?: DocumentoRegras;
+  regras?: DocumentoRegras | undefined;
   whatsappGrupoUrl?: string | undefined;
   status: StatusEvento;
   criadoEm: string;

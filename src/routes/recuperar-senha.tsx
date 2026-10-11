@@ -49,7 +49,7 @@ function PaginaRecuperar() {
           </form>
         )}
         <p className="mt-4 text-sm">
-          <Link to="/login" className="text-accent hover:underline">Voltar ao login</Link>
+          <Link to="/login" search={{ redirect: undefined }} className="text-accent hover:underline">Voltar ao login</Link>
         </p>
       </Cartao>
     </div>
