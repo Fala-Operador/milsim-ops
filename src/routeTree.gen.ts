@@ -18,6 +18,9 @@ import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppIngressosRouteImport } from './routes/app.ingressos'
+import { Route as AppMissoesRouteImport } from './routes/app.missoes'
+import { Route as AppNotificacoesRouteImport } from './routes/app.notificacoes'
+import { Route as AppSuporteRouteImport } from './routes/app.suporte'
 import { Route as EventosEventoIdRouteImport } from './routes/eventos.$eventoId'
 import { Route as InscricaoEventoIdRouteImport } from './routes/inscricao.$eventoId'
 
@@ -66,6 +69,21 @@ const AppIngressosRoute = AppIngressosRouteImport.update({
   path: '/ingressos',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMissoesRoute = AppMissoesRouteImport.update({
+  id: '/missoes',
+  path: '/missoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSuporteRoute = AppSuporteRouteImport.update({
+  id: '/suporte',
+  path: '/suporte',
+  getParentRoute: () => AppRoute,
+} as any)
 const EventosEventoIdRoute = EventosEventoIdRouteImport.update({
   id: '/eventos/$eventoId',
   path: '/eventos/$eventoId',
@@ -86,6 +104,9 @@ export interface FileRoutesByFullPath {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
   '/app/ingressos': typeof AppIngressosRoute
+  '/app/missoes': typeof AppMissoesRoute
+  '/app/notificacoes': typeof AppNotificacoesRoute
+  '/app/suporte': typeof AppSuporteRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
   '/app/': typeof AppIndexRoute
@@ -98,6 +119,9 @@ export interface FileRoutesByTo {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
   '/app/ingressos': typeof AppIngressosRoute
+  '/app/missoes': typeof AppMissoesRoute
+  '/app/notificacoes': typeof AppNotificacoesRoute
+  '/app/suporte': typeof AppSuporteRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
   '/app': typeof AppIndexRoute
@@ -112,6 +136,9 @@ export interface FileRoutesById {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
   '/app/ingressos': typeof AppIngressosRoute
+  '/app/missoes': typeof AppMissoesRoute
+  '/app/notificacoes': typeof AppNotificacoesRoute
+  '/app/suporte': typeof AppSuporteRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
   '/app/': typeof AppIndexRoute
@@ -127,6 +154,9 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/termos'
     | '/app/ingressos'
+    | '/app/missoes'
+    | '/app/notificacoes'
+    | '/app/suporte'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
     | '/app/'
@@ -139,6 +169,9 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/termos'
     | '/app/ingressos'
+    | '/app/missoes'
+    | '/app/notificacoes'
+    | '/app/suporte'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
     | '/app'
@@ -152,6 +185,9 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/termos'
     | '/app/ingressos'
+    | '/app/missoes'
+    | '/app/notificacoes'
+    | '/app/suporte'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
     | '/app/'
@@ -234,6 +270,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIngressosRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/missoes': {
+      id: '/app/missoes'
+      path: '/missoes'
+      fullPath: '/app/missoes'
+      preLoaderRoute: typeof AppMissoesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/notificacoes': {
+      id: '/app/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/app/notificacoes'
+      preLoaderRoute: typeof AppNotificacoesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/suporte': {
+      id: '/app/suporte'
+      path: '/suporte'
+      fullPath: '/app/suporte'
+      preLoaderRoute: typeof AppSuporteRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/eventos/$eventoId': {
       id: '/eventos/$eventoId'
       path: '/eventos/$eventoId'
@@ -253,11 +310,17 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppIngressosRoute: typeof AppIngressosRoute
+  AppMissoesRoute: typeof AppMissoesRoute
+  AppNotificacoesRoute: typeof AppNotificacoesRoute
+  AppSuporteRoute: typeof AppSuporteRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppIngressosRoute: AppIngressosRoute,
+  AppMissoesRoute: AppMissoesRoute,
+  AppNotificacoesRoute: AppNotificacoesRoute,
+  AppSuporteRoute: AppSuporteRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
