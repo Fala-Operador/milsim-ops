@@ -76,7 +76,7 @@ export async function analisarSolicitacao(
         rejeitar: `Solicitação rejeitada: ${justificativa}`,
       };
       base.notificacoes.push(
-        notificar(sol.usuarioId, "Atualização da solicitação", textos[acao], "/app/organizador"),
+        notificar(sol.usuarioId, "Atualização da solicitação", textos[acao] ?? "", "/app/organizador"),
       );
     }
     base.auditoria.push(auditar(adminId, `solicitacao_${acao}`, "solicitacao", solicitacaoId, justificativa));

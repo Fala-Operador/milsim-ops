@@ -103,10 +103,10 @@ export function Header() {
             </>
           ) : (
             <>
-              <Link to="/login" className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground">
+              <Link to="/login" search={{ redirect: undefined }} className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground">
                 Entrar
               </Link>
-              <Link to="/cadastro">
+              <Link to="/cadastro" search={{ redirect: undefined }}>
                 <Botao>Cadastrar</Botao>
               </Link>
             </>

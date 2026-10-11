@@ -12,7 +12,7 @@ interface NotificationContextValue {
 
 const NotificationContext = createContext<NotificationContextValue | null>(null);
 
-export function NotificationProvider({ usuarioId, children }: { usuarioId?: string; children: ReactNode }) {
+export function NotificationProvider({ usuarioId, children }: { usuarioId?: string | undefined; children: ReactNode }) {
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>(() => lerDoUsuario(usuarioId));
 
   function lerDoUsuario(uid?: string) {

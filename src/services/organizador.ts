@@ -85,7 +85,7 @@ export async function salvarEvento(
   return mutarBase((base) => {
     const idx = base.eventos.findIndex((e) => e.id === evento.id);
     if (idx >= 0) {
-      assertDono(base.eventos[idx], usuarioId, perfil);
+      assertDono(base.eventos[idx]!, usuarioId, perfil);
       // Não permitir redução de capacidade abaixo da ocupação atual
       const ativas = base.inscricoes.filter(
         (i) => i.eventoId === evento.id && i.status === "confirmada",

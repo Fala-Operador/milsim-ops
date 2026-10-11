@@ -28,13 +28,13 @@ export interface DadosCadastro {
   cep: string;
   logradouro: string;
   numero: string;
-  complemento?: string;
+  complemento?: string | undefined;
   bairro: string;
   cidade: string;
   uf: string;
-  instagram?: string;
-  squad?: string;
-  fotoUrl?: string;
+  instagram?: string | undefined;
+  squad?: string | undefined;
+  fotoUrl?: string | undefined;
   aceiteTermos: boolean;
   cienciaPrivacidade: boolean;
   autorizacaoPromocional: boolean;

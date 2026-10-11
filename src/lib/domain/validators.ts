@@ -18,7 +18,7 @@ export function cpfValido(cpf: string): boolean {
   const digito = (base: string, pesos: number[]) => {
     const soma = base
       .split("")
-      .reduce((acc, n, i) => acc + Number(n) * pesos[i], 0);
+      .reduce((acc, n, i) => acc + Number(n) * pesos[i]!, 0);
     const resto = (soma * 10) % 11;
     return resto === 10 ? 0 : resto;
   };
@@ -36,7 +36,7 @@ export function cnpjValido(cnpj: string): boolean {
   const calc = (base: string, pesos: number[]) => {
     const soma = base
       .split("")
-      .reduce((acc, n, i) => acc + Number(n) * pesos[i], 0);
+      .reduce((acc, n, i) => acc + Number(n) * pesos[i]!, 0);
     const resto = soma % 11;
     return resto < 2 ? 0 : 11 - resto;
   };
@@ -55,7 +55,7 @@ export function telefoneValido(telefone: string): boolean {
 
 /** Idade em anos completos, calculada pela data civil (sem fuso). */
 export function idadeEmAnos(dataNascimento: string, referencia?: Date): number {
-  const [ano, mes, dia] = dataNascimento.split("-").map(Number);
+  const [ano = 0, mes = 1, dia = 1] = dataNascimento.split("-").map(Number);
   const ref = referencia ?? new Date();
   let idade = ref.getFullYear() - ano;
   const aindaNaoFezAniversario =

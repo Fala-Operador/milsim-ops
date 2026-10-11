@@ -13,7 +13,7 @@ import { Botao, Campo, Cartao, Entrada, Selecao } from "@/components/ui";
 
 export const Route = createFileRoute("/inscricao/$eventoId")({
   validateSearch: (s: Record<string, unknown>) => ({
-    cortesia: typeof s.cortesia === "string" ? s.cortesia : undefined,
+    cortesia: typeof s["cortesia"] === "string" ? s["cortesia"] : undefined,
   }),
   loader: ({ params }) => {
     const base = carregarBase();

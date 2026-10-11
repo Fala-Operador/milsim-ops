@@ -67,7 +67,7 @@ function PaginaEvento() {
                 {restantes} vagas restantes
               </Badge>
               <div className="mt-2">
-                <Link to="/inscricao/$eventoId" params={{ eventoId: evento.id }}>
+                <Link to="/inscricao/$eventoId" params={{ eventoId: evento.id }} search={{ cortesia: undefined }}>
                   <Botao>Inscrever-se</Botao>
                 </Link>
               </div>
