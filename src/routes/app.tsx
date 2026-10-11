@@ -28,7 +28,7 @@ function LayoutApp() {
     }
   }, [autenticado, navigate, pathname]);
 
-  if (!usuario) return <Spinner texto="Verificando sessão..." />;
+  if (!usuario) return <SkeletonPagina />;
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 lg:flex-row">
