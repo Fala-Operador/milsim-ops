@@ -15,6 +15,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as TermosRouteImport } from './routes/termos'
+import { Route as EventosEventoIdRouteImport } from './routes/eventos.$eventoId'
+import { Route as InscricaoEventoIdRouteImport } from './routes/inscricao.$eventoId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +48,16 @@ const TermosRoute = TermosRouteImport.update({
   path: '/termos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EventosEventoIdRoute = EventosEventoIdRouteImport.update({
+  id: '/eventos/$eventoId',
+  path: '/eventos/$eventoId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InscricaoEventoIdRoute = InscricaoEventoIdRouteImport.update({
+  id: '/inscricao/$eventoId',
+  path: '/inscricao/$eventoId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +66,8 @@ export interface FileRoutesByFullPath {
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
+  '/eventos/$eventoId': typeof EventosEventoIdRoute
+  '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +76,8 @@ export interface FileRoutesByTo {
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
+  '/eventos/$eventoId': typeof EventosEventoIdRoute
+  '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +87,8 @@ export interface FileRoutesById {
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
+  '/eventos/$eventoId': typeof EventosEventoIdRoute
+  '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +99,8 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/recuperar-senha'
     | '/termos'
+    | '/eventos/$eventoId'
+    | '/inscricao/$eventoId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +109,8 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/recuperar-senha'
     | '/termos'
+    | '/eventos/$eventoId'
+    | '/inscricao/$eventoId'
   id:
     | '__root__'
     | '/'
@@ -97,6 +119,8 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/recuperar-senha'
     | '/termos'
+    | '/eventos/$eventoId'
+    | '/inscricao/$eventoId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,6 +130,8 @@ export interface RootRouteChildren {
   PrivacidadeRoute: typeof PrivacidadeRoute
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   TermosRoute: typeof TermosRoute
+  EventosEventoIdRoute: typeof EventosEventoIdRoute
+  InscricaoEventoIdRoute: typeof InscricaoEventoIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -152,6 +178,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/eventos/$eventoId': {
+      id: '/eventos/$eventoId'
+      path: '/eventos/$eventoId'
+      fullPath: '/eventos/$eventoId'
+      preLoaderRoute: typeof EventosEventoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inscricao/$eventoId': {
+      id: '/inscricao/$eventoId'
+      path: '/inscricao/$eventoId'
+      fullPath: '/inscricao/$eventoId'
+      preLoaderRoute: typeof InscricaoEventoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -162,6 +202,8 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacidadeRoute: PrivacidadeRoute,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   TermosRoute: TermosRoute,
+  EventosEventoIdRoute: EventosEventoIdRoute,
+  InscricaoEventoIdRoute: InscricaoEventoIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
