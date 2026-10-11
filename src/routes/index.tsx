@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { carregarBase } from "@/services/db";
+import { carregarBase, type Base } from "@/services/db";
 import { vagasRestantes } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { Badge, Cartao, Entrada, Selecao, EstadoVazio, SkeletonGrade } from "@/components/ui";
@@ -48,7 +48,7 @@ function PaginaInicial() {
   const publicados = base?.eventos.filter((e) => e.status === "publicado") ?? [];
   const ufs = [...new Set(publicados.map((e) => e.uf))].sort();
 
-  const filtrados = publicados.filter((e) => {
+  const filtrados = !base ? [] : publicados.filter((e) => {
     if (busca && !e.nome.toLowerCase().includes(busca.toLowerCase())) return false;
     if (uf && e.uf !== uf) return false;
     if (periodo) {
@@ -130,7 +130,7 @@ function PaginaInicial() {
         ) : (
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtrados.map((e) => {
-              const restantes = vagasRestantes(base, e);
+              const restantes = vagasRestantes(base!, e);
               return (
                 <Link key={e.id} to="/eventos/$eventoId" params={{ eventoId: e.id }}>
                   <Cartao className="h-full transition-transform hover:-translate-y-0.5">
