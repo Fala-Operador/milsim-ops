@@ -119,7 +119,11 @@ function PaginaInicial() {
           Eventos em destaque
         </h2>
 
-        {filtrados.length === 0 ? (
+        {carregando ? (
+          <div className="mt-4">
+            <SkeletonGrade quantidade={6} />
+          </div>
+        ) : filtrados.length === 0 ? (
           <div className="mt-4">
             <EstadoVazio titulo="Nenhuma operação encontrada" descricao="Ajuste os filtros ou a busca." />
           </div>
