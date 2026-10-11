@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { carregarBase } from "@/services/db";
 import { vagasRestantes } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
@@ -45,7 +45,7 @@ function PaginaInicial() {
   const [periodo, setPeriodo] = useState("");
   const [disponibilidade, setDisponibilidade] = useState("");
 
-  const publicados = base.eventos.filter((e) => e.status === "publicado");
+  const publicados = base?.eventos.filter((e) => e.status === "publicado") ?? [];
   const ufs = [...new Set(publicados.map((e) => e.uf))].sort();
 
   const filtrados = publicados.filter((e) => {
@@ -65,7 +65,7 @@ function PaginaInicial() {
     return true;
   });
 
-  const organizacaoDe = (id: string) => base.organizacoes.find((o) => o.id === id)?.nome ?? "—";
+  const organizacaoDe = (id: string) => base?.organizacoes.find((o) => o.id === id)?.nome ?? "—";
 
   return (
     <div>
