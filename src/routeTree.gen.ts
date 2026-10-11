@@ -10,17 +10,25 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as TermosRouteImport } from './routes/termos'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppIngressosRouteImport } from './routes/app.ingressos'
 import { Route as EventosEventoIdRouteImport } from './routes/eventos.$eventoId'
 import { Route as InscricaoEventoIdRouteImport } from './routes/inscricao.$eventoId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CadastroRoute = CadastroRouteImport.update({
@@ -48,6 +56,16 @@ const TermosRoute = TermosRouteImport.update({
   path: '/termos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIngressosRoute = AppIngressosRouteImport.update({
+  id: '/ingressos',
+  path: '/ingressos',
+  getParentRoute: () => AppRoute,
+} as any)
 const EventosEventoIdRoute = EventosEventoIdRouteImport.update({
   id: '/eventos/$eventoId',
   path: '/eventos/$eventoId',
@@ -61,13 +79,16 @@ const InscricaoEventoIdRoute = InscricaoEventoIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
+  '/app/ingressos': typeof AppIngressosRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -76,31 +97,39 @@ export interface FileRoutesByTo {
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
+  '/app/ingressos': typeof AppIngressosRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
+  '/app/ingressos': typeof AppIngressosRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/app'
     | '/cadastro'
     | '/login'
     | '/privacidade'
     | '/recuperar-senha'
     | '/termos'
+    | '/app/ingressos'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -109,22 +138,28 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/recuperar-senha'
     | '/termos'
+    | '/app/ingressos'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
+    | '/app'
   id:
     | '__root__'
     | '/'
+    | '/app'
     | '/cadastro'
     | '/login'
     | '/privacidade'
     | '/recuperar-senha'
     | '/termos'
+    | '/app/ingressos'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
+    | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   CadastroRoute: typeof CadastroRoute
   LoginRoute: typeof LoginRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
@@ -141,6 +176,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cadastro': {
@@ -178,6 +220,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/ingressos': {
+      id: '/app/ingressos'
+      path: '/ingressos'
+      fullPath: '/app/ingressos'
+      preLoaderRoute: typeof AppIngressosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/eventos/$eventoId': {
       id: '/eventos/$eventoId'
       path: '/eventos/$eventoId'
@@ -195,8 +251,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppRouteChildren {
+  AppIngressosRoute: typeof AppIngressosRoute
+  AppIndexRoute: typeof AppIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppIngressosRoute: AppIngressosRoute,
+  AppIndexRoute: AppIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   CadastroRoute: CadastroRoute,
   LoginRoute: LoginRoute,
   PrivacidadeRoute: PrivacidadeRoute,
