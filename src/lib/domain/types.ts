@@ -22,7 +22,7 @@ export interface Usuario {
   instagram?: string | undefined;
   squad?: string | undefined;
   fotoUrl?: string | undefined;
-  autorizacaoResponsavel?: "pendente" | "aprovada" | "nao_aplicavel";: undefined;
+  autorizacaoResponsavel?: "pendente" | "aprovada" | "nao_aplicavel" | undefined;
   autorizacaoPromocional: boolean;
   aceiteTermosVersao: string;
   aceiteTermosEm: string;
