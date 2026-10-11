@@ -3,6 +3,9 @@
 
 const PREFIXO = "milsim-demo:";
 
+// No servidor (SSR) não há localStorage: leituras retornam vazio e escritas são ignoradas.
+const semJanela = () => typeof window === "undefined";
+
 export const storage = {
   ler<T>(chave: string): T | null {
     try {
