@@ -10,33 +10,274 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AppRouteImport } from './routes/app'
+import { Route as CadastroRouteImport } from './routes/cadastro'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as OrganizacaoRouteImport } from './routes/organizacao'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
+import { Route as TermosRouteImport } from './routes/termos'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppIngressosRouteImport } from './routes/app.ingressos'
+import { Route as AppMissoesRouteImport } from './routes/app.missoes'
+import { Route as AppNotificacoesRouteImport } from './routes/app.notificacoes'
+import { Route as AppOrganizadorRouteImport } from './routes/app.organizador'
+import { Route as AppPerfilRouteImport } from './routes/app.perfil'
+import { Route as AppPrivacidadeRouteImport } from './routes/app.privacidade'
+import { Route as AppSuporteRouteImport } from './routes/app.suporte'
+import { Route as ComunidadeEventoIdRouteImport } from './routes/comunidade.$eventoId'
+import { Route as EventosEventoIdRouteImport } from './routes/eventos.$eventoId'
+import { Route as InscricaoEventoIdRouteImport } from './routes/inscricao.$eventoId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CadastroRoute = CadastroRouteImport.update({
+  id: '/cadastro',
+  path: '/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizacaoRoute = OrganizacaoRouteImport.update({
+  id: '/organizacao',
+  path: '/organizacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
+  id: '/recuperar-senha',
+  path: '/recuperar-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIngressosRoute = AppIngressosRouteImport.update({
+  id: '/ingressos',
+  path: '/ingressos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMissoesRoute = AppMissoesRouteImport.update({
+  id: '/missoes',
+  path: '/missoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrganizadorRoute = AppOrganizadorRouteImport.update({
+  id: '/organizador',
+  path: '/organizador',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPerfilRoute = AppPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrivacidadeRoute = AppPrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSuporteRoute = AppSuporteRouteImport.update({
+  id: '/suporte',
+  path: '/suporte',
+  getParentRoute: () => AppRoute,
+} as any)
+const ComunidadeEventoIdRoute = ComunidadeEventoIdRouteImport.update({
+  id: '/comunidade/$eventoId',
+  path: '/comunidade/$eventoId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventosEventoIdRoute = EventosEventoIdRouteImport.update({
+  id: '/eventos/$eventoId',
+  path: '/eventos/$eventoId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InscricaoEventoIdRoute = InscricaoEventoIdRouteImport.update({
+  id: '/inscricao/$eventoId',
+  path: '/inscricao/$eventoId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/app': typeof AppRouteWithChildren
+  '/cadastro': typeof CadastroRoute
+  '/login': typeof LoginRoute
+  '/organizacao': typeof OrganizacaoRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/termos': typeof TermosRoute
+  '/app/ingressos': typeof AppIngressosRoute
+  '/app/missoes': typeof AppMissoesRoute
+  '/app/notificacoes': typeof AppNotificacoesRoute
+  '/app/organizador': typeof AppOrganizadorRoute
+  '/app/perfil': typeof AppPerfilRoute
+  '/app/privacidade': typeof AppPrivacidadeRoute
+  '/app/suporte': typeof AppSuporteRoute
+  '/comunidade/$eventoId': typeof ComunidadeEventoIdRoute
+  '/eventos/$eventoId': typeof EventosEventoIdRoute
+  '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/cadastro': typeof CadastroRoute
+  '/login': typeof LoginRoute
+  '/organizacao': typeof OrganizacaoRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/termos': typeof TermosRoute
+  '/app/ingressos': typeof AppIngressosRoute
+  '/app/missoes': typeof AppMissoesRoute
+  '/app/notificacoes': typeof AppNotificacoesRoute
+  '/app/organizador': typeof AppOrganizadorRoute
+  '/app/perfil': typeof AppPerfilRoute
+  '/app/privacidade': typeof AppPrivacidadeRoute
+  '/app/suporte': typeof AppSuporteRoute
+  '/comunidade/$eventoId': typeof ComunidadeEventoIdRoute
+  '/eventos/$eventoId': typeof EventosEventoIdRoute
+  '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/app': typeof AppRouteWithChildren
+  '/cadastro': typeof CadastroRoute
+  '/login': typeof LoginRoute
+  '/organizacao': typeof OrganizacaoRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/termos': typeof TermosRoute
+  '/app/ingressos': typeof AppIngressosRoute
+  '/app/missoes': typeof AppMissoesRoute
+  '/app/notificacoes': typeof AppNotificacoesRoute
+  '/app/organizador': typeof AppOrganizadorRoute
+  '/app/perfil': typeof AppPerfilRoute
+  '/app/privacidade': typeof AppPrivacidadeRoute
+  '/app/suporte': typeof AppSuporteRoute
+  '/comunidade/$eventoId': typeof ComunidadeEventoIdRoute
+  '/eventos/$eventoId': typeof EventosEventoIdRoute
+  '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/app'
+    | '/cadastro'
+    | '/login'
+    | '/organizacao'
+    | '/privacidade'
+    | '/recuperar-senha'
+    | '/termos'
+    | '/app/ingressos'
+    | '/app/missoes'
+    | '/app/notificacoes'
+    | '/app/organizador'
+    | '/app/perfil'
+    | '/app/privacidade'
+    | '/app/suporte'
+    | '/comunidade/$eventoId'
+    | '/eventos/$eventoId'
+    | '/inscricao/$eventoId'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin'
+    | '/cadastro'
+    | '/login'
+    | '/organizacao'
+    | '/privacidade'
+    | '/recuperar-senha'
+    | '/termos'
+    | '/app/ingressos'
+    | '/app/missoes'
+    | '/app/notificacoes'
+    | '/app/organizador'
+    | '/app/perfil'
+    | '/app/privacidade'
+    | '/app/suporte'
+    | '/comunidade/$eventoId'
+    | '/eventos/$eventoId'
+    | '/inscricao/$eventoId'
+    | '/app'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/app'
+    | '/cadastro'
+    | '/login'
+    | '/organizacao'
+    | '/privacidade'
+    | '/recuperar-senha'
+    | '/termos'
+    | '/app/ingressos'
+    | '/app/missoes'
+    | '/app/notificacoes'
+    | '/app/organizador'
+    | '/app/perfil'
+    | '/app/privacidade'
+    | '/app/suporte'
+    | '/comunidade/$eventoId'
+    | '/eventos/$eventoId'
+    | '/inscricao/$eventoId'
+    | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  AppRoute: typeof AppRouteWithChildren
+  CadastroRoute: typeof CadastroRoute
+  LoginRoute: typeof LoginRoute
+  OrganizacaoRoute: typeof OrganizacaoRoute
+  PrivacidadeRoute: typeof PrivacidadeRoute
+  RecuperarSenhaRoute: typeof RecuperarSenhaRoute
+  TermosRoute: typeof TermosRoute
+  ComunidadeEventoIdRoute: typeof ComunidadeEventoIdRoute
+  EventosEventoIdRoute: typeof EventosEventoIdRoute
+  InscricaoEventoIdRoute: typeof InscricaoEventoIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +289,179 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cadastro': {
+      id: '/cadastro'
+      path: '/cadastro'
+      fullPath: '/cadastro'
+      preLoaderRoute: typeof CadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizacao': {
+      id: '/organizacao'
+      path: '/organizacao'
+      fullPath: '/organizacao'
+      preLoaderRoute: typeof OrganizacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recuperar-senha': {
+      id: '/recuperar-senha'
+      path: '/recuperar-senha'
+      fullPath: '/recuperar-senha'
+      preLoaderRoute: typeof RecuperarSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/ingressos': {
+      id: '/app/ingressos'
+      path: '/ingressos'
+      fullPath: '/app/ingressos'
+      preLoaderRoute: typeof AppIngressosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/missoes': {
+      id: '/app/missoes'
+      path: '/missoes'
+      fullPath: '/app/missoes'
+      preLoaderRoute: typeof AppMissoesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/notificacoes': {
+      id: '/app/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/app/notificacoes'
+      preLoaderRoute: typeof AppNotificacoesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/organizador': {
+      id: '/app/organizador'
+      path: '/organizador'
+      fullPath: '/app/organizador'
+      preLoaderRoute: typeof AppOrganizadorRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/perfil': {
+      id: '/app/perfil'
+      path: '/perfil'
+      fullPath: '/app/perfil'
+      preLoaderRoute: typeof AppPerfilRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/privacidade': {
+      id: '/app/privacidade'
+      path: '/privacidade'
+      fullPath: '/app/privacidade'
+      preLoaderRoute: typeof AppPrivacidadeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/suporte': {
+      id: '/app/suporte'
+      path: '/suporte'
+      fullPath: '/app/suporte'
+      preLoaderRoute: typeof AppSuporteRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/comunidade/$eventoId': {
+      id: '/comunidade/$eventoId'
+      path: '/comunidade/$eventoId'
+      fullPath: '/comunidade/$eventoId'
+      preLoaderRoute: typeof ComunidadeEventoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/eventos/$eventoId': {
+      id: '/eventos/$eventoId'
+      path: '/eventos/$eventoId'
+      fullPath: '/eventos/$eventoId'
+      preLoaderRoute: typeof EventosEventoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inscricao/$eventoId': {
+      id: '/inscricao/$eventoId'
+      path: '/inscricao/$eventoId'
+      fullPath: '/inscricao/$eventoId'
+      preLoaderRoute: typeof InscricaoEventoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppIngressosRoute: typeof AppIngressosRoute
+  AppMissoesRoute: typeof AppMissoesRoute
+  AppNotificacoesRoute: typeof AppNotificacoesRoute
+  AppOrganizadorRoute: typeof AppOrganizadorRoute
+  AppPerfilRoute: typeof AppPerfilRoute
+  AppPrivacidadeRoute: typeof AppPrivacidadeRoute
+  AppSuporteRoute: typeof AppSuporteRoute
+  AppIndexRoute: typeof AppIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppIngressosRoute: AppIngressosRoute,
+  AppMissoesRoute: AppMissoesRoute,
+  AppNotificacoesRoute: AppNotificacoesRoute,
+  AppOrganizadorRoute: AppOrganizadorRoute,
+  AppPerfilRoute: AppPerfilRoute,
+  AppPrivacidadeRoute: AppPrivacidadeRoute,
+  AppSuporteRoute: AppSuporteRoute,
+  AppIndexRoute: AppIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  AppRoute: AppRouteWithChildren,
+  CadastroRoute: CadastroRoute,
+  LoginRoute: LoginRoute,
+  OrganizacaoRoute: OrganizacaoRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
+  RecuperarSenhaRoute: RecuperarSenhaRoute,
+  TermosRoute: TermosRoute,
+  ComunidadeEventoIdRoute: ComunidadeEventoIdRoute,
+  EventosEventoIdRoute: EventosEventoIdRoute,
+  InscricaoEventoIdRoute: InscricaoEventoIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
