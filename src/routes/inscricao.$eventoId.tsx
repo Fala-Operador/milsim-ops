@@ -31,6 +31,7 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
         ]
       : [{ title: "Inscrição — MilSim Ops" }],
   }),
+  pendingComponent: SkeletonPagina,
   component: PaginaInscricao,
   notFoundComponent: () => (
     <div className="mx-auto max-w-xl px-4 py-16 text-center">

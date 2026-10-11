@@ -22,6 +22,7 @@ export const Route = createFileRoute("/comunidade/$eventoId")({
         ]
       : [{ title: "Comunidade — MilSim Ops" }],
   }),
+  pendingComponent: SkeletonPagina,
   component: Comunidade,
 });
 
