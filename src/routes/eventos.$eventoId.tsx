@@ -3,7 +3,7 @@ import { useState } from "react";
 import { carregarBase } from "@/services/db";
 import { vagasRestantes, loteVigente } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
-import { Badge, Botao, Cartao, Modal } from "@/components/ui";
+import { Badge, Botao, Cartao, Modal, SkeletonPagina } from "@/components/ui";
 
 export const Route = createFileRoute("/eventos/$eventoId")({
   loader: ({ params }) => {

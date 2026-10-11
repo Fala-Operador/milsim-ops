@@ -9,7 +9,7 @@ import {
 } from "@/services/inscricoes";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL } from "@/lib/domain/money";
-import { Botao, Campo, Cartao, Entrada, Selecao } from "@/components/ui";
+import { Botao, Campo, Cartao, Entrada, Selecao, SkeletonPagina } from "@/components/ui";
 
 export const Route = createFileRoute("/inscricao/$eventoId")({
   validateSearch: (s: Record<string, unknown>) => ({

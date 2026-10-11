@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { carregarBase } from "@/services/db";
 import { vagasRestantes } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
-import { Badge, Cartao, Entrada, Selecao, EstadoVazio } from "@/components/ui";
+import { Badge, Cartao, Entrada, Selecao, EstadoVazio, SkeletonGrade } from "@/components/ui";
 import type { Evento } from "@/lib/domain/types";
 
 export const Route = createFileRoute("/")({

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { carregarBase, mutarBase, gerarId } from "@/services/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
-import { AreaTexto, Badge, Botao, Cartao } from "@/components/ui";
+import { AreaTexto, Badge, Botao, Cartao, SkeletonPagina } from "@/components/ui";
 
 export const Route = createFileRoute("/comunidade/$eventoId")({
   loader: ({ params }) => {
