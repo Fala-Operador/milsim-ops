@@ -1,24 +1,159 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { carregarBase } from "@/services/db";
+import { vagasRestantes } from "@/services/inscricoes";
+import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
+import { Badge, Cartao, Entrada, Selecao, EstadoVazio } from "@/components/ui";
+import type { Evento } from "@/lib/domain/types";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "MilSim Ops — Descubra operações de simulação militar" },
+      {
+        name: "description",
+        content:
+          "Eventos de simulação militar em destaque: busque por nome, filtre por localização, data e disponibilidade. Ambiente de demonstração.",
+      },
+      { property: "og:title", content: "MilSim Ops — Descubra operações de simulação militar" },
+      {
+        property: "og:description",
+        content: "Eventos de simulação militar em destaque. Ambiente de demonstração.",
+      },
+    ],
+  }),
+  component: PaginaInicial,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function precoInicial(evento: Evento): number {
+  const precos = evento.lotes
+    .filter((l) => l.status === "ativo")
+    .flatMap((l) => l.itens.map((i) => i.precoCentavos));
+  if (precos.length) return Math.min(...precos);
+  return Math.min(...evento.tipos.map((t) => t.precoBaseCentavos));
+}
+
+function PaginaInicial() {
+  const base = useMemo(() => carregarBase(), []);
+  const [busca, setBusca] = useState("");
+  const [uf, setUf] = useState("");
+  const [periodo, setPeriodo] = useState("");
+  const [disponibilidade, setDisponibilidade] = useState("");
+
+  const publicados = base.eventos.filter((e) => e.status === "publicado");
+  const ufs = [...new Set(publicados.map((e) => e.uf))].sort();
+
+  const filtrados = publicados.filter((e) => {
+    if (busca && !e.nome.toLowerCase().includes(busca.toLowerCase())) return false;
+    if (uf && e.uf !== uf) return false;
+    if (periodo) {
+      const inicio = new Date(e.inicioEm);
+      const hoje = new Date();
+      if (periodo === "30d" && inicio.getTime() - hoje.getTime() > 30 * 86400000) return false;
+      if (periodo === "90d" && inicio.getTime() - hoje.getTime() > 90 * 86400000) return false;
+    }
+    if (disponibilidade === "com_vagas" && vagasRestantes(base, e) <= 0) return false;
+    if (disponibilidade === "quase_esgotado") {
+      const restantes = vagasRestantes(base, e);
+      if (restantes <= 0 || restantes > e.capacidadeTotal * 0.15) return false;
+    }
+    return true;
+  });
+
+  const organizacaoDe = (id: string) => base.organizacoes.find((o) => o.id === id)?.nome ?? "—";
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div>
+      <section className="topo-bg border-b border-border bg-card">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <p className="font-mono text-xs uppercase tracking-widest text-accent">
+            23°06'S 46°42'W — setor de operações
+          </p>
+          <h1 className="mt-2 font-display text-4xl font-bold uppercase tracking-wide text-foreground sm:text-5xl">
+            Operações de simulação militar
+          </h1>
+          <p className="mt-3 max-w-2xl text-muted-foreground">
+            Encontre eventos, escolha seu exército e confirme sua inscrição simulada. Tudo em um
+            só lugar — do briefing ao caderno de regras.
+          </p>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-8">
+        <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Entrada
+            type="search"
+            placeholder="Buscar por nome da operação..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            aria-label="Buscar por nome"
+          />
+          <Selecao value={uf} onChange={(e) => setUf(e.target.value)} aria-label="Filtrar por estado">
+            <option value="">Todos os estados</option>
+            {ufs.map((u) => (
+              <option key={u} value={u}>{u}</option>
+            ))}
+          </Selecao>
+          <Selecao value={periodo} onChange={(e) => setPeriodo(e.target.value)} aria-label="Filtrar por data">
+            <option value="">Qualquer data</option>
+            <option value="30d">Próximos 30 dias</option>
+            <option value="90d">Próximos 90 dias</option>
+          </Selecao>
+          <Selecao
+            value={disponibilidade}
+            onChange={(e) => setDisponibilidade(e.target.value)}
+            aria-label="Filtrar por disponibilidade"
+          >
+            <option value="">Qualquer disponibilidade</option>
+            <option value="com_vagas">Com vagas</option>
+            <option value="quase_esgotado">Quase esgotado</option>
+          </Selecao>
+        </div>
+
+        <h2 className="mt-8 font-display text-2xl font-semibold uppercase tracking-wide">
+          Eventos em destaque
+        </h2>
+
+        {filtrados.length === 0 ? (
+          <div className="mt-4">
+            <EstadoVazio titulo="Nenhuma operação encontrada" descricao="Ajuste os filtros ou a busca." />
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filtrados.map((e) => {
+              const restantes = vagasRestantes(base, e);
+              return (
+                <Link key={e.id} to="/eventos/$eventoId" params={{ eventoId: e.id }}>
+                  <Cartao className="h-full transition-transform hover:-translate-y-0.5">
+                    <div className="topo-bg -mx-5 -mt-5 mb-4 flex h-32 items-end rounded-t-lg border-b border-border bg-secondary p-3">
+                      <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                        {e.nome.slice(0, 2).toUpperCase()}-{e.cidade.slice(0, 3).toUpperCase()} · {e.fuso}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-display text-xl font-semibold uppercase">{e.nome}</h3>
+                      {restantes <= 0 ? (
+                        <Badge tom="perigo">Esgotado</Badge>
+                      ) : restantes <= e.capacidadeTotal * 0.15 ? (
+                        <Badge tom="aviso">Últimas vagas</Badge>
+                      ) : (
+                        <Badge tom="sucesso">Vagas abertas</Badge>
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {formatarDataBR(e.inicioEm)} · {e.cidade}/{e.uf}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{organizacaoDe(e.organizacaoId)}</p>
+                    <p className="mt-3 text-sm font-medium text-foreground">
+                      A partir de <span className="text-accent">{formatarBRL(precoInicial(e))}</span>
+                    </p>
+                  </Cartao>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
