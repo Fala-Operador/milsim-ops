@@ -186,6 +186,7 @@ function PaginaInicial() {
                     </p>
                   </Cartao>
                 </Link>
+                </CardRastreado>
               );
             })}
           </div>

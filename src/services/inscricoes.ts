@@ -1,4 +1,5 @@
 // Regras de inscrição, vagas, cupons, cortesias e cancelamento.
+import { registrarConfirmacao } from "./analytics";
 import { carregarBase, mutarBase, latencia, ErroDominio, gerarId, gerarCodigo } from "./db";
 import { idadeEmAnos } from "@/lib/domain/validators";
 import type { Cupom, Evento, Inscricao, Usuario } from "@/lib/domain/types";
@@ -181,6 +182,7 @@ export async function confirmarInscricao(dados: DadosInscricao): Promise<Inscric
       criadoEm: new Date().toISOString(),
     };
     base.inscricoes.push(inscricao);
+    registrarConfirmacao(inscricao);
 
     if (valorFinal > 0) {
       base.movimentacoes.push({

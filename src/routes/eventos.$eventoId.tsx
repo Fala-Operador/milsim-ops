@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { carregarBase } from "@/services/db";
 import { dataUrlParaBlobUrl } from "@/lib/imagens";
 import { useEventoAtual } from "@/hooks/useEventoAtual";
-import { confirmarVisitaEvento } from "@/services/metricas";
+import { registrarCliqueInscrever, registrarVisita } from "@/services/analytics";
 import { vagasRestantes, loteVigente } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
 import { Badge, Botao, Cartao, Modal, SkeletonPagina } from "@/components/ui";
@@ -43,7 +43,7 @@ function PaginaEvento() {
   const base = carregarBase();
   const restantes = vagasRestantes(base, evento);
   const [regrasAbertas, setRegrasAbertas] = useState(false);
-  useEffect(() => confirmarVisitaEvento(evento.id), [evento.id]);
+  useEffect(() => registrarVisita(evento.id, new URLSearchParams(window.location.search).get("cmp")), [evento.id]);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   useEffect(() => {
     if (!regrasAbertas || !evento.regras?.pdfDataUrl) return;
@@ -83,7 +83,7 @@ function PaginaEvento() {
                 {restantes} vagas restantes
               </Badge>
               <div className="mt-2">
-                <Link to="/inscricao/$eventoId" params={{ eventoId: evento.id }} search={{ cortesia: undefined }}>
+                <Link to="/inscricao/$eventoId" params={{ eventoId: evento.id }} search={{ cortesia: undefined }} onClick={() => registrarCliqueInscrever(evento.id)}>
                   <Botao>Inscrever-se</Botao>
                 </Link>
               </div>

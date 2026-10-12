@@ -18,7 +18,6 @@ import { arquivoParaDataUrl } from "@/lib/imagens";
 import { SecoesPublicas, SeletorLocalizacao } from "@/components/divulgacao";
 import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, EstadoVazio, Modal, Selecao, SkeletonPagina } from "@/components/ui";
 import { gerarId } from "@/services/db";
-import { PainelDesempenho } from "@/components/PainelDesempenho";
 
 export const Route = createFileRoute("/admin/divulgacao")({
   head: () => ({
@@ -46,7 +45,7 @@ const tomStatus = { rascunho: "aviso", publicada: "sucesso", desativada: "padrao
 function PaginaDivulgacao() {
   const versao = useVersaoBase();
   const [base, setBase] = useState<BaseDados | null>(null);
-  const [aba, setAba] = useState<"secoes" | "parceiros" | "desempenho">("secoes");
+  const [aba, setAba] = useState<"secoes" | "parceiros">("secoes");
   useEffect(() => setBase(structuredClone(carregarBase())), [versao]);
   if (!base) return <SkeletonPagina />;
   return (
@@ -61,10 +60,9 @@ function PaginaDivulgacao() {
         <div className="flex gap-1" role="tablist">
           <Botao role="tab" aria-selected={aba === "secoes"} variante={aba === "secoes" ? "primario" : "contorno"} onClick={() => setAba("secoes")}>Seções</Botao>
           <Botao role="tab" aria-selected={aba === "parceiros"} variante={aba === "parceiros" ? "primario" : "contorno"} onClick={() => setAba("parceiros")}>Parceiros</Botao>
-          <Botao role="tab" aria-selected={aba === "desempenho"} variante={aba === "desempenho" ? "primario" : "contorno"} onClick={() => setAba("desempenho")}>Desempenho</Botao>
         </div>
       </div>
-      <div className="mt-4">{aba === "secoes" ? <GestaoSecoes base={base} /> : aba === "parceiros" ? <GestaoParceiros base={base} /> : <PainelDesempenho base={base} />}</div>
+      <div className="mt-4">{aba === "secoes" ? <GestaoSecoes base={base} /> : <GestaoParceiros base={base} />}</div>
     </div>
   );
 }

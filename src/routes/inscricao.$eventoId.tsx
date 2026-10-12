@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-ro
 import { useEffect, useMemo, useRef, useState } from "react";
 import { carregarBase } from "@/services/db";
 import { useEventoAtual } from "@/hooks/useEventoAtual";
+import { registrarInicioInscricao } from "@/services/analytics";
 import {
   confirmarInscricao,
   validarCupom,
