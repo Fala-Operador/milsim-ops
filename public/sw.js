@@ -10,7 +10,7 @@ self.addEventListener("message", (e) => {
   const urls = e.data.urls || [];
   e.waitUntil(
     caches.open(CACHE)
-      .then((c) => Promise.all(urls.map((u) => fetch(u, { cache: "reload" }).then((r) => (r.ok ? c.put(u, r) : null)).catch(() => null))))
+      .then((c) => Promise.all(urls.map((u) => fetch(u, { cache: "reload" }).then((r) => (r.ok ? c.put(u, r).then(() => true) : null)).catch(() => null))))
       .then(async (res) => {
         const ok = res.filter(Boolean).length;
         e.source && e.source.postMessage({ tipo: "cacheado", ok, total: urls.length });
