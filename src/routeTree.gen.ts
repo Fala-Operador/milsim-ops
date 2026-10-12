@@ -35,6 +35,9 @@ import { Route as AppSuporteRouteImport } from './routes/app.suporte'
 import { Route as ComunidadeEventoIdRouteImport } from './routes/comunidade.$eventoId'
 import { Route as EventosEventoIdRouteImport } from './routes/eventos.$eventoId'
 import { Route as InscricaoEventoIdRouteImport } from './routes/inscricao.$eventoId'
+import { Route as ComunidadeEventoIdIndexRouteImport } from './routes/comunidade.$eventoId.index'
+import { Route as ComunidadeEventoIdGerenciarRouteImport } from './routes/comunidade.$eventoId.gerenciar'
+import { Route as ComunidadeEventoIdPPostIdRouteImport } from './routes/comunidade.$eventoId.p.$postId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -166,6 +169,23 @@ const InscricaoEventoIdRoute = InscricaoEventoIdRouteImport.update({
   path: '/inscricao/$eventoId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ComunidadeEventoIdIndexRoute = ComunidadeEventoIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ComunidadeEventoIdRoute,
+} as any)
+const ComunidadeEventoIdGerenciarRoute =
+  ComunidadeEventoIdGerenciarRouteImport.update({
+    id: '/gerenciar',
+    path: '/gerenciar',
+    getParentRoute: () => ComunidadeEventoIdRoute,
+  } as any)
+const ComunidadeEventoIdPPostIdRoute =
+  ComunidadeEventoIdPPostIdRouteImport.update({
+    id: '/p/$postId',
+    path: '/p/$postId',
+    getParentRoute: () => ComunidadeEventoIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -189,11 +209,14 @@ export interface FileRoutesByFullPath {
   '/app/perfil': typeof AppPerfilRoute
   '/app/privacidade': typeof AppPrivacidadeRoute
   '/app/suporte': typeof AppSuporteRoute
-  '/comunidade/$eventoId': typeof ComunidadeEventoIdRoute
+  '/comunidade/$eventoId': typeof ComunidadeEventoIdRouteWithChildren
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
+  '/comunidade/$eventoId/': typeof ComunidadeEventoIdIndexRoute
+  '/comunidade/$eventoId/p/$postId': typeof ComunidadeEventoIdPPostIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -215,11 +238,13 @@ export interface FileRoutesByTo {
   '/app/perfil': typeof AppPerfilRoute
   '/app/privacidade': typeof AppPrivacidadeRoute
   '/app/suporte': typeof AppSuporteRoute
-  '/comunidade/$eventoId': typeof ComunidadeEventoIdRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
+  '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
+  '/comunidade/$eventoId': typeof ComunidadeEventoIdIndexRoute
+  '/comunidade/$eventoId/p/$postId': typeof ComunidadeEventoIdPPostIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -244,11 +269,14 @@ export interface FileRoutesById {
   '/app/perfil': typeof AppPerfilRoute
   '/app/privacidade': typeof AppPrivacidadeRoute
   '/app/suporte': typeof AppSuporteRoute
-  '/comunidade/$eventoId': typeof ComunidadeEventoIdRoute
+  '/comunidade/$eventoId': typeof ComunidadeEventoIdRouteWithChildren
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
+  '/comunidade/$eventoId/': typeof ComunidadeEventoIdIndexRoute
+  '/comunidade/$eventoId/p/$postId': typeof ComunidadeEventoIdPPostIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -279,6 +307,9 @@ export interface FileRouteTypes {
     | '/inscricao/$eventoId'
     | '/admin/'
     | '/app/'
+    | '/comunidade/$eventoId/gerenciar'
+    | '/comunidade/$eventoId/'
+    | '/comunidade/$eventoId/p/$postId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -300,11 +331,13 @@ export interface FileRouteTypes {
     | '/app/perfil'
     | '/app/privacidade'
     | '/app/suporte'
-    | '/comunidade/$eventoId'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
     | '/admin'
     | '/app'
+    | '/comunidade/$eventoId/gerenciar'
+    | '/comunidade/$eventoId'
+    | '/comunidade/$eventoId/p/$postId'
   id:
     | '__root__'
     | '/'
@@ -333,6 +366,9 @@ export interface FileRouteTypes {
     | '/inscricao/$eventoId'
     | '/admin/'
     | '/app/'
+    | '/comunidade/$eventoId/gerenciar'
+    | '/comunidade/$eventoId/'
+    | '/comunidade/$eventoId/p/$postId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -345,7 +381,7 @@ export interface RootRouteChildren {
   PrivacidadeRoute: typeof PrivacidadeRoute
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   TermosRoute: typeof TermosRoute
-  ComunidadeEventoIdRoute: typeof ComunidadeEventoIdRoute
+  ComunidadeEventoIdRoute: typeof ComunidadeEventoIdRouteWithChildren
   EventosEventoIdRoute: typeof EventosEventoIdRoute
   InscricaoEventoIdRoute: typeof InscricaoEventoIdRoute
 }
@@ -534,6 +570,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InscricaoEventoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/comunidade/$eventoId/': {
+      id: '/comunidade/$eventoId/'
+      path: '/'
+      fullPath: '/comunidade/$eventoId/'
+      preLoaderRoute: typeof ComunidadeEventoIdIndexRouteImport
+      parentRoute: typeof ComunidadeEventoIdRoute
+    }
+    '/comunidade/$eventoId/gerenciar': {
+      id: '/comunidade/$eventoId/gerenciar'
+      path: '/gerenciar'
+      fullPath: '/comunidade/$eventoId/gerenciar'
+      preLoaderRoute: typeof ComunidadeEventoIdGerenciarRouteImport
+      parentRoute: typeof ComunidadeEventoIdRoute
+    }
+    '/comunidade/$eventoId/p/$postId': {
+      id: '/comunidade/$eventoId/p/$postId'
+      path: '/p/$postId'
+      fullPath: '/comunidade/$eventoId/p/$postId'
+      preLoaderRoute: typeof ComunidadeEventoIdPPostIdRouteImport
+      parentRoute: typeof ComunidadeEventoIdRoute
+    }
   }
 }
 
@@ -581,6 +638,21 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface ComunidadeEventoIdRouteChildren {
+  ComunidadeEventoIdGerenciarRoute: typeof ComunidadeEventoIdGerenciarRoute
+  ComunidadeEventoIdIndexRoute: typeof ComunidadeEventoIdIndexRoute
+  ComunidadeEventoIdPPostIdRoute: typeof ComunidadeEventoIdPPostIdRoute
+}
+
+const ComunidadeEventoIdRouteChildren: ComunidadeEventoIdRouteChildren = {
+  ComunidadeEventoIdGerenciarRoute: ComunidadeEventoIdGerenciarRoute,
+  ComunidadeEventoIdIndexRoute: ComunidadeEventoIdIndexRoute,
+  ComunidadeEventoIdPPostIdRoute: ComunidadeEventoIdPPostIdRoute,
+}
+
+const ComunidadeEventoIdRouteWithChildren =
+  ComunidadeEventoIdRoute._addFileChildren(ComunidadeEventoIdRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -591,7 +663,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacidadeRoute: PrivacidadeRoute,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   TermosRoute: TermosRoute,
-  ComunidadeEventoIdRoute: ComunidadeEventoIdRoute,
+  ComunidadeEventoIdRoute: ComunidadeEventoIdRouteWithChildren,
   EventosEventoIdRoute: EventosEventoIdRoute,
   InscricaoEventoIdRoute: InscricaoEventoIdRoute,
 }
