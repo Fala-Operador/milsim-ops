@@ -1,49 +1,43 @@
+// Regras de tema: visitante sempre escuro; conta autenticada usa a própria preferência (padrão escuro).
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { storage } from "@/lib/storage";
-
-export type PreferenciaTema = "dark" | "light" | "system";
-export type TemaEfetivo = "dark" | "light";
+import { useAuth } from "@/contexts/AuthContext";
+import { definirTemaDaConta, temaDaConta } from "@/services/aparencia";
+import { temaEfetivo, type Tema } from "@/lib/localizacao";
 
 interface ThemeContextValue {
-  preferencia: PreferenciaTema;
-  tema: TemaEfetivo;
-  definirPreferencia: (p: PreferenciaTema) => void;
+  tema: Tema;
+  /** Só pode alterar quem está autenticado. */
+  podeAlterar: boolean;
+  definirTema: (t: Tema) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
-const CHAVE = "tema";
 
-function temaDoSistema(): TemaEfetivo {
-  if (typeof window === "undefined" || !window.matchMedia) return "dark";
-  return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-}
+/** Script executado antes da primeira pintura (lê sessão e preferência da conta). */
+export const SCRIPT_TEMA_INICIAL = `try{var p="milsim-demo:",s=JSON.parse(localStorage.getItem(p+"sessao")||"null"),t="dark";if(s){var b=JSON.parse(localStorage.getItem(p+"base")||"null");var u=b&&b.usuarios&&b.usuarios.find(function(x){return x.id===s});if(u&&u.tema==="light")t="light"}document.documentElement.classList.toggle("dark",t==="dark")}catch(_){document.documentElement.classList.add("dark")}`;
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [preferencia, setPreferencia] = useState<PreferenciaTema>(
-    () => storage.ler<PreferenciaTema>(CHAVE) ?? "system",
-  );
-  const [temaSistema, setTemaSistema] = useState<TemaEfetivo>(temaDoSistema);
+  const { usuario } = useAuth();
+  const [preferencia, setPreferencia] = useState<Tema | undefined>(undefined);
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: light)");
-    const ouvinte = () => setTemaSistema(mq.matches ? "light" : "dark");
-    mq.addEventListener("change", ouvinte);
-    return () => mq.removeEventListener("change", ouvinte);
-  }, []);
+    setPreferencia(usuario ? temaDaConta(usuario.id) : undefined);
+  }, [usuario]);
 
-  const tema: TemaEfetivo = preferencia === "system" ? temaSistema : preferencia;
+  const tema = temaEfetivo(!!usuario, preferencia);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", tema === "dark");
   }, [tema]);
 
-  const definirPreferencia = (p: PreferenciaTema) => {
-    setPreferencia(p);
-    storage.gravar(CHAVE, p);
+  const definirTema = (t: Tema) => {
+    if (!usuario) return;
+    setPreferencia(t);
+    definirTemaDaConta(usuario.id, t);
   };
 
   return (
-    <ThemeContext.Provider value={{ preferencia, tema, definirPreferencia }}>
+    <ThemeContext.Provider value={{ tema, podeAlterar: !!usuario, definirTema }}>
       {children}
     </ThemeContext.Provider>
   );
