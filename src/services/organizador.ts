@@ -231,3 +231,29 @@ export async function criarCortesia(
   });
   return codigo;
 }
+
+/** Exclui um evento. Só é permitido quando não há inscrições confirmadas (caso contrário, cancele). */
+export async function excluirEvento(eventoId: string, usuarioId: string, perfil: string): Promise<void> {
+  await latencia();
+  mutarBase((base) => {
+    const evento = base.eventos.find((e) => e.id === eventoId);
+    if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
+    assertDono(evento, usuarioId, perfil);
+    const ativas = base.inscricoes.filter((i) => i.eventoId === eventoId && i.status === "confirmada");
+    if (ativas.length > 0) {
+      throw new ErroDominio("inscricoes_ativas", "Há inscrições confirmadas. Cancele o evento em vez de excluí-lo.");
+    }
+    base.eventos = base.eventos.filter((e) => e.id !== eventoId);
+    base.cupons = base.cupons.filter((c) => c.eventoId !== eventoId);
+    base.cortesias = base.cortesias.filter((c) => c.eventoId !== eventoId);
+    base.auditoria.push({
+      id: gerarId("aud"),
+      autorId: usuarioId,
+      acao: "exclusao_evento",
+      entidade: "evento",
+      entidadeId: eventoId,
+      justificativa: `Evento "${evento.nome}" excluído.`,
+      criadoEm: new Date().toISOString(),
+    });
+  });
+}

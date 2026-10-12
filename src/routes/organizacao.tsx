@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { carregarBase, mutarBase, gerarId } from "@/services/db";
+import { carregarBase } from "@/services/db";
 import { resumoFinanceiro, inscricoesAtivasDoEvento } from "@/services/inscricoes";
 import {
   cancelarEvento,
   criarCortesia,
   criarCupom,
+  excluirEvento,
   publicarEvento,
   salvarEvento,
   validarParaPublicacao,
@@ -14,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { mascararCpf } from "@/lib/domain/validators";
 import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, Modal, Selecao, SkeletonPagina } from "@/components/ui";
+import { FormEvento, eventoVazio } from "@/components/FormEvento";
 import type { Evento } from "@/lib/domain/types";
 
 export const Route = createFileRoute("/organizacao")({
@@ -47,6 +49,10 @@ function PainelOrganizacao() {
   const [erro, setErro] = useState("");
   const [cupomForm, setCupomForm] = useState({ codigo: "", desconto: "10", limite: "10", validoAte: "" });
   const [cortesiaForm, setCortesiaForm] = useState({ nome: "", email: "", tipoId: "", validade: "" });
+  const [form, setForm] = useState<Evento | null>(null);
+  const [excluirEvt, setExcluirEvt] = useState<Evento | null>(null);
+  const [busca, setBusca] = useState("");
+  const [filtroStatus, setFiltroStatus] = useState<"todos" | Evento["status"]>("todos");
   const [aba, setAba] = useState<"inscritos" | "financeiro" | "cupons" | "cortesias">("inscritos");
 
   useEffect(() => {
@@ -55,37 +61,44 @@ function PainelOrganizacao() {
     }
   }, [usuario, navigate]);
 
-  if (!usuario) return <SkeletonPagina />;
+  const [montado, setMontado] = useState(false);
+  useEffect(() => setMontado(true), []);
+  if (!usuario || !montado) return <SkeletonPagina />;
   const base = carregarBase();
   const orgId = usuario.perfil === "admin" ? undefined : usuario.organizacaoId;
   const eventos = base.eventos.filter((e) => !orgId || e.organizacaoId === orgId);
   const eventoSel = eventos.find((e) => e.id === selecionado) ?? null;
 
-  const novoEvento = async () => {
-    const ev: Evento = {
-      id: gerarId("evt"),
-      organizacaoId: orgId ?? base.organizacoes[0]?.id ?? "",
-      nome: "Nova operação (rascunho)",
-      descricaoResumida: "",
-      enredo: "",
-      inicioEm: new Date(Date.now() + 30 * 86400000).toISOString(),
-      fimEm: new Date(Date.now() + 31 * 86400000).toISOString(),
-      fuso: "America/Sao_Paulo",
-      local: "",
-      endereco: "",
-      cidade: "",
-      uf: "SP",
-      capacidadeTotal: 50,
-      exercitos: [{ id: gerarId("ex"), nome: "Exército A", capacidade: 25 }],
-      tipos: [{ id: gerarId("tp"), nome: "Ingresso Padrão", precoBaseCentavos: 10000, quantidadeMaxima: 50 }],
-      lotes: [],
-      cronograma: [],
-      status: "rascunho",
-      criadoEm: new Date().toISOString(),
-    };
+  const ativasPorEvento = (id: string) => base.inscricoes.filter((i) => i.eventoId === id && i.status === "confirmada").length;
+  const receitaEvento = (id: string) => base.movimentacoes.filter((m) => m.eventoId === id).reduce((t, m) => t + m.valorCentavos, 0);
+  const totalInscritos = eventos.reduce((t, e) => t + ativasPorEvento(e.id), 0);
+  const totalCapacidade = eventos.filter((e) => e.status !== "cancelado").reduce((t, e) => t + e.capacidadeTotal, 0);
+  const totalReceita = eventos.reduce((t, e) => t + receitaEvento(e.id), 0);
+  const agora = Date.now();
+  const proximos = eventos.filter((e) => new Date(e.inicioEm).getTime() > agora && e.status !== "cancelado");
+  const filtrados = eventos.filter(
+    (e) => (filtroStatus === "todos" || e.status === filtroStatus) && e.nome.toLowerCase().includes(busca.toLowerCase()),
+  );
+
+  const aoSalvarForm = async (ev: Evento) => {
     await salvarEvento(ev, usuario.id, usuario.perfil);
+    setForm(null);
     setSelecionado(ev.id);
     setVersao((v) => v + 1);
+  };
+
+  const aoExcluir = async () => {
+    if (!excluirEvt) return;
+    setErro("");
+    try {
+      await excluirEvento(excluirEvt.id, usuario.id, usuario.perfil);
+      if (selecionado === excluirEvt.id) setSelecionado(null);
+      setExcluirEvt(null);
+      setVersao((v) => v + 1);
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : "Falha ao excluir.");
+      setExcluirEvt(null);
+    }
   };
 
   const aoPublicar = async (ev: Evento) => {
@@ -157,32 +170,87 @@ function PainelOrganizacao() {
         <h1 className="font-display text-2xl font-semibold uppercase">
           {orgId ? (base.organizacoes.find((o) => o.id === orgId)?.nome ?? "Minha organização") : "Todas as organizações"}
         </h1>
-        <Botao onClick={novoEvento}>Criar evento (rascunho)</Botao>
+        <Botao onClick={() => setForm(eventoVazio(orgId ?? base.organizacoes[0]?.id ?? ""))}>+ Criar evento</Botao>
       </div>
 
       {erro && <p role="alert" className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <div className="space-y-2">
-          <h2 className="font-display text-lg font-semibold uppercase">Eventos</h2>
-          {eventos.map((e) => (
-            <button
-              key={e.id}
-              onClick={() => setSelecionado(e.id)}
-              className={`w-full rounded-md border p-3 text-left text-sm ${selecionado === e.id ? "border-primary bg-secondary" : "border-border bg-card"}`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium">{e.nome}</span>
-                <Badge tom={tomStatusEvento[e.status]}>{e.status.replace("_", " ")}</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">{formatarDataBR(e.inicioEm)} · {e.cidade}/{e.uf}</p>
-            </button>
-          ))}
-        </div>
+      <section aria-label="Visão geral" className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {([
+          ["Eventos", String(eventos.length), `${eventos.filter((e) => e.status === "publicado").length} publicados · ${eventos.filter((e) => e.status === "rascunho").length} rascunhos`],
+          ["Próximos eventos", String(proximos.length), proximos[0] ? `Próximo: ${formatarDataBR(proximos.sort((x, y) => x.inicioEm.localeCompare(y.inicioEm))[0]!.inicioEm)}` : "Nenhum agendado"],
+          ["Inscrições ativas", String(totalInscritos), totalCapacidade ? `${Math.round((totalInscritos / totalCapacidade) * 100)}% da capacidade total` : "—"],
+          ["Receita simulada", formatarBRL(totalReceita), "Soma das movimentações"],
+        ] as const).map(([rotulo, valor, sub]) => (
+          <Cartao key={rotulo}>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">{rotulo}</p>
+            <p className="mt-1 font-mono text-2xl font-semibold">{valor}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+          </Cartao>
+        ))}
+      </section>
 
-        <div className="lg:col-span-2">
+      <Cartao className="mt-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-lg font-semibold uppercase">Meus eventos</h2>
+          <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
+            <Entrada aria-label="Buscar evento" placeholder="Buscar por nome…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+            <Selecao aria-label="Filtrar por status" value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value as typeof filtroStatus)}>
+              <option value="todos">Todos os status</option>
+              {Object.keys(tomStatusEvento).map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+            </Selecao>
+          </div>
+        </div>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
+                <th className="py-2 pr-3">Evento</th>
+                <th className="py-2 pr-3">Data</th>
+                <th className="py-2 pr-3">Status</th>
+                <th className="py-2 pr-3">Ocupação</th>
+                <th className="py-2 pr-3">Receita</th>
+                <th className="py-2 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtrados.map((e) => {
+                const ativas = ativasPorEvento(e.id);
+                const pct = e.capacidadeTotal ? Math.min(100, Math.round((ativas / e.capacidadeTotal) * 100)) : 0;
+                return (
+                  <tr key={e.id} className={`border-b border-border/50 ${selecionado === e.id ? "bg-secondary" : ""}`}>
+                    <td className="py-2 pr-3">
+                      <p className="font-medium">{e.nome || "Sem nome"}</p>
+                      <p className="text-xs text-muted-foreground">{e.cidade || "—"}/{e.uf}</p>
+                    </td>
+                    <td className="py-2 pr-3 whitespace-nowrap">{formatarDataBR(e.inicioEm)}</td>
+                    <td className="py-2 pr-3"><Badge tom={tomStatusEvento[e.status]}>{e.status.replace("_", " ")}</Badge></td>
+                    <td className="py-2 pr-3 min-w-32">
+                      <p className="text-xs">{ativas}/{e.capacidadeTotal}</p>
+                      <div className="mt-1 h-1.5 rounded bg-muted"><div className="h-1.5 rounded bg-primary" style={{ width: `${pct}%` }} /></div>
+                    </td>
+                    <td className="py-2 pr-3 font-mono whitespace-nowrap">{formatarBRL(receitaEvento(e.id))}</td>
+                    <td className="py-2">
+                      <div className="flex justify-end gap-1">
+                        <Botao variante="fantasma" onClick={() => setSelecionado(e.id)}>Gerenciar</Botao>
+                        <Botao variante="contorno" onClick={() => setForm(structuredClone(e))} disabled={["cancelado", "concluido"].includes(e.status)}>Editar</Botao>
+                        <Botao variante="perigo" onClick={() => setExcluirEvt(e)}>Excluir</Botao>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtrados.length === 0 && (
+                <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Nenhum evento encontrado.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Cartao>
+
+      <div className="mt-6">
           {!eventoSel ? (
-            <Cartao><p className="text-sm text-muted-foreground">Selecione um evento para gerenciar.</p></Cartao>
+            <Cartao><p className="text-sm text-muted-foreground">Clique em “Gerenciar” em um evento para ver inscritos, financeiro, cupons e cortesias.</p></Cartao>
           ) : (
             <div className="space-y-4">
               <Cartao>
@@ -277,7 +345,28 @@ function PainelOrganizacao() {
             </div>
           )}
         </div>
-      </div>
+      
+
+      <Modal aberto={!!form} titulo={form && eventos.some((e) => e.id === form.id) ? "Editar evento" : "Criar evento"} onFechar={() => setForm(null)}>
+        {form && <FormEvento key={form.id} inicial={form} onSalvar={aoSalvarForm} onCancelar={() => setForm(null)} />}
+      </Modal>
+
+      <Modal aberto={!!excluirEvt} titulo="Excluir evento" onFechar={() => setExcluirEvt(null)}>
+        {excluirEvt && (
+          <div className="space-y-3 text-sm">
+            <p>Tem certeza que deseja excluir <strong>{excluirEvt.nome || "este evento"}</strong>? Esta ação não pode ser desfeita.</p>
+            {ativasPorEvento(excluirEvt.id) > 0 && (
+              <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-warning">
+                Este evento tem {ativasPorEvento(excluirEvt.id)} inscrições confirmadas e não pode ser excluído. Use “Cancelar evento” para estornar os participantes.
+              </p>
+            )}
+            <div className="flex justify-end gap-2">
+              <Botao variante="fantasma" onClick={() => setExcluirEvt(null)}>Voltar</Botao>
+              <Botao variante="perigo" onClick={aoExcluir} disabled={ativasPorEvento(excluirEvt.id) > 0}>Excluir</Botao>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       <Modal aberto={!!cancelarEvt} titulo="Cancelar evento" onFechar={() => setCancelarEvt(null)}>
         {cancelarEvt && (
