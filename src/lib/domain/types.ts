@@ -162,6 +162,7 @@ export interface Inscricao {
   loteId?: string | undefined; // cortesias não têm lote
   exercitoId: string;
   codigo: string; // identificador opaco fictício
+  tokenEntrada?: string | undefined; // token estável do QR Code de entrada (opaco)
   status: StatusInscricao;
   origem: "plataforma" | "cortesia" | "organizador" | "admin";
   valorCentavos: number; // valor original preservado
