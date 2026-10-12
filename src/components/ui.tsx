@@ -7,7 +7,7 @@ export function Botao({
   variante = "primario",
   className = "",
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variante?: VarianteBotao }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variante?: VarianteBotao; ref?: React.Ref<HTMLButtonElement> }) {
   const estilos: Record<VarianteBotao, string> = {
     primario: "bg-primary text-primary-foreground hover:opacity-90",
     secundario: "bg-secondary text-secondary-foreground hover:opacity-90",

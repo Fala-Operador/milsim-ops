@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useEventoOrganizacao } from "@/contexts/OrganizationEventContext";
 import { carregarBase } from "@/services/db";
 import { resumoFinanceiro } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
@@ -161,9 +162,7 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
   );
 }
 
-/** Estado de seleção de evento com padrão no primeiro da lista. */
+/** Evento selecionado compartilhado entre as páginas da organização. */
 export function useEventoSelecionado(eventos: Evento[]) {
-  const [id, setId] = useState<string>("");
-  const efetivo = id && eventos.some((e) => e.id === id) ? id : (eventos[0]?.id ?? "");
-  return [efetivo, setId] as const;
+  return useEventoOrganizacao(eventos);
 }

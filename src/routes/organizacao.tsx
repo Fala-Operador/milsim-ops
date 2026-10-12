@@ -58,7 +58,7 @@ function LayoutOrganizacao() {
               to={item.to}
               activeOptions={{ exact: "exato" in item }}
               className="flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
-              activeProps={{ className: "bg-secondary !text-foreground" }}
+              activeProps={{ className: "bg-secondary !text-foreground shadow-[inset_3px_0_0_var(--color-primary)]", "aria-current": "page" }}
             >
               <item.icone className="h-4 w-4" />
               {item.rotulo}
