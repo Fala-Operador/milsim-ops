@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import { Botao, Cartao, EstadoVazio } from "@/components/ui";
+import { SilencioNotificacoes } from "@/components/SilencioNotificacoes";
 
 export const Route = createFileRoute("/app/notificacoes")({
   head: () => ({
