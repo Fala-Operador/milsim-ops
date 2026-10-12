@@ -125,7 +125,7 @@ function PainelAdmin() {
                     ev.status === "publicado" ? "sucesso"
                     : ev.status === "cancelado" ? "perigo"
                     : ev.status === "rascunho" ? "aviso"
-                    : "neutro";
+                    : "padrao";
                   return (
                     <tr key={ev.id} className="border-b border-border/50">
                       <td className="py-2 pr-3">
