@@ -11,6 +11,7 @@ import { criarCampanha, linkCampanha, listarCampanhas, listarRegistros } from "@
 import { inscricoesAtivasDoEvento } from "@/services/inscricoes";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import { Badge, Botao, Cartao, Entrada, EstadoVazio, Selecao, Skeleton } from "@/components/ui";
+import { baixarCsv, baixarPdf, montarRelatorio, nomeArquivo } from "@/lib/relatorioMetricas";
 
 const DIA = 86400000;
 const fmtN = (n: number) => n.toLocaleString("pt-BR");
@@ -111,6 +112,13 @@ export function PainelMetricas({ base, eventos, modo }: { base: BaseDados; event
   const porSecao = agrupar(regs, todos, (r) => r.secaoId).sort((a, b) => b.ind.cliques - a.ind.cliques);
   const evPorId = new Map(base.eventos.map((e) => [e.id, e]));
   const linhaComVolume = (i: Indicadores) => [fmtN(i.visitas), fmtN(i.visitantes), fmtN(i.confirmadas), <>{fmtP(i.conversao)} <span className="text-xs text-muted-foreground">({fmtN(i.confirmadas)} de {fmtN(i.visitantes)})</span></>];
+  const rotEvento = eventoId === "todos" ? "Todos os eventos" : (evAtual?.nome ?? eventoId);
+  const fmtD = (t: number) => new Date(t).toLocaleDateString("pt-BR");
+  const relatorio = () => montarRelatorio({
+    evento: rotEvento, periodo: `${fmtD(desde)} a ${fmtD(ate)}`, origem: origem ? nomeOrigem(origem) : "Todas", ind,
+    porOrigem, porSecao, porEvento: agrupar(regs, todos, (r) => r.eventoId).sort((a, b) => b.ind.visitas - a.ind.visitas),
+    nomeOrigem, nomeSecao, nomeEvento, geradoEm: new Date().toLocaleString("pt-BR"),
+  });
 
   return (
     <div className="space-y-8">
@@ -145,7 +153,11 @@ export function PainelMetricas({ base, eventos, modo }: { base: BaseDados; event
         <label className="flex items-center gap-2 pb-2 text-sm"><input type="checkbox" checked={comparar} onChange={(e) => setComparar(e.target.checked)} /> Comparar com período anterior</label>
         <div className="ml-auto text-right text-xs text-muted-foreground">
           Última atualização: {formatarDataHoraBR(new Date(dados.em).toISOString())}
-          <div><Botao variante="contorno" className="mt-1 !py-1" onClick={recarregar}>Atualizar</Botao></div>
+          <div className="mt-1 flex justify-end gap-2">
+            <Botao variante="contorno" className="!py-1" onClick={() => baixarCsv(relatorio(), nomeArquivo(rotEvento, "csv"))}>Exportar CSV</Botao>
+            <Botao variante="contorno" className="!py-1" onClick={() => void baixarPdf(relatorio(), nomeArquivo(rotEvento, "pdf"))}>Exportar PDF</Botao>
+            <Botao variante="contorno" className="!py-1" onClick={recarregar}>Atualizar</Botao>
+          </div>
         </div>
       </div>
 
