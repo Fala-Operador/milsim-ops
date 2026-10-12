@@ -6,6 +6,10 @@ import { vagasRestantes } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { Badge, Cartao, Entrada, Selecao, EstadoVazio, SkeletonGrade } from "@/components/ui";
 import type { Evento } from "@/lib/domain/types";
+import { useLocalizacao } from "@/contexts/LocalizacaoContext";
+import { montarPaginaInicial, NACIONAL, rotuloAbrangencia } from "@/lib/divulgacao";
+import { SecoesPublicas, SeletorLocalizacao } from "@/components/divulgacao";
+import { useVersaoBase } from "@/hooks/useVersaoBase";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,13 +18,15 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Eventos de simulação militar em destaque: busque por nome, filtre por localização, data e disponibilidade. Ambiente de demonstração.",
+          "Eventos de simulação militar em destaque por região: busque por nome, filtre por localização, data e disponibilidade. Ambiente de demonstração.",
       },
       { property: "og:title", content: "MilSim Ops — Descubra operações de simulação militar" },
       {
         property: "og:description",
         content: "Eventos de simulação militar em destaque. Ambiente de demonstração.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PaginaInicial,
@@ -36,10 +42,14 @@ function precoInicial(evento: Evento): number {
 
 function PaginaInicial() {
   const [base, setBase] = useState<BaseDados | null>(null);
+  const versao = useVersaoBase();
+  const { local, definirLocal } = useLocalizacao();
   useEffect(() => {
     const t = setTimeout(() => setBase(carregarBase()), 350);
     return () => clearTimeout(t);
-  }, []);
+  }, [versao]);
+  const secoes = base ? montarPaginaInicial(base, local, new Date()) : [];
+  const temEventosNoLocal = secoes.some((s) => s.eventos.length > 0);
   const carregando = base === null;
   const [busca, setBusca] = useState("");
   const [uf, setUf] = useState("");
@@ -85,6 +95,21 @@ function PaginaInicial() {
         </div>
       </section>
 
+      {base && (
+        <section className="mx-auto max-w-6xl px-4 pt-8">
+          <SeletorLocalizacao base={base} valor={local} onMudar={definirLocal} />
+          {local.escopo !== "nacional" && !temEventosNoLocal && (
+            <div className="mt-4 rounded-lg border border-dashed border-border p-6 text-center">
+              <p className="font-medium">Nenhuma operação divulgada para {rotuloAbrangencia(local)} no momento.</p>
+              <button type="button" onClick={() => definirLocal(NACIONAL)} className="mt-3 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+                Ver eventos de todo o Brasil
+              </button>
+            </div>
+          )}
+          <div className="mt-6"><SecoesPublicas secoes={secoes} base={base} local={local} /></div>
+        </section>
+      )}
+
       <section className="mx-auto max-w-6xl px-4 py-8">
         <div className="grid gap-3 rounded-lg border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
           <Entrada
@@ -117,7 +142,7 @@ function PaginaInicial() {
         </div>
 
         <h2 className="mt-8 font-display text-2xl font-semibold uppercase tracking-wide">
-          Eventos em destaque
+          Todas as operações
         </h2>
 
         {carregando ? (
