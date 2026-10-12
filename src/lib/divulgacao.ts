@@ -163,7 +163,7 @@ export function montarPaginaInicial(
     .filter((s) => vigente(s.agendamento, agora))
     .filter((s) => secaoCompativel(s, local))
     .sort((a, b) => a.ordem - b.ordem)
-    .flatMap((secao) => {
+    .flatMap((secao): SecaoResolvida[] => {
       if (secao.tipo === "destaques" || secao.tipo === "regional") {
         const eventos = eventosDaSecao(base, secao, local, agora);
         return eventos.length ? [{ secao, eventos, parceiros: [] }] : [];
@@ -200,7 +200,7 @@ export function normalizarInstagram(entrada: string | undefined): string | null 
   const v = (entrada ?? "").trim();
   if (!v) return null;
   const m = v.match(/instagram\.com\/([A-Za-z0-9._]+)/i);
-  const usuario = m ? m[1] : v.replace(/^@/, "");
+  const usuario = m?.[1] ?? v.replace(/^@/, "");
   if (!/^[A-Za-z0-9._]{1,30}$/.test(usuario)) return null;
   return `https://www.instagram.com/${usuario}/`;
 }

@@ -64,7 +64,7 @@ export function SeletorLocalizacao({
   );
 }
 
-export function ImagemSegura({ src, alt, className = "", contain = false }: { src?: string; alt: string; className?: string; contain?: boolean }) {
+export function ImagemSegura({ src, alt, className = "", contain = false }: { src?: string | undefined; alt: string; className?: string; contain?: boolean }) {
   const [erro, setErro] = useState(false);
   if (!src || erro) {
     return (

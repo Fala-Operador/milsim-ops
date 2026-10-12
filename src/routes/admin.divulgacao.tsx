@@ -80,6 +80,7 @@ function GestaoSecoes({ base }: { base: BaseDados }) {
     if (para < 0 || para >= ordenadas.length) return;
     const ids = ordenadas.map((s) => s.id);
     const [x] = ids.splice(de, 1);
+    if (!x) return;
     ids.splice(para, 0, x);
     reordenarSecoes(usuario, ids);
   };
@@ -199,14 +200,14 @@ function EditorSecao({ base, inicial, onFechar }: { base: BaseDados; inicial: Da
     <Modal aberto titulo={d.id ? "Editar seção" : "Nova seção"} onFechar={onFechar}>
       <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Campo id="sec-titulo" rotulo="Título"><Entrada id="sec-titulo" value={d.titulo} onChange={(e) => set({ titulo: e.target.value })} /></Campo>
-          <Campo id="sec-sub" rotulo="Subtítulo (opcional)"><Entrada id="sec-sub" value={d.subtitulo ?? ""} onChange={(e) => set({ subtitulo: e.target.value || undefined })} /></Campo>
-          <Campo id="sec-tipo" rotulo="Tipo">
+          <Campo htmlFor="sec-titulo" rotulo="Título"><Entrada id="sec-titulo" value={d.titulo} onChange={(e) => set({ titulo: e.target.value })} /></Campo>
+          <Campo htmlFor="sec-sub" rotulo="Subtítulo (opcional)"><Entrada id="sec-sub" value={d.subtitulo ?? ""} onChange={(e) => set({ subtitulo: e.target.value || undefined })} /></Campo>
+          <Campo htmlFor="sec-tipo" rotulo="Tipo">
             <Selecao id="sec-tipo" value={d.tipo} disabled={!!d.id} onChange={(e) => { const t = e.target.value as TipoSecao; setD({ ...secaoVazia(t), titulo: d.titulo }); }}>
               {Object.entries(ROTULO_TIPO).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </Selecao>
           </Campo>
-          <Campo id="sec-layout" rotulo="Layout">
+          <Campo htmlFor="sec-layout" rotulo="Layout">
             <Selecao id="sec-layout" value={d.layout} onChange={(e) => set({ layout: e.target.value as SecaoInicial["layout"] })}>
               {d.tipo === "banner" ? <option value="banner">Banner</option> : <><option value="grade">Grade</option><option value="carrossel">Carrossel</option></>}
             </Selecao>
@@ -214,8 +215,8 @@ function EditorSecao({ base, inicial, onFechar }: { base: BaseDados; inicial: Da
         </div>
         <EditorAbrangencia rotulo="Abrangência" valor={d.abrangencia} onMudar={(a) => set({ abrangencia: a })} />
         <div className="grid gap-3 sm:grid-cols-2">
-          <Campo id="sec-ini" rotulo="Início da exibição (opcional)"><Entrada id="sec-ini" type="datetime-local" value={paraLocal(d.agendamento.inicioEm)} onChange={(e) => set({ agendamento: { ...d.agendamento, inicioEm: deLocal(e.target.value) } })} /></Campo>
-          <Campo id="sec-fim" rotulo="Término da exibição (opcional)"><Entrada id="sec-fim" type="datetime-local" value={paraLocal(d.agendamento.fimEm)} onChange={(e) => set({ agendamento: { ...d.agendamento, fimEm: deLocal(e.target.value) } })} /></Campo>
+          <Campo htmlFor="sec-ini" rotulo="Início da exibição (opcional)"><Entrada id="sec-ini" type="datetime-local" value={paraLocal(d.agendamento.inicioEm)} onChange={(e) => set({ agendamento: { ...d.agendamento, inicioEm: deLocal(e.target.value) } })} /></Campo>
+          <Campo htmlFor="sec-fim" rotulo="Término da exibição (opcional)"><Entrada id="sec-fim" type="datetime-local" value={paraLocal(d.agendamento.fimEm)} onChange={(e) => set({ agendamento: { ...d.agendamento, fimEm: deLocal(e.target.value) } })} /></Campo>
         </div>
 
         {ehEventos && (
@@ -261,9 +262,9 @@ function EditorSecao({ base, inicial, onFechar }: { base: BaseDados; inicial: Da
               <div className="space-y-3">
                 <EditorAbrangencia rotulo="Filtrar eventos por" valor={auto.abrangencia} onMudar={(a) => set({ automatica: { ...auto, abrangencia: a } })} />
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <Campo id="au-per" rotulo="Próximos dias (vazio = todos)"><Entrada id="au-per" type="number" min={1} value={auto.periodoDias ?? ""} onChange={(e) => set({ automatica: { ...auto, periodoDias: e.target.value ? Number(e.target.value) : undefined } })} /></Campo>
-                  <Campo id="au-max" rotulo="Máximo de cards"><Entrada id="au-max" type="number" min={1} value={auto.maximo} onChange={(e) => set({ automatica: { ...auto, maximo: Number(e.target.value) } })} /></Campo>
-                  <Campo id="au-ord" rotulo="Ordenação">
+                  <Campo htmlFor="au-per" rotulo="Próximos dias (vazio = todos)"><Entrada id="au-per" type="number" min={1} value={auto.periodoDias ?? ""} onChange={(e) => set({ automatica: { ...auto, periodoDias: e.target.value ? Number(e.target.value) : undefined } })} /></Campo>
+                  <Campo htmlFor="au-max" rotulo="Máximo de cards"><Entrada id="au-max" type="number" min={1} value={auto.maximo} onChange={(e) => set({ automatica: { ...auto, maximo: Number(e.target.value) } })} /></Campo>
+                  <Campo htmlFor="au-ord" rotulo="Ordenação">
                     <Selecao id="au-ord" value={auto.ordenacao} onChange={(e) => set({ automatica: { ...auto, ordenacao: e.target.value as "data" | "recentes" } })}>
                       <option value="data">Data mais próxima</option><option value="recentes">Publicação mais recente</option>
                     </Selecao>
@@ -293,12 +294,12 @@ function EditorSecao({ base, inicial, onFechar }: { base: BaseDados; inicial: Da
               );
             })}
             <div className="grid gap-3 sm:grid-cols-3">
-              <Campo id="sp-tam" rotulo="Tamanho dos logos">
+              <Campo htmlFor="sp-tam" rotulo="Tamanho dos logos">
                 <Selecao id="sp-tam" value={d.tamanhoLogo} onChange={(e) => set({ tamanhoLogo: e.target.value as "p" | "m" | "g" })}>
                   <option value="p">Pequeno</option><option value="m">Médio</option><option value="g">Grande</option>
                 </Selecao>
               </Campo>
-              <Campo id="sp-sup" rotulo="Superfície atrás do logo">
+              <Campo htmlFor="sp-sup" rotulo="Superfície atrás do logo">
                 <Selecao id="sp-sup" value={d.superficieLogo} onChange={(e) => set({ superficieLogo: e.target.value as SecaoInicial["superficieLogo"] })}>
                   <option value="nenhuma">Nenhuma</option><option value="clara">Neutra clara</option><option value="escura">Neutra escura</option>
                 </Selecao>
@@ -336,13 +337,13 @@ function EditorBanner({ base, d, set, setErro }: { base: BaseDados; d: DadosSeca
   return (
     <div className="space-y-3 rounded-lg border border-border p-3">
       <div className="grid gap-3 sm:grid-cols-2">{imagem("imagemDesktop", "Imagem para desktop")}{imagem("imagemCelular", "Imagem para celular (opcional)")}</div>
-      <Campo id="bn-alt" rotulo="Texto alternativo"><Entrada id="bn-alt" value={b.textoAlt} onChange={(e) => up({ textoAlt: e.target.value })} /></Campo>
+      <Campo htmlFor="bn-alt" rotulo="Texto alternativo"><Entrada id="bn-alt" value={b.textoAlt} onChange={(e) => up({ textoAlt: e.target.value })} /></Campo>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Campo id="bn-cha" rotulo="Chamada (opcional)"><Entrada id="bn-cha" value={b.chamada ?? ""} onChange={(e) => up({ chamada: e.target.value || undefined })} /></Campo>
-        <Campo id="bn-bot" rotulo="Texto do botão"><Entrada id="bn-bot" value={b.textoBotao ?? ""} onChange={(e) => up({ textoBotao: e.target.value || undefined })} /></Campo>
+        <Campo htmlFor="bn-cha" rotulo="Chamada (opcional)"><Entrada id="bn-cha" value={b.chamada ?? ""} onChange={(e) => up({ chamada: e.target.value || undefined })} /></Campo>
+        <Campo htmlFor="bn-bot" rotulo="Texto do botão"><Entrada id="bn-bot" value={b.textoBotao ?? ""} onChange={(e) => up({ textoBotao: e.target.value || undefined })} /></Campo>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Campo id="bn-dt" rotulo="Destino (opcional)">
+        <Campo htmlFor="bn-dt" rotulo="Destino (opcional)">
           <Selecao id="bn-dt" value={b.destino?.tipo ?? ""} onChange={(e) => {
             const t = e.target.value;
             up({ destino: t ? ({ tipo: t, valor: "" } as NonNullable<typeof b.destino>) : undefined });
@@ -352,7 +353,7 @@ function EditorBanner({ base, d, set, setErro }: { base: BaseDados; d: DadosSeca
           </Selecao>
         </Campo>
         {b.destino && (
-          <Campo id="bn-dv" rotulo="Alvo">
+          <Campo htmlFor="bn-dv" rotulo="Alvo">
             {b.destino.tipo === "externo" ? (
               <Entrada id="bn-dv" placeholder="https://..." value={b.destino.valor} onChange={(e) => up({ destino: { tipo: "externo", valor: e.target.value } })} />
             ) : (
@@ -447,14 +448,14 @@ function EditorParceiro({ inicial, onFechar }: { inicial: DadosParceiro; onFecha
     <Modal aberto titulo={d.id ? "Editar parceiro" : "Novo parceiro"} onFechar={onFechar}>
       <div className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Campo id="pa-nome" rotulo="Nome"><Entrada id="pa-nome" value={d.nome} onChange={(e) => set({ nome: e.target.value })} /></Campo>
-          <Campo id="pa-tipo" rotulo="Tipo">
+          <Campo htmlFor="pa-nome" rotulo="Nome"><Entrada id="pa-nome" value={d.nome} onChange={(e) => set({ nome: e.target.value })} /></Campo>
+          <Campo htmlFor="pa-tipo" rotulo="Tipo">
             <Selecao id="pa-tipo" value={d.tipo} onChange={(e) => set({ tipo: e.target.value as Parceiro["tipo"] })}>
               <option value="patrocinador">Patrocinador</option><option value="apoiador">Apoiador</option><option value="ambos">Ambos</option>
             </Selecao>
           </Campo>
         </div>
-        <Campo id="pa-desc" rotulo="Descrição curta (opcional)"><AreaTexto id="pa-desc" maxLength={160} value={d.descricao ?? ""} onChange={(e) => set({ descricao: e.target.value || undefined })} /></Campo>
+        <Campo htmlFor="pa-desc" rotulo="Descrição curta (opcional)"><AreaTexto id="pa-desc" maxLength={160} value={d.descricao ?? ""} onChange={(e) => set({ descricao: e.target.value || undefined })} /></Campo>
         <div className="flex flex-wrap items-center gap-3">
           {d.logoUrl && <img src={d.logoUrl} alt="" className="h-14 w-24 rounded bg-secondary object-contain" />}
           <label className="cursor-pointer rounded-md border border-border px-3 py-2 text-sm">
@@ -466,7 +467,7 @@ function EditorParceiro({ inicial, onFechar }: { inicial: DadosParceiro; onFecha
           </label>
           {d.logoUrl && <Botao variante="fantasma" onClick={() => set({ logoUrl: undefined })}>Remover logo</Botao>}
         </div>
-        <Campo id="pa-alt" rotulo="Texto alternativo do logo"><Entrada id="pa-alt" value={d.textoAlt} onChange={(e) => set({ textoAlt: e.target.value })} /></Campo>
+        <Campo htmlFor="pa-alt" rotulo="Texto alternativo do logo"><Entrada id="pa-alt" value={d.textoAlt} onChange={(e) => set({ textoAlt: e.target.value })} /></Campo>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={d.ativo} onChange={(e) => set({ ativo: e.target.checked })} /> Ativo</label>
 
         <fieldset className="space-y-2 rounded-lg border border-border p-3">
