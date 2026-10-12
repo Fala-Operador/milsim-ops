@@ -17,9 +17,9 @@ import { Badge, Cartao, Entrada, EstadoVazio, Selecao, SkeletonPagina, Botao } f
 import { formatarDataBR } from "@/lib/domain/money";
 
 export const Route = createFileRoute("/comunidade/$eventoId/")({
-  validateSearch: (s: Record<string, unknown>): { forum?: string; q?: string } => ({
-    forum: typeof s.forum === "string" && s.forum ? s.forum : undefined,
-    q: typeof s.q === "string" && s.q ? s.q : undefined,
+  validateSearch: (s: Record<string, unknown>): { forum?: string | undefined; q?: string | undefined } => ({
+    forum: typeof s["forum"] === "string" && s["forum"] ? s["forum"] : undefined,
+    q: typeof s["q"] === "string" && s["q"] ? s["q"] : undefined,
   }),
   component: ComunidadeInicio,
 });

@@ -1,3 +1,5 @@
+import { useAuth } from "@/contexts/AuthContext";
+import { notificacaoAcessivel } from "@/services/comunidade";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useNotifications } from "@/contexts/NotificationContext";
@@ -17,10 +19,12 @@ export const Route = createFileRoute("/app/notificacoes")({
 });
 
 function CentralNotificacoes() {
+  const { usuario: usuarioAtual } = useAuth();
   const { notificacoes, naoLidas, marcarLida, marcarTodasLidas } = useNotifications();
   const [soNaoLidas, setSoNaoLidas] = useState(false);
 
-  const lista = soNaoLidas ? notificacoes.filter((n) => !n.lida) : notificacoes;
+  const acessiveis = usuarioAtual ? notificacoes.filter((n) => notificacaoAcessivel(usuarioAtual, n.link)) : notificacoes;
+  const lista = soNaoLidas ? acessiveis.filter((n) => !n.lida) : acessiveis;
 
   return (
     <div>
