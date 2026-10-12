@@ -132,7 +132,7 @@ export function Modal({
       onClick={onFechar}
     >
       <div
-        className="w-full max-w-lg rounded-lg border border-border bg-popover p-6 text-popover-foreground shadow-xl"
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-popover p-6 text-popover-foreground shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
