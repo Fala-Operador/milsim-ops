@@ -195,9 +195,9 @@ export function semearHistorico() {
   const secaoDe = (o: OrigemAcesso) => (o === "destaques" ? "sec-destaques" : o === "regional" ? "sec-sudeste" : undefined);
   for (const e of eventos) {
     const peso = 0.5 + rnd();
-    for (let d = 30; d >= 0; d--) {
+    for (let d = 60; d >= 0; d--) {
       const diaBase = Date.now() - d * 86400000;
-      const exib = Math.round((3 + rnd() * 8) * peso);
+      const exib = Math.round((2 + rnd() * 5) * peso);
       for (let i = 0; i < exib; i++) {
         const origem: OrigemAcesso = rnd() < 0.5 ? "destaques" : rnd() < 0.6 ? "regional" : "busca";
         const vis = `vis-demo-${Math.floor(rnd() * 400)}`;
