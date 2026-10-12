@@ -12,7 +12,9 @@ interface AuthContextValue {
   podeGerenciarEvento: (organizacaoId: string) => boolean;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+// Mantém a mesma instância do contexto entre recarregamentos rápidos do editor.
+const g = globalThis as unknown as { __authCtx?: React.Context<AuthContextValue | null> };
+const AuthContext = (g.__authCtx ??= createContext<AuthContextValue | null>(null));
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(() => usuarioDaSessao());
