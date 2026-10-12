@@ -2,7 +2,8 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SkeletonPagina } from "@/components/ui";
-import { LayoutDashboard, Users, MessagesSquare, Wallet } from "lucide-react";
+import { LayoutDashboard, Users, MessagesSquare, Wallet, Bell } from "lucide-react";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 export const Route = createFileRoute("/organizacao")({
   head: () => ({
