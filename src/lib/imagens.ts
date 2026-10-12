@@ -32,3 +32,13 @@ export async function pdfParaDataUrl(arquivo: File): Promise<string> {
     leitor.readAsDataURL(arquivo);
   });
 }
+
+// Converte data URL em URL de objeto (blob) — navegadores abrem PDFs assim no leitor interno.
+export function dataUrlParaBlobUrl(dataUrl: string): string {
+  const [cab, dados] = dataUrl.split(",");
+  const mime = /data:(.*?);/.exec(cab ?? "")?.[1] ?? "application/pdf";
+  const bin = atob(dados ?? "");
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return URL.createObjectURL(new Blob([bytes], { type: mime }));
+}
