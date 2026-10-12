@@ -56,3 +56,16 @@ describe("página inicial e divulgação", () => {
     await expect(salvarParceiro(org, { nome: "X", tipo: "apoiador", textoAlt: "", links: [], ativo: true })).rejects.toThrow();
   });
 });
+
+describe("métricas de divulgação", async () => {
+  const m = await import("@/services/metricas");
+  it("clique no destaque seguido da página do evento conta uma visita", () => {
+    m.limparMetricas();
+    m.registrarVisualizacao("sec-destaques");
+    m.registrarCliqueEvento("sec-destaques", "evt-serra-verde");
+    m.confirmarVisitaEvento("evt-serra-verde");
+    m.confirmarVisitaEvento("evt-serra-verde"); // recarregar não conta de novo
+    const r = m.resumirMetricas(m.listarMetricas());
+    expect(r.total).toEqual({ v: 1, c: 1, i: 1 });
+  });
+});
