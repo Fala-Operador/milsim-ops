@@ -34,7 +34,7 @@ function PaginaComunidadeOrg() {
         <>
           <section aria-label="Resumo da comunidade" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {([
-              ["Fóruns ativos", String(foruns.filter((f) => !f.arquivado).length), `${foruns.filter((f) => f.arquivado).length} arquivados`],
+              ["Fóruns ativos", String(foruns.filter((f) => f.status !== "arquivado").length), `${foruns.filter((f) => f.status === "arquivado").length} arquivados`],
               ["Publicações", String(publicacoes.length), `${respostas.length} respostas`],
               ["Denúncias pendentes", String(denunciasPendentes.length), denunciasPendentes.length ? "Exigem análise" : "Nada a revisar"],
               ["Participantes suspensos", String(suspensoes.length), "Restrições ativas"],
@@ -79,14 +79,14 @@ function PaginaComunidadeOrg() {
                   <span>
                     {f.nome}
                     <span className="ml-2 text-xs text-muted-foreground">
-                      {f.visivelPara === "todos" ? "todos os inscritos" : "restrito a um exército"}
+                      {f.publico === "todos" ? "todos os inscritos" : "restrito a um exército"}
                     </span>
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">
                       {publicacoes.filter((p) => p.forumId === f.id).length} publicações
                     </span>
-                    {f.arquivado && <Badge tom="aviso">arquivado</Badge>}
+                    {f.status === "arquivado" && <Badge tom="aviso">arquivado</Badge>}
                   </span>
                 </li>
               ))}
