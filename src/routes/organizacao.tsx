@@ -61,7 +61,9 @@ function PainelOrganizacao() {
     }
   }, [usuario, navigate]);
 
-  if (!usuario) return <SkeletonPagina />;
+  const [montado, setMontado] = useState(false);
+  useEffect(() => setMontado(true), []);
+  if (!usuario || !montado) return <SkeletonPagina />;
   const base = carregarBase();
   const orgId = usuario.perfil === "admin" ? undefined : usuario.organizacaoId;
   const eventos = base.eventos.filter((e) => !orgId || e.organizacaoId === orgId);
