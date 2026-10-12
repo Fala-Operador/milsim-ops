@@ -58,7 +58,11 @@ function CentralNotificacoes() {
                     <p className="mt-1 text-sm text-muted-foreground">{n.corpo}</p>
                     <p className="mt-1 text-xs text-muted-foreground">{formatarDataHoraBR(n.criadoEm)}</p>
                     {n.link && (
-                      <Link to={n.link} className="mt-1 inline-block text-sm text-accent hover:underline">
+                      <Link
+                        to={n.link}
+                        className="mt-1 inline-block text-sm text-accent hover:underline"
+                        onClick={() => marcarLida(n.id)}
+                      >
                         Ver conteúdo relacionado →
                       </Link>
                     )}

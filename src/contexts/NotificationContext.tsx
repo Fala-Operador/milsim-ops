@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState, type Context, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type Context, type ReactNode } from "react";
 import { carregarBase, mutarBase } from "@/services/db";
 import type { Notificacao } from "@/lib/domain/types";
 
@@ -25,6 +25,11 @@ export function NotificationProvider({ usuarioId, children }: { usuarioId?: stri
   }
 
   const recarregar = useCallback(() => setNotificacoes(lerDoUsuario(usuarioId)), [usuarioId]);
+
+  // A sessão é restaurada depois da montagem: relê as notificações quando o usuário aparece.
+  useEffect(() => {
+    recarregar();
+  }, [recarregar]);
 
   const marcarLida = useCallback((id: string) => {
     mutarBase((base) => {

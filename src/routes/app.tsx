@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/contexts/NotificationContext";
 import { SkeletonPagina } from "@/components/ui";
 
 export const Route = createFileRoute("/app")({
@@ -20,6 +21,7 @@ const ITENS = [
 
 function LayoutApp() {
   const { usuario, autenticado } = useAuth();
+  const { naoLidas } = useNotifications();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   // O servidor não conhece a sessão guardada no navegador: mantém o esqueleto até
@@ -48,6 +50,11 @@ function LayoutApp() {
               activeProps={{ className: "bg-secondary text-foreground font-medium" }}
             >
               {item.rotulo}
+              {item.to === "/app/notificacoes" && naoLidas > 0 && (
+                <span className="ml-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                  {naoLidas}
+                </span>
+              )}
             </Link>
           ))}
         </nav>
