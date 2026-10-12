@@ -17,7 +17,9 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 export const SCRIPT_TEMA_INICIAL = `try{var p="milsim-demo:",s=JSON.parse(localStorage.getItem(p+"sessao")||"null"),t="dark";if(s){var b=JSON.parse(localStorage.getItem(p+"base")||"null");var u=b&&b.usuarios&&b.usuarios.find(function(x){return x.id===s});if(u&&u.tema==="light")t="light"}document.documentElement.classList.toggle("dark",t==="dark")}catch(_){document.documentElement.classList.add("dark")}`;
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const { usuario } = useAuth();
+  // Tolerante à ausência do provedor (ex.: recarga parcial durante a edição): trata como visitante.
+  let usuario: ReturnType<typeof useAuth>["usuario"] = null;
+  try { usuario = useAuth().usuario; } catch { usuario = null; }
   const [preferencia, setPreferencia] = useState<Tema | undefined>(undefined);
 
   useEffect(() => {
