@@ -5,3 +5,5 @@
 - [x] Skeletons de loading em páginas e componentes
 - [x] Verificação visual no preview (home, login, área do participante, página do evento)
 - [x] Correção de erro de armazenamento no SSR e de hidratação do cabeçalho
+
+- [x] Comunidade com fóruns e feed social (publicações, respostas, curtidas, denúncias, moderação, gestão de fóruns)

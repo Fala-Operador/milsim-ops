@@ -4,6 +4,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { formatarDataBR } from "@/lib/domain/money";
 import { mascararCpf, mascararTelefone } from "@/lib/domain/validators";
 import { Cartao, Selecao, Campo } from "@/components/ui";
+import { NomeExibicaoForm } from "@/components/NomeExibicaoForm";
 
 export const Route = createFileRoute("/app/perfil")({
   head: () => ({
@@ -41,6 +42,7 @@ function Perfil() {
       </Cartao>
       <Cartao>
         <h2 className="font-display text-lg font-semibold uppercase">Configurações</h2>
+        <div className="mt-3"><NomeExibicaoForm /></div>
         <div className="mt-3 max-w-xs">
           <Campo rotulo="Tema" htmlFor="tema">
             <Selecao id="tema" value={preferencia} onChange={(e) => definirPreferencia(e.target.value as "dark" | "light" | "system")}>
