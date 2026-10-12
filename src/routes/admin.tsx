@@ -22,6 +22,7 @@ const abas = [
   { to: "/admin", rotulo: "Dashboard", exato: true },
   { to: "/admin/insights", rotulo: "Insights IA" },
   { to: "/admin/solicitacoes", rotulo: "Solicitações" },
+  { to: "/admin/notificacoes", rotulo: "Notificações" },
   { to: "/admin/usuarios", rotulo: "Usuários" },
   { to: "/admin/privacidade", rotulo: "Privacidade" },
   { to: "/admin/auditoria", rotulo: "Auditoria" },
