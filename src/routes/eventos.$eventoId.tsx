@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
 import { carregarBase } from "@/services/db";
+import { useEventoAtual } from "@/hooks/useEventoAtual";
 import { vagasRestantes, loteVigente } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
 import { Badge, Botao, Cartao, Modal, SkeletonPagina } from "@/components/ui";
@@ -35,7 +36,8 @@ export const Route = createFileRoute("/eventos/$eventoId")({
 });
 
 function PaginaEvento() {
-  const { evento, organizacao } = Route.useLoaderData();
+  const { evento: eventoCarregado, organizacao } = Route.useLoaderData();
+  const evento = useEventoAtual(eventoCarregado);
   const base = carregarBase();
   const restantes = vagasRestantes(base, evento);
   const [regrasAbertas, setRegrasAbertas] = useState(false);
