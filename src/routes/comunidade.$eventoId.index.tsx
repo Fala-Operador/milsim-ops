@@ -226,7 +226,11 @@ function ComunidadeInicio() {
           {evento.regras && (
             <details className="rounded-lg border border-border bg-card p-4 text-sm">
               <summary className="cursor-pointer font-display font-semibold uppercase">Caderno de regras</summary>
-              <div className="mt-2 max-h-64 overflow-y-auto [&_h2]:font-semibold [&_p]:text-muted-foreground" dangerouslySetInnerHTML={{ __html: evento.regras.conteudoHtml ?? "" }} />
+              {evento.regras.pdfDataUrl ? (
+                <iframe title={evento.regras.titulo} src={evento.regras.pdfDataUrl} className="mt-2 h-96 w-full rounded-md border border-border bg-background" />
+              ) : (
+                <div className="mt-2 max-h-64 overflow-y-auto [&_h2]:font-semibold [&_p]:text-muted-foreground" dangerouslySetInnerHTML={{ __html: evento.regras.conteudoHtml ?? "" }} />
+              )}
             </details>
           )}
           <Cartao>
