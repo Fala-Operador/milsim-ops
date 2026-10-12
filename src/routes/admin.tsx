@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { carregarBase } from "@/services/db";
 import {
@@ -10,7 +10,7 @@ import {
   restaurarBaseDemonstrativa,
 } from "@/services/admin";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatarDataHoraBR } from "@/lib/domain/money";
+import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
 import { mascararCpf } from "@/lib/domain/validators";
 import { AreaTexto, Badge, Botao, Cartao, Modal, SkeletonPagina } from "@/components/ui";
 
@@ -66,6 +66,95 @@ function PainelAdmin() {
         </Botao>
       </div>
       {erro && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
+
+      <section>
+        <h2 className="font-display text-lg font-semibold uppercase">Visão geral</h2>
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Cartao>
+            <p className="text-xs uppercase text-muted-foreground">Eventos</p>
+            <p className="font-display text-2xl font-semibold">{base.eventos.length}</p>
+          </Cartao>
+          <Cartao>
+            <p className="text-xs uppercase text-muted-foreground">Inscrições ativas</p>
+            <p className="font-display text-2xl font-semibold">
+              {base.inscricoes.filter((i) => i.status === "confirmada").length}
+            </p>
+          </Cartao>
+          <Cartao>
+            <p className="text-xs uppercase text-muted-foreground">Receita simulada</p>
+            <p className="font-display text-2xl font-semibold">
+              {formatarBRL(base.movimentacoes.reduce((s, m) => s + m.valorCentavos, 0))}
+            </p>
+          </Cartao>
+          <Cartao>
+            <p className="text-xs uppercase text-muted-foreground">Usuários ativos</p>
+            <p className="font-display text-2xl font-semibold">
+              {base.usuarios.filter((u) => u.ativo).length}
+            </p>
+          </Cartao>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="font-display text-lg font-semibold uppercase">Eventos</h2>
+        {base.eventos.length === 0 ? (
+          <p className="mt-2 text-sm text-muted-foreground">Nenhum evento cadastrado.</p>
+        ) : (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
+                  <th className="py-2 pr-3">Evento</th>
+                  <th className="py-2 pr-3">Data</th>
+                  <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3">Ocupação</th>
+                  <th className="py-2 pr-3">Receita</th>
+                  <th className="py-2">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {base.eventos.map((ev) => {
+                  const inscritas = base.inscricoes.filter(
+                    (i) => i.eventoId === ev.id && i.status === "confirmada",
+                  ).length;
+                  const receita = base.movimentacoes
+                    .filter((m) => m.eventoId === ev.id)
+                    .reduce((s, m) => s + m.valorCentavos, 0);
+                  const org = base.organizacoes.find((o) => o.id === ev.organizacaoId);
+                  const tomStatus =
+                    ev.status === "publicado" ? "sucesso"
+                    : ev.status === "cancelado" ? "perigo"
+                    : ev.status === "rascunho" ? "aviso"
+                    : "padrao";
+                  return (
+                    <tr key={ev.id} className="border-b border-border/50">
+                      <td className="py-2 pr-3">
+                        <p className="font-medium">{ev.nome}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {org?.nome ?? "—"} · {ev.cidade}/{ev.uf}
+                        </p>
+                      </td>
+                      <td className="py-2 pr-3">{formatarDataBR(ev.inicioEm)}</td>
+                      <td className="py-2 pr-3">
+                        <Badge tom={tomStatus}>{ev.status.replace("_", " ")}</Badge>
+                      </td>
+                      <td className="py-2 pr-3">
+                        {inscritas}/{ev.capacidadeTotal}
+                      </td>
+                      <td className="py-2 pr-3">{formatarBRL(receita)}</td>
+                      <td className="py-2">
+                        <Link to="/eventos/$eventoId" params={{ eventoId: ev.id }}>
+                          <Botao variante="contorno">Ver</Botao>
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <section>
         <h2 className="font-display text-lg font-semibold uppercase">Solicitações de organizador</h2>
