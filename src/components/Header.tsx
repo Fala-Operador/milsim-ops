@@ -61,7 +61,7 @@ export function Header() {
             Eventos
           </Link>
           <ControleTema />
-          {usuario ? (
+          {usuarioVisivel ? (
             <>
               <Link
                 to="/app/notificacoes"
@@ -77,24 +77,24 @@ export function Header() {
               </Link>
               <div className="relative">
                 <Botao variante="secundario" onClick={() => setMenuAberto((v) => !v)} aria-expanded={menuAberto}>
-                  {usuario.nomeCompleto.split(" ")[0]} ▾
+                  {usuarioVisivel.nomeCompleto.split(" ")[0]} ▾
                 </Botao>
                 {menuAberto && (
                   <div className="absolute right-0 top-full mt-1 w-56 rounded-md border border-border bg-popover p-1 shadow-lg" role="menu">
                     <Link to="/app" className="block rounded px-3 py-2 text-sm hover:bg-secondary" onClick={() => setMenuAberto(false)}>
                       Minha área
                     </Link>
-                    {usuario.perfil === "organizador" && (
+                    {usuarioVisivel.perfil === "organizador" && (
                       <Link to="/organizacao" className="block rounded px-3 py-2 text-sm hover:bg-secondary" onClick={() => setMenuAberto(false)}>
                         Minha organização
                       </Link>
                     )}
-                    {usuario.perfil === "admin" && (
+                    {usuarioVisivel.perfil === "admin" && (
                       <Link to="/admin" className="block rounded px-3 py-2 text-sm hover:bg-secondary" onClick={() => setMenuAberto(false)}>
                         Administração
                       </Link>
                     )}
-                    {usuario.perfil === "participante" && (
+                    {usuarioVisivel.perfil === "participante" && (
                       <Link to="/app/organizador" className="block rounded px-3 py-2 text-sm text-muted-foreground hover:bg-secondary" onClick={() => setMenuAberto(false)}>
                         Quero ser organizador
                       </Link>
