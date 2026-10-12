@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useState, type Context, type ReactNode } from "react";
 import { carregarBase, mutarBase } from "@/services/db";
 import type { Notificacao } from "@/lib/domain/types";
 
@@ -10,7 +10,9 @@ interface NotificationContextValue {
   recarregar: () => void;
 }
 
-const NotificationContext = createContext<NotificationContextValue | null>(null);
+// Mantém a mesma instância do contexto entre recarregamentos rápidos do editor.
+const g = globalThis as unknown as { __notifCtx?: Context<NotificationContextValue | null> };
+const NotificationContext = (g.__notifCtx ??= createContext<NotificationContextValue | null>(null));
 
 export function NotificationProvider({ usuarioId, children }: { usuarioId?: string | undefined; children: ReactNode }) {
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>(() => lerDoUsuario(usuarioId));
@@ -50,8 +52,16 @@ export function NotificationProvider({ usuarioId, children }: { usuarioId?: stri
   );
 }
 
+// Sem provedor (ou durante troca rápida de módulo no editor), devolve um estado vazio
+// em vez de lançar: o cabeçalho aparece em todas as telas e não pode ficar em branco.
+const VAZIO: NotificationContextValue = {
+  notificacoes: [],
+  naoLidas: 0,
+  marcarLida: () => {},
+  marcarTodasLidas: () => {},
+  recarregar: () => {},
+};
+
 export function useNotifications(): NotificationContextValue {
-  const ctx = useContext(NotificationContext);
-  if (!ctx) throw new Error("useNotifications() deve ser usado dentro de <NotificationProvider>.");
-  return ctx;
+  return useContext(NotificationContext) ?? VAZIO;
 }
