@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { carregarBase } from "@/services/db";
+import { dataUrlParaBlobUrl } from "@/lib/imagens";
 import { useEventoAtual } from "@/hooks/useEventoAtual";
 import { vagasRestantes, loteVigente } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
@@ -41,6 +42,16 @@ function PaginaEvento() {
   const base = carregarBase();
   const restantes = vagasRestantes(base, evento);
   const [regrasAbertas, setRegrasAbertas] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!regrasAbertas || !evento.regras?.pdfDataUrl) return;
+    const url = dataUrlParaBlobUrl(evento.regras.pdfDataUrl);
+    setPdfUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+      setPdfUrl(null);
+    };
+  }, [regrasAbertas, evento.regras?.pdfDataUrl]);
   const inscricoesAbertas = evento.status === "publicado" && restantes > 0;
 
   return (
@@ -162,7 +173,17 @@ function PaginaEvento() {
       </div>
 
       <Modal aberto={regrasAbertas} titulo={evento.regras?.titulo ?? "Regras"} onFechar={() => setRegrasAbertas(false)}>
-        {evento.regras?.conteudoHtml ? (
+        {evento.regras?.pdfDataUrl ? (
+          pdfUrl ? (
+            <iframe
+              title={evento.regras.titulo}
+              src={pdfUrl}
+              className="h-[70vh] w-full rounded-md border border-border bg-background"
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">Carregando PDF…</p>
+          )
+        ) : evento.regras?.conteudoHtml ? (
           <div
             className="prose-sm max-h-[60vh] overflow-y-auto text-sm leading-relaxed [&_h2]:mt-4 [&_h2]:font-display [&_h2]:text-base [&_h2]:font-semibold [&_p]:mt-1 [&_p]:text-muted-foreground"
             dangerouslySetInnerHTML={{ __html: evento.regras.conteudoHtml }}

@@ -15,6 +15,7 @@ import {
 import { CartaoPublicacao, Compositor, SemAcesso } from "@/components/comunidade";
 import { Badge, Cartao, Entrada, EstadoVazio, Selecao, SkeletonPagina, Botao } from "@/components/ui";
 import { formatarDataBR } from "@/lib/domain/money";
+import { dataUrlParaBlobUrl } from "@/lib/imagens";
 
 export const Route = createFileRoute("/comunidade/$eventoId/")({
   validateSearch: (s: Record<string, unknown>): { forum?: string | undefined; q?: string | undefined } => ({
@@ -226,7 +227,11 @@ function ComunidadeInicio() {
           {evento.regras && (
             <details className="rounded-lg border border-border bg-card p-4 text-sm">
               <summary className="cursor-pointer font-display font-semibold uppercase">Caderno de regras</summary>
-              <div className="mt-2 max-h-64 overflow-y-auto [&_h2]:font-semibold [&_p]:text-muted-foreground" dangerouslySetInnerHTML={{ __html: evento.regras.conteudoHtml ?? "" }} />
+              {evento.regras.pdfDataUrl ? (
+                <LeitorPdf titulo={evento.regras.titulo} dataUrl={evento.regras.pdfDataUrl} />
+              ) : (
+                <div className="mt-2 max-h-64 overflow-y-auto [&_h2]:font-semibold [&_p]:text-muted-foreground" dangerouslySetInnerHTML={{ __html: evento.regras.conteudoHtml ?? "" }} />
+              )}
             </details>
           )}
           <Cartao>
@@ -259,4 +264,15 @@ function ItemForum({ ativo, onClick, rotulo, descricao, novas, arquivado }: { at
       </button>
     </li>
   );
+}
+
+function LeitorPdf({ titulo, dataUrl }: { titulo: string; dataUrl: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const u = dataUrlParaBlobUrl(dataUrl);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [dataUrl]);
+  if (!url) return <p className="mt-2 text-xs text-muted-foreground">Carregando PDF…</p>;
+  return <iframe title={titulo} src={url} className="mt-2 h-96 w-full rounded-md border border-border bg-background" />;
 }
