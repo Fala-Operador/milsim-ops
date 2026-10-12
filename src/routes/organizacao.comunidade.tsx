@@ -1,6 +1,7 @@
+import { OperacaoSelecionada } from "@/components/OperacaoSelecionada";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Badge, Botao, Cartao } from "@/components/ui";
-import { SeletorEvento, useEventoSelecionado, useEventosOrg } from "@/components/organizacao";
+import { useEventoSelecionado, useEventosOrg } from "@/components/organizacao";
 
 export const Route = createFileRoute("/organizacao/comunidade")({
   head: () => ({
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/organizacao/comunidade")({
 
 function PaginaComunidadeOrg() {
   const { base, eventos } = useEventosOrg();
-  const [eventoId, setEventoId] = useEventoSelecionado(eventos);
+  const [eventoId, setEventoId, invalido] = useEventoSelecionado(eventos);
 
   const foruns = base.foruns.filter((f) => f.eventoId === eventoId);
   const publicacoes = base.publicacoes.filter((p) => p.eventoId === eventoId && !p.oculta);
@@ -26,11 +27,11 @@ function PaginaComunidadeOrg() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold uppercase">Comunidade</h2>
-        <SeletorEvento eventos={eventos} valor={eventoId} onChange={setEventoId} />
       </div>
+      <OperacaoSelecionada eventos={eventos} evento={eventos.find((e) => e.id === eventoId)} invalido={invalido} onSelecionar={setEventoId} />
       {eventos.length === 0 ? (
         <Cartao><p className="text-sm text-muted-foreground">Nenhum evento criado ainda. Crie um evento no Painel.</p></Cartao>
-      ) : (
+      ) : !eventoId ? null : (
         <>
           <section aria-label="Resumo da comunidade" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {([
