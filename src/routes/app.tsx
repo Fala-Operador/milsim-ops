@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SkeletonPagina } from "@/components/ui";
 
@@ -22,6 +22,10 @@ function LayoutApp() {
   const { usuario, autenticado } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // O servidor não conhece a sessão guardada no navegador: mantém o esqueleto até
+  // montar, para que o primeiro desenho do navegador coincida com o HTML recebido.
+  const [montado, setMontado] = useState(false);
+  useEffect(() => setMontado(true), []);
 
   useEffect(() => {
     if (!autenticado) {
@@ -29,7 +33,7 @@ function LayoutApp() {
     }
   }, [autenticado, navigate, pathname]);
 
-  if (!usuario) return <SkeletonPagina />;
+  if (!montado || !usuario) return <SkeletonPagina />;
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 lg:flex-row">
