@@ -44,3 +44,6 @@ export function useEventoOrganizacao(eventosAutorizados: Evento[]) {
   const efetivo = autorizado ? id : invalido ? "" : (eventosAutorizados[0]?.id ?? "");
   return [efetivo, definir, invalido] as const;
 }
+
+/** Define o evento selecionado (ex.: atalho "Abrir check-in" no Painel). */
+export const selecionarEventoOrganizacao = definir;

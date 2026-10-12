@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { selecionarEventoOrganizacao } from "@/contexts/OrganizationEventContext";
 import { useState } from "react";
 import { carregarBase } from "@/services/db";
 import { inscricoesAtivasDoEvento } from "@/services/inscricoes";
@@ -176,6 +177,7 @@ function PainelEventos() {
                             <Botao variante="fantasma">Página pública</Botao>
                           </Link>
                         )}
+                        <Botao variante="fantasma" onClick={() => { selecionarEventoOrganizacao(e.id); navigate({ to: "/organizacao/checkin" }); }}>Abrir check-in</Botao>
                         <Botao variante="contorno" onClick={() => setForm(structuredClone(e))} disabled={["cancelado", "concluido"].includes(e.status)}>Editar</Botao>
                         <Botao variante="perigo" onClick={() => setExcluirEvt(e)}>Excluir</Botao>
                       </div>
