@@ -1,0 +1,26 @@
+import { describe, expect, it } from "vitest";
+import { agrupar, chaveOrigem, filtrar, indicadores, type RegistroAnalytics } from "@/lib/analytics";
+import { montarRelatorio, relatorioParaCsv } from "@/lib/relatorioMetricas";
+
+const r = (id: string, tipo: RegistroAnalytics["tipo"], origem: RegistroAnalytics["origem"], em: number, campanhaId?: string): RegistroAnalytics =>
+  ({ id, tipo, eventoId: "e1", visitanteId: id, sessaoId: id, origem, em, campanhaId });
+const regs = [r("1", "visita", "destaques", 100), r("2", "visita", "campanha", 100, "c1"), r("3", "visita", "destaques", 9999)];
+
+function csv(origem?: string) {
+  const f = filtrar(regs, { desde: 0, ate: 1000, origem });
+  return relatorioParaCsv(montarRelatorio({
+    evento: "Ev", periodo: "p", origem: origem ?? "Todas", ind: indicadores(f, regs),
+    porOrigem: agrupar(f, regs, chaveOrigem), porSecao: [], porEvento: [],
+    nomeOrigem: (k) => k, nomeSecao: (k) => k, nomeEvento: (k) => k, geradoEm: "agora",
+  }));
+}
+
+describe("exportação de métricas", () => {
+  it("respeita o período", () => expect(csv()).toContain("Visitas;2"));
+  it("respeita a campanha", () => {
+    const c = csv("cmp:c1");
+    expect(c).toContain("Visitas;1");
+    expect(c).toContain("cmp:c1;");
+    expect(c).not.toContain("destaques;");
+  });
+});
