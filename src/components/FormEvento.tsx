@@ -68,14 +68,14 @@ export function FormEvento({
     if (ev.exercitos.length === 0) return setErro("Cadastre ao menos um exército.");
     if (ev.tipos.length === 0) return setErro("Cadastre ao menos um tipo de ingresso.");
     const proximo: Evento = { ...ev };
-    const texto = textoRegras.trim();
-    proximo.regras = texto
+    proximo.regras = pdf
       ? {
           titulo: tituloRegras.trim() || "Manual de regras",
           versao: versaoRegras.trim() || "1",
           atualizadoEm: new Date().toISOString(),
-          formato: "html",
-          conteudoHtml: textoParaHtml(texto),
+          formato: "pdf",
+          nomeArquivo: pdf.nome,
+          pdfDataUrl: pdf.dataUrl,
         }
       : undefined;
     setSalvando(true);
@@ -186,10 +186,10 @@ export function FormEvento({
       </div>
 
       <div className={secao}>
-        <h3 className="font-medium">Manual de regras</h3>
+        <h3 className="font-medium">Manual de regras (PDF)</h3>
         <p className="text-xs text-muted-foreground">
-          É aqui que você cola o caderno de regras. Ele aparece na página pública do evento, com botão para ler dentro
-          da plataforma, e na comunidade do evento.
+          Envie o caderno de regras em PDF. Ele aparece na página pública do evento e os participantes leem dentro da
+          plataforma, sem precisar baixar.
         </p>
         <div className="grid gap-3 sm:grid-cols-[1fr_7rem]">
           <Campo rotulo="Título do manual" htmlFor="ev-regras-titulo">
@@ -204,19 +204,34 @@ export function FormEvento({
             <Entrada id="ev-regras-versao" placeholder="1" value={versaoRegras} onChange={(e) => setVersaoRegras(e.target.value)} />
           </Campo>
         </div>
-        <Campo rotulo="Conteúdo do manual" htmlFor="ev-regras-texto">
-          <AreaTexto
-            id="ev-regras-texto"
-            rows={10}
-            value={textoRegras}
-            onChange={(e) => setTextoRegras(e.target.value)}
-            placeholder={"## Segurança\n\nLimite de 350 FPS.\n\n- Óculos obrigatório\n- Touca de proteção"}
-          />
-        </Campo>
-        <p className="text-xs text-muted-foreground">
-          Comece uma linha com <code>##</code> para criar um título, use <code>-</code> para listas e deixe uma linha em
-          branco entre os blocos. Deixar o conteúdo vazio remove o manual do evento.
-        </p>
+        {pdf ? (
+          <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-2">
+            <p className="truncate text-xs">
+              📄 {pdf.nome}
+            </p>
+            <Botao variante="fantasma" onClick={() => setPdf(null)}>Remover PDF</Botao>
+          </div>
+        ) : (
+          <Campo rotulo="Arquivo PDF (máx. 5 MB)" htmlFor="ev-regras-pdf">
+            <Entrada
+              id="ev-regras-pdf"
+              type="file"
+              accept="application/pdf"
+              onChange={async (e) => {
+                const arquivo = e.target.files?.[0];
+                e.target.value = "";
+                if (!arquivo) return;
+                try {
+                  setPdf({ dataUrl: await pdfParaDataUrl(arquivo), nome: arquivo.name });
+                  setErro("");
+                } catch (err) {
+                  setErro(err instanceof Error ? err.message : "Falha ao ler o PDF.");
+                }
+              }}
+            />
+          </Campo>
+        )}
+        <p className="text-xs text-muted-foreground">Sem PDF anexado, o evento fica sem manual de regras.</p>
       </div>
 
       {erro && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive">{erro}</p>}
