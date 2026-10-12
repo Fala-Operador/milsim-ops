@@ -1,6 +1,7 @@
 // Serviços administrativos: análise de solicitações, auditoria, restauração.
 import { mutarBase, restaurarBase, latencia, ErroDominio, gerarId } from "./db";
 import { carregarBase } from "./db";
+import { silenciado } from "./notificacoes";
 import type { StatusSolicitacao } from "@/lib/domain/types";
 
 function auditar(autorId: string, acao: string, entidade: string, entidadeId: string, justificativa?: string) {

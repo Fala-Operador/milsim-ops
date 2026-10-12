@@ -1,6 +1,7 @@
 // Serviço da comunidade (fóruns com feed social). Todas as regras de acesso
 // ficam aqui e são reaplicadas em leituras E escritas — esconder botões não basta.
 import { carregarBase, mutarBase, gerarId, ErroDominio } from "@/services/db";
+import { silenciado } from "@/services/notificacoes";
 import type {
   BaseDados,
   Evento,
