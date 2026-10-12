@@ -61,6 +61,11 @@ function LayoutOrganizacao() {
             >
               <item.icone className="h-4 w-4" />
               {item.rotulo}
+              {item.rotulo === "Notificações" && naoLidas > 0 && (
+                <span className="ml-auto rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">
+                  {naoLidas}
+                </span>
+              )}
             </Link>
           ))}
         </nav>
