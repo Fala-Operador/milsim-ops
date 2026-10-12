@@ -21,6 +21,7 @@ import { Route as TermosRouteImport } from './routes/termos'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
 import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
+import { Route as AdminNotificacoesRouteImport } from './routes/admin.notificacoes'
 import { Route as AdminPrivacidadeRouteImport } from './routes/admin.privacidade'
 import { Route as AdminSolicitacoesRouteImport } from './routes/admin.solicitacoes'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
@@ -103,6 +104,11 @@ const AdminAuditoriaRoute = AdminAuditoriaRouteImport.update({
 const AdminInsightsRoute = AdminInsightsRouteImport.update({
   id: '/insights',
   path: '/insights',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminNotificacoesRoute = AdminNotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPrivacidadeRoute = AdminPrivacidadeRouteImport.update({
@@ -235,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/termos': typeof TermosRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -269,6 +276,7 @@ export interface FileRoutesByTo {
   '/termos': typeof TermosRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -306,6 +314,7 @@ export interface FileRoutesById {
   '/termos': typeof TermosRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
@@ -345,6 +354,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/admin/auditoria'
     | '/admin/insights'
+    | '/admin/notificacoes'
     | '/admin/privacidade'
     | '/admin/solicitacoes'
     | '/admin/usuarios'
@@ -379,6 +389,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/admin/auditoria'
     | '/admin/insights'
+    | '/admin/notificacoes'
     | '/admin/privacidade'
     | '/admin/solicitacoes'
     | '/admin/usuarios'
@@ -415,6 +426,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/admin/auditoria'
     | '/admin/insights'
+    | '/admin/notificacoes'
     | '/admin/privacidade'
     | '/admin/solicitacoes'
     | '/admin/usuarios'
@@ -540,6 +552,13 @@ declare module '@tanstack/react-router' {
       path: '/insights'
       fullPath: '/admin/insights'
       preLoaderRoute: typeof AdminInsightsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/notificacoes': {
+      id: '/admin/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/admin/notificacoes'
+      preLoaderRoute: typeof AdminNotificacoesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/privacidade': {
@@ -709,6 +728,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAuditoriaRoute: typeof AdminAuditoriaRoute
   AdminInsightsRoute: typeof AdminInsightsRoute
+  AdminNotificacoesRoute: typeof AdminNotificacoesRoute
   AdminPrivacidadeRoute: typeof AdminPrivacidadeRoute
   AdminSolicitacoesRoute: typeof AdminSolicitacoesRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
@@ -718,6 +738,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditoriaRoute: AdminAuditoriaRoute,
   AdminInsightsRoute: AdminInsightsRoute,
+  AdminNotificacoesRoute: AdminNotificacoesRoute,
   AdminPrivacidadeRoute: AdminPrivacidadeRoute,
   AdminSolicitacoesRoute: AdminSolicitacoesRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
