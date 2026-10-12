@@ -25,6 +25,7 @@ import { Route as AdminPrivacidadeRouteImport } from './routes/admin.privacidade
 import { Route as AdminSolicitacoesRouteImport } from './routes/admin.solicitacoes'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppComunidadesRouteImport } from './routes/app.comunidades'
 import { Route as AppIngressosRouteImport } from './routes/app.ingressos'
 import { Route as AppMissoesRouteImport } from './routes/app.missoes'
 import { Route as AppNotificacoesRouteImport } from './routes/app.notificacoes'
@@ -119,6 +120,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppComunidadesRoute = AppComunidadesRouteImport.update({
+  id: '/comunidades',
+  path: '/comunidades',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppIngressosRoute = AppIngressosRouteImport.update({
   id: '/ingressos',
   path: '/ingressos',
@@ -202,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/app/comunidades': typeof AppComunidadesRoute
   '/app/ingressos': typeof AppIngressosRoute
   '/app/missoes': typeof AppMissoesRoute
   '/app/notificacoes': typeof AppNotificacoesRoute
@@ -231,6 +238,7 @@ export interface FileRoutesByTo {
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/app/comunidades': typeof AppComunidadesRoute
   '/app/ingressos': typeof AppIngressosRoute
   '/app/missoes': typeof AppMissoesRoute
   '/app/notificacoes': typeof AppNotificacoesRoute
@@ -262,6 +270,7 @@ export interface FileRoutesById {
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
+  '/app/comunidades': typeof AppComunidadesRoute
   '/app/ingressos': typeof AppIngressosRoute
   '/app/missoes': typeof AppMissoesRoute
   '/app/notificacoes': typeof AppNotificacoesRoute
@@ -295,6 +304,7 @@ export interface FileRouteTypes {
     | '/admin/privacidade'
     | '/admin/solicitacoes'
     | '/admin/usuarios'
+    | '/app/comunidades'
     | '/app/ingressos'
     | '/app/missoes'
     | '/app/notificacoes'
@@ -324,6 +334,7 @@ export interface FileRouteTypes {
     | '/admin/privacidade'
     | '/admin/solicitacoes'
     | '/admin/usuarios'
+    | '/app/comunidades'
     | '/app/ingressos'
     | '/app/missoes'
     | '/app/notificacoes'
@@ -354,6 +365,7 @@ export interface FileRouteTypes {
     | '/admin/privacidade'
     | '/admin/solicitacoes'
     | '/admin/usuarios'
+    | '/app/comunidades'
     | '/app/ingressos'
     | '/app/missoes'
     | '/app/notificacoes'
@@ -500,6 +512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/comunidades': {
+      id: '/app/comunidades'
+      path: '/comunidades'
+      fullPath: '/app/comunidades'
+      preLoaderRoute: typeof AppComunidadesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/ingressos': {
       id: '/app/ingressos'
       path: '/ingressos'
@@ -615,6 +634,7 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface AppRouteChildren {
+  AppComunidadesRoute: typeof AppComunidadesRoute
   AppIngressosRoute: typeof AppIngressosRoute
   AppMissoesRoute: typeof AppMissoesRoute
   AppNotificacoesRoute: typeof AppNotificacoesRoute
@@ -626,6 +646,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppComunidadesRoute: AppComunidadesRoute,
   AppIngressosRoute: AppIngressosRoute,
   AppMissoesRoute: AppMissoesRoute,
   AppNotificacoesRoute: AppNotificacoesRoute,
