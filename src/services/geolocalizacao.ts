@@ -1,6 +1,7 @@
 // Localização real do aparelho (com autorização do navegador) e conversão em cidade/UF.
-// Provedor externo: BigDataCloud "reverse-geocode-client" (gratuito, sem chave, feito para uso no navegador).
-// Dados enviados: somente latitude/longitude arredondadas a 2 casas (~1 km) e o idioma "pt".
+// Provedor externo: OpenStreetMap Nominatim (gratuito, sem chave; limite de 1 consulta/s, uso leve).
+// Dados enviados: somente latitude/longitude arredondadas a 2 casas (~1 km) e o idioma "pt-BR".
+// Para produção, trocar por um provedor contratado ou instância própria.
 // Coordenadas nunca são salvas, exibidas ou enviadas para métricas.
 import { CIDADES_BASE, casarLocalidade, type Localidade } from "@/lib/localizacao";
 
@@ -35,18 +36,19 @@ export function obterCoordenadas(): Promise<{ lat: number; lng: number }> {
 }
 
 export async function coordenadasParaCidade(lat: number, lng: number): Promise<Localidade> {
-  const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat.toFixed(2)}&longitude=${lng.toFixed(2)}&localityLanguage=pt`;
-  let dados: { city?: string; locality?: string; principalSubdivisionCode?: string; countryCode?: string };
+  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=pt-BR&lat=${lat.toFixed(2)}&lon=${lng.toFixed(2)}`;
+  let dados: { address?: { city?: string; town?: string; municipality?: string; village?: string; country_code?: string; "ISO3166-2-lvl4"?: string } };
   try {
-    const r = await fetch(url);
+    const r = await fetch(url, { headers: { Accept: "application/json" } });
     if (!r.ok) throw new Error(String(r.status));
     dados = await r.json();
   } catch {
     throw new ErroLocalizacao("cidade_nao_resolvida");
   }
-  const cidade = (dados.city || dados.locality || "").trim();
-  const uf = (dados.principalSubdivisionCode ?? "").replace(/^BR-/, "");
-  if (dados.countryCode !== "BR" || !cidade || uf.length !== 2) throw new ErroLocalizacao("cidade_nao_resolvida");
+  const a = dados.address ?? {};
+  const cidade = (a.city || a.town || a.municipality || a.village || "").trim();
+  const uf = (a["ISO3166-2-lvl4"] ?? "").replace(/^BR-/, "");
+  if (a.country_code !== "br" || !cidade || uf.length !== 2) throw new ErroLocalizacao("cidade_nao_resolvida");
   return casarLocalidade(CIDADES_BASE, cidade, uf);
 }
 
