@@ -110,7 +110,7 @@ export function validarEntrada(
 
 /** Registra entrada após revalidar com as mesmas regras (QR ou manual). */
 export async function confirmarEntrada(p: {
-  usuario: Usuario | null; eventoId: string; inscricaoId: string; origem: OrigemEntrada; motivo?: string; online: boolean;
+  usuario: Usuario | null; eventoId: string; inscricaoId: string; origem: OrigemEntrada; motivo?: string | undefined; online: boolean;
 }): Promise<{ resultado: ResultadoValidacao; registro?: RegistroCheckin }> {
   const usuario = exigirPermissao(p.usuario, p.eventoId);
   if (p.origem !== "qr" && !p.motivo?.trim()) throw new ErroDominio("motivo", "Informe o motivo do check-in manual.");
