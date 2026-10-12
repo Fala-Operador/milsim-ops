@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNotifications } from "@/contexts/NotificationContext";
@@ -29,6 +29,11 @@ export function Header() {
   const { naoLidas } = useNotifications();
   const navigate = useNavigate();
   const [menuAberto, setMenuAberto] = useState(false);
+  // A sessão vem do armazenamento local: só é lida após a montagem para evitar
+  // divergência entre a renderização do servidor e a do navegador.
+  const [montado, setMontado] = useState(false);
+  useEffect(() => setMontado(true), []);
+  const usuarioVisivel = montado ? usuario : null;
 
   const aoSair = () => {
     logout();
