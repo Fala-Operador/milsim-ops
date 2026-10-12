@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { carregarBase } from "@/services/db";
+import { useEventoAtual } from "@/hooks/useEventoAtual";
 import {
   confirmarInscricao,
   validarCupom,
@@ -42,7 +43,8 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
 });
 
 function PaginaInscricao() {
-  const { evento } = Route.useLoaderData();
+  const { evento: eventoCarregado } = Route.useLoaderData();
+  const evento = useEventoAtual(eventoCarregado);
   const { cortesia: codigoCortesia } = Route.useSearch();
   const { usuario } = useAuth();
   const navigate = useNavigate();
