@@ -1,5 +1,6 @@
 // Serviços do organizador: solicitação, eventos, cupons, cortesias.
 import { carregarBase, mutarBase, latencia, ErroDominio, gerarId, gerarCodigo } from "./db";
+import { silenciado } from "./notificacoes";
 import { cnpjValido, normalizarEmail, somenteDigitos, telefoneValido } from "@/lib/domain/validators";
 import type { Evento, SolicitacaoOrganizador } from "@/lib/domain/types";
 
@@ -35,6 +36,7 @@ export async function solicitarOrganizador(
     };
     base.solicitacoes.push(sol);
     for (const admin of base.usuarios.filter((u) => u.perfil === "admin" && u.ativo)) {
+      if (silenciado(base, admin.id, "geral")) continue;
       base.notificacoes.push({
         id: gerarId("not"),
         usuarioId: admin.id,
@@ -175,6 +177,7 @@ export async function cancelarEvento(
           criadoEm: new Date().toISOString(),
         });
       }
+      if (silenciado(base, ins.usuarioId, "geral")) continue;
       base.notificacoes.push({
         id: gerarId("not"),
         usuarioId: ins.usuarioId,
