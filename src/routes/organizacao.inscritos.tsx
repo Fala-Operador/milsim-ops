@@ -87,6 +87,8 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
   const [filtrosMobile, setFiltrosMobile] = useState(false);
   const [detalhe, setDetalhe] = useState<Inscricao | null>(null);
   const origemFoco = useRef<HTMLElement | null>(null);
+  const regsCheckin = registrosReferencia(evento.id);
+  const presencaDe = (id: string) => entradaAtiva(regsCheckin, id);
   const abrirDetalhe = (i: Inscricao, el: HTMLElement) => { origemFoco.current = el; setDetalhe(i); };
   const fecharDetalhe = () => { setDetalhe(null); requestAnimationFrame(() => origemFoco.current?.focus()); };
   const [pagina, setPagina] = useState(1);
