@@ -32,6 +32,7 @@ const tomStatusEvento: Record<Evento["status"], "padrao" | "sucesso" | "aviso" |
 
 function PainelEventos() {
   const { usuario } = useAuth();
+  const navigate = useNavigate();
   const { base, eventos, orgId } = useEventosOrg();
   const [, setVersao] = useState(0);
   const [cancelarEvt, setCancelarEvt] = useState<Evento | null>(null);
