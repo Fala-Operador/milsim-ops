@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { carregarBase, mutarBase, useVersaoBase } from "@/services/db";
+import { carregarBase, mutarBase } from "@/services/db";
+import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import { Botao, Cartao, EstadoVazio, Badge } from "@/components/ui";
 
@@ -24,7 +25,7 @@ function NotificacoesAdmin() {
 
   const todas = useMemo(() => {
     const base = carregarBase();
-    const usuarios = new Map(base.usuarios.map((u) => [u.id, u.nomeExibicao || u.nome]));
+    const usuarios = new Map(base.usuarios.map((u) => [u.id, u.nomeExibicao || u.email]));
     return base.notificacoes
       .slice()
       .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm))
@@ -84,7 +85,7 @@ function NotificacoesAdmin() {
                       {!n.lida && <span className="mr-2 inline-block h-2 w-2 rounded-full bg-accent" aria-label="Não lida" />}
                       {n.titulo}
                       {PADRAO_EVENTOS.test(`${n.titulo} ${n.corpo}`) && (
-                        <Badge className="ml-2">eventos/inscrições</Badge>
+                        <span className="ml-2"><Badge>eventos/inscrições</Badge></span>
                       )}
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">{n.corpo}</p>
