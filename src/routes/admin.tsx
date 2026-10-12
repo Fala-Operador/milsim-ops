@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { carregarBase } from "@/services/db";
 import {
@@ -10,7 +10,7 @@ import {
   restaurarBaseDemonstrativa,
 } from "@/services/admin";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatarDataHoraBR } from "@/lib/domain/money";
+import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
 import { mascararCpf } from "@/lib/domain/validators";
 import { AreaTexto, Badge, Botao, Cartao, Modal, SkeletonPagina } from "@/components/ui";
 
