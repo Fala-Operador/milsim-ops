@@ -40,6 +40,7 @@ import { Route as ComunidadeEventoIdRouteImport } from './routes/comunidade.$eve
 import { Route as EventosEventoIdRouteImport } from './routes/eventos.$eventoId'
 import { Route as InscricaoEventoIdRouteImport } from './routes/inscricao.$eventoId'
 import { Route as OrganizacaoIndexRouteImport } from './routes/organizacao.index'
+import { Route as OrganizacaoCheckinRouteImport } from './routes/organizacao.checkin'
 import { Route as OrganizacaoComunidadeRouteImport } from './routes/organizacao.comunidade'
 import { Route as OrganizacaoFinanceiroRouteImport } from './routes/organizacao.financeiro'
 import { Route as OrganizacaoInscritosRouteImport } from './routes/organizacao.inscritos'
@@ -204,6 +205,11 @@ const OrganizacaoIndexRoute = OrganizacaoIndexRouteImport.update({
   path: '/',
   getParentRoute: () => OrganizacaoRoute,
 } as any)
+const OrganizacaoCheckinRoute = OrganizacaoCheckinRouteImport.update({
+  id: '/checkin',
+  path: '/checkin',
+  getParentRoute: () => OrganizacaoRoute,
+} as any)
 const OrganizacaoComunidadeRoute = OrganizacaoComunidadeRouteImport.update({
   id: '/comunidade',
   path: '/comunidade',
@@ -276,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/comunidade/$eventoId': typeof ComunidadeEventoIdRouteWithChildren
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
@@ -313,6 +320,7 @@ export interface FileRoutesByTo {
   '/app/suporte': typeof AppSuporteRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
@@ -355,6 +363,7 @@ export interface FileRoutesById {
   '/comunidade/$eventoId': typeof ComunidadeEventoIdRouteWithChildren
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
@@ -398,6 +407,7 @@ export interface FileRouteTypes {
     | '/comunidade/$eventoId'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
+    | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
     | '/organizacao/inscritos'
@@ -435,6 +445,7 @@ export interface FileRouteTypes {
     | '/app/suporte'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
+    | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
     | '/organizacao/inscritos'
@@ -476,6 +487,7 @@ export interface FileRouteTypes {
     | '/comunidade/$eventoId'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
+    | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
     | '/organizacao/inscritos'
@@ -723,6 +735,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizacaoIndexRouteImport
       parentRoute: typeof OrganizacaoRoute
     }
+    '/organizacao/checkin': {
+      id: '/organizacao/checkin'
+      path: '/checkin'
+      fullPath: '/organizacao/checkin'
+      preLoaderRoute: typeof OrganizacaoCheckinRouteImport
+      parentRoute: typeof OrganizacaoRoute
+    }
     '/organizacao/comunidade': {
       id: '/organizacao/comunidade'
       path: '/comunidade'
@@ -835,6 +854,7 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface OrganizacaoRouteChildren {
+  OrganizacaoCheckinRoute: typeof OrganizacaoCheckinRoute
   OrganizacaoComunidadeRoute: typeof OrganizacaoComunidadeRoute
   OrganizacaoFinanceiroRoute: typeof OrganizacaoFinanceiroRoute
   OrganizacaoInscritosRoute: typeof OrganizacaoInscritosRoute
@@ -844,6 +864,7 @@ interface OrganizacaoRouteChildren {
 }
 
 const OrganizacaoRouteChildren: OrganizacaoRouteChildren = {
+  OrganizacaoCheckinRoute: OrganizacaoCheckinRoute,
   OrganizacaoComunidadeRoute: OrganizacaoComunidadeRoute,
   OrganizacaoFinanceiroRoute: OrganizacaoFinanceiroRoute,
   OrganizacaoInscritosRoute: OrganizacaoInscritosRoute,

@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Download, Search, SlidersHorizontal, Ticket, Users, UserCheck, X, Eye } from "lucide-react";
 import { OperacaoSelecionada } from "@/components/OperacaoSelecionada";
+import { entradaAtiva, ROTULO_ORIGEM_ENTRADA, type RegistroCheckin } from "@/lib/checkin";
+import { registrosReferencia } from "@/services/checkin";
 import { Badge, Botao, Cartao, EstadoVazio, Selecao, Skeleton } from "@/components/ui";
 import { useEventoSelecionado, useEventosOrg } from "@/components/organizacao";
 import { formatarDataBR } from "@/lib/domain/money";
@@ -85,6 +87,8 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
   const [filtrosMobile, setFiltrosMobile] = useState(false);
   const [detalhe, setDetalhe] = useState<Inscricao | null>(null);
   const origemFoco = useRef<HTMLElement | null>(null);
+  const regsCheckin = registrosReferencia(evento.id);
+  const presencaDe = (id: string) => entradaAtiva(regsCheckin, id);
   const abrirDetalhe = (i: Inscricao, el: HTMLElement) => { origemFoco.current = el; setDetalhe(i); };
   const fecharDetalhe = () => { setDetalhe(null); requestAnimationFrame(() => origemFoco.current?.focus()); };
   const [pagina, setPagina] = useState(1);
@@ -203,7 +207,7 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
                     <td className="px-4 py-3">{nomeTipo(i.tipoId)}</td>
                     <td className="px-4 py-3">{nomeEx(i.exercitoId)}</td>
                     <td className="px-4 py-3">{ROTULO_ORIGEM[i.origem]}</td>
-                    <td className="px-4 py-3"><StatusInscricao status={i.status} /></td>
+                    <td className="px-4 py-3"><div className="flex flex-wrap gap-1"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div></td>
                     <td className="px-4 py-3 text-right">
                       <Botao variante="fantasma" className="px-2 py-1" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={`Ver detalhes de ${nomeDe(i)}`}>
                         <Eye className="h-4 w-4" /> Detalhes
@@ -218,7 +222,7 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
                 <li key={i.id} className="space-y-2 p-4">
                   <div className="flex items-start justify-between gap-2">
                     <Participante nome={nomeDe(i)} codigo={i.codigo} />
-                    <StatusInscricao status={i.status} />
+                    <div className="flex flex-col items-end gap-1"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div>
                   </div>
                   <p className="text-xs text-muted-foreground">{nomeTipo(i.tipoId)} · {nomeEx(i.exercitoId)} · {ROTULO_ORIGEM[i.origem]}</p>
                   <Botao variante="contorno" className="w-full py-1.5" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={`Ver detalhes de ${nomeDe(i)}`}><Eye className="h-4 w-4" /> Detalhes</Botao>
@@ -242,6 +246,7 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
           evento={evento}
           nome={nomeDe(detalhe)}
           cpf={(() => { const u = usuarios.find((x) => x.id === detalhe.usuarioId); return u ? mascararCpf(u.cpf) : "***"; })()}
+          presenca={presencaDe(detalhe.id)}
           onFechar={fecharDetalhe}
         />
       )}
@@ -266,8 +271,14 @@ function StatusInscricao({ status }: { status: Inscricao["status"] }) {
   return <Badge tom={status === "confirmada" ? "sucesso" : "perigo"}>{status === "confirmada" ? "✓ " : "✕ "}{ROTULO_STATUS_INSCRICAO[status]}</Badge>;
 }
 
-function PainelDetalhes({ inscricao, evento, nome, cpf, onFechar }: {
-  inscricao: Inscricao; evento: Evento; nome: string; cpf: string; onFechar: () => void;
+function StatusCheckin({ presenca }: { presenca: RegistroCheckin | undefined }) {
+  return presenca
+    ? <Badge tom="destaque">⛳ Check-in {new Date(presenca.em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</Badge>
+    : <Badge>○ Sem check-in</Badge>;
+}
+
+function PainelDetalhes({ inscricao, evento, nome, cpf, presenca, onFechar }: {
+  inscricao: Inscricao; evento: Evento; nome: string; cpf: string; presenca: RegistroCheckin | undefined; onFechar: () => void;
 }) {
   const fechar = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -312,6 +323,15 @@ function PainelDetalhes({ inscricao, evento, nome, cpf, onFechar }: {
             </dl>
           </section>
           <section>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Check-in (presença)</h3>
+            <dl className="mt-1 divide-y divide-border/60">
+              <Linha r="Situação">{presenca ? "Check-in realizado" : "Ainda não credenciado"}</Linha>
+              {presenca && <Linha r="Horário">{new Date(presenca.em).toLocaleString("pt-BR")}</Linha>}
+              {presenca && <Linha r="Validação">{ROTULO_ORIGEM_ENTRADA[presenca.origem]} · {presenca.operadorNome}</Linha>}
+            </dl>
+            <p className="mt-1 text-xs text-muted-foreground">Mostra entradas já sincronizadas. A inscrição confirmada não significa presença.</p>
+          </section>
+          <section>
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Dados pessoais</h3>
             <dl className="mt-1 divide-y divide-border/60">
               <Linha r="Nome">{nome}</Linha>
@@ -320,7 +340,7 @@ function PainelDetalhes({ inscricao, evento, nome, cpf, onFechar }: {
           </section>
           <section>
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ações</h3>
-            <p className="mt-2 text-muted-foreground">Nenhuma ação disponível para esta inscrição no momento. Check-in e alterações manuais ainda não fazem parte do app.</p>
+            <p className="mt-2 text-muted-foreground">Para registrar ou desfazer a presença, use a página Check-in.</p>
           </section>
         </div>
       </aside>

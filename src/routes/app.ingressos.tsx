@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { Badge, Botao, Cartao, EstadoVazio, Modal, AreaTexto } from "@/components/ui";
 import type { Inscricao } from "@/lib/domain/types";
+import { IngressoQr } from "@/components/IngressoQr";
+import { QrCode } from "lucide-react";
 
 export const Route = createFileRoute("/app/ingressos")({
   head: () => ({
@@ -31,6 +33,7 @@ function MeusIngressos() {
   const [cancelando, setCancelando] = useState<Inscricao | null>(null);
   const [motivo, setMotivo] = useState("");
   const [erro, setErro] = useState("");
+  const [qrDe, setQrDe] = useState<Inscricao | null>(null);
   const base = carregarBase();
   if (!usuario) return null;
 
@@ -93,7 +96,8 @@ function MeusIngressos() {
                   </div>
                 </div>
                 {ins.status === "confirmada" && (
-                  <div className="mt-3">
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Botao onClick={() => setQrDe(ins)}><QrCode className="h-4 w-4" />Abrir QR Code de entrada</Botao>
                     <Botao variante="contorno" onClick={() => setCancelando(ins)}>
                       Cancelar inscrição
                     </Botao>
@@ -105,6 +109,7 @@ function MeusIngressos() {
         </div>
       )}
 
+      {qrDe && <IngressoQr inscricao={qrDe} evento={base.eventos.find((e) => e.id === qrDe.eventoId)} usuarioId={usuario.id} onFechar={() => setQrDe(null)} />}
       <Modal aberto={!!cancelando} titulo="Cancelar inscrição" onFechar={() => setCancelando(null)}>
         <p className="text-sm text-muted-foreground">
           O cancelamento invalida o ingresso, libera a vaga e registra o estorno integral simulado.
