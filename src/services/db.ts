@@ -6,6 +6,26 @@ import type { BaseDados } from "@/lib/domain/types";
 const CHAVE = "base";
 
 let cache: BaseDados | null = null;
+let versao = 0;
+const ouvintes = new Set<() => void>();
+
+/** Versão da base em memória: aumenta a cada escrita. */
+export function versaoBase(): number {
+  return versao;
+}
+
+/** Inscreve um ouvinte para mudanças na base; devolve a função de cancelamento. */
+export function assinarBase(ouvinte: () => void): () => void {
+  ouvintes.add(ouvinte);
+  return () => {
+    ouvintes.delete(ouvinte);
+  };
+}
+
+function notificarMudanca(): void {
+  versao += 1;
+  ouvintes.forEach((o) => o());
+}
 
 export function carregarBase(): BaseDados {
   if (cache) return cache;
@@ -23,6 +43,7 @@ export function carregarBase(): BaseDados {
 export function salvarBase(base: BaseDados): void {
   cache = base;
   storage.gravar(CHAVE, base);
+  notificarMudanca();
 }
 
 /** Restaura a base demonstrativa: limpa apenas os dados desta aplicação. */
@@ -30,6 +51,7 @@ export function restaurarBase(): BaseDados {
   storage.limparTudo();
   cache = criarBaseInicial();
   storage.gravar(CHAVE, cache);
+  notificarMudanca();
   return cache;
 }
 

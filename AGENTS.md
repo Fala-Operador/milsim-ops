@@ -8,3 +8,19 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+# Regras técnicas do projeto
+
+- Route loaders and module-level base reads run on the server, where browser
+  storage is empty and always holds the seed data. Any screen that must show
+  what the organizer just saved has to re-read the local base after mount —
+  through `useVersaoBase()` (subscription to writes) or `useEventoAtual()`
+  (fresh event after hydration). Never trust loader data or a `useMemo` cached
+  read for post-write state.
+- Branches that depend on the logged-in user (or on browser storage in general)
+  need a `montado` guard set in `useEffect` before switching the rendered tree.
+  Server markup has no session, so an unguarded branch causes a hydration
+  mismatch and a full client re-render.
+- Free text typed by users (event rules manual) is converted to HTML only
+  through `src/lib/regras.ts`, which escapes everything before adding tags.
+  Never inject user text as raw HTML.

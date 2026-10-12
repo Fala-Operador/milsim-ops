@@ -141,6 +141,7 @@ function PainelEventos() {
                 <th className="py-2 pr-3">Evento</th>
                 <th className="py-2 pr-3">Data</th>
                 <th className="py-2 pr-3">Status</th>
+                <th className="py-2 pr-3">Manual</th>
                 <th className="py-2 pr-3">Ocupação</th>
                 <th className="py-2 pr-3">Receita</th>
                 <th className="py-2 text-right">Ações</th>
@@ -158,6 +159,9 @@ function PainelEventos() {
                     </td>
                     <td className="py-2 pr-3 whitespace-nowrap">{formatarDataBR(e.inicioEm)}</td>
                     <td className="py-2 pr-3"><Badge tom={tomStatusEvento[e.status]}>{e.status.replace("_", " ")}</Badge></td>
+                    <td className="py-2 pr-3">
+                      {e.regras ? <Badge tom="sucesso">v{e.regras.versao}</Badge> : <span className="text-xs text-muted-foreground">sem manual</span>}
+                    </td>
                     <td className="py-2 pr-3 min-w-32">
                       <p className="text-xs">{ativas}/{e.capacidadeTotal}</p>
                       <div className="mt-1 h-1.5 rounded bg-muted"><div className="h-1.5 rounded bg-primary" style={{ width: `${pct}%` }} /></div>
@@ -180,7 +184,7 @@ function PainelEventos() {
                 );
               })}
               {filtrados.length === 0 && (
-                <tr><td colSpan={6} className="py-6 text-center text-muted-foreground">Nenhum evento encontrado.</td></tr>
+                <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">Nenhum evento encontrado.</td></tr>
               )}
             </tbody>
           </table>

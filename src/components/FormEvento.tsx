@@ -2,6 +2,7 @@ import { useState } from "react";
 import { gerarId } from "@/services/db";
 import { AreaTexto, Botao, Campo, Entrada, Selecao } from "@/components/ui";
 import type { Evento } from "@/lib/domain/types";
+import { htmlParaTexto, textoParaHtml } from "@/lib/regras";
 
 const UFS = "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" ");
 
@@ -53,6 +54,9 @@ export function FormEvento({
   const [ev, setEv] = useState<Evento>(inicial);
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [tituloRegras, setTituloRegras] = useState(inicial.regras?.titulo ?? "");
+  const [versaoRegras, setVersaoRegras] = useState(inicial.regras?.versao ?? "1");
+  const [textoRegras, setTextoRegras] = useState(() => htmlParaTexto(inicial.regras?.conteudoHtml ?? ""));
   const set = <K extends keyof Evento>(k: K, v: Evento[K]) => setEv((p) => ({ ...p, [k]: v }));
 
   const salvar = async () => {
@@ -61,9 +65,20 @@ export function FormEvento({
     if (new Date(ev.fimEm) <= new Date(ev.inicioEm)) return setErro("O término deve ser depois do início.");
     if (ev.exercitos.length === 0) return setErro("Cadastre ao menos um exército.");
     if (ev.tipos.length === 0) return setErro("Cadastre ao menos um tipo de ingresso.");
+    const proximo: Evento = { ...ev };
+    const texto = textoRegras.trim();
+    proximo.regras = texto
+      ? {
+          titulo: tituloRegras.trim() || "Manual de regras",
+          versao: versaoRegras.trim() || "1",
+          atualizadoEm: new Date().toISOString(),
+          formato: "html",
+          conteudoHtml: textoParaHtml(texto),
+        }
+      : undefined;
     setSalvando(true);
     try {
-      await onSalvar(ev);
+      await onSalvar(proximo);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Falha ao salvar.");
     } finally {
@@ -166,6 +181,40 @@ export function FormEvento({
           </div>
         ))}
         {ev.cronograma.length === 0 && <p className="text-xs text-muted-foreground">Necessário ao menos uma atividade para publicar.</p>}
+      </div>
+
+      <div className={secao}>
+        <h3 className="font-medium">Manual de regras</h3>
+        <p className="text-xs text-muted-foreground">
+          É aqui que você cola o caderno de regras. Ele aparece na página pública do evento, com botão para ler dentro
+          da plataforma, e na comunidade do evento.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-[1fr_7rem]">
+          <Campo rotulo="Título do manual" htmlFor="ev-regras-titulo">
+            <Entrada
+              id="ev-regras-titulo"
+              placeholder="Caderno de regras — Operação Serra Verde"
+              value={tituloRegras}
+              onChange={(e) => setTituloRegras(e.target.value)}
+            />
+          </Campo>
+          <Campo rotulo="Versão" htmlFor="ev-regras-versao">
+            <Entrada id="ev-regras-versao" placeholder="1" value={versaoRegras} onChange={(e) => setVersaoRegras(e.target.value)} />
+          </Campo>
+        </div>
+        <Campo rotulo="Conteúdo do manual" htmlFor="ev-regras-texto">
+          <AreaTexto
+            id="ev-regras-texto"
+            rows={10}
+            value={textoRegras}
+            onChange={(e) => setTextoRegras(e.target.value)}
+            placeholder={"## Segurança\n\nLimite de 350 FPS.\n\n- Óculos obrigatório\n- Touca de proteção"}
+          />
+        </Campo>
+        <p className="text-xs text-muted-foreground">
+          Comece uma linha com <code>##</code> para criar um título, use <code>-</code> para listas e deixe uma linha em
+          branco entre os blocos. Deixar o conteúdo vazio remove o manual do evento.
+        </p>
       </div>
 
       {erro && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive">{erro}</p>}

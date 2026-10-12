@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { carregarBase } from "@/services/db";
+import { useEventoAtual } from "@/hooks/useEventoAtual";
 import {
   confirmarInscricao,
   validarCupom,
@@ -42,7 +43,8 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
 });
 
 function PaginaInscricao() {
-  const { evento } = Route.useLoaderData();
+  const { evento: eventoCarregado } = Route.useLoaderData();
+  const evento = useEventoAtual(eventoCarregado);
   const { cortesia: codigoCortesia } = Route.useSearch();
   const { usuario } = useAuth();
   const navigate = useNavigate();
@@ -64,6 +66,10 @@ function PaginaInscricao() {
   const [ok, setOk] = useState("");
   const [confirmando, setConfirmando] = useState(false);
   const emAndamento = useRef(false); // impede duplicidade por cliques repetidos
+  // O servidor não conhece a sessão guardada no navegador: só após montar decidimos
+  // se mostramos o formulário ou o convite para entrar (evita divergência na hidratação).
+  const [montado, setMontado] = useState(false);
+  useEffect(() => setMontado(true), []);
 
   const tipo = evento.tipos.find((t) => t.id === tipoId);
   const lote = tipo ? loteVigente(evento, tipo.id) : undefined;
@@ -72,7 +78,7 @@ function PaginaInscricao() {
     : (lote?.itens.find((i) => i.tipoId === tipoId)?.precoCentavos ?? tipo?.precoBaseCentavos ?? 0);
 
   // Cadastro iniciado a partir do evento: preserva o destino e retorna após autenticação
-  if (!usuario) {
+  if (!usuario || !montado) {
     const destino = `/inscricao/${evento.id}${codigoCortesia ? `?cortesia=${codigoCortesia}` : ""}`;
     return (
       <div className="mx-auto max-w-md px-4 py-16">
