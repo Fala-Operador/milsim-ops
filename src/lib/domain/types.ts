@@ -24,6 +24,8 @@ export interface Usuario {
   fotoUrl?: string | undefined;
   nomeExibicao?: string | undefined; // usado na comunidade
   silencioNotificacoes?: { todas?: boolean; comunidade?: boolean } | undefined;
+  /** Aparência escolhida pela conta; ausente = escuro. */
+  tema?: "dark" | "light" | undefined;
   autorizacaoResponsavel?: "pendente" | "aprovada" | "nao_aplicavel" | undefined;
   autorizacaoPromocional: boolean;
   aceiteTermosVersao: string;

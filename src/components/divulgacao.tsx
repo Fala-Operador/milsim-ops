@@ -225,9 +225,26 @@ function Banner({ secao, base, celular, rastrear }: { secao: SecaoInicial; base:
   } else if (d?.tipo === "externo" && d.valor) {
     acao = <a href={d.valor} target="_blank" rel="noopener noreferrer" className={classeBotao}>{botao}</a>;
   }
+  const ev = d?.tipo === "evento" ? base.eventos.find((e) => e.id === d.valor) : undefined;
+  if (ev && img) {
+    return (
+      <div className="relative overflow-hidden rounded-lg border border-border bg-card">
+        <ImagemSegura src={img} alt={b.textoAlt} className={`w-full ${celular ? "aspect-[4/3] max-h-[300px]" : "aspect-[21/6] max-h-[300px]"}`} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent" aria-hidden="true" />
+        <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-3 p-4 sm:p-6">
+          <div className="min-w-0 text-white">
+            <span className="inline-block rounded bg-accent px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wider text-accent-foreground">Operação em destaque</span>
+            <p className="mt-2 font-display text-2xl font-bold uppercase leading-tight sm:text-3xl">{ev.nome}</p>
+            <p className="text-sm text-white/85">{formatarDataBR(ev.inicioEm)} · {ev.cidade}/{ev.uf}</p>
+          </div>
+          <Link to="/eventos/$eventoId" params={{ eventoId: ev.id }} onClickCapture={() => rastrear && registrarClique({ eventoId: ev.id, origem: "inicio", secaoId: secao.id })} className={classeBotao}>Ver operação</Link>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="relative overflow-hidden rounded-lg border border-border bg-card">
-      {img && <ImagemSegura src={img} alt={b.textoAlt} className={`w-full ${celular ? "aspect-[4/3]" : "aspect-[21/7]"}`} />}
+      {img && <ImagemSegura src={img} alt={b.textoAlt} className={`w-full ${celular ? "aspect-[4/3] max-h-[300px]" : "aspect-[21/6] max-h-[300px]"}`} />}
       {(b.chamada || acao) && (
         <div className="flex flex-wrap items-center justify-between gap-3 p-4">
           {b.chamada && <p className="font-display text-xl font-semibold uppercase">{b.chamada}</p>}

@@ -4,23 +4,32 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { Botao } from "./ui";
+import { SeletorCidade } from "./SeletorCidade";
 
-function ControleTema() {
-  const { preferencia, definirPreferencia } = useTheme();
+function Aparencia({ onEscolher }: { onEscolher?: () => void }) {
+  const { tema, podeAlterar, definirTema } = useTheme();
+  if (!podeAlterar) return null;
+  const opcoes = [
+    { v: "dark" as const, r: "Escuro — Verde-oliva" },
+    { v: "light" as const, r: "Claro — TAN" },
+  ];
   return (
-    <label className="flex items-center gap-1 text-xs text-muted-foreground">
-      <span className="sr-only">Tema</span>
-      <select
-        aria-label="Selecionar tema"
-        className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
-        value={preferencia}
-        onChange={(e) => definirPreferencia(e.target.value as "dark" | "light" | "system")}
-      >
-        <option value="dark">Escuro</option>
-        <option value="light">Claro</option>
-        <option value="system">Sistema</option>
-      </select>
-    </label>
+    <div role="group" aria-label="Aparência" className="border-t border-border px-1 pt-1">
+      <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Aparência</p>
+      {opcoes.map((o) => (
+        <button
+          key={o.v}
+          type="button"
+          role="menuitemradio"
+          aria-checked={tema === o.v}
+          onClick={() => { definirTema(o.v); onEscolher?.(); }}
+          className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-secondary"
+        >
+          {o.r}
+          {tema === o.v && <span className="text-accent" aria-hidden="true">✓</span>}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -60,7 +69,7 @@ export function Header() {
           >
             Eventos
           </Link>
-          <ControleTema />
+          <SeletorCidade compacto className="hidden md:block" />
           {usuarioVisivel ? (
             <>
               <Link
@@ -105,7 +114,11 @@ export function Header() {
                         Quero ser organizador
                       </Link>
                     )}
-                    <button className="block w-full rounded px-3 py-2 text-left text-sm text-destructive hover:bg-secondary" onClick={aoSair}>
+                    <Link to="/app/perfil" className="block rounded px-3 py-2 text-sm hover:bg-secondary" onClick={() => setMenuAberto(false)}>
+                      Configurações da conta
+                    </Link>
+                    <Aparencia />
+                    <button className="block w-full rounded border-t border-border px-3 py-2 text-left text-sm text-destructive hover:bg-secondary" onClick={aoSair}>
                       Sair
                     </button>
                   </div>
@@ -118,11 +131,14 @@ export function Header() {
                 Entrar
               </Link>
               <Link to="/cadastro" search={{ redirect: undefined }}>
-                <Botao>Cadastrar</Botao>
+                <Botao>Criar conta</Botao>
               </Link>
             </>
           )}
         </nav>
+      </div>
+      <div className="border-t border-border px-4 py-2 md:hidden">
+        <SeletorCidade compacto />
       </div>
       <p className="border-t border-border bg-secondary/50 py-1 text-center text-[11px] text-muted-foreground">
         Ambiente de demonstração — utilize apenas dados fictícios.
