@@ -20,7 +20,7 @@ export const Route = createFileRoute("/app/perfil")({
 
 function Perfil() {
   const { usuario } = useAuth();
-  const { preferencia, definirPreferencia } = useTheme();
+  const { tema, definirTema } = useTheme();
   if (!usuario) return null;
   const [a, m, d] = usuario.dataNascimento.split("-");
 
@@ -44,11 +44,10 @@ function Perfil() {
         <h2 className="font-display text-lg font-semibold uppercase">Configurações</h2>
         <div className="mt-3"><NomeExibicaoForm /></div>
         <div className="mt-3 max-w-xs">
-          <Campo rotulo="Tema" htmlFor="tema">
-            <Selecao id="tema" value={preferencia} onChange={(e) => definirPreferencia(e.target.value as "dark" | "light" | "system")}>
-              <option value="dark">Escuro — verde-oliva</option>
+          <Campo rotulo="Aparência" htmlFor="tema">
+            <Selecao id="tema" value={tema} onChange={(e) => definirTema(e.target.value as "dark" | "light")}>
+              <option value="dark">Escuro — Verde-oliva</option>
               <option value="light">Claro — TAN</option>
-              <option value="system">Seguir o sistema</option>
             </Selecao>
           </Campo>
         </div>

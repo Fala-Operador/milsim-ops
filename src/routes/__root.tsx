@@ -13,7 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ThemeProvider, SCRIPT_TEMA_INICIAL } from "@/contexts/ThemeContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { LocalizacaoProvider } from "@/contexts/LocalizacaoContext";
 import { Header } from "@/components/Header";
@@ -122,7 +122,7 @@ function RootShell({ children }: { children: ReactNode }) {
         {/* Aplica o tema antes da primeira pintura para evitar flashes */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=JSON.parse(localStorage.getItem("milsim-demo:tema")||'"system"');var e=t==="system"?(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"):t;document.documentElement.classList.toggle("dark",e==="dark")}catch(_){document.documentElement.classList.add("dark")}`,
+            __html: SCRIPT_TEMA_INICIAL,
           }}
         />
       </head>
@@ -152,15 +152,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <ThemeProvider>
           <LocalizacaoProvider>
           <Providers>
             <Outlet />
           </Providers>
           </LocalizacaoProvider>
-        </AuthProvider>
-      </ThemeProvider>
+        </ThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
