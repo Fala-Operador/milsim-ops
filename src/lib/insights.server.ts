@@ -4,7 +4,7 @@ import { streamText } from "ai";
 const RUN_HEADER = "X-Lovable-AIG-Run-ID";
 
 export async function gerarInsightsIA(resumo: unknown, pergunta?: string): Promise<string> {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("Lovable AI não está configurado.");
   let runId: string | undefined;
   const provider = createOpenAI({
