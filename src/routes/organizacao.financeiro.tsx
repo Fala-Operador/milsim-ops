@@ -1,10 +1,11 @@
+import { OperacaoSelecionada } from "@/components/OperacaoSelecionada";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { criarCortesia, criarCupom } from "@/services/organizador";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarDataBR } from "@/lib/domain/money";
 import { Badge, Botao, Cartao, Entrada, Selecao } from "@/components/ui";
-import { Financeiro, SeletorEvento, useEventoSelecionado, useEventosOrg } from "@/components/organizacao";
+import { Financeiro, useEventoSelecionado, useEventosOrg } from "@/components/organizacao";
 
 export const Route = createFileRoute("/organizacao/financeiro")({
   head: () => ({
@@ -19,13 +20,19 @@ export const Route = createFileRoute("/organizacao/financeiro")({
 function PaginaFinanceiro() {
   const { usuario } = useAuth();
   const { base, eventos } = useEventosOrg();
-  const [eventoId, setEventoId] = useEventoSelecionado(eventos);
+  const [eventoId, setEventoId, invalido] = useEventoSelecionado(eventos);
   const [, setVersao] = useState(0);
   const [erro, setErro] = useState("");
   const [cupomForm, setCupomForm] = useState({ codigo: "", desconto: "10", limite: "10", validoAte: "" });
   const [cortesiaForm, setCortesiaForm] = useState({ nome: "", email: "", tipoId: "", validade: "" });
 
   const evento = eventos.find((e) => e.id === eventoId) ?? null;
+  // Troca de evento limpa formulários e mensagens do evento anterior.
+  useEffect(() => {
+    setErro("");
+    setCupomForm({ codigo: "", desconto: "10", limite: "10", validoAte: "" });
+    setCortesiaForm({ nome: "", email: "", tipoId: "", validade: "" });
+  }, [eventoId]);
 
   const aoCriarCupom = async () => {
     if (!evento) return;
@@ -73,8 +80,8 @@ function PaginaFinanceiro() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold uppercase">Financeiro</h2>
-        <SeletorEvento eventos={eventos} valor={eventoId} onChange={setEventoId} />
       </div>
+      <OperacaoSelecionada eventos={eventos} evento={eventos.find((e) => e.id === eventoId)} invalido={invalido} onSelecionar={setEventoId} />
 
       {erro && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
 

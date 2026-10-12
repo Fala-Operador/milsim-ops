@@ -37,6 +37,10 @@ export function useEventoOrganizacao(eventosAutorizados: Evento[]) {
     }
   }, []);
   // Revalida autorização: só aceita ids da lista do organizador logado.
-  const efetivo = id && eventosAutorizados.some((e) => e.id === id) ? id : (eventosAutorizados[0]?.id ?? "");
-  return [efetivo, definir] as const;
+  // Se o evento salvo sumiu ou deixou de ser autorizado, não troca em silêncio:
+  // devolve "" com `invalido` para a tela pedir uma nova seleção.
+  const autorizado = !!id && eventosAutorizados.some((e) => e.id === id);
+  const invalido = !!id && !autorizado && eventosAutorizados.length > 0;
+  const efetivo = autorizado ? id : invalido ? "" : (eventosAutorizados[0]?.id ?? "");
+  return [efetivo, definir, invalido] as const;
 }

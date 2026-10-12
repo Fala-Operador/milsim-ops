@@ -11,3 +11,5 @@
 - [x] Manual de regras em PDF: organizador anexa o arquivo no formulário do evento; participante lê dentro do app (página pública e comunidade)
 - [x] Página inicial e divulgação: seções ordenáveis/agendáveis, destaques manuais e automáticos por região, parceiros com links, banners, prévia (admin)
 - [x] Métricas por evento: exibições, cliques, visitas, funil, origens/campanhas (organizador) e visão consolidada (admin)
+- [x] Inscritos: painel lateral de detalhes, troca de evento em bottom sheet no celular, cartão de operação compartilhado (Inscritos/Comunidade/Financeiro)
+- [ ] Check-in e "Adicionar participante" (módulos pendentes)
