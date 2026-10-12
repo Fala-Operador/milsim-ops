@@ -265,3 +265,14 @@ function ItemForum({ ativo, onClick, rotulo, descricao, novas, arquivado }: { at
     </li>
   );
 }
+
+function LeitorPdf({ titulo, dataUrl }: { titulo: string; dataUrl: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const u = dataUrlParaBlobUrl(dataUrl);
+    setUrl(u);
+    return () => URL.revokeObjectURL(u);
+  }, [dataUrl]);
+  if (!url) return <p className="mt-2 text-xs text-muted-foreground">Carregando PDF…</p>;
+  return <iframe title={titulo} src={url} className="mt-2 h-96 w-full rounded-md border border-border bg-background" />;
+}
