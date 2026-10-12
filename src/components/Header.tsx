@@ -64,6 +64,12 @@ export function Header() {
           {usuarioVisivel ? (
             <>
               <Link
+                to="/app/comunidades"
+                className="hidden rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground sm:block"
+              >
+                Comunidades
+              </Link>
+              <Link
                 to="/app/notificacoes"
                 className="relative rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
                 aria-label={`Notificações, ${naoLidas} não lidas`}

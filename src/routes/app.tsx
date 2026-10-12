@@ -10,6 +10,7 @@ export const Route = createFileRoute("/app")({
 const ITENS = [
   { to: "/app", rotulo: "Visão geral" },
   { to: "/app/ingressos", rotulo: "Meus ingressos" },
+  { to: "/app/comunidades", rotulo: "Comunidades" },
   { to: "/app/missoes", rotulo: "Missões" },
   { to: "/app/notificacoes", rotulo: "Notificações" },
   { to: "/app/suporte", rotulo: "Suporte" },
