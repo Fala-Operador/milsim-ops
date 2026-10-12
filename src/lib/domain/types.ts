@@ -23,6 +23,7 @@ export interface Usuario {
   squad?: string | undefined;
   fotoUrl?: string | undefined;
   nomeExibicao?: string | undefined; // usado na comunidade
+  silencioNotificacoes?: { todas?: boolean; comunidade?: boolean } | undefined;
   autorizacaoResponsavel?: "pendente" | "aprovada" | "nao_aplicavel" | undefined;
   autorizacaoPromocional: boolean;
   aceiteTermosVersao: string;

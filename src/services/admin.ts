@@ -1,6 +1,7 @@
 // Serviços administrativos: análise de solicitações, auditoria, restauração.
 import { mutarBase, restaurarBase, latencia, ErroDominio, gerarId } from "./db";
 import { carregarBase } from "./db";
+import { silenciado } from "./notificacoes";
 import type { StatusSolicitacao } from "@/lib/domain/types";
 
 function auditar(autorId: string, acao: string, entidade: string, entidadeId: string, justificativa?: string) {
@@ -66,18 +67,22 @@ export async function analisarSolicitacao(
       base.organizacoes.push(org);
       usuario.perfil = "organizador";
       usuario.organizacaoId = org.id;
-      base.notificacoes.push(
-        notificar(usuario.id, "Solicitação aprovada", "Sua organização foi aprovada! A área da organização já está liberada.", "/organizacao"),
-      );
+      if (!silenciado(base, usuario.id, "geral")) {
+        base.notificacoes.push(
+          notificar(usuario.id, "Solicitação aprovada", "Sua organização foi aprovada! A área da organização já está liberada.", "/organizacao"),
+        );
+      }
     } else {
       const textos: Record<string, string> = {
         iniciar: "Sua solicitação está em análise.",
         ajustes: `Ajustes solicitados: ${justificativa}`,
         rejeitar: `Solicitação rejeitada: ${justificativa}`,
       };
-      base.notificacoes.push(
-        notificar(sol.usuarioId, "Atualização da solicitação", textos[acao] ?? "", "/app/organizador"),
-      );
+      if (!silenciado(base, sol.usuarioId, "geral")) {
+        base.notificacoes.push(
+          notificar(sol.usuarioId, "Atualização da solicitação", textos[acao] ?? "", "/app/organizador"),
+        );
+      }
     }
     base.auditoria.push(auditar(adminId, `solicitacao_${acao}`, "solicitacao", solicitacaoId, justificativa));
   });
@@ -106,9 +111,11 @@ export async function aprovarAutorizacaoResponsavel(usuarioId: string, adminId: 
     const alvo = base.usuarios.find((u) => u.id === usuarioId);
     if (!alvo) throw new ErroDominio("usuario", "Usuário não encontrado.");
     alvo.autorizacaoResponsavel = "aprovada";
-    base.notificacoes.push(
-      notificar(alvo.id, "Autorização aprovada", "A autorização do responsável foi aprovada. Você já pode se inscrever em eventos.", "/app"),
-    );
+    if (!silenciado(base, alvo.id, "geral")) {
+      base.notificacoes.push(
+        notificar(alvo.id, "Autorização aprovada", "A autorização do responsável foi aprovada. Você já pode se inscrever em eventos.", "/app"),
+      );
+    }
     base.auditoria.push(auditar(adminId, "aprovar_autorizacao_responsavel", "usuario", usuarioId));
   });
 }
@@ -125,9 +132,11 @@ export async function responderPrivacidade(
     if (!sol) throw new ErroDominio("privacidade", "Solicitação não encontrada.");
     sol.status = "respondida";
     sol.resposta = resposta;
-    base.notificacoes.push(
-      notificar(sol.usuarioId, "Solicitação de privacidade respondida", resposta, "/app/privacidade"),
-    );
+    if (!silenciado(base, sol.usuarioId, "geral")) {
+      base.notificacoes.push(
+        notificar(sol.usuarioId, "Solicitação de privacidade respondida", resposta, "/app/privacidade"),
+      );
+    }
     base.auditoria.push(auditar(adminId, "responder_privacidade", "privacidade", solicitacaoId));
   });
 }

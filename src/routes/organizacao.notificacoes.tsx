@@ -5,6 +5,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import { Botao, Cartao, EstadoVazio } from "@/components/ui";
+import { SilencioNotificacoes } from "@/components/SilencioNotificacoes";
 
 export const Route = createFileRoute("/organizacao/notificacoes")({
   head: () => ({
@@ -48,6 +49,7 @@ function NotificacoesOrganizacao() {
           </Botao>
         </div>
       </div>
+      <SilencioNotificacoes />
 
       {lista.length === 0 ? (
         <div className="mt-4">

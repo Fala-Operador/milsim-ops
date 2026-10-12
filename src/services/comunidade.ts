@@ -1,6 +1,7 @@
 // Serviço da comunidade (fóruns com feed social). Todas as regras de acesso
 // ficam aqui e são reaplicadas em leituras E escritas — esconder botões não basta.
 import { carregarBase, mutarBase, gerarId, ErroDominio } from "@/services/db";
+import { silenciado } from "@/services/notificacoes";
 import type {
   BaseDados,
   Evento,
@@ -266,6 +267,7 @@ function registrarModeracao(b: BaseDados, eventoId: string, autorId: string, aca
 }
 
 function notificar(b: BaseDados, usuarioId: string, titulo: string, corpo: string, link: string) {
+  if (silenciado(b, usuarioId, "comunidade")) return;
   b.notificacoes.push({ id: gerarId("not"), usuarioId, titulo, corpo, link, lida: false, criadoEm: new Date().toISOString() });
 }
 
