@@ -15,7 +15,10 @@ export type BaseSemComunidade = Omit<
   | "restricoesComunidade"
   | "moderacao"
   | "visitasComunidade"
+  | "parceiros"
+  | "secoesInicio"
 >;
+export type BaseSemDivulgacao = Omit<BaseDados, "parceiros" | "secoesInicio">;
 
 const h = (horas: number) => new Date(Date.now() - horas * 3600_000).toISOString();
 
@@ -39,7 +42,7 @@ function usuarioFicticio(id: string, nome: string, exibicao: string): Usuario {
   };
 }
 
-export function aplicarSeedComunidade(b: BaseSemComunidade): BaseDados {
+export function aplicarSeedComunidade(b: BaseSemComunidade): BaseSemDivulgacao {
   const ev = "evt-serra-verde";
   const extras = [
     usuarioFicticio("usr-ana", "Ana Fictícia Rocha", "Ana Sniper"),

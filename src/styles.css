@@ -46,7 +46,8 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
-:root {
+:root,
+.tema-claro {
   --radius: 0.5rem;
   /* Light — TAN militar */
   --background: oklch(0.93 0.025 85);
@@ -76,7 +77,8 @@
   --ring: oklch(0.45 0.055 125);
 }
 
-.dark {
+.dark,
+.tema-escuro {
   /* Dark — verde-oliva militar */
   --background: oklch(0.185 0.02 140);
   --foreground: oklch(0.95 0.015 120);
@@ -140,4 +142,8 @@
     color-mix(in oklch, var(--color-foreground) 6%, transparent) 38px,
     color-mix(in oklch, var(--color-foreground) 6%, transparent) 39px
   );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }

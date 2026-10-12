@@ -1,8 +1,9 @@
 // Base demonstrativa fictícia. Nenhum dado pessoal real.
 import type { BaseDados } from "@/lib/domain/types";
 import { aplicarSeedComunidade, type BaseSemComunidade } from "@/data/seedComunidade";
+import { aplicarSeedDivulgacao } from "@/data/seedDivulgacao";
 
-export const VERSAO_BASE = 2;
+export const VERSAO_BASE = 3;
 export const VERSAO_TERMOS = "termos-demo-v1";
 
 // Hash demonstrativo (NÃO é segurança real — documentado no README).
@@ -23,7 +24,7 @@ const dias = (n: number) => {
 };
 
 export function criarBaseInicial(): BaseDados {
-  return aplicarSeedComunidade(criarBaseLegada());
+  return aplicarSeedDivulgacao(aplicarSeedComunidade(criarBaseLegada()));
 }
 
 function criarBaseLegada(): BaseSemComunidade {

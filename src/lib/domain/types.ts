@@ -347,6 +347,8 @@ export interface BaseDados {
   restricoesComunidade: RestricaoComunidade[];
   moderacao: RegistroModeracao[];
   visitasComunidade: Record<string, string>; // `${usuarioId}:${eventoId}` -> ISO
+  parceiros: Parceiro[];
+  secoesInicio: SecaoInicial[];
 }
 
 // ===== Comunidade: fóruns com feed social =====
@@ -444,4 +446,102 @@ export interface RegistroModeracao {
   alvoId: string;
   justificativa?: string | undefined;
   criadoEm: string;
+}
+
+// ===== Página inicial e divulgação =====
+export type RegiaoBR = "Norte" | "Nordeste" | "Centro-Oeste" | "Sudeste" | "Sul";
+export type EscopoGeo = "nacional" | "regiao" | "estado" | "cidade";
+/** Segmentação geográfica (seção ou filtro do visitante). */
+export interface Abrangencia {
+  escopo: EscopoGeo;
+  regiao?: RegiaoBR | undefined;
+  uf?: string | undefined;
+  cidade?: string | undefined;
+}
+/** Janela de exibição opcional (ISO). */
+export interface Agendamento {
+  inicioEm?: string | undefined;
+  fimEm?: string | undefined;
+}
+export type TipoLinkParceiro = "site" | "instagram" | "whatsapp" | "externo" | "outro";
+export interface LinkParceiro {
+  id: string;
+  tipo: TipoLinkParceiro;
+  url?: string | undefined; // site/instagram/externo/outro
+  rotulo?: string | undefined; // obrigatório para "outro"
+  telefone?: string | undefined; // whatsapp, com código do país
+  mensagem?: string | undefined; // whatsapp, mensagem inicial opcional
+  principal?: boolean | undefined;
+}
+export type TipoParceiro = "patrocinador" | "apoiador" | "ambos";
+export interface Parceiro {
+  id: string;
+  nome: string;
+  tipo: TipoParceiro;
+  descricao?: string | undefined;
+  logoUrl?: string | undefined;
+  textoAlt: string;
+  links: LinkParceiro[];
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+export type TipoSecao = "destaques" | "regional" | "patrocinadores" | "apoiadores" | "banner";
+export type LayoutSecao = "grade" | "carrossel" | "banner";
+export type StatusSecao = "rascunho" | "publicada" | "desativada";
+/** Configuração de destaque: referencia o evento pelo id. */
+export interface DestaqueEvento {
+  id: string;
+  eventoId: string;
+  posicao: number;
+  imagemPromocional?: string | undefined;
+  selo?: string | undefined;
+  chamada?: string | undefined;
+  agendamento: Agendamento;
+}
+export interface ItemParceiroSecao {
+  parceiroId: string;
+  posicao: number;
+}
+export interface SelecaoAutomatica {
+  abrangencia: Abrangencia;
+  periodoDias?: number | undefined; // próximos N dias
+  maximo: number;
+  incluirEsgotados: boolean;
+  ordenacao: "data" | "recentes";
+}
+export type DestinoBanner =
+  | { tipo: "evento"; valor: string }
+  | { tipo: "secao"; valor: string }
+  | { tipo: "parceiro"; valor: string }
+  | { tipo: "externo"; valor: string };
+export interface ConfigBanner {
+  imagemDesktop?: string | undefined;
+  imagemCelular?: string | undefined;
+  textoAlt: string;
+  chamada?: string | undefined;
+  textoBotao?: string | undefined;
+  destino?: DestinoBanner | undefined;
+}
+export interface SecaoInicial {
+  id: string;
+  titulo: string;
+  subtitulo?: string | undefined;
+  tipo: TipoSecao;
+  abrangencia: Abrangencia;
+  ordem: number;
+  status: StatusSecao;
+  agendamento: Agendamento;
+  layout: LayoutSecao;
+  modo: "manual" | "automatico";
+  destaques: DestaqueEvento[];
+  automatica?: SelecaoAutomatica | undefined;
+  mostrarEsgotados: boolean;
+  parceiros: ItemParceiroSecao[];
+  tamanhoLogo: "p" | "m" | "g";
+  mostrarDescricoes: boolean;
+  superficieLogo: "nenhuma" | "clara" | "escura";
+  banner?: ConfigBanner | undefined;
+  criadoEm: string;
+  atualizadoEm: string;
 }

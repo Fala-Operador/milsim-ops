@@ -20,6 +20,7 @@ import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
+import { Route as AdminDivulgacaoRouteImport } from './routes/admin.divulgacao'
 import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
 import { Route as AdminNotificacoesRouteImport } from './routes/admin.notificacoes'
 import { Route as AdminPrivacidadeRouteImport } from './routes/admin.privacidade'
@@ -99,6 +100,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminAuditoriaRoute = AdminAuditoriaRouteImport.update({
   id: '/auditoria',
   path: '/auditoria',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDivulgacaoRoute = AdminDivulgacaoRouteImport.update({
+  id: '/divulgacao',
+  path: '/divulgacao',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminInsightsRoute = AdminInsightsRouteImport.update({
@@ -240,6 +246,7 @@ export interface FileRoutesByFullPath {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
@@ -275,6 +282,7 @@ export interface FileRoutesByTo {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
@@ -313,6 +321,7 @@ export interface FileRoutesById {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
@@ -353,6 +362,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/termos'
     | '/admin/auditoria'
+    | '/admin/divulgacao'
     | '/admin/insights'
     | '/admin/notificacoes'
     | '/admin/privacidade'
@@ -388,6 +398,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/termos'
     | '/admin/auditoria'
+    | '/admin/divulgacao'
     | '/admin/insights'
     | '/admin/notificacoes'
     | '/admin/privacidade'
@@ -425,6 +436,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/termos'
     | '/admin/auditoria'
+    | '/admin/divulgacao'
     | '/admin/insights'
     | '/admin/notificacoes'
     | '/admin/privacidade'
@@ -545,6 +557,13 @@ declare module '@tanstack/react-router' {
       path: '/auditoria'
       fullPath: '/admin/auditoria'
       preLoaderRoute: typeof AdminAuditoriaRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/divulgacao': {
+      id: '/admin/divulgacao'
+      path: '/divulgacao'
+      fullPath: '/admin/divulgacao'
+      preLoaderRoute: typeof AdminDivulgacaoRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/insights': {
@@ -727,6 +746,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminAuditoriaRoute: typeof AdminAuditoriaRoute
+  AdminDivulgacaoRoute: typeof AdminDivulgacaoRoute
   AdminInsightsRoute: typeof AdminInsightsRoute
   AdminNotificacoesRoute: typeof AdminNotificacoesRoute
   AdminPrivacidadeRoute: typeof AdminPrivacidadeRoute
@@ -737,6 +757,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditoriaRoute: AdminAuditoriaRoute,
+  AdminDivulgacaoRoute: AdminDivulgacaoRoute,
   AdminInsightsRoute: AdminInsightsRoute,
   AdminNotificacoesRoute: AdminNotificacoesRoute,
   AdminPrivacidadeRoute: AdminPrivacidadeRoute,

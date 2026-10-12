@@ -116,11 +116,13 @@ export function Modal({
   titulo,
   onFechar,
   children,
+  largo = false,
 }: {
   aberto: boolean;
   titulo: string;
   onFechar: () => void;
   children: ReactNode;
+  largo?: boolean;
 }) {
   if (!aberto) return null;
   return (
@@ -132,7 +134,7 @@ export function Modal({
       onClick={onFechar}
     >
       <div
-        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-popover p-6 text-popover-foreground shadow-xl"
+        className={`max-h-[90vh] w-full ${largo ? "max-w-6xl" : "max-w-2xl"} overflow-y-auto rounded-lg border border-border bg-popover p-6 text-popover-foreground shadow-xl`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
