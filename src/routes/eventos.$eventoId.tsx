@@ -174,11 +174,15 @@ function PaginaEvento() {
 
       <Modal aberto={regrasAbertas} titulo={evento.regras?.titulo ?? "Regras"} onFechar={() => setRegrasAbertas(false)}>
         {evento.regras?.pdfDataUrl ? (
-          <iframe
-            title={evento.regras.titulo}
-            src={evento.regras.pdfDataUrl}
-            className="h-[70vh] w-full rounded-md border border-border bg-background"
-          />
+          pdfUrl ? (
+            <iframe
+              title={evento.regras.titulo}
+              src={pdfUrl}
+              className="h-[70vh] w-full rounded-md border border-border bg-background"
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">Carregando PDF…</p>
+          )
         ) : evento.regras?.conteudoHtml ? (
           <div
             className="prose-sm max-h-[60vh] overflow-y-auto text-sm leading-relaxed [&_h2]:mt-4 [&_h2]:font-display [&_h2]:text-base [&_h2]:font-semibold [&_p]:mt-1 [&_p]:text-muted-foreground"
