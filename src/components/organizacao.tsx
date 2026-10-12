@@ -5,17 +5,19 @@ import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { mascararCpf } from "@/lib/domain/validators";
 import { Badge, Botao, Selecao } from "@/components/ui";
 import { useAuth } from "@/contexts/AuthContext";
+import { useVersaoBase } from "@/hooks/useVersaoBase";
 import type { Evento } from "@/lib/domain/types";
 
 /** Eventos visíveis para o organizador logado (admin vê todos). */
 export function useEventosOrg() {
   const { usuario } = useAuth();
+  const versao = useVersaoBase();
   return useMemo(() => {
     const base = carregarBase();
     const orgId = usuario && usuario.perfil !== "admin" ? usuario.organizacaoId : undefined;
     const eventos = base.eventos.filter((e) => !orgId || e.organizacaoId === orgId);
     return { base, eventos, orgId };
-  }, [usuario]);
+  }, [usuario, versao]);
 }
 
 /** Seletor de evento usado nas páginas Inscritos, Comunidade e Financeiro. */
