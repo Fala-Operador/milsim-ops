@@ -193,8 +193,8 @@ function PainelOrganizacao() {
       <Cartao className="mt-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-semibold uppercase">Meus eventos</h2>
-          <div className="flex flex-wrap gap-2">
-            <Entrada aria-label="Buscar evento" placeholder="Buscar por nome…" value={busca} onChange={(e) => setBusca(e.target.value)} className="w-48" />
+          <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
+            <Entrada aria-label="Buscar evento" placeholder="Buscar por nome…" value={busca} onChange={(e) => setBusca(e.target.value)} />
             <Selecao aria-label="Filtrar por status" value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value as typeof filtroStatus)}>
               <option value="todos">Todos os status</option>
               {Object.keys(tomStatusEvento).map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
