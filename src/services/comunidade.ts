@@ -269,6 +269,16 @@ function notificar(b: BaseDados, usuarioId: string, titulo: string, corpo: strin
   b.notificacoes.push({ id: gerarId("not"), usuarioId, titulo, corpo, link, lida: false, criadoEm: new Date().toISOString() });
 }
 
+/** Notifica todos os organizadores do evento (exceto o autor da ação). */
+function notificarOrganizacao(b: BaseDados, eventoId: string, autorId: string, titulo: string, corpo: string, link: string) {
+  const ev = b.eventos.find((e) => e.id === eventoId);
+  if (!ev) return;
+  for (const org of b.usuarios) {
+    if (org.id === autorId || org.perfil !== "organizador" || org.organizacaoId !== ev.organizacaoId) continue;
+    notificar(b, org.id, titulo, corpo, link);
+  }
+}
+
 function validarConteudo(texto: string, imagens: ImagemPost[], maxImagens: number) {
   const t = texto.trim();
   if (t.length > LIMITE_TEXTO) throw new ErroDominio("texto_longo", `O texto pode ter no máximo ${LIMITE_TEXTO} caracteres.`);
@@ -330,6 +340,7 @@ export function criarPublicacao(
       if (pub.importante) notificar(b, uid, "Comunicado importante", `Nova publicação importante em ${forum.nome}.`, link);
       else if (pref === "seguir") notificar(b, uid, "Nova publicação", `Nova atividade em ${forum.nome}.`, link);
     }
+    notificarOrganizacao(b, forum.eventoId, u.id, "Nova publicação na comunidade", `${nomeExibicao(u)} publicou em ${forum.nome}.`, link);
     return pub;
   });
 }
@@ -378,6 +389,12 @@ export function alternarCurtida(usuario: Usuario | null, pubId: string): boolean
       return false;
     }
     b.curtidas.push({ id: gerarId("cur"), publicacaoId: pubId, usuarioId: u.id });
+    if (p.autorId !== u.id) {
+      const autor = b.usuarios.find((x) => x.id === p.autorId);
+      if (autor && publicacaoVisivel(b, autor, p)) {
+        notificar(b, autor.id, "Nova curtida", `${nomeExibicao(u)} curtiu sua publicação.`, `/comunidade/${p.eventoId}/p/${p.id}`);
+      }
+    }
     return true;
   });
 }
@@ -398,9 +415,10 @@ export function responder(usuario: Usuario | null, pubId: string, texto: string,
         // Agrupa: se já há notificação não lida para esta publicação, não duplica.
         const link = `/comunidade/${p.eventoId}/p/${p.id}`;
         const jaTem = b.notificacoes.find((n) => n.usuarioId === autor.id && n.link === link && !n.lida && n.titulo === "Novas respostas");
-        if (!jaTem) notificar(b, autor.id, "Novas respostas", "Alguém respondeu à sua publicação na comunidade.", link);
+        if (!jaTem) notificar(b, autor.id, "Novas respostas", `${nomeExibicao(u)} respondeu à sua publicação na comunidade.`, link);
       }
     }
+    notificarOrganizacao(b, p.eventoId, u.id, "Nova resposta na comunidade", `${nomeExibicao(u)} respondeu a uma publicação.`, `/comunidade/${p.eventoId}/p/${p.id}`);
     return r;
   });
 }
@@ -448,6 +466,7 @@ export function denunciar(
       status: "pendente",
       criadoEm: new Date().toISOString(),
     });
+    notificarOrganizacao(b, pub.eventoId, u.id, "Nova denúncia na comunidade", `Uma ${dados.alvo === "publicacao" ? "publicação" : "resposta"} foi denunciada e aguarda análise.`, `/comunidade/${pub.eventoId}/gerenciar`);
   });
 }
 
