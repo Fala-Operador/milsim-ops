@@ -14,3 +14,4 @@
 - [x] Inscritos: painel lateral de detalhes, troca de evento em bottom sheet no celular, cartão de operação compartilhado (Inscritos/Comunidade/Financeiro)
 - [x] Check-in e credenciamento (QR Code, manual, offline com Service Worker + IndexedDB, sincronização demonstrativa)
 - [ ] "Adicionar participante" (módulo pendente)
+- [x] Página inicial refeita: tema escuro para visitantes, aparência por conta, localização real + seletor de cidade
