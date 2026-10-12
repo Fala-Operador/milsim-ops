@@ -120,6 +120,7 @@ export interface DocumentoRegras {
   formato: "pdf" | "docx" | "html"; // html = demonstrativo renderizável
   conteudoHtml?: string | undefined; // usado no leitor interno demonstrativo
   nomeArquivo?: string | undefined;
+  pdfDataUrl?: string | undefined; // PDF enviado pelo organizador (data URL, persistência local demo)
 }
 
 export interface Evento {

@@ -20,3 +20,15 @@ export async function arquivoParaDataUrl(arquivo: File, max = 1024): Promise<str
     URL.revokeObjectURL(url);
   }
 }
+
+// Converte um PDF escolhido pelo usuário em data URL (persistência local demo).
+export async function pdfParaDataUrl(arquivo: File): Promise<string> {
+  if (arquivo.type !== "application/pdf") throw new Error("Selecione um arquivo PDF.");
+  if (arquivo.size > 5 * 1024 * 1024) throw new Error("PDF muito grande (máx. 5 MB).");
+  return new Promise((ok, erro) => {
+    const leitor = new FileReader();
+    leitor.onload = () => ok(String(leitor.result));
+    leitor.onerror = () => erro(new Error("Não foi possível ler o PDF."));
+    leitor.readAsDataURL(arquivo);
+  });
+}
