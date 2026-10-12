@@ -49,6 +49,7 @@ function NotificacoesOrganizacao() {
           </Botao>
         </div>
       </div>
+      <SilencioNotificacoes />
 
       {lista.length === 0 ? (
         <div className="mt-4">
