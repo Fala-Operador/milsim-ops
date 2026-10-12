@@ -51,11 +51,12 @@ function PaginaCheckin() {
   );
 }
 
-type Modo = "nenhum" | "qr" | "busca" | "codigo";
+type Modo = "nenhum" | "busca" | "codigo";
 
 function Portaria() {
   const ck = useCheckin();
   const [modo, setModo] = useState<Modo>("nenhum");
+  const [leitorAberto, setLeitorAberto] = useState(false);
   const [resultado, setResultado] = useState<ResultadoValidacao | null>(null);
   const [registradoOffline, setRegistradoOffline] = useState(false);
   const [conferir, setConferir] = useState<{ ingresso: IngressoCredenciamento; origem: "codigo" | "manual" } | null>(null);
@@ -131,7 +132,7 @@ function Portaria() {
 
       {/* Ações principais */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <BotaoGrande ativo={modo === "qr"} onClick={() => trocarModo(modo === "qr" ? "nenhum" : "qr")} disabled={semBase}><QrCode className="h-7 w-7" />Ler QR Code</BotaoGrande>
+        <BotaoGrande ativo={leitorAberto} onClick={() => { setResultado(null); setLeitorAberto(true); }} disabled={semBase}><QrCode className="h-7 w-7" />Ler QR Code</BotaoGrande>
         <BotaoGrande ativo={modo === "busca"} onClick={() => trocarModo("busca")} disabled={semBase}><Search className="h-7 w-7" />Buscar participante</BotaoGrande>
         <BotaoGrande ativo={modo === "codigo"} onClick={() => trocarModo("codigo")} disabled={semBase}><Keyboard className="h-7 w-7" />Digitar código</BotaoGrande>
         <BotaoGrande onClick={ck.preparar} disabled={ck.ocupado || !ck.online}><Download className="h-7 w-7" />{ck.fonte?.snapshot ? "Atualizar base offline" : "Preparar para uso offline"}</BotaoGrande>
@@ -139,14 +140,15 @@ function Portaria() {
       </div>
       {semBase && <p role="alert" className="text-sm text-warning">Sem conexão e sem base baixada para este evento: não é possível validar ingressos neste aparelho.</p>}
 
-      {modo === "qr" && (
-        <Cartao className="space-y-4">
+      {/* Leitura de QR Code em modal: a câmera liga só quando aberto e desliga ao fechar */}
+      <Modal aberto={leitorAberto} titulo="Ler QR Code do participante" onFechar={() => setLeitorAberto(false)}>
+        <div className="space-y-4">
           <LeitorQr pausado={!!resultado || ck.ocupado} onLeitura={aoLerQr} onErro={() => {}} />
           {resultado && <CartaoResultado r={resultado} offline={registradoOffline} />}
           {resultado && <Botao className="h-14 w-full text-base" onClick={() => setResultado(null)}><QrCode className="h-5 w-5" />Próxima leitura</Botao>}
-          {!resultado && <p className="text-center text-sm text-muted-foreground">Aponte a câmera para o QR Code do participante.</p>}
-        </Cartao>
-      )}
+          {!resultado && <p className="text-center text-sm text-muted-foreground">Aponte a câmera para o QR Code do participante. Feche o modal para desligar a câmera.</p>}
+        </div>
+      </Modal>
       {modo === "busca" && !conferir && <BuscaManual ingressos={ingressos} registros={registros} onEscolher={(i) => { setResultado(null); setConferir({ ingresso: i, origem: "manual" }); }} />}
       {modo === "codigo" && !conferir && (
         <DigitarCodigo onBuscar={(codigo) => {
