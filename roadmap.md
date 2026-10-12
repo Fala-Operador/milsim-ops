@@ -9,3 +9,4 @@
 - [x] Comunidade com fóruns e feed social (publicações, respostas, curtidas, denúncias, moderação, gestão de fóruns)
 - [x] Manual de regras editável pela organização (formulário do evento → página pública e comunidade)
 - [x] Manual de regras em PDF: organizador anexa o arquivo no formulário do evento; participante lê dentro do app (página pública e comunidade)
+- [x] Página inicial e divulgação: seções ordenáveis/agendáveis, destaques manuais e automáticos por região, parceiros com links, banners, prévia (admin)

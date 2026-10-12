@@ -24,3 +24,4 @@
 - Free text typed by users (event rules manual) is converted to HTML only
   through `src/lib/regras.ts`, which escapes everything before adding tags.
   Never inject user text as raw HTML.
+- Home-page eligibility rules (location, schedule, event status, link validation) live only in `src/lib/divulgacao.ts`; admin writes go through `src/services/divulgacao.ts`, which enforces admin-only access and audit logging. Why: one place decides what the public page shows.
