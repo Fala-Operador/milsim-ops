@@ -2,7 +2,7 @@ import { useState } from "react";
 import { gerarId } from "@/services/db";
 import { AreaTexto, Botao, Campo, Entrada, Selecao } from "@/components/ui";
 import type { Evento } from "@/lib/domain/types";
-import { htmlParaTexto, textoParaHtml } from "@/lib/regras";
+import { pdfParaDataUrl } from "@/lib/imagens";
 
 const UFS = "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" ");
 
@@ -56,7 +56,9 @@ export function FormEvento({
   const [salvando, setSalvando] = useState(false);
   const [tituloRegras, setTituloRegras] = useState(inicial.regras?.titulo ?? "");
   const [versaoRegras, setVersaoRegras] = useState(inicial.regras?.versao ?? "1");
-  const [textoRegras, setTextoRegras] = useState(() => htmlParaTexto(inicial.regras?.conteudoHtml ?? ""));
+  const [pdf, setPdf] = useState<{ dataUrl: string; nome: string } | null>(
+    inicial.regras?.pdfDataUrl ? { dataUrl: inicial.regras.pdfDataUrl, nome: inicial.regras.nomeArquivo ?? "manual.pdf" } : null,
+  );
   const set = <K extends keyof Evento>(k: K, v: Evento[K]) => setEv((p) => ({ ...p, [k]: v }));
 
   const salvar = async () => {
