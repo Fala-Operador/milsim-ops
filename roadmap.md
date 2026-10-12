@@ -7,3 +7,4 @@
 - [x] Correção de erro de armazenamento no SSR e de hidratação do cabeçalho
 
 - [x] Comunidade com fóruns e feed social (publicações, respostas, curtidas, denúncias, moderação, gestão de fóruns)
+- [x] Manual de regras editável pela organização (formulário do evento → página pública e comunidade)
