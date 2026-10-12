@@ -18,6 +18,12 @@ import { Route as OrganizacaoRouteImport } from './routes/organizacao'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as TermosRouteImport } from './routes/termos'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
+import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
+import { Route as AdminPrivacidadeRouteImport } from './routes/admin.privacidade'
+import { Route as AdminSolicitacoesRouteImport } from './routes/admin.solicitacoes'
+import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppIngressosRouteImport } from './routes/app.ingressos'
 import { Route as AppMissoesRouteImport } from './routes/app.missoes'
@@ -74,6 +80,36 @@ const TermosRoute = TermosRouteImport.update({
   id: '/termos',
   path: '/termos',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuditoriaRoute = AdminAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminInsightsRoute = AdminInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPrivacidadeRoute = AdminPrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSolicitacoesRoute = AdminSolicitacoesRouteImport.update({
+  id: '/solicitacoes',
+  path: '/solicitacoes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
@@ -133,7 +169,7 @@ const InscricaoEventoIdRoute = InscricaoEventoIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
@@ -141,6 +177,11 @@ export interface FileRoutesByFullPath {
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/insights': typeof AdminInsightsRoute
+  '/admin/privacidade': typeof AdminPrivacidadeRoute
+  '/admin/solicitacoes': typeof AdminSolicitacoesRoute
+  '/admin/usuarios': typeof AdminUsuariosRoute
   '/app/ingressos': typeof AppIngressosRoute
   '/app/missoes': typeof AppMissoesRoute
   '/app/notificacoes': typeof AppNotificacoesRoute
@@ -151,17 +192,22 @@ export interface FileRoutesByFullPath {
   '/comunidade/$eventoId': typeof ComunidadeEventoIdRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
   '/organizacao': typeof OrganizacaoRoute
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/insights': typeof AdminInsightsRoute
+  '/admin/privacidade': typeof AdminPrivacidadeRoute
+  '/admin/solicitacoes': typeof AdminSolicitacoesRoute
+  '/admin/usuarios': typeof AdminUsuariosRoute
   '/app/ingressos': typeof AppIngressosRoute
   '/app/missoes': typeof AppMissoesRoute
   '/app/notificacoes': typeof AppNotificacoesRoute
@@ -172,12 +218,13 @@ export interface FileRoutesByTo {
   '/comunidade/$eventoId': typeof ComunidadeEventoIdRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
@@ -185,6 +232,11 @@ export interface FileRoutesById {
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
+  '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/insights': typeof AdminInsightsRoute
+  '/admin/privacidade': typeof AdminPrivacidadeRoute
+  '/admin/solicitacoes': typeof AdminSolicitacoesRoute
+  '/admin/usuarios': typeof AdminUsuariosRoute
   '/app/ingressos': typeof AppIngressosRoute
   '/app/missoes': typeof AppMissoesRoute
   '/app/notificacoes': typeof AppNotificacoesRoute
@@ -195,6 +247,7 @@ export interface FileRoutesById {
   '/comunidade/$eventoId': typeof ComunidadeEventoIdRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -209,6 +262,11 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/recuperar-senha'
     | '/termos'
+    | '/admin/auditoria'
+    | '/admin/insights'
+    | '/admin/privacidade'
+    | '/admin/solicitacoes'
+    | '/admin/usuarios'
     | '/app/ingressos'
     | '/app/missoes'
     | '/app/notificacoes'
@@ -219,17 +277,22 @@ export interface FileRouteTypes {
     | '/comunidade/$eventoId'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
+    | '/admin/'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/cadastro'
     | '/login'
     | '/organizacao'
     | '/privacidade'
     | '/recuperar-senha'
     | '/termos'
+    | '/admin/auditoria'
+    | '/admin/insights'
+    | '/admin/privacidade'
+    | '/admin/solicitacoes'
+    | '/admin/usuarios'
     | '/app/ingressos'
     | '/app/missoes'
     | '/app/notificacoes'
@@ -240,6 +303,7 @@ export interface FileRouteTypes {
     | '/comunidade/$eventoId'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
+    | '/admin'
     | '/app'
   id:
     | '__root__'
@@ -252,6 +316,11 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/recuperar-senha'
     | '/termos'
+    | '/admin/auditoria'
+    | '/admin/insights'
+    | '/admin/privacidade'
+    | '/admin/solicitacoes'
+    | '/admin/usuarios'
     | '/app/ingressos'
     | '/app/missoes'
     | '/app/notificacoes'
@@ -262,12 +331,13 @@ export interface FileRouteTypes {
     | '/comunidade/$eventoId'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
+    | '/admin/'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
   CadastroRoute: typeof CadastroRoute
   LoginRoute: typeof LoginRoute
@@ -344,6 +414,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/termos'
       preLoaderRoute: typeof TermosRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/auditoria': {
+      id: '/admin/auditoria'
+      path: '/auditoria'
+      fullPath: '/admin/auditoria'
+      preLoaderRoute: typeof AdminAuditoriaRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/insights': {
+      id: '/admin/insights'
+      path: '/insights'
+      fullPath: '/admin/insights'
+      preLoaderRoute: typeof AdminInsightsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/privacidade': {
+      id: '/admin/privacidade'
+      path: '/privacidade'
+      fullPath: '/admin/privacidade'
+      preLoaderRoute: typeof AdminPrivacidadeRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/solicitacoes': {
+      id: '/admin/solicitacoes'
+      path: '/solicitacoes'
+      fullPath: '/admin/solicitacoes'
+      preLoaderRoute: typeof AdminSolicitacoesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/usuarios': {
+      id: '/admin/usuarios'
+      path: '/usuarios'
+      fullPath: '/admin/usuarios'
+      preLoaderRoute: typeof AdminUsuariosRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/app/': {
       id: '/app/'
@@ -425,6 +537,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminAuditoriaRoute: typeof AdminAuditoriaRoute
+  AdminInsightsRoute: typeof AdminInsightsRoute
+  AdminPrivacidadeRoute: typeof AdminPrivacidadeRoute
+  AdminSolicitacoesRoute: typeof AdminSolicitacoesRoute
+  AdminUsuariosRoute: typeof AdminUsuariosRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAuditoriaRoute: AdminAuditoriaRoute,
+  AdminInsightsRoute: AdminInsightsRoute,
+  AdminPrivacidadeRoute: AdminPrivacidadeRoute,
+  AdminSolicitacoesRoute: AdminSolicitacoesRoute,
+  AdminUsuariosRoute: AdminUsuariosRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface AppRouteChildren {
   AppIngressosRoute: typeof AppIngressosRoute
   AppMissoesRoute: typeof AppMissoesRoute
@@ -451,7 +583,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   AppRoute: AppRouteWithChildren,
   CadastroRoute: CadastroRoute,
   LoginRoute: LoginRoute,
