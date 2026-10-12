@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { carregarBase } from "@/services/db";
+import { dataUrlParaBlobUrl } from "@/lib/imagens";
 import { useEventoAtual } from "@/hooks/useEventoAtual";
 import { vagasRestantes, loteVigente } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
@@ -41,6 +42,16 @@ function PaginaEvento() {
   const base = carregarBase();
   const restantes = vagasRestantes(base, evento);
   const [regrasAbertas, setRegrasAbertas] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!regrasAbertas || !evento.regras?.pdfDataUrl) return;
+    const url = dataUrlParaBlobUrl(evento.regras.pdfDataUrl);
+    setPdfUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+      setPdfUrl(null);
+    };
+  }, [regrasAbertas, evento.regras?.pdfDataUrl]);
   const inscricoesAbertas = evento.status === "publicado" && restantes > 0;
 
   return (
