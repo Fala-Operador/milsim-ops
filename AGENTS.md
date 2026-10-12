@@ -25,3 +25,4 @@
   through `src/lib/regras.ts`, which escapes everything before adding tags.
   Never inject user text as raw HTML.
 - Home-page eligibility rules (location, schedule, event status, link validation) live only in `src/lib/divulgacao.ts`; admin writes go through `src/services/divulgacao.ts`, which enforces admin-only access and audit logging. Why: one place decides what the public page shows.
+- All analytics collection goes through `src/services/analytics.ts` (anonymous random ids, exclusions, dedupe, attribution); aggregations/formulas live in `src/lib/analytics.ts`. Why: tracking rules stay out of components and stay consistent across panels.

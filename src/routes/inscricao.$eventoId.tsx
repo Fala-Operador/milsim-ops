@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-ro
 import { useEffect, useMemo, useRef, useState } from "react";
 import { carregarBase } from "@/services/db";
 import { useEventoAtual } from "@/hooks/useEventoAtual";
+import { registrarInicioInscricao } from "@/services/analytics";
 import {
   confirmarInscricao,
   validarCupom,
@@ -70,6 +71,11 @@ function PaginaInscricao() {
   // se mostramos o formulário ou o convite para entrar (evita divergência na hidratação).
   const [montado, setMontado] = useState(false);
   useEffect(() => setMontado(true), []);
+  // Início do fluxo só quando o formulário aparece (usuário logado, após montar).
+  const formularioVisivel = montado && !!usuario;
+  useEffect(() => {
+    if (formularioVisivel) registrarInicioInscricao(evento.id);
+  }, [formularioVisivel, evento.id]);
 
   const tipo = evento.tipos.find((t) => t.id === tipoId);
   const lote = tipo ? loteVigente(evento, tipo.id) : undefined;

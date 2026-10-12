@@ -57,15 +57,53 @@ describe("página inicial e divulgação", () => {
   });
 });
 
-describe("métricas de divulgação", async () => {
-  const m = await import("@/services/metricas");
-  it("clique no destaque seguido da página do evento conta uma visita", () => {
-    m.limparMetricas();
-    m.registrarVisualizacao("sec-destaques");
-    m.registrarCliqueEvento("sec-destaques", "evt-serra-verde");
-    m.confirmarVisitaEvento("evt-serra-verde");
-    m.confirmarVisitaEvento("evt-serra-verde"); // recarregar não conta de novo
-    const r = m.resumirMetricas(m.listarMetricas());
-    expect(r.total).toEqual({ v: 1, c: 1, i: 1 });
+describe("métricas por evento", async () => {
+  const a = await import("@/services/analytics");
+  const { indicadores, filtrar } = await import("@/lib/analytics");
+  const { storage } = await import("@/lib/storage");
+  const limpar = () => {
+    ["analytics-registros", "analytics-atribuicao", "analytics-fluxos-abertos", "analytics-clique-pendente", "sessao"].forEach((k) => storage.remover(k));
+    storage.gravar("analytics-semeado", true);
+    a._reiniciarMemoria();
+  };
+  const doEvento = (id: string) => filtrar(a.listarRegistros(), { eventoIds: new Set([id]) });
+  const insc = (id: string, extra = {}) => ({ id, eventoId: "evt-araucaria", origem: "plataforma", ...extra }) as never;
+
+  it("visita direta não cria clique e repetição imediata (Strict Mode) não duplica", () => {
+    limpar();
+    a.registrarVisita("evt-araucaria", null);
+    a.registrarVisita("evt-araucaria", null);
+    const r = doEvento("evt-araucaria");
+    expect(r.filter((x) => x.tipo === "visita")).toHaveLength(1);
+    expect(r.filter((x) => x.tipo === "clique")).toHaveLength(0);
+    expect(r[0]!.origem).toBe("direto");
+  });
+
+  it("clique no card atribui a origem até a confirmação, sem duplicar", () => {
+    limpar();
+    a.registrarClique({ eventoId: "evt-araucaria", origem: "regional", secaoId: "sec-sudeste", posicao: 2 });
+    a.registrarVisita("evt-araucaria", null);
+    a.registrarInicioInscricao("evt-araucaria");
+    a.registrarConfirmacao(insc("i-1"));
+    a.registrarConfirmacao(insc("i-1"));
+    const r = doEvento("evt-araucaria");
+    const conf = r.filter((x) => x.tipo === "inscricao_confirmada");
+    expect(conf).toHaveLength(1);
+    expect(conf[0]!.origem).toBe("regional");
+    const ind = indicadores(r, r);
+    expect(ind.conclusao).toBe(100);
+    expect(ind.conversao).toBe(100);
+  });
+
+  it("cortesia e inclusão administrativa ficam fora das confirmações públicas", () => {
+    limpar();
+    a.registrarConfirmacao(insc("i-2", { cortesiaId: "c1", origem: "cortesia" }));
+    a.registrarConfirmacao(insc("i-3", { origem: "admin" }));
+    const ind = indicadores(doEvento("evt-araucaria"), []);
+    expect([ind.confirmadas, ind.cortesias, ind.inclusoes]).toEqual([0, 1, 1]);
+  });
+
+  it("sem denominador a taxa fica indefinida (sem divisão por zero)", () => {
+    expect(indicadores([], []).ctr).toBeNull();
   });
 });

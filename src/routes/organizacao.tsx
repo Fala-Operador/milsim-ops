@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SkeletonPagina } from "@/components/ui";
-import { LayoutDashboard, Users, MessagesSquare, Wallet, Bell } from "lucide-react";
+import { LayoutDashboard, Users, MessagesSquare, Wallet, Bell, BarChart3 } from "lucide-react";
 import { useNotifications } from "@/contexts/NotificationContext";
 
 export const Route = createFileRoute("/organizacao")({
@@ -24,6 +24,7 @@ const itens = [
   { to: "/organizacao/inscritos", rotulo: "Inscritos", icone: Users },
   { to: "/organizacao/comunidade", rotulo: "Comunidade", icone: MessagesSquare },
   { to: "/organizacao/financeiro", rotulo: "Financeiro", icone: Wallet },
+  { to: "/organizacao/metricas", rotulo: "Métricas", icone: BarChart3 },
   { to: "/organizacao/notificacoes", rotulo: "Notificações", icone: Bell },
 ] as const;
 

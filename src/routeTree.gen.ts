@@ -22,6 +22,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
 import { Route as AdminDivulgacaoRouteImport } from './routes/admin.divulgacao'
 import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
+import { Route as AdminMetricasRouteImport } from './routes/admin.metricas'
 import { Route as AdminNotificacoesRouteImport } from './routes/admin.notificacoes'
 import { Route as AdminPrivacidadeRouteImport } from './routes/admin.privacidade'
 import { Route as AdminSolicitacoesRouteImport } from './routes/admin.solicitacoes'
@@ -42,6 +43,7 @@ import { Route as OrganizacaoIndexRouteImport } from './routes/organizacao.index
 import { Route as OrganizacaoComunidadeRouteImport } from './routes/organizacao.comunidade'
 import { Route as OrganizacaoFinanceiroRouteImport } from './routes/organizacao.financeiro'
 import { Route as OrganizacaoInscritosRouteImport } from './routes/organizacao.inscritos'
+import { Route as OrganizacaoMetricasRouteImport } from './routes/organizacao.metricas'
 import { Route as OrganizacaoNotificacoesRouteImport } from './routes/organizacao.notificacoes'
 import { Route as ComunidadeEventoIdIndexRouteImport } from './routes/comunidade.$eventoId.index'
 import { Route as ComunidadeEventoIdGerenciarRouteImport } from './routes/comunidade.$eventoId.gerenciar'
@@ -110,6 +112,11 @@ const AdminDivulgacaoRoute = AdminDivulgacaoRouteImport.update({
 const AdminInsightsRoute = AdminInsightsRouteImport.update({
   id: '/insights',
   path: '/insights',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMetricasRoute = AdminMetricasRouteImport.update({
+  id: '/metricas',
+  path: '/metricas',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminNotificacoesRoute = AdminNotificacoesRouteImport.update({
@@ -212,6 +219,11 @@ const OrganizacaoInscritosRoute = OrganizacaoInscritosRouteImport.update({
   path: '/inscritos',
   getParentRoute: () => OrganizacaoRoute,
 } as any)
+const OrganizacaoMetricasRoute = OrganizacaoMetricasRouteImport.update({
+  id: '/metricas',
+  path: '/metricas',
+  getParentRoute: () => OrganizacaoRoute,
+} as any)
 const OrganizacaoNotificacoesRoute = OrganizacaoNotificacoesRouteImport.update({
   id: '/notificacoes',
   path: '/notificacoes',
@@ -248,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
@@ -266,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
+  '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
@@ -284,6 +298,7 @@ export interface FileRoutesByTo {
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
@@ -301,6 +316,7 @@ export interface FileRoutesByTo {
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
+  '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
@@ -323,6 +339,7 @@ export interface FileRoutesById {
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
@@ -341,6 +358,7 @@ export interface FileRoutesById {
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
+  '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
@@ -364,6 +382,7 @@ export interface FileRouteTypes {
     | '/admin/auditoria'
     | '/admin/divulgacao'
     | '/admin/insights'
+    | '/admin/metricas'
     | '/admin/notificacoes'
     | '/admin/privacidade'
     | '/admin/solicitacoes'
@@ -382,6 +401,7 @@ export interface FileRouteTypes {
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
     | '/organizacao/inscritos'
+    | '/organizacao/metricas'
     | '/organizacao/notificacoes'
     | '/admin/'
     | '/app/'
@@ -400,6 +420,7 @@ export interface FileRouteTypes {
     | '/admin/auditoria'
     | '/admin/divulgacao'
     | '/admin/insights'
+    | '/admin/metricas'
     | '/admin/notificacoes'
     | '/admin/privacidade'
     | '/admin/solicitacoes'
@@ -417,6 +438,7 @@ export interface FileRouteTypes {
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
     | '/organizacao/inscritos'
+    | '/organizacao/metricas'
     | '/organizacao/notificacoes'
     | '/admin'
     | '/app'
@@ -438,6 +460,7 @@ export interface FileRouteTypes {
     | '/admin/auditoria'
     | '/admin/divulgacao'
     | '/admin/insights'
+    | '/admin/metricas'
     | '/admin/notificacoes'
     | '/admin/privacidade'
     | '/admin/solicitacoes'
@@ -456,6 +479,7 @@ export interface FileRouteTypes {
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
     | '/organizacao/inscritos'
+    | '/organizacao/metricas'
     | '/organizacao/notificacoes'
     | '/admin/'
     | '/app/'
@@ -571,6 +595,13 @@ declare module '@tanstack/react-router' {
       path: '/insights'
       fullPath: '/admin/insights'
       preLoaderRoute: typeof AdminInsightsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/metricas': {
+      id: '/admin/metricas'
+      path: '/metricas'
+      fullPath: '/admin/metricas'
+      preLoaderRoute: typeof AdminMetricasRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/notificacoes': {
@@ -713,6 +744,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizacaoInscritosRouteImport
       parentRoute: typeof OrganizacaoRoute
     }
+    '/organizacao/metricas': {
+      id: '/organizacao/metricas'
+      path: '/metricas'
+      fullPath: '/organizacao/metricas'
+      preLoaderRoute: typeof OrganizacaoMetricasRouteImport
+      parentRoute: typeof OrganizacaoRoute
+    }
     '/organizacao/notificacoes': {
       id: '/organizacao/notificacoes'
       path: '/notificacoes'
@@ -748,6 +786,7 @@ interface AdminRouteChildren {
   AdminAuditoriaRoute: typeof AdminAuditoriaRoute
   AdminDivulgacaoRoute: typeof AdminDivulgacaoRoute
   AdminInsightsRoute: typeof AdminInsightsRoute
+  AdminMetricasRoute: typeof AdminMetricasRoute
   AdminNotificacoesRoute: typeof AdminNotificacoesRoute
   AdminPrivacidadeRoute: typeof AdminPrivacidadeRoute
   AdminSolicitacoesRoute: typeof AdminSolicitacoesRoute
@@ -759,6 +798,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditoriaRoute: AdminAuditoriaRoute,
   AdminDivulgacaoRoute: AdminDivulgacaoRoute,
   AdminInsightsRoute: AdminInsightsRoute,
+  AdminMetricasRoute: AdminMetricasRoute,
   AdminNotificacoesRoute: AdminNotificacoesRoute,
   AdminPrivacidadeRoute: AdminPrivacidadeRoute,
   AdminSolicitacoesRoute: AdminSolicitacoesRoute,
@@ -798,6 +838,7 @@ interface OrganizacaoRouteChildren {
   OrganizacaoComunidadeRoute: typeof OrganizacaoComunidadeRoute
   OrganizacaoFinanceiroRoute: typeof OrganizacaoFinanceiroRoute
   OrganizacaoInscritosRoute: typeof OrganizacaoInscritosRoute
+  OrganizacaoMetricasRoute: typeof OrganizacaoMetricasRoute
   OrganizacaoNotificacoesRoute: typeof OrganizacaoNotificacoesRoute
   OrganizacaoIndexRoute: typeof OrganizacaoIndexRoute
 }
@@ -806,6 +847,7 @@ const OrganizacaoRouteChildren: OrganizacaoRouteChildren = {
   OrganizacaoComunidadeRoute: OrganizacaoComunidadeRoute,
   OrganizacaoFinanceiroRoute: OrganizacaoFinanceiroRoute,
   OrganizacaoInscritosRoute: OrganizacaoInscritosRoute,
+  OrganizacaoMetricasRoute: OrganizacaoMetricasRoute,
   OrganizacaoNotificacoesRoute: OrganizacaoNotificacoesRoute,
   OrganizacaoIndexRoute: OrganizacaoIndexRoute,
 }

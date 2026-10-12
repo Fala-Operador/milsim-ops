@@ -8,7 +8,7 @@ import { Badge, Cartao, Entrada, Selecao, EstadoVazio, SkeletonGrade } from "@/c
 import type { Evento } from "@/lib/domain/types";
 import { useLocalizacao } from "@/contexts/LocalizacaoContext";
 import { montarPaginaInicial, NACIONAL, rotuloAbrangencia } from "@/lib/divulgacao";
-import { SecoesPublicas, SeletorLocalizacao } from "@/components/divulgacao";
+import { CardRastreado, SecoesPublicas, SeletorLocalizacao } from "@/components/divulgacao";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 
 export const Route = createFileRoute("/")({
@@ -43,6 +43,7 @@ function precoInicial(evento: Evento): number {
 function PaginaInicial() {
   const [base, setBase] = useState<BaseDados | null>(null);
   const versao = useVersaoBase();
+  const [visualizacaoId] = useState(() => `vz-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`);
   const { local, definirLocal } = useLocalizacao();
   useEffect(() => {
     const t = setTimeout(() => setBase(carregarBase()), 350);
@@ -106,7 +107,7 @@ function PaginaInicial() {
               </button>
             </div>
           )}
-          <div className="mt-6"><SecoesPublicas secoes={secoes} base={base} local={local} rastrear /></div>
+          <div className="mt-6"><SecoesPublicas secoes={secoes} base={base} local={local} rastrear visualizacaoId={visualizacaoId} /></div>
         </section>
       )}
 
@@ -155,10 +156,11 @@ function PaginaInicial() {
           </div>
         ) : (
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtrados.map((e) => {
+            {filtrados.map((e, i) => {
               const restantes = vagasRestantes(base!, e);
               return (
-                <Link key={e.id} to="/eventos/$eventoId" params={{ eventoId: e.id }}>
+                <CardRastreado key={e.id} ativo eventoId={e.id} origem="busca" posicao={i + 1} visualizacaoId={visualizacaoId}>
+                <Link to="/eventos/$eventoId" params={{ eventoId: e.id }}>
                   <Cartao className="h-full transition-transform hover:-translate-y-0.5">
                     <div className="topo-bg -mx-5 -mt-5 mb-4 flex h-32 items-end rounded-t-lg border-b border-border bg-secondary p-3">
                       <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
@@ -184,6 +186,7 @@ function PaginaInicial() {
                     </p>
                   </Cartao>
                 </Link>
+                </CardRastreado>
               );
             })}
           </div>

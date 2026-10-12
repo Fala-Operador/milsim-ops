@@ -21,6 +21,7 @@ export const Route = createFileRoute("/admin")({
 const abas = [
   { to: "/admin", rotulo: "Dashboard", exato: true },
   { to: "/admin/insights", rotulo: "Insights IA" },
+  { to: "/admin/metricas", rotulo: "Métricas" },
   { to: "/admin/divulgacao", rotulo: "Página inicial e divulgação" },
   { to: "/admin/solicitacoes", rotulo: "Solicitações" },
   { to: "/admin/notificacoes", rotulo: "Notificações" },

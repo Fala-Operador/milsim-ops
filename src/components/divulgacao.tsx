@@ -1,7 +1,8 @@
 // Componentes públicos da página inicial: seletor de região, seções, carrossel, parceiros e banner.
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { registrarCliqueEvento, registrarMetrica, registrarVisualizacao } from "@/services/metricas";
+import { registrarClique, registrarExibicao } from "@/services/analytics";
+import type { OrigemAcesso } from "@/lib/analytics";
 import { ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
 import type { Abrangencia, BaseDados, Parceiro, SecaoInicial } from "@/lib/domain/types";
 import {
@@ -102,16 +103,49 @@ function Carrossel({ rotulo, children }: { rotulo: string; children: ReactNode }
   );
 }
 
+/** Envolve um card de evento: exibição (50% visível por 1s) e clique, via AnalyticsService. */
+export function CardRastreado({
+  ativo, eventoId, origem, secaoId, posicao, visualizacaoId, className = "", children,
+}: {
+  ativo: boolean; eventoId: string; origem: OrigemAcesso; secaoId?: string | undefined; posicao: number;
+  visualizacaoId: string; className?: string; children: ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!ativo || !el || typeof IntersectionObserver === "undefined") return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const obs = new IntersectionObserver(([en]) => {
+      if (en?.isIntersecting && en.intersectionRatio >= 0.5) {
+        timer ??= setTimeout(() => {
+          registrarExibicao({ eventoId, origem, secaoId, posicao, visualizacaoId });
+          obs.disconnect();
+        }, 1000);
+      } else {
+        clearTimeout(timer);
+        timer = undefined;
+      }
+    }, { threshold: [0, 0.5, 1] });
+    obs.observe(el);
+    return () => { obs.disconnect(); clearTimeout(timer); };
+  }, [ativo, eventoId, origem, secaoId, posicao, visualizacaoId]);
+  return (
+    <div ref={ref} className={className} onClickCapture={ativo ? () => registrarClique({ eventoId, origem, secaoId, posicao }) : undefined}>
+      {children}
+    </div>
+  );
+}
+
 function precoInicial(e: CartaoEventoResolvido["evento"]): number {
   const precos = e.lotes.filter((l) => l.status === "ativo").flatMap((l) => l.itens.map((i) => i.precoCentavos));
   return precos.length ? Math.min(...precos) : Math.min(...e.tipos.map((t) => t.precoBaseCentavos));
 }
 
-function CartaoEvento({ c, carrossel, onClique }: { c: CartaoEventoResolvido; carrossel: boolean; onClique?: (() => void) | undefined }) {
+function CartaoEvento({ c }: { c: CartaoEventoResolvido }) {
   const e = c.evento;
   return (
-    <Link to="/eventos/$eventoId" params={{ eventoId: e.id }} onClick={onClique}
-      className={`block rounded-lg border border-border bg-card text-card-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${carrossel ? "w-72 shrink-0 snap-start" : ""}`}>
+    <Link to="/eventos/$eventoId" params={{ eventoId: e.id }}
+      className="block h-full rounded-lg border border-border bg-card text-card-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
       <div className="relative aspect-[16/9] overflow-hidden rounded-t-lg">
         {c.imagem ? (
           <ImagemSegura src={c.imagem} alt={`Imagem da ${e.nome}`} className="h-full w-full" />
@@ -138,8 +172,7 @@ function CartaoEvento({ c, carrossel, onClique }: { c: CartaoEventoResolvido; ca
 const TAM_LOGO = { p: "h-14", m: "h-20", g: "h-28" } as const;
 const SUPERFICIE = { nenhuma: "", clara: "bg-[oklch(0.98_0_0)]", escura: "bg-[oklch(0.2_0_0)]" } as const;
 
-function CartaoParceiro({ p, secao, carrossel, rastrear }: { p: Parceiro; secao: SecaoInicial; carrossel: boolean; rastrear: boolean }) {
-  const clique = () => rastrear && registrarMetrica({ tipo: "clique", secaoId: secao.id, alvoId: p.id });
+function CartaoParceiro({ p, secao, carrossel }: { p: Parceiro; secao: SecaoInicial; carrossel: boolean }) {
   const principal = linkPrincipal(p);
   const extras = p.links.filter((l) => hrefDoLink(l) && hrefDoLink(l) !== principal);
   const logo = (
@@ -150,7 +183,7 @@ function CartaoParceiro({ p, secao, carrossel, rastrear }: { p: Parceiro; secao:
   return (
     <div id={`parceiro-${p.id}`} className={`rounded-lg border border-border bg-card p-3 ${carrossel ? "w-60 shrink-0 snap-start" : ""}`}>
       {principal ? (
-        <a href={principal} onClick={clique} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${p.nome} (nova aba)`} className="block rounded-md focus-visible:ring-2 focus-visible:ring-ring">
+        <a href={principal} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${p.nome} (nova aba)`} className="block rounded-md focus-visible:ring-2 focus-visible:ring-ring">
           {logo}
           <p className="mt-2 text-center font-medium underline-offset-2 hover:underline">{p.nome}</p>
         </a>
@@ -164,7 +197,7 @@ function CartaoParceiro({ p, secao, carrossel, rastrear }: { p: Parceiro; secao:
       {extras.length > 0 && (
         <div className="mt-2 flex flex-wrap justify-center gap-1">
           {extras.map((l) => (
-            <a key={l.id} href={hrefDoLink(l)!} onClick={clique} target="_blank" rel="noopener noreferrer"
+            <a key={l.id} href={hrefDoLink(l)!} target="_blank" rel="noopener noreferrer"
               aria-label={`Abrir ${rotuloDoLink(l)} de ${p.nome}`}
               className="rounded-md border border-border px-2 py-1 text-xs hover:bg-secondary">
               {rotuloDoLink(l)}
@@ -184,13 +217,13 @@ function Banner({ secao, base, celular, rastrear }: { secao: SecaoInicial; base:
   const classeBotao = "inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90";
   let acao: ReactNode = null;
   if (d?.tipo === "evento" && base.eventos.some((e) => e.id === d.valor)) {
-    acao = <Link to="/eventos/$eventoId" params={{ eventoId: d.valor }} onClick={() => rastrear && registrarCliqueEvento(secao.id, d.valor)} className={classeBotao}>{botao}</Link>;
+    acao = <Link to="/eventos/$eventoId" params={{ eventoId: d.valor }} onClickCapture={() => rastrear && registrarClique({ eventoId: d.valor, origem: "inicio", secaoId: secao.id })} className={classeBotao}>{botao}</Link>;
   } else if (d?.tipo === "secao") {
-    acao = <a onClick={() => rastrear && registrarMetrica({ tipo: "clique", secaoId: secao.id, alvoId: d.valor })} href={`#secao-${d.valor}`} className={classeBotao}>{botao}</a>;
+    acao = <a href={`#secao-${d.valor}`} className={classeBotao}>{botao}</a>;
   } else if (d?.tipo === "parceiro") {
-    acao = <a onClick={() => rastrear && registrarMetrica({ tipo: "clique", secaoId: secao.id, alvoId: d.valor })} href={`#parceiro-${d.valor}`} className={classeBotao}>{botao}</a>;
+    acao = <a href={`#parceiro-${d.valor}`} className={classeBotao}>{botao}</a>;
   } else if (d?.tipo === "externo" && d.valor) {
-    acao = <a onClick={() => rastrear && registrarMetrica({ tipo: "clique", secaoId: secao.id, alvoId: d.valor })} href={d.valor} target="_blank" rel="noopener noreferrer" className={classeBotao}>{botao}</a>;
+    acao = <a href={d.valor} target="_blank" rel="noopener noreferrer" className={classeBotao}>{botao}</a>;
   }
   return (
     <div className="relative overflow-hidden rounded-lg border border-border bg-card">
@@ -206,16 +239,13 @@ function Banner({ secao, base, celular, rastrear }: { secao: SecaoInicial; base:
 }
 
 export function SecoesPublicas({
-  secoes, base, local, celular = false, rastrear = false,
-}: { secoes: SecaoResolvida[]; base: BaseDados; local: Abrangencia; celular?: boolean; rastrear?: boolean }) {
-  const chave = secoes.map((s) => s.secao.id).join(",");
-  useEffect(() => {
-    if (rastrear) chave.split(",").filter(Boolean).forEach(registrarVisualizacao);
-  }, [rastrear, chave]);
+  secoes, base, local, celular = false, rastrear = false, visualizacaoId = "previa",
+}: { secoes: SecaoResolvida[]; base: BaseDados; local: Abrangencia; celular?: boolean; rastrear?: boolean; visualizacaoId?: string }) {
   return (
     <div className="space-y-10">
       {secoes.map(({ secao, eventos, parceiros }) => {
         const carrossel = secao.layout === "carrossel";
+        const origemSecao: OrigemAcesso = secao.tipo === "regional" ? "regional" : "destaques";
         const regional = local.escopo === "nacional" && secao.abrangencia.escopo !== "nacional";
         const grade = celular ? "grid gap-4" : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3";
         const gradeParceiros = celular ? "grid grid-cols-2 gap-3" : "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4";
@@ -236,14 +266,22 @@ export function SecoesPublicas({
               <Banner secao={secao} base={base} celular={celular} rastrear={rastrear} />
             ) : eventos.length ? (
               carrossel ? (
-                <Carrossel rotulo={secao.titulo}>{eventos.map((c) => <CartaoEvento key={c.evento.id} c={c} carrossel onClique={rastrear ? () => registrarCliqueEvento(secao.id, c.evento.id) : undefined} />)}</Carrossel>
+                <Carrossel rotulo={secao.titulo}>{eventos.map((c, i) => (
+                  <CardRastreado key={c.evento.id} ativo={rastrear} eventoId={c.evento.id} origem={origemSecao} secaoId={secao.id} posicao={i + 1} visualizacaoId={visualizacaoId} className="w-72 shrink-0 snap-start">
+                    <CartaoEvento c={c} />
+                  </CardRastreado>
+                ))}</Carrossel>
               ) : (
-                <div className={grade}>{eventos.map((c) => <CartaoEvento key={c.evento.id} c={c} carrossel={false} onClique={rastrear ? () => registrarCliqueEvento(secao.id, c.evento.id) : undefined} />)}</div>
+                <div className={grade}>{eventos.map((c, i) => (
+                  <CardRastreado key={c.evento.id} ativo={rastrear} eventoId={c.evento.id} origem={origemSecao} secaoId={secao.id} posicao={i + 1} visualizacaoId={visualizacaoId} className="h-full">
+                    <CartaoEvento c={c} />
+                  </CardRastreado>
+                ))}</div>
               )
             ) : carrossel ? (
-              <Carrossel rotulo={secao.titulo}>{parceiros.map((p) => <CartaoParceiro key={p.id} p={p} secao={secao} carrossel rastrear={rastrear} />)}</Carrossel>
+              <Carrossel rotulo={secao.titulo}>{parceiros.map((p) => <CartaoParceiro key={p.id} p={p} secao={secao} carrossel />)}</Carrossel>
             ) : (
-              <div className={gradeParceiros}>{parceiros.map((p) => <CartaoParceiro key={p.id} p={p} secao={secao} carrossel={false} rastrear={rastrear} />)}</div>
+              <div className={gradeParceiros}>{parceiros.map((p) => <CartaoParceiro key={p.id} p={p} secao={secao} carrossel={false} />)}</div>
             )}
           </section>
         );
