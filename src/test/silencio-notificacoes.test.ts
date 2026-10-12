@@ -1,24 +1,31 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { carregarBase, mutarBase, restaurarBase } from "@/services/db";
+import { carregarBase, restaurarBase } from "@/services/db";
 import { definirSilencio, silenciado } from "@/services/notificacoes";
-import { publicar, responder } from "@/services/comunidade";
+import { criarPublicacao, responder } from "@/services/comunidade";
 
-function usuario(id: string) {
-  return carregarBase().usuarios.find((u) => u.id === id)!;
+class LS {
+  private m = new Map<string, string>();
+  get length() { return this.m.size; }
+  key(i: number) { return [...this.m.keys()][i] ?? null; }
+  getItem(k: string) { return this.m.get(k) ?? null; }
+  setItem(k: string, v: string) { this.m.set(k, v); }
+  removeItem(k: string) { this.m.delete(k); }
 }
+Object.defineProperty(globalThis, "window", { value: { localStorage: new LS() }, configurable: true });
+
+const u = (id: string) => carregarBase().usuarios.find((x) => x.id === id)!;
+const FORUM = "for-evt-serra-verde-geral";
 
 describe("silêncio de notificações", () => {
   beforeEach(() => restaurarBase());
 
   it("silenciar a comunidade impede aviso de resposta ao autor", () => {
-    const base = carregarBase();
-    const autor = base.usuarios.find((u) => u.id === "usr-ana")!;
-    const outro = base.usuarios.find((u) => u.id === "usr-bruno")!;
-    const pub = publicar(autor, "for-serra-geral", "Teste de silêncio", []);
+    const autor = u("usr-ana");
+    const pub = criarPublicacao(autor, { forumId: FORUM, texto: "Teste de silêncio", imagens: [] });
     const antes = carregarBase().notificacoes.filter((n) => n.usuarioId === autor.id).length;
 
     definirSilencio(autor.id, { comunidade: true });
-    responder(outro, pub.id, "Resposta com comunidade silenciada");
+    responder(u("usr-bruno"), pub.id, "Resposta com comunidade silenciada");
 
     const depois = carregarBase().notificacoes.filter((n) => n.usuarioId === autor.id).length;
     expect(depois).toBe(antes);
@@ -32,10 +39,9 @@ describe("silêncio de notificações", () => {
   });
 
   it("sem silêncio, a notificação de resposta é criada normalmente", () => {
-    const autor = usuario("usr-ana");
-    const outro = usuario("usr-bruno");
-    const pub = publicar(autor, "for-serra-geral", "Teste sem silêncio", []);
-    responder(outro, pub.id, "Resposta normal");
+    const autor = u("usr-ana");
+    const pub = criarPublicacao(autor, { forumId: FORUM, texto: "Teste sem silêncio", imagens: [] });
+    responder(u("usr-bruno"), pub.id, "Resposta normal");
     const aviso = carregarBase().notificacoes.find((n) => n.usuarioId === autor.id && n.titulo === "Novas respostas");
     expect(aviso).toBeTruthy();
   });
