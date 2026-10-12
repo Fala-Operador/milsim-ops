@@ -1,4 +1,5 @@
 // Botão de localização + seletor (popover no desktop, painel inferior no celular).
+import { createPortal } from "react-dom";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, Crosshair, Loader2, MapPin, Search, X } from "lucide-react";
 import { useLocalizacao, mensagemStatus } from "@/contexts/LocalizacaoContext";
@@ -133,11 +134,12 @@ export function SeletorCidade({ compacto = false, className = "" }: { compacto?:
         <span className="truncate font-medium text-foreground">{obtendo ? "Localizando…" : rotulo}</span>
         <span className="shrink-0 text-muted-foreground">· Alterar</span>
       </button>
-      {aberto && (celular ? (
+      {aberto && (celular ? createPortal(
         <>
           <div className="fixed inset-0 z-[55] bg-black/60" onClick={fechar} aria-hidden="true" />
           {conteudo}
-        </>
+        </>,
+        document.body,
       ) : conteudo)}
     </div>
   );
