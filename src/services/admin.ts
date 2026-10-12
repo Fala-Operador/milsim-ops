@@ -40,12 +40,12 @@ export async function analisarSolicitacao(
   mutarBase((base) => {
     const sol = base.solicitacoes.find((s) => s.id === solicitacaoId);
     if (!sol) throw new ErroDominio("solicitacao", "Solicitação não encontrada.");
-    const mapa: Record<string, StatusSolicitacao> = {
+    const mapa = {
       iniciar: "em_analise",
       aprovar: "aprovada",
       ajustes: "ajustes_solicitados",
       rejeitar: "rejeitada",
-    };
+    } as const satisfies Record<string, StatusSolicitacao>;
     sol.status = mapa[acao];
     sol.observacaoAdmin = justificativa?.trim() || undefined;
     sol.atualizadoEm = new Date().toISOString();
@@ -76,7 +76,7 @@ export async function analisarSolicitacao(
         rejeitar: `Solicitação rejeitada: ${justificativa}`,
       };
       base.notificacoes.push(
-        notificar(sol.usuarioId, "Atualização da solicitação", textos[acao], "/app/organizador"),
+        notificar(sol.usuarioId, "Atualização da solicitação", textos[acao] ?? "", "/app/organizador"),
       );
     }
     base.auditoria.push(auditar(adminId, `solicitacao_${acao}`, "solicitacao", solicitacaoId, justificativa));

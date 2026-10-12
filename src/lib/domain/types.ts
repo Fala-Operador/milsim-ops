@@ -14,19 +14,19 @@ export interface Usuario {
     cep: string;
     logradouro: string;
     numero: string;
-    complemento?: string;
+    complemento?: string | undefined;
     bairro: string;
     cidade: string;
     uf: string;
   };
-  instagram?: string;
-  squad?: string;
-  fotoUrl?: string;
-  autorizacaoResponsavel?: "pendente" | "aprovada" | "nao_aplicavel";
+  instagram?: string | undefined;
+  squad?: string | undefined;
+  fotoUrl?: string | undefined;
+  autorizacaoResponsavel?: "pendente" | "aprovada" | "nao_aplicavel" | undefined;
   autorizacaoPromocional: boolean;
   aceiteTermosVersao: string;
   aceiteTermosEm: string;
-  organizacaoId?: string; // quando organizador aprovado
+  organizacaoId?: string | undefined; // quando organizador aprovado
   ativo: boolean;
   criadoEm: string;
 }
@@ -34,8 +34,8 @@ export interface Usuario {
 export interface Organizacao {
   id: string;
   nome: string;
-  cnpj?: string;
-  instagram?: string;
+  cnpj?: string | undefined;
+  instagram?: string | undefined;
   telefone: string;
   responsavelId: string;
   status: "ativa" | "suspensa";
@@ -53,12 +53,12 @@ export interface SolicitacaoOrganizador {
   id: string;
   usuarioId: string;
   possuiCnpj: boolean;
-  cnpj?: string;
+  cnpj?: string | undefined;
   nomeOrganizacao: string;
-  instagram?: string;
+  instagram?: string | undefined;
   telefone: string;
   status: StatusSolicitacao;
-  observacaoAdmin?: string;
+  observacaoAdmin?: string | undefined;
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -74,19 +74,19 @@ export type StatusEvento =
 export interface Exercito {
   id: string;
   nome: string;
-  descricao?: string;
+  descricao?: string | undefined;
   capacidade: number;
 }
 
 export interface TipoIngresso {
   id: string;
   nome: string;
-  descricao?: string;
-  observacoes?: string;
-  beneficios?: string;
+  descricao?: string | undefined;
+  observacoes?: string | undefined;
+  beneficios?: string | undefined;
   precoBaseCentavos: number;
   quantidadeMaxima: number;
-  arquivado?: boolean;
+  arquivado?: boolean | undefined;
 }
 
 export interface Lote {
@@ -108,7 +108,7 @@ export interface AtividadeCronograma {
   horario: string; // HH:MM
   titulo: string;
   descricao: string;
-  local?: string;
+  local?: string | undefined;
   ordem: number;
 }
 
@@ -117,8 +117,8 @@ export interface DocumentoRegras {
   versao: string;
   atualizadoEm: string;
   formato: "pdf" | "docx" | "html"; // html = demonstrativo renderizável
-  conteudoHtml?: string; // usado no leitor interno demonstrativo
-  nomeArquivo?: string;
+  conteudoHtml?: string | undefined; // usado no leitor interno demonstrativo
+  nomeArquivo?: string | undefined;
 }
 
 export interface Evento {
@@ -135,13 +135,13 @@ export interface Evento {
   cidade: string;
   uf: string;
   capacidadeTotal: number;
-  imagemUrl?: string;
+  imagemUrl?: string | undefined;
   exercitos: Exercito[];
   tipos: TipoIngresso[];
   lotes: Lote[];
   cronograma: AtividadeCronograma[];
-  regras?: DocumentoRegras;
-  whatsappGrupoUrl?: string;
+  regras?: DocumentoRegras | undefined;
+  whatsappGrupoUrl?: string | undefined;
   status: StatusEvento;
   criadoEm: string;
 }
@@ -156,18 +156,18 @@ export interface Inscricao {
   eventoId: string;
   usuarioId: string;
   tipoId: string;
-  loteId?: string; // cortesias não têm lote
+  loteId?: string | undefined; // cortesias não têm lote
   exercitoId: string;
   codigo: string; // identificador opaco fictício
   status: StatusInscricao;
   origem: "plataforma" | "cortesia" | "organizador" | "admin";
   valorCentavos: number; // valor original preservado
   descontoCentavos: number;
-  cupomId?: string;
-  cortesiaId?: string;
+  cupomId?: string | undefined;
+  cortesiaId?: string | undefined;
   criadoEm: string;
-  canceladoEm?: string;
-  motivoCancelamento?: string;
+  canceladoEm?: string | undefined;
+  motivoCancelamento?: string | undefined;
 }
 
 export interface Cupom {
@@ -191,7 +191,7 @@ export interface Cortesia {
   nomeConvidado: string;
   emailConvidado: string;
   tipoId: string;
-  exercitoId?: string;
+  exercitoId?: string | undefined;
   validade: string;
   codigo: string;
   status: StatusCortesia;
@@ -206,7 +206,7 @@ export interface Missao {
   eventoId: string;
   titulo: string;
   descricao: string;
-  imagemUrl?: string;
+  imagemUrl?: string | undefined;
   prazo: string;
   publico: "todos" | string; // "todos" ou exercitoId
   tipoEntrega: TipoEntregaMissao;
@@ -218,9 +218,9 @@ export interface EntregaMissao {
   missaoId: string;
   usuarioId: string;
   status: StatusMissao;
-  conteudo?: string;
+  conteudo?: string | undefined;
   enviadoEm: string;
-  avaliacao?: string;
+  avaliacao?: string | undefined;
 }
 
 export interface Comunicado {
@@ -229,9 +229,9 @@ export interface Comunicado {
   autorId: string;
   titulo: string;
   corpo: string;
-  imagemUrl?: string;
+  imagemUrl?: string | undefined;
   fixado: boolean;
-  segmentoExercitoId?: string; // comunicado segmentado
+  segmentoExercitoId?: string | undefined; // comunicado segmentado
   criadoEm: string;
 }
 
@@ -259,7 +259,7 @@ export interface MensagemChamado {
 
 export interface Chamado {
   id: string;
-  eventoId?: string;
+  eventoId?: string | undefined;
   solicitanteId: string;
   assunto: string;
   categoria: string;
@@ -275,7 +275,7 @@ export interface Notificacao {
   usuarioId: string;
   titulo: string;
   corpo: string;
-  link?: string;
+  link?: string | undefined;
   lida: boolean;
   criadoEm: string;
 }
@@ -289,7 +289,7 @@ export type TipoMovimentacao =
 export interface Movimentacao {
   id: string;
   eventoId: string;
-  inscricaoId?: string;
+  inscricaoId?: string | undefined;
   tipo: TipoMovimentacao;
   valorCentavos: number; // positivo = entrada, negativo = saída
   descricao: string;
@@ -302,7 +302,7 @@ export interface RegistroAuditoria {
   acao: string;
   entidade: string;
   entidadeId: string;
-  justificativa?: string;
+  justificativa?: string | undefined;
   criadoEm: string;
 }
 
@@ -312,7 +312,7 @@ export interface SolicitacaoPrivacidade {
   tipo: "acesso" | "correcao" | "exportacao" | "exclusao";
   detalhes: string;
   status: "aberta" | "respondida";
-  resposta?: string;
+  resposta?: string | undefined;
   criadoEm: string;
 }
 

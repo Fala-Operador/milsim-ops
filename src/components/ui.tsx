@@ -55,7 +55,7 @@ export function Campo({
   htmlFor,
 }: {
   rotulo: string;
-  erro?: string;
+  erro?: string | undefined;
   children: ReactNode;
   htmlFor?: string;
 }) {
@@ -142,6 +142,51 @@ export function Modal({
           </Botao>
         </div>
         {children}
+      </div>
+    </div>
+  );
+}
+
+export function Skeleton({ className = "" }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`animate-pulse rounded-md bg-secondary ${className}`}
+    />
+  );
+}
+
+export function SkeletonCartao() {
+  return (
+    <div className="rounded-lg border border-border bg-card p-5" role="status" aria-label="Carregando conteúdo">
+      <Skeleton className="h-32 w-full" />
+      <Skeleton className="mt-4 h-5 w-3/4" />
+      <Skeleton className="mt-2 h-4 w-1/2" />
+      <Skeleton className="mt-2 h-4 w-2/3" />
+    </div>
+  );
+}
+
+export function SkeletonGrade({ quantidade = 6 }: { quantidade?: number }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: quantidade }, (_, i) => (
+        <SkeletonCartao key={i} />
+      ))}
+    </div>
+  );
+}
+
+export function SkeletonPagina() {
+  return (
+    <div className="mx-auto max-w-4xl space-y-4 px-4 py-8" role="status" aria-label="Carregando página">
+      <Skeleton className="h-40 w-full" />
+      <Skeleton className="h-8 w-1/2" />
+      <Skeleton className="h-4 w-2/3" />
+      <Skeleton className="h-4 w-1/3" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <SkeletonCartao />
+        <SkeletonCartao />
       </div>
     </div>
   );

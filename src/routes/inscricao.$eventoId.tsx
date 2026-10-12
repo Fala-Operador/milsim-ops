@@ -9,11 +9,11 @@ import {
 } from "@/services/inscricoes";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL } from "@/lib/domain/money";
-import { Botao, Campo, Cartao, Entrada, Selecao } from "@/components/ui";
+import { Botao, Campo, Cartao, Entrada, Selecao, SkeletonPagina } from "@/components/ui";
 
 export const Route = createFileRoute("/inscricao/$eventoId")({
   validateSearch: (s: Record<string, unknown>) => ({
-    cortesia: typeof s.cortesia === "string" ? s.cortesia : undefined,
+    cortesia: typeof s["cortesia"] === "string" ? s["cortesia"] : undefined,
   }),
   loader: ({ params }) => {
     const base = carregarBase();
@@ -31,6 +31,7 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
         ]
       : [{ title: "Inscrição — MilSim Ops" }],
   }),
+  pendingComponent: SkeletonPagina,
   component: PaginaInscricao,
   notFoundComponent: () => (
     <div className="mx-auto max-w-xl px-4 py-16 text-center">

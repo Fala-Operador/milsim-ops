@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { carregarBase } from "@/services/db";
+import type { BaseDados } from "@/lib/domain/types";
 import { vagasRestantes } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
-import { Badge, Cartao, Entrada, Selecao, EstadoVazio } from "@/components/ui";
+import { Badge, Cartao, Entrada, Selecao, EstadoVazio, SkeletonGrade } from "@/components/ui";
 import type { Evento } from "@/lib/domain/types";
 
 export const Route = createFileRoute("/")({
@@ -34,16 +35,21 @@ function precoInicial(evento: Evento): number {
 }
 
 function PaginaInicial() {
-  const base = useMemo(() => carregarBase(), []);
+  const [base, setBase] = useState<BaseDados | null>(null);
+  useEffect(() => {
+    const t = setTimeout(() => setBase(carregarBase()), 350);
+    return () => clearTimeout(t);
+  }, []);
+  const carregando = base === null;
   const [busca, setBusca] = useState("");
   const [uf, setUf] = useState("");
   const [periodo, setPeriodo] = useState("");
   const [disponibilidade, setDisponibilidade] = useState("");
 
-  const publicados = base.eventos.filter((e) => e.status === "publicado");
+  const publicados = base?.eventos.filter((e) => e.status === "publicado") ?? [];
   const ufs = [...new Set(publicados.map((e) => e.uf))].sort();
 
-  const filtrados = publicados.filter((e) => {
+  const filtrados = !base ? [] : publicados.filter((e) => {
     if (busca && !e.nome.toLowerCase().includes(busca.toLowerCase())) return false;
     if (uf && e.uf !== uf) return false;
     if (periodo) {
@@ -60,7 +66,7 @@ function PaginaInicial() {
     return true;
   });
 
-  const organizacaoDe = (id: string) => base.organizacoes.find((o) => o.id === id)?.nome ?? "—";
+  const organizacaoDe = (id: string) => base?.organizacoes.find((o) => o.id === id)?.nome ?? "—";
 
   return (
     <div>
@@ -114,14 +120,18 @@ function PaginaInicial() {
           Eventos em destaque
         </h2>
 
-        {filtrados.length === 0 ? (
+        {carregando ? (
+          <div className="mt-4">
+            <SkeletonGrade quantidade={6} />
+          </div>
+        ) : filtrados.length === 0 ? (
           <div className="mt-4">
             <EstadoVazio titulo="Nenhuma operação encontrada" descricao="Ajuste os filtros ou a busca." />
           </div>
         ) : (
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtrados.map((e) => {
-              const restantes = vagasRestantes(base, e);
+              const restantes = vagasRestantes(base!, e);
               return (
                 <Link key={e.id} to="/eventos/$eventoId" params={{ eventoId: e.id }}>
                   <Cartao className="h-full transition-transform hover:-translate-y-0.5">

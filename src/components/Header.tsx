@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNotifications } from "@/contexts/NotificationContext";
@@ -29,6 +29,11 @@ export function Header() {
   const { naoLidas } = useNotifications();
   const navigate = useNavigate();
   const [menuAberto, setMenuAberto] = useState(false);
+  // A sessão vem do armazenamento local: só é lida após a montagem para evitar
+  // divergência entre a renderização do servidor e a do navegador.
+  const [montado, setMontado] = useState(false);
+  useEffect(() => setMontado(true), []);
+  const usuarioVisivel = montado ? usuario : null;
 
   const aoSair = () => {
     logout();
@@ -56,7 +61,7 @@ export function Header() {
             Eventos
           </Link>
           <ControleTema />
-          {usuario ? (
+          {usuarioVisivel ? (
             <>
               <Link
                 to="/app/notificacoes"
@@ -72,24 +77,24 @@ export function Header() {
               </Link>
               <div className="relative">
                 <Botao variante="secundario" onClick={() => setMenuAberto((v) => !v)} aria-expanded={menuAberto}>
-                  {usuario.nomeCompleto.split(" ")[0]} ▾
+                  {usuarioVisivel.nomeCompleto.split(" ")[0]} ▾
                 </Botao>
                 {menuAberto && (
                   <div className="absolute right-0 top-full mt-1 w-56 rounded-md border border-border bg-popover p-1 shadow-lg" role="menu">
                     <Link to="/app" className="block rounded px-3 py-2 text-sm hover:bg-secondary" onClick={() => setMenuAberto(false)}>
                       Minha área
                     </Link>
-                    {usuario.perfil === "organizador" && (
+                    {usuarioVisivel.perfil === "organizador" && (
                       <Link to="/organizacao" className="block rounded px-3 py-2 text-sm hover:bg-secondary" onClick={() => setMenuAberto(false)}>
                         Minha organização
                       </Link>
                     )}
-                    {usuario.perfil === "admin" && (
+                    {usuarioVisivel.perfil === "admin" && (
                       <Link to="/admin" className="block rounded px-3 py-2 text-sm hover:bg-secondary" onClick={() => setMenuAberto(false)}>
                         Administração
                       </Link>
                     )}
-                    {usuario.perfil === "participante" && (
+                    {usuarioVisivel.perfil === "participante" && (
                       <Link to="/app/organizador" className="block rounded px-3 py-2 text-sm text-muted-foreground hover:bg-secondary" onClick={() => setMenuAberto(false)}>
                         Quero ser organizador
                       </Link>
@@ -103,10 +108,10 @@ export function Header() {
             </>
           ) : (
             <>
-              <Link to="/login" className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground">
+              <Link to="/login" search={{ redirect: undefined }} className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground">
                 Entrar
               </Link>
-              <Link to="/cadastro">
+              <Link to="/cadastro" search={{ redirect: undefined }}>
                 <Botao>Cadastrar</Botao>
               </Link>
             </>

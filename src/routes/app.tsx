@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Spinner } from "@/components/ui";
+import { SkeletonPagina } from "@/components/ui";
 
 export const Route = createFileRoute("/app")({
   component: LayoutApp,
@@ -28,7 +28,7 @@ function LayoutApp() {
     }
   }, [autenticado, navigate, pathname]);
 
-  if (!usuario) return <Spinner texto="Verificando sessão..." />;
+  if (!usuario) return <SkeletonPagina />;
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 lg:flex-row">

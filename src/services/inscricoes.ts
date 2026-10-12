@@ -74,8 +74,8 @@ export interface DadosInscricao {
   usuarioId: string;
   tipoId: string;
   exercitoId: string;
-  codigoCupom?: string;
-  cortesiaId?: string;
+  codigoCupom?: string | undefined;
+  cortesiaId?: string | undefined;
   origem?: Inscricao["origem"];
 }
 

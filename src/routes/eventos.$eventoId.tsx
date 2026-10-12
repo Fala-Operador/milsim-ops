@@ -3,7 +3,7 @@ import { useState } from "react";
 import { carregarBase } from "@/services/db";
 import { vagasRestantes, loteVigente } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
-import { Badge, Botao, Cartao, Modal } from "@/components/ui";
+import { Badge, Botao, Cartao, Modal, SkeletonPagina } from "@/components/ui";
 
 export const Route = createFileRoute("/eventos/$eventoId")({
   loader: ({ params }) => {
@@ -24,6 +24,7 @@ export const Route = createFileRoute("/eventos/$eventoId")({
         ]
       : [{ title: "Evento — MilSim Ops" }],
   }),
+  pendingComponent: SkeletonPagina,
   component: PaginaEvento,
   notFoundComponent: () => (
     <div className="mx-auto max-w-xl px-4 py-16 text-center">
@@ -67,7 +68,7 @@ function PaginaEvento() {
                 {restantes} vagas restantes
               </Badge>
               <div className="mt-2">
-                <Link to="/inscricao/$eventoId" params={{ eventoId: evento.id }}>
+                <Link to="/inscricao/$eventoId" params={{ eventoId: evento.id }} search={{ cortesia: undefined }}>
                   <Botao>Inscrever-se</Botao>
                 </Link>
               </div>

@@ -13,7 +13,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { mascararCpf } from "@/lib/domain/validators";
-import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, Modal, Selecao, Spinner } from "@/components/ui";
+import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, Modal, Selecao, SkeletonPagina } from "@/components/ui";
 import type { Evento } from "@/lib/domain/types";
 
 export const Route = createFileRoute("/organizacao")({
@@ -55,7 +55,7 @@ function PainelOrganizacao() {
     }
   }, [usuario, navigate]);
 
-  if (!usuario) return <Spinner />;
+  if (!usuario) return <SkeletonPagina />;
   const base = carregarBase();
   const orgId = usuario.perfil === "admin" ? undefined : usuario.organizacaoId;
   const eventos = base.eventos.filter((e) => !orgId || e.organizacaoId === orgId);
