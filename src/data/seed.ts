@@ -644,6 +644,33 @@ function criarBaseLegada(): BaseSemComunidade {
         lida: false,
         criadoEm: iso(dias(-3)),
       },
+      {
+        id: "not-4",
+        usuarioId: orgUserId,
+        titulo: "Nova inscrição recebida",
+        corpo: "Ana Ribeiro se inscreveu na Operação Serra Verde (Exército Alfa).",
+        link: "/organizacao/inscritos",
+        lida: false,
+        criadoEm: iso(dias(-1)),
+      },
+      {
+        id: "not-5",
+        usuarioId: orgUserId,
+        titulo: "Inscrição confirmada",
+        corpo: "A inscrição de Bruno Costa na Operação Serra Verde foi confirmada.",
+        link: "/organizacao/inscritos",
+        lida: false,
+        criadoEm: iso(dias(-2)),
+      },
+      {
+        id: "not-6",
+        usuarioId: orgUserId,
+        titulo: "Cortesia utilizada",
+        corpo: "Um link de cortesia da Operação Serra Verde foi utilizado.",
+        link: "/organizacao/financeiro",
+        lida: true,
+        criadoEm: iso(dias(-5)),
+      },
     ],
     movimentacoes: [
       {

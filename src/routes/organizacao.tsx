@@ -2,7 +2,8 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SkeletonPagina } from "@/components/ui";
-import { LayoutDashboard, Users, MessagesSquare, Wallet } from "lucide-react";
+import { LayoutDashboard, Users, MessagesSquare, Wallet, Bell } from "lucide-react";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 export const Route = createFileRoute("/organizacao")({
   head: () => ({
@@ -23,10 +24,12 @@ const itens = [
   { to: "/organizacao/inscritos", rotulo: "Inscritos", icone: Users },
   { to: "/organizacao/comunidade", rotulo: "Comunidade", icone: MessagesSquare },
   { to: "/organizacao/financeiro", rotulo: "Financeiro", icone: Wallet },
+  { to: "/organizacao/notificacoes", rotulo: "Notificações", icone: Bell },
 ] as const;
 
 function LayoutOrganizacao() {
   const { usuario } = useAuth();
+  const { naoLidas } = useNotifications();
   const navigate = useNavigate();
   const [montado, setMontado] = useState(false);
 
@@ -58,6 +61,11 @@ function LayoutOrganizacao() {
             >
               <item.icone className="h-4 w-4" />
               {item.rotulo}
+              {item.rotulo === "Notificações" && naoLidas > 0 && (
+                <span className="ml-auto rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">
+                  {naoLidas}
+                </span>
+              )}
             </Link>
           ))}
         </nav>
