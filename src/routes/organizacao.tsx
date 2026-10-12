@@ -29,6 +29,7 @@ const itens = [
 
 function LayoutOrganizacao() {
   const { usuario } = useAuth();
+  const { naoLidas } = useNotifications();
   const navigate = useNavigate();
   const [montado, setMontado] = useState(false);
 
