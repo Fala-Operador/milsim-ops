@@ -22,6 +22,7 @@ export interface Usuario {
   instagram?: string | undefined;
   squad?: string | undefined;
   fotoUrl?: string | undefined;
+  nomeExibicao?: string | undefined; // usado na comunidade
   autorizacaoResponsavel?: "pendente" | "aprovada" | "nao_aplicavel" | undefined;
   autorizacaoPromocional: boolean;
   aceiteTermosVersao: string;
@@ -335,4 +336,110 @@ export interface BaseDados {
   auditoria: RegistroAuditoria[];
   privacidade: SolicitacaoPrivacidade[];
   credenciais: Record<string, string>; // email -> hash demonstrativo
+  foruns: Forum[];
+  publicacoes: Publicacao[];
+  respostas: Resposta[];
+  curtidas: Curtida[];
+  denuncias: Denuncia[];
+  preferenciasForum: PreferenciaForum[];
+  restricoesComunidade: RestricaoComunidade[];
+  moderacao: RegistroModeracao[];
+  visitasComunidade: Record<string, string>; // `${usuarioId}:${eventoId}` -> ISO
+}
+
+// ===== Comunidade: fóruns com feed social =====
+export type PermissaoForum = "membros" | "gestao";
+
+export interface Forum {
+  id: string;
+  eventoId: string;
+  nome: string;
+  descricao: string;
+  icone?: string | undefined; // emoji opcional
+  regras?: string | undefined;
+  ordem: number;
+  publico: "todos" | string; // "todos" ou exercitoId (nunca exibido a participantes)
+  publicacao: PermissaoForum;
+  respostas: PermissaoForum;
+  status: "ativo" | "arquivado";
+  criadoEm: string;
+}
+
+export interface ImagemPost {
+  url: string;
+  alt?: string | undefined;
+}
+
+export interface Publicacao {
+  id: string;
+  forumId: string;
+  eventoId: string;
+  autorId: string;
+  texto: string;
+  imagens: ImagemPost[];
+  fixada: boolean;
+  importante: boolean;
+  respostasFechadas: boolean;
+  oculta: boolean;
+  motivoOcultacao?: string | undefined;
+  removidaPeloAutor: boolean;
+  editadoEm?: string | undefined;
+  criadoEm: string;
+}
+
+export interface Resposta {
+  id: string;
+  publicacaoId: string;
+  autorId: string;
+  texto: string;
+  imagem?: ImagemPost | undefined;
+  oculta: boolean;
+  motivoOcultacao?: string | undefined;
+  editadoEm?: string | undefined;
+  criadoEm: string;
+}
+
+export interface Curtida {
+  id: string;
+  publicacaoId: string;
+  usuarioId: string;
+}
+
+export type MotivoDenuncia = "ofensa" | "spam" | "dados_pessoais" | "inadequado" | "outro";
+
+export interface Denuncia {
+  id: string;
+  eventoId: string;
+  alvo: "publicacao" | "resposta";
+  alvoId: string;
+  denuncianteId: string;
+  motivo: MotivoDenuncia;
+  descricao?: string | undefined;
+  status: "pendente" | "procedente" | "descartada";
+  criadoEm: string;
+}
+
+export interface PreferenciaForum {
+  usuarioId: string;
+  forumId: string;
+  modo: "seguir" | "silenciar";
+}
+
+export interface RestricaoComunidade {
+  id: string;
+  eventoId: string;
+  usuarioId: string;
+  justificativa: string;
+  ativa: boolean;
+  criadoEm: string;
+}
+
+export interface RegistroModeracao {
+  id: string;
+  eventoId: string;
+  autorId: string;
+  acao: string;
+  alvoId: string;
+  justificativa?: string | undefined;
+  criadoEm: string;
 }
