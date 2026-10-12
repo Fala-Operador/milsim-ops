@@ -24,6 +24,7 @@ const itens = [
   { to: "/organizacao/inscritos", rotulo: "Inscritos", icone: Users },
   { to: "/organizacao/comunidade", rotulo: "Comunidade", icone: MessagesSquare },
   { to: "/organizacao/financeiro", rotulo: "Financeiro", icone: Wallet },
+  { to: "/organizacao/notificacoes", rotulo: "Notificações", icone: Bell },
 ] as const;
 
 function LayoutOrganizacao() {

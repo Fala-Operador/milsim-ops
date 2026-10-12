@@ -40,6 +40,7 @@ import { Route as OrganizacaoIndexRouteImport } from './routes/organizacao.index
 import { Route as OrganizacaoComunidadeRouteImport } from './routes/organizacao.comunidade'
 import { Route as OrganizacaoFinanceiroRouteImport } from './routes/organizacao.financeiro'
 import { Route as OrganizacaoInscritosRouteImport } from './routes/organizacao.inscritos'
+import { Route as OrganizacaoNotificacoesRouteImport } from './routes/organizacao.notificacoes'
 import { Route as ComunidadeEventoIdIndexRouteImport } from './routes/comunidade.$eventoId.index'
 import { Route as ComunidadeEventoIdGerenciarRouteImport } from './routes/comunidade.$eventoId.gerenciar'
 import { Route as ComunidadeEventoIdPPostIdRouteImport } from './routes/comunidade.$eventoId.p.$postId'
@@ -199,6 +200,11 @@ const OrganizacaoInscritosRoute = OrganizacaoInscritosRouteImport.update({
   path: '/inscritos',
   getParentRoute: () => OrganizacaoRoute,
 } as any)
+const OrganizacaoNotificacoesRoute = OrganizacaoNotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
+  getParentRoute: () => OrganizacaoRoute,
+} as any)
 const ComunidadeEventoIdIndexRoute = ComunidadeEventoIdIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -246,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
+  '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/organizacao/': typeof OrganizacaoIndexRoute
@@ -278,6 +285,7 @@ export interface FileRoutesByTo {
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
+  '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/organizacao': typeof OrganizacaoIndexRoute
@@ -315,6 +323,7 @@ export interface FileRoutesById {
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
+  '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/organizacao/': typeof OrganizacaoIndexRoute
@@ -353,6 +362,7 @@ export interface FileRouteTypes {
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
     | '/organizacao/inscritos'
+    | '/organizacao/notificacoes'
     | '/admin/'
     | '/app/'
     | '/organizacao/'
@@ -385,6 +395,7 @@ export interface FileRouteTypes {
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
     | '/organizacao/inscritos'
+    | '/organizacao/notificacoes'
     | '/admin'
     | '/app'
     | '/organizacao'
@@ -421,6 +432,7 @@ export interface FileRouteTypes {
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
     | '/organizacao/inscritos'
+    | '/organizacao/notificacoes'
     | '/admin/'
     | '/app/'
     | '/organizacao/'
@@ -663,6 +675,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizacaoInscritosRouteImport
       parentRoute: typeof OrganizacaoRoute
     }
+    '/organizacao/notificacoes': {
+      id: '/organizacao/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/organizacao/notificacoes'
+      preLoaderRoute: typeof OrganizacaoNotificacoesRouteImport
+      parentRoute: typeof OrganizacaoRoute
+    }
     '/comunidade/$eventoId/': {
       id: '/comunidade/$eventoId/'
       path: '/'
@@ -737,6 +756,7 @@ interface OrganizacaoRouteChildren {
   OrganizacaoComunidadeRoute: typeof OrganizacaoComunidadeRoute
   OrganizacaoFinanceiroRoute: typeof OrganizacaoFinanceiroRoute
   OrganizacaoInscritosRoute: typeof OrganizacaoInscritosRoute
+  OrganizacaoNotificacoesRoute: typeof OrganizacaoNotificacoesRoute
   OrganizacaoIndexRoute: typeof OrganizacaoIndexRoute
 }
 
@@ -744,6 +764,7 @@ const OrganizacaoRouteChildren: OrganizacaoRouteChildren = {
   OrganizacaoComunidadeRoute: OrganizacaoComunidadeRoute,
   OrganizacaoFinanceiroRoute: OrganizacaoFinanceiroRoute,
   OrganizacaoInscritosRoute: OrganizacaoInscritosRoute,
+  OrganizacaoNotificacoesRoute: OrganizacaoNotificacoesRoute,
   OrganizacaoIndexRoute: OrganizacaoIndexRoute,
 }
 
