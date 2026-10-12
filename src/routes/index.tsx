@@ -106,7 +106,7 @@ function PaginaInicial() {
               </button>
             </div>
           )}
-          <div className="mt-6"><SecoesPublicas secoes={secoes} base={base} local={local} /></div>
+          <div className="mt-6"><SecoesPublicas secoes={secoes} base={base} local={local} rastrear /></div>
         </section>
       )}
 
