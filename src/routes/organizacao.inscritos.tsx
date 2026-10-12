@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeftRight, CalendarDays, Check, ChevronDown, Download, MapPin, Search, SlidersHorizontal, Ticket, Users, UserCheck, X, Eye } from "lucide-react";
-import { Badge, Botao, Cartao, Entrada, EstadoVazio, Modal, Selecao, Skeleton } from "@/components/ui";
+import { Badge, Botao, Cartao, EstadoVazio, Modal, Selecao, Skeleton } from "@/components/ui";
 import { useEventoSelecionado, useEventosOrg } from "@/components/organizacao";
 import { formatarDataBR } from "@/lib/domain/money";
 import { mascararCpf } from "@/lib/domain/validators";
