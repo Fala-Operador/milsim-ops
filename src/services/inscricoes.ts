@@ -147,6 +147,7 @@ export async function confirmarInscricao(dados: DadosInscricao): Promise<Inscric
         throw new ErroDominio("cortesia_email", "Esta cortesia foi emitida para outro e-mail.");
       }
       if (dados.codigoCupom) throw new ErroDominio("cupom_cortesia", "Cortesias não aceitam cupom.");
+      if (dados.voucherId) throw new ErroDominio("voucher_cortesia", "Cortesias não aceitam benefício de recompensa.");
       if (cortesia.tipoId !== tipo.id) throw new ErroDominio("cortesia_tipo", "Tipo de ingresso diferente do convite.");
       cortesia.status = "resgatada";
       valorCentavos = 0;

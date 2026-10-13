@@ -45,7 +45,7 @@ export const previsualizarCupomFn = createServerFn({ method: "POST" })
 
 // ---------- Uso no navegador ----------
 export async function confirmarInscricao(d: {
-  eventoId: string; tipoId: string; exercitoId: string; codigoCupom?: string | undefined; cortesiaId?: string | undefined;
+  eventoId: string; tipoId: string; exercitoId: string; codigoCupom?: string | undefined; cortesiaId?: string | undefined; voucherId?: string | undefined;
 }) {
   const inscricao = await chamar(confirmarInscricaoFn({ data: d }));
   registrarConfirmacao(inscricao);
