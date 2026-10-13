@@ -1,6 +1,6 @@
 // Painel de métricas por evento (organizador) e consolidado (admin). Somente dados agregados.
 import { nomeModalidade } from "@/lib/modalidades";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { BaseDados, Evento } from "@/lib/domain/types";
 import {
