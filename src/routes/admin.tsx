@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErroSecao, SkeletonPagina } from "@/components/ui";
@@ -44,6 +44,8 @@ function LayoutAdmin() {
   const { usuario } = useAuth();
   const navigate = useNavigate();
   const [montado, setMontado] = useState(false);
+  const caminho = useRouterState({ select: (s) => s.location.pathname });
+  const abaAtual = [...abas].reverse().find((a) => ("exato" in a ? caminho === a.to : caminho.startsWith(a.to))) ?? abas[0];
 
   useEffect(() => setMontado(true), []);
   useEffect(() => {
@@ -56,14 +58,27 @@ function LayoutAdmin() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <h1 className="font-display text-2xl font-semibold uppercase">Administração</h1>
-      <nav aria-label="Seções da administração" className="mt-4 flex gap-1 overflow-x-auto border-b border-border">
+      <p className="mt-1 text-sm text-muted-foreground" aria-label="Você está em">
+        Administração / <span className="text-foreground">{abaAtual.rotulo}</span>
+      </p>
+      <label className="mt-4 block md:hidden">
+        <span className="sr-only">Seção da administração</span>
+        <select
+          value={abaAtual.to}
+          onChange={(e) => navigate({ to: e.target.value })}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground"
+        >
+          {abas.map((a) => <option key={a.to} value={a.to}>{a.rotulo}</option>)}
+        </select>
+      </label>
+      <nav aria-label="Seções da administração" className="mt-4 hidden flex-wrap gap-1 border-b border-border md:flex">
         {abas.map((a) => (
           <Link
             key={a.to}
             to={a.to}
             activeOptions={{ exact: "exato" in a }}
-            className="whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-            activeProps={{ className: "!border-primary !text-foreground" }}
+            className="-mb-px whitespace-nowrap rounded-t-md border-b-2 border-transparent px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+            activeProps={{ className: "!border-primary bg-secondary !text-foreground", "aria-current": "page" }}
           >
             {a.rotulo}
           </Link>

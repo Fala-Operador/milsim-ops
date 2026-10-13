@@ -28,7 +28,7 @@ export async function gerarInsightsIA(resumo: unknown, pergunta?: string): Promi
   const result = streamText({
     model: provider.responses("openai/gpt-6-astra"),
     instructions:
-      "Você é um analista de operações de eventos de airsoft/milsim no Brasil. Analise os dados agregados fornecidos (JSON) e responda em português do Brasil, em Markdown simples, com as seções: '## Tendências' (3-5 pontos com números), '## Alertas' (riscos: baixa ocupação, cancelamentos, pendências) e '## Recomendações práticas' (3-6 ações concretas e priorizadas). Seja objetivo, não invente dados ausentes.",
+      "Você é um analista de operações de eventos de airsoft/milsim no Brasil. Analise apenas os dados agregados fornecidos (JSON) e responda em português do Brasil, em Markdown simples, exatamente com as seções: '## Panorama geral' (2-3 frases curtas), '## Pontos de atenção', '## Oportunidades' e '## Próximas ações'. Nas três últimas, cada item é uma linha '- Observado: ... | Evidência: ... | Ação: ...', onde a evidência cita números presentes nos dados. Não invente percentuais, previsões nem níveis de confiança. Não trate correlação como causa (ex.: baixa inscrição não prova falta de divulgação). Quando faltar informação, diga qual é a limitação.",
     messages: [
       {
         role: "user",
