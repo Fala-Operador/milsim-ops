@@ -1,163 +1,36 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { carregarBase } from "@/services/db";
-import { abrirChamado, responderChamado } from "@/api/conta.functions";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatarDataHoraBR } from "@/lib/domain/money";
-import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, EstadoVazio, Modal, Selecao } from "@/components/ui";
-import type { StatusChamado } from "@/lib/domain/types";
+import { CentralSuporte } from "@/components/suporte/CentralSuporte";
 
 export const Route = createFileRoute("/app/suporte")({
+  validateSearch: z.object({ c: z.string().max(100).optional(), evento: z.string().max(100).optional() }),
   head: () => ({
     meta: [
-      { title: "Suporte — MilSim Ops" },
-      { name: "description", content: "Abra e acompanhe chamados de suporte." },
-      { property: "og:title", content: "Suporte — MilSim Ops" },
-      { property: "og:description", content: "Chamados de suporte." },
+      { title: "Meus chamados — MilSim Ops" },
+      { name: "description", content: "Abra chamados de suporte do evento ou da plataforma e converse com a equipe." },
+      { property: "og:title", content: "Meus chamados — MilSim Ops" },
+      { property: "og:description", content: "Central de suporte do participante." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PaginaSuporte,
 });
 
-const rotulos: Record<StatusChamado, string> = {
-  aberto: "Aberto",
-  em_atendimento: "Em atendimento",
-  aguardando_participante: "Aguardando participante",
-  resolvido: "Resolvido",
-  fechado: "Fechado",
-};
-
 function PaginaSuporte() {
   const { usuario } = useAuth();
-  const [, setVersao] = useState(0);
-  const [erro, setErro] = useState("");
-  const [novo, setNovo] = useState(false);
-  const [aberto, setAberto] = useState<string | null>(null);
-  const [resposta, setResposta] = useState("");
-  const [form, setForm] = useState({ assunto: "", categoria: "Logística", descricao: "", eventoId: "" });
-  const base = carregarBase();
+  const { c, evento } = Route.useSearch();
+  const navigate = useNavigate({ from: "/app/suporte" });
   if (!usuario) return null;
-
-  // Chamados continuam visíveis mesmo após cancelamento da inscrição
-  const meus = base.chamados
-    .filter((c) => c.solicitanteId === usuario.id)
-    .sort((a, b) => b.atualizadoEm.localeCompare(a.atualizadoEm));
-  const eventosInscrito = base.inscricoes
-    .filter((i) => i.usuarioId === usuario.id)
-    .map((i) => base.eventos.find((e) => e.id === i.eventoId))
-    .filter(Boolean);
-
-  const abrir = async () => {
-    if (!form.assunto.trim() || !form.descricao.trim()) return;
-    setErro("");
-    try {
-      await abrirChamado({ ...form, eventoId: form.eventoId || undefined });
-      setNovo(false);
-      setForm({ assunto: "", categoria: "Logística", descricao: "", eventoId: "" });
-      setVersao((v) => v + 1);
-    } catch (e) {
-      setErro(e instanceof Error ? e.message : "Falha ao abrir o chamado.");
-    }
-  };
-
-  const responder = async (chamadoId: string) => {
-    if (!resposta.trim()) return;
-    setErro("");
-    try {
-      await responderChamado(chamadoId, resposta);
-      setResposta("");
-      setVersao((v) => v + 1);
-    } catch (e) {
-      setErro(e instanceof Error ? e.message : "Falha ao enviar a mensagem.");
-    }
-  };
-
-  const chamadoAberto = meus.find((c) => c.id === aberto);
-
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-semibold uppercase">Suporte</h1>
-        <Botao onClick={() => setNovo(true)}>Abrir chamado</Botao>
+      <h1 className="font-display text-2xl font-semibold uppercase">Meus chamados</h1>
+      <p className="mt-1 text-sm text-muted-foreground">Suporte do evento é atendido pela organização e pela administração; suporte da plataforma, só pela administração.</p>
+      <div className="mt-4">
+        <CentralSuporte modo="participante" usuario={usuario} selecionado={c} eventoInicial={evento}
+          onSelecionar={(id) => navigate({ search: id ? { c: id } : {}, replace: true })} />
       </div>
-      {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
-
-      {meus.length === 0 ? (
-        <div className="mt-4">
-          <EstadoVazio titulo="Nenhum chamado" descricao="Abra um chamado para falar com a organização." />
-        </div>
-      ) : (
-        <ul className="mt-4 space-y-2">
-          {meus.map((c) => (
-            <li key={c.id}>
-              <Cartao>
-                <button className="w-full text-left" onClick={() => setAberto(c.id)}>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-medium">{c.assunto}</p>
-                    <Badge tom={c.status === "resolvido" || c.status === "fechado" ? "sucesso" : "aviso"}>
-                      {rotulos[c.status]}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{c.categoria} · atualizado em {formatarDataHoraBR(c.atualizadoEm)}</p>
-                </button>
-              </Cartao>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <Modal aberto={novo} titulo="Abrir chamado" onFechar={() => setNovo(false)}>
-        <div className="space-y-3">
-          <Campo rotulo="Assunto" htmlFor="assunto">
-            <Entrada id="assunto" value={form.assunto} onChange={(e) => setForm((p) => ({ ...p, assunto: e.target.value }))} />
-          </Campo>
-          <Campo rotulo="Categoria" htmlFor="categoria">
-            <Selecao id="categoria" value={form.categoria} onChange={(e) => setForm((p) => ({ ...p, categoria: e.target.value }))}>
-              {["Logística", "Inscrição", "Produtos", "Regras", "Outro"].map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </Selecao>
-          </Campo>
-          <Campo rotulo="Evento (opcional)" htmlFor="evento">
-            <Selecao id="evento" value={form.eventoId} onChange={(e) => setForm((p) => ({ ...p, eventoId: e.target.value }))}>
-              <option value="">Nenhum</option>
-              {eventosInscrito.map((e) => e && <option key={e.id} value={e.id}>{e.nome}</option>)}
-            </Selecao>
-          </Campo>
-          <Campo rotulo="Descrição" htmlFor="desc">
-            <AreaTexto id="desc" value={form.descricao} onChange={(e) => setForm((p) => ({ ...p, descricao: e.target.value }))} />
-          </Campo>
-          <Botao onClick={abrir} className="w-full">Enviar chamado</Botao>
-        </div>
-      </Modal>
-
-      <Modal aberto={!!chamadoAberto} titulo={chamadoAberto?.assunto ?? "Chamado"} onFechar={() => setAberto(null)}>
-        {chamadoAberto && (
-          <div className="space-y-3">
-            <Badge tom="aviso">{rotulos[chamadoAberto.status]}</Badge>
-            <div className="max-h-72 space-y-2 overflow-y-auto">
-              {chamadoAberto.mensagens.map((m) => {
-                const autor = base.usuarios.find((u) => u.id === m.autorId);
-                const eu = m.autorId === usuario.id;
-                return (
-                  <div key={m.id} className={`rounded-md border border-border p-2 text-sm ${eu ? "bg-elevated" : "bg-secondary"}`}>
-                    <p className="text-xs text-muted-foreground">
-                      {eu ? "Você" : (autor?.nomeCompleto.split(" ")[0] ?? "Equipe")} · {formatarDataHoraBR(m.criadoEm)}
-                    </p>
-                    <p>{m.corpo}</p>
-                  </div>
-                );
-              })}
-            </div>
-            {chamadoAberto.status !== "fechado" && (
-              <div className="flex gap-2">
-                <Entrada placeholder="Escrever resposta..." value={resposta} onChange={(e) => setResposta(e.target.value)} />
-                <Botao onClick={() => responder(chamadoAberto.id)}>Enviar</Botao>
-              </div>
-            )}
-          </div>
-        )}
-      </Modal>
     </div>
   );
 }

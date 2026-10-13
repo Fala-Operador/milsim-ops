@@ -18,6 +18,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider, SCRIPT_TEMA_INICIAL } from "@/contexts/ThemeContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { SuporteProvider } from "@/contexts/SuporteContext";
 import { LocalizacaoProvider } from "@/contexts/LocalizacaoContext";
 import { PreferenciasProvider } from "@/contexts/PreferenciasContext";
 import { PreferenciasModal } from "@/components/PreferenciasModalidade";
@@ -159,6 +160,7 @@ function Providers({ children }: { children: ReactNode }) {
     : <SkeletonPagina />;
   return (
     <NotificationProvider usuarioId={usuario?.id}>
+     <SuporteProvider usuarioId={usuario?.id}>
       <Header />
       <main>{conteudo}</main>
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
@@ -169,6 +171,7 @@ function Providers({ children }: { children: ReactNode }) {
           <Link to="/privacidade" className="underline-offset-4 hover:underline">Privacidade</Link>
         </nav>
       </footer>
+     </SuporteProvider>
     </NotificationProvider>
   );
 }

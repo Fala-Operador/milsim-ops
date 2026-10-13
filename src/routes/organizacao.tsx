@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSuporte } from "@/contexts/SuporteContext";
 import { ErroSecao, SkeletonPagina } from "@/components/ui";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
 import type { ErrorComponentProps } from "@tanstack/react-router";
@@ -12,7 +13,7 @@ function ErroOrganizacao({ error, reset }: ErrorComponentProps) {
   }, [error]);
   return <ErroSecao onTentar={() => reset()} />;
 }
-import { LayoutDashboard, Users, MessagesSquare, Wallet, Gift, Bell, BarChart3, QrCode } from "lucide-react";
+import { LayoutDashboard, Users, MessagesSquare, Wallet, Gift, Bell, LifeBuoy, BarChart3, QrCode } from "lucide-react";
 import { useNotifications } from "@/contexts/NotificationContext";
 
 export const Route = createFileRoute("/organizacao")({
@@ -38,12 +39,14 @@ const itens = [
   { to: "/organizacao/financeiro", rotulo: "Financeiro", icone: Wallet },
   { to: "/organizacao/metricas", rotulo: "Métricas", icone: BarChart3 },
   { to: "/organizacao/recompensas", rotulo: "Recompensas", icone: Gift },
+  { to: "/organizacao/suporte", rotulo: "Suporte", icone: LifeBuoy },
   { to: "/organizacao/notificacoes", rotulo: "Notificações", icone: Bell },
 ] as const;
 
 function LayoutOrganizacao() {
   const { usuario } = useAuth();
   const { naoLidas } = useNotifications();
+  const { atencaoEquipe } = useSuporte();
   const navigate = useNavigate();
   const [montado, setMontado] = useState(false);
 
@@ -75,6 +78,9 @@ function LayoutOrganizacao() {
             >
               <item.icone className="h-4 w-4" />
               {item.rotulo}
+              {item.rotulo === "Suporte" && atencaoEquipe > 0 && (
+                <span className="ml-auto rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">{atencaoEquipe}</span>
+              )}
               {item.rotulo === "Notificações" && naoLidas > 0 && (
                 <span className="ml-auto rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">
                   {naoLidas}

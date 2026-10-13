@@ -238,7 +238,7 @@ function ComunidadeInicio() {
           <Cartao>
             <ul className="space-y-2 text-sm">
               <li><Link to="/app/missoes" className="text-accent hover:underline">🎯 Missões</Link></li>
-              <li><Link to="/app/suporte" className="text-accent hover:underline">🛟 Suporte (privado)</Link></li>
+              <li><Link to="/app/suporte" search={{ evento: eventoId }} className="text-accent hover:underline">🛟 Suporte (privado)</Link></li>
               {evento.whatsappGrupoUrl && <li><a href={evento.whatsappGrupoUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">💬 Grupo do WhatsApp ↗</a></li>}
             </ul>
           </Cartao>

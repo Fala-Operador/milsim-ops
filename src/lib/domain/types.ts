@@ -283,11 +283,25 @@ export type StatusChamado =
   | "resolvido"
   | "fechado";
 
+export interface AnexoChamado {
+  /** Caminho no bucket privado "documentos" (prefixo suporte/); acesso só por URL assinada. */
+  caminho: string;
+  nome: string;
+  tipo: string;
+  tamanho: number;
+}
+
 export interface MensagemChamado {
   id: string;
   autorId: string;
   corpo: string;
   criadoEm: string;
+  /** "sistema" = evento de histórico (status/responsável), visualmente distinto. */
+  tipo?: "mensagem" | "sistema" | undefined;
+  /** Id gerado pelo navegador: reenvios não duplicam a mensagem. */
+  clienteId?: string | undefined;
+  anexo?: AnexoChamado | undefined;
+  acao?: { tipo: "status" | "responsavel" | "vinculo"; valor: string } | undefined;
 }
 
 export interface Chamado {

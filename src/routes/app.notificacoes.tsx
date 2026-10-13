@@ -1,3 +1,4 @@
+import { destinoDoLink } from "@/lib/links";
 import { useAuth } from "@/contexts/AuthContext";
 import { notificacaoAcessivel } from "@/services/comunidade";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -61,7 +62,7 @@ function CentralNotificacoes() {
                     <p className="mt-1 text-xs text-muted-foreground">{formatarDataHoraBR(n.criadoEm)}</p>
                     {n.link && (
                       <Link
-                        to={n.link}
+                        {...(destinoDoLink(n.link) as { to: string })}
                         className="mt-1 inline-block text-sm text-accent hover:underline"
                         onClick={() => marcarLida(n.id)}
                       >
