@@ -22,6 +22,7 @@ import { Route as TermosRouteImport } from './routes/termos'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
 import { Route as AdminDivulgacaoRouteImport } from './routes/admin.divulgacao'
+import { Route as AdminGamificacaoRouteImport } from './routes/admin.gamificacao'
 import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
 import { Route as AdminMetricasRouteImport } from './routes/admin.metricas'
 import { Route as AdminNotificacoesRouteImport } from './routes/admin.notificacoes'
@@ -48,6 +49,7 @@ import { Route as OrganizacaoFinanceiroRouteImport } from './routes/organizacao.
 import { Route as OrganizacaoInscritosRouteImport } from './routes/organizacao.inscritos'
 import { Route as OrganizacaoMetricasRouteImport } from './routes/organizacao.metricas'
 import { Route as OrganizacaoNotificacoesRouteImport } from './routes/organizacao.notificacoes'
+import { Route as OrganizacaoRecompensasRouteImport } from './routes/organizacao.recompensas'
 import { Route as ComunidadeEventoIdIndexRouteImport } from './routes/comunidade.$eventoId.index'
 import { Route as ComunidadeEventoIdGerenciarRouteImport } from './routes/comunidade.$eventoId.gerenciar'
 import { Route as ComunidadeEventoIdPPostIdRouteImport } from './routes/comunidade.$eventoId.p.$postId'
@@ -115,6 +117,11 @@ const AdminAuditoriaRoute = AdminAuditoriaRouteImport.update({
 const AdminDivulgacaoRoute = AdminDivulgacaoRouteImport.update({
   id: '/divulgacao',
   path: '/divulgacao',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminGamificacaoRoute = AdminGamificacaoRouteImport.update({
+  id: '/gamificacao',
+  path: '/gamificacao',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminInsightsRoute = AdminInsightsRouteImport.update({
@@ -247,6 +254,11 @@ const OrganizacaoNotificacoesRoute = OrganizacaoNotificacoesRouteImport.update({
   path: '/notificacoes',
   getParentRoute: () => OrganizacaoRoute,
 } as any)
+const OrganizacaoRecompensasRoute = OrganizacaoRecompensasRouteImport.update({
+  id: '/recompensas',
+  path: '/recompensas',
+  getParentRoute: () => OrganizacaoRoute,
+} as any)
 const ComunidadeEventoIdIndexRoute = ComunidadeEventoIdIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -278,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/termos': typeof TermosRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
+  '/admin/gamificacao': typeof AdminGamificacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
@@ -302,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
+  '/organizacao/recompensas': typeof OrganizacaoRecompensasRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/organizacao/': typeof OrganizacaoIndexRoute
@@ -319,6 +333,7 @@ export interface FileRoutesByTo {
   '/termos': typeof TermosRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
+  '/admin/gamificacao': typeof AdminGamificacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
@@ -342,6 +357,7 @@ export interface FileRoutesByTo {
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
+  '/organizacao/recompensas': typeof OrganizacaoRecompensasRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/organizacao': typeof OrganizacaoIndexRoute
@@ -363,6 +379,7 @@ export interface FileRoutesById {
   '/termos': typeof TermosRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
+  '/admin/gamificacao': typeof AdminGamificacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
@@ -387,6 +404,7 @@ export interface FileRoutesById {
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
+  '/organizacao/recompensas': typeof OrganizacaoRecompensasRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/organizacao/': typeof OrganizacaoIndexRoute
@@ -409,6 +427,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/admin/auditoria'
     | '/admin/divulgacao'
+    | '/admin/gamificacao'
     | '/admin/insights'
     | '/admin/metricas'
     | '/admin/notificacoes'
@@ -433,6 +452,7 @@ export interface FileRouteTypes {
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
     | '/organizacao/notificacoes'
+    | '/organizacao/recompensas'
     | '/admin/'
     | '/app/'
     | '/organizacao/'
@@ -450,6 +470,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/admin/auditoria'
     | '/admin/divulgacao'
+    | '/admin/gamificacao'
     | '/admin/insights'
     | '/admin/metricas'
     | '/admin/notificacoes'
@@ -473,6 +494,7 @@ export interface FileRouteTypes {
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
     | '/organizacao/notificacoes'
+    | '/organizacao/recompensas'
     | '/admin'
     | '/app'
     | '/organizacao'
@@ -493,6 +515,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/admin/auditoria'
     | '/admin/divulgacao'
+    | '/admin/gamificacao'
     | '/admin/insights'
     | '/admin/metricas'
     | '/admin/notificacoes'
@@ -517,6 +540,7 @@ export interface FileRouteTypes {
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
     | '/organizacao/notificacoes'
+    | '/organizacao/recompensas'
     | '/admin/'
     | '/app/'
     | '/organizacao/'
@@ -633,6 +657,13 @@ declare module '@tanstack/react-router' {
       path: '/divulgacao'
       fullPath: '/admin/divulgacao'
       preLoaderRoute: typeof AdminDivulgacaoRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/gamificacao': {
+      id: '/admin/gamificacao'
+      path: '/gamificacao'
+      fullPath: '/admin/gamificacao'
+      preLoaderRoute: typeof AdminGamificacaoRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/insights': {
@@ -817,6 +848,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizacaoNotificacoesRouteImport
       parentRoute: typeof OrganizacaoRoute
     }
+    '/organizacao/recompensas': {
+      id: '/organizacao/recompensas'
+      path: '/recompensas'
+      fullPath: '/organizacao/recompensas'
+      preLoaderRoute: typeof OrganizacaoRecompensasRouteImport
+      parentRoute: typeof OrganizacaoRoute
+    }
     '/comunidade/$eventoId/': {
       id: '/comunidade/$eventoId/'
       path: '/'
@@ -844,6 +882,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAuditoriaRoute: typeof AdminAuditoriaRoute
   AdminDivulgacaoRoute: typeof AdminDivulgacaoRoute
+  AdminGamificacaoRoute: typeof AdminGamificacaoRoute
   AdminInsightsRoute: typeof AdminInsightsRoute
   AdminMetricasRoute: typeof AdminMetricasRoute
   AdminNotificacoesRoute: typeof AdminNotificacoesRoute
@@ -856,6 +895,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditoriaRoute: AdminAuditoriaRoute,
   AdminDivulgacaoRoute: AdminDivulgacaoRoute,
+  AdminGamificacaoRoute: AdminGamificacaoRoute,
   AdminInsightsRoute: AdminInsightsRoute,
   AdminMetricasRoute: AdminMetricasRoute,
   AdminNotificacoesRoute: AdminNotificacoesRoute,
@@ -900,6 +940,7 @@ interface OrganizacaoRouteChildren {
   OrganizacaoInscritosRoute: typeof OrganizacaoInscritosRoute
   OrganizacaoMetricasRoute: typeof OrganizacaoMetricasRoute
   OrganizacaoNotificacoesRoute: typeof OrganizacaoNotificacoesRoute
+  OrganizacaoRecompensasRoute: typeof OrganizacaoRecompensasRoute
   OrganizacaoIndexRoute: typeof OrganizacaoIndexRoute
 }
 
@@ -910,6 +951,7 @@ const OrganizacaoRouteChildren: OrganizacaoRouteChildren = {
   OrganizacaoInscritosRoute: OrganizacaoInscritosRoute,
   OrganizacaoMetricasRoute: OrganizacaoMetricasRoute,
   OrganizacaoNotificacoesRoute: OrganizacaoNotificacoesRoute,
+  OrganizacaoRecompensasRoute: OrganizacaoRecompensasRoute,
   OrganizacaoIndexRoute: OrganizacaoIndexRoute,
 }
 
