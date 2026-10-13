@@ -737,5 +737,13 @@ function criarBaseLegada(): BaseSemComunidade {
     ],
     privacidade: [],
     checkins: [],
+    perfisOperador: [],
+    equipamentos: [],
+    fotosPerfil: [],
+    insignias: [],
+    concessoesInsignia: [],
+    campanhasRecompensa: [],
+    vouchers: [],
+    correcoesParticipacao: [],
   };
 }

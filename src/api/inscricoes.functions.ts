@@ -12,7 +12,7 @@ const id = z.string().min(1).max(100);
 
 export const confirmarInscricaoFn = createServerFn({ method: "POST" })
   .validator(
-    z.object({ eventoId: id, tipoId: id, exercitoId: id, codigoCupom: z.string().max(40).optional(), cortesiaId: id.optional() }).parse,
+    z.object({ eventoId: id, tipoId: id, exercitoId: id, codigoCupom: z.string().max(40).optional(), cortesiaId: id.optional(), voucherId: z.string().max(200).optional() }).parse,
   )
   .handler(({ data }) =>
     // A pessoa só se inscreve a si mesma; a origem é decidida pelo servidor.
@@ -45,7 +45,7 @@ export const previsualizarCupomFn = createServerFn({ method: "POST" })
 
 // ---------- Uso no navegador ----------
 export async function confirmarInscricao(d: {
-  eventoId: string; tipoId: string; exercitoId: string; codigoCupom?: string | undefined; cortesiaId?: string | undefined;
+  eventoId: string; tipoId: string; exercitoId: string; codigoCupom?: string | undefined; cortesiaId?: string | undefined; voucherId?: string | undefined;
 }) {
   const inscricao = await chamar(confirmarInscricaoFn({ data: d }));
   registrarConfirmacao(inscricao);

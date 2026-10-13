@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { aplicarSincronizacao } from "@/services/checkin";
+import { recalcularProgressao } from "@/services/progressao";
 import { exigirUsuario, mutar } from "@/server/unidade.server";
 import { chamar } from "@/api/cliente";
 import type { RegistroCheckin } from "@/lib/checkin";
@@ -25,7 +26,13 @@ const operacao = z.object({
 
 export const sincronizarCheckinsFn = createServerFn({ method: "POST" })
   .validator(z.object({ ops: z.array(operacao).max(500) }).parse)
-  .handler(({ data }) => mutar(({ usuario }) => aplicarSincronizacao(exigirUsuario(usuario), data.ops as RegistroCheckin[])));
+  .handler(({ data }) =>
+    mutar(({ base, usuario }) => {
+      const r = aplicarSincronizacao(exigirUsuario(usuario), data.ops as RegistroCheckin[]);
+      recalcularProgressao(base); // presença confirmada ou revertida muda a elegibilidade
+      return r;
+    }),
+  );
 
 // ---------- Uso no navegador ----------
 export const enviarFilaCheckin = (ops: RegistroCheckin[]) => chamar(sincronizarCheckinsFn({ data: { ops } }));
