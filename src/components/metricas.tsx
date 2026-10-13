@@ -275,17 +275,66 @@ function Campanhas({ evento, campanhas, regs, onCriada }: { evento: Evento; camp
   const [nome, setNome] = useState("");
   const [origem, setOrigem] = useState<OrigemCampanha>("instagram");
   const [erro, setErro] = useState("");
+  const [erroNome, setErroNome] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const [criada, setCriada] = useState<Campanha | null>(null);
   const [copiado, setCopiado] = useState("");
+  const nomeRef = useRef<HTMLInputElement>(null);
+  const copiar = async (c: Campanha) => {
+    try { await navigator.clipboard.writeText(linkCampanha(c)); setCopiado(c.id); } catch { setErro("Não foi possível copiar. Selecione o link e copie manualmente."); }
+  };
+  const gerar = async () => {
+    if (salvando) return;
+    setErro("");
+    if (!nome.trim()) { setErroNome("Digite um nome para identificar a campanha."); nomeRef.current?.focus(); return; }
+    setSalvando(true);
+    try {
+      const c = await criarCampanha(evento.id, nome.trim(), origem);
+      setCriada(c); setCopiado(""); setNome(""); onCriada();
+    } catch (e) { setErro((e as Error).message); } finally { setSalvando(false); }
+  };
+  const borda = erroNome ? "border-destructive" : "border-input";
   return (
-    <Bloco titulo="Links de divulgação" nota="A origem identifica a campanha: um link criado para Instagram pode ser compartilhado em outro canal.">
-      <div className="flex flex-wrap items-end gap-2">
-        <Entrada aria-label="Nome da campanha" placeholder="Nome (ex.: Lançamento)" value={nome} onChange={(e) => setNome(e.target.value)} className="!w-64" />
-        <Selecao aria-label="Origem da campanha" value={origem} onChange={(e) => setOrigem(e.target.value as OrigemCampanha)}>
-          {Object.entries(ROTULO_ORIGEM_CAMPANHA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </Selecao>
-        <Botao onClick={async () => { setErro(""); try { await criarCampanha(evento.id, nome, origem); setNome(""); onCriada(); } catch (e) { setErro((e as Error).message); } }}>Criar link</Botao>
+    <Bloco titulo="Links de divulgação" nota="O canal representa a origem configurada para a campanha, mas o link pode ser compartilhado em outros locais.">
+      <div className="rounded-lg border border-border bg-card p-4">
+        <h4 className="font-display text-base font-semibold">Criar link de divulgação</h4>
+        <p className="mt-1 text-sm text-muted-foreground">Dê um nome à campanha e escolha o canal para acompanhar os acessos e inscrições gerados pelo link.</p>
+        <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div>
+            <label htmlFor="camp-nome" className="text-sm font-medium">Nome da campanha <span className="text-destructive">*</span></label>
+            <input id="camp-nome" ref={nomeRef} value={nome} maxLength={60} required
+              aria-invalid={!!erroNome} aria-describedby={erroNome ? "camp-nome-erro" : "camp-nome-ajuda"}
+              placeholder="Ex.: Lançamento — Operação Tempestade"
+              onChange={(e) => { setNome(e.target.value); if (erroNome && e.target.value.trim()) setErroNome(""); }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void gerar(); } }}
+              className={`mt-1 h-10 w-full rounded-md border ${borda} bg-background px-3 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40`} />
+            {erroNome
+              ? <p id="camp-nome-erro" role="alert" className="mt-1 text-xs text-destructive">{erroNome}</p>
+              : <p id="camp-nome-ajuda" className="mt-1 text-xs text-muted-foreground">Escolha um nome para identificar esta divulgação nos relatórios.</p>}
+          </div>
+          <div>
+            <label htmlFor="camp-canal" className="text-sm font-medium">Canal de divulgação <span className="text-destructive">*</span></label>
+            <select id="camp-canal" value={origem} aria-describedby="camp-canal-ajuda" onChange={(e) => setOrigem(e.target.value as OrigemCampanha)}
+              className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40">
+              {Object.entries(ROTULO_ORIGEM_CAMPANHA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+            <p id="camp-canal-ajuda" className="mt-1 text-xs text-muted-foreground">Selecione onde você pretende compartilhar o link.</p>
+          </div>
+        </div>
+        <div className="mt-3"><Botao type="button" onClick={gerar} disabled={salvando} className="w-full sm:w-auto">{salvando ? "Gerando…" : "Gerar link de divulgação"}</Botao></div>
+        {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
+        {criada && (
+          <div className="mt-4 rounded-md border border-border bg-background p-3 text-sm" aria-live="polite">
+            <p className="font-medium">{criada.nome} <Badge>{ROTULO_ORIGEM_CAMPANHA[criada.origem]}</Badge></p>
+            <label htmlFor="camp-link" className="mt-2 block text-xs text-muted-foreground">Link gerado</label>
+            <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+              <input id="camp-link" readOnly value={linkCampanha(criada)} onFocus={(e) => e.target.select()}
+                className="h-10 w-full min-w-0 rounded-md border border-input bg-muted px-3 text-sm text-foreground" />
+              <Botao type="button" variante="contorno" onClick={() => copiar(criada)}>{copiado === criada.id ? "Link copiado" : "Copiar link"}</Botao>
+            </div>
+          </div>
+        )}
       </div>
-      {erro && <p role="alert" className="mt-1 text-sm text-destructive">{erro}</p>}
       <div className="mt-3">
         <Tabela vazio="Nenhuma campanha para este evento."
           cab={["Campanha", "Origem", "Visitas", "Inscrições", "Link"]}
