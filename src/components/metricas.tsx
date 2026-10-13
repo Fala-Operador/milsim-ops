@@ -248,6 +248,9 @@ export function PainelMetricas({ base, eventos, modo }: { base: BaseDados; event
               </div>
               <Tabela cab={["Local", ...cab]} linhas={geo.map((g) => [g.chave, ...linhaComVolume(g.ind)])} />
             </Bloco>
+            <Bloco titulo="Visitas e inscrições por modalidade" nota="Dados agregados por evento. Preferências declaradas não entram aqui e não indicam inscrição.">
+              <Tabela cab={["Modalidade", ...cab]} linhas={porModalidade.map((g) => [g.chave, ...linhaComVolume(g.ind)])} />
+            </Bloco>
           </>
         );
       })()}
