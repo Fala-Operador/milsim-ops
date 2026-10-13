@@ -38,7 +38,7 @@ export const registrarAnalyticsFn = createServerFn({ method: "POST" })
 export const listarAnalyticsFn = createServerFn({ method: "GET" }).handler(() => comMensagem(() => analytics.listar()));
 
 export const criarCampanhaFn = createServerFn({ method: "POST" })
-  .validator(z.object({ eventoId: curto, nome: z.string().max(60), origem: z.enum(["instagram", "whatsapp", "parceiro", "lancamento", "outro"]) }).parse)
+  .validator(z.object({ eventoId: curto, nome: z.string().trim().min(1, "Digite um nome para identificar a campanha.").max(60), origem: z.enum(["instagram", "whatsapp", "parceiro", "lancamento", "outro"]) }).parse)
   .handler(({ data }) => comMensagem(() => analytics.criarCampanha(data.eventoId, data.nome, data.origem)));
 
 // ---------- Uso no navegador ----------
