@@ -21,3 +21,7 @@
 - [x] Monólito com Supabase: APIs (server functions), Postgres com RLS fechado, Supabase Auth (cookies), Storage para mídia, seed e restauração
 - [ ] Escala: consultas por página/agregado no lugar da base inteira por requisição
 - [ ] SMTP próprio e confirmação de e-mail no cadastro
+
+## Perfil do Operador
+- [x] Perfil, histórico, mapa, insígnias, privacidade, equipamentos, notas fiscais privadas, galeria, recompensas, admin e organização
+- [ ] Conferir no navegador (computador/celular, dois temas) — bloqueado: chaves do banco precisam ser salvas nos segredos
