@@ -40,6 +40,7 @@ import { Route as AppSuporteRouteImport } from './routes/app.suporte'
 import { Route as ComunidadeEventoIdRouteImport } from './routes/comunidade.$eventoId'
 import { Route as EventosEventoIdRouteImport } from './routes/eventos.$eventoId'
 import { Route as InscricaoEventoIdRouteImport } from './routes/inscricao.$eventoId'
+import { Route as OperadorUsuarioIdRouteImport } from './routes/operador.$usuarioId'
 import { Route as OrganizacaoIndexRouteImport } from './routes/organizacao.index'
 import { Route as OrganizacaoCheckinRouteImport } from './routes/organizacao.checkin'
 import { Route as OrganizacaoComunidadeRouteImport } from './routes/organizacao.comunidade'
@@ -206,6 +207,11 @@ const InscricaoEventoIdRoute = InscricaoEventoIdRouteImport.update({
   path: '/inscricao/$eventoId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OperadorUsuarioIdRoute = OperadorUsuarioIdRouteImport.update({
+  id: '/operador/$usuarioId',
+  path: '/operador/$usuarioId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrganizacaoIndexRoute = OrganizacaoIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -289,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/comunidade/$eventoId': typeof ComunidadeEventoIdRouteWithChildren
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/operador/$usuarioId': typeof OperadorUsuarioIdRoute
   '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
@@ -328,6 +335,7 @@ export interface FileRoutesByTo {
   '/app/suporte': typeof AppSuporteRoute
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/operador/$usuarioId': typeof OperadorUsuarioIdRoute
   '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
@@ -372,6 +380,7 @@ export interface FileRoutesById {
   '/comunidade/$eventoId': typeof ComunidadeEventoIdRouteWithChildren
   '/eventos/$eventoId': typeof EventosEventoIdRoute
   '/inscricao/$eventoId': typeof InscricaoEventoIdRoute
+  '/operador/$usuarioId': typeof OperadorUsuarioIdRoute
   '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
@@ -417,6 +426,7 @@ export interface FileRouteTypes {
     | '/comunidade/$eventoId'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
+    | '/operador/$usuarioId'
     | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
@@ -456,6 +466,7 @@ export interface FileRouteTypes {
     | '/app/suporte'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
+    | '/operador/$usuarioId'
     | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
@@ -499,6 +510,7 @@ export interface FileRouteTypes {
     | '/comunidade/$eventoId'
     | '/eventos/$eventoId'
     | '/inscricao/$eventoId'
+    | '/operador/$usuarioId'
     | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
@@ -527,6 +539,7 @@ export interface RootRouteChildren {
   ComunidadeEventoIdRoute: typeof ComunidadeEventoIdRouteWithChildren
   EventosEventoIdRoute: typeof EventosEventoIdRoute
   InscricaoEventoIdRoute: typeof InscricaoEventoIdRoute
+  OperadorUsuarioIdRoute: typeof OperadorUsuarioIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -748,6 +761,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InscricaoEventoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/operador/$usuarioId': {
+      id: '/operador/$usuarioId'
+      path: '/operador/$usuarioId'
+      fullPath: '/operador/$usuarioId'
+      preLoaderRoute: typeof OperadorUsuarioIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/organizacao/': {
       id: '/organizacao/'
       path: '/'
@@ -926,6 +946,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComunidadeEventoIdRoute: ComunidadeEventoIdRouteWithChildren,
   EventosEventoIdRoute: EventosEventoIdRoute,
   InscricaoEventoIdRoute: InscricaoEventoIdRoute,
+  OperadorUsuarioIdRoute: OperadorUsuarioIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
