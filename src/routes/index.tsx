@@ -9,7 +9,7 @@ import { Badge, Botao, SkeletonGrade } from "@/components/ui";
 import { useLocalizacao, mensagemStatus } from "@/contexts/LocalizacaoContext";
 import { eventoElegivel, montarPaginaInicial, NACIONAL } from "@/lib/divulgacao";
 import { filtrarEventos, rotuloCurto, type FiltroDescoberta, type Periodo } from "@/lib/localizacao";
-import { CardRastreado, SecoesPublicas } from "@/components/divulgacao";
+import { CardRastreado, ImagemSegura, SecoesPublicas } from "@/components/divulgacao";
 import { SeletorCidade } from "@/components/SeletorCidade";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { SectionCarousel } from "@/components/SectionCarousel";
@@ -292,10 +292,16 @@ function CartaoEvento({ evento: e, base, organizacao }: { evento: Evento; base: 
   return (
     <Link to="/eventos/$eventoId" params={{ eventoId: e.id }}
       className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-      <div className="topo-bg flex aspect-[16/7] items-end border-b border-border bg-secondary p-3">
-        <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-          {e.cidade}/{e.uf}
-        </span>
+      <div className="aspect-video overflow-hidden border-b border-border bg-secondary">
+        {e.imagemUrl ? (
+          <ImagemSegura key={e.imagemUrl} src={e.imagemUrl} alt={e.imagem?.alt || `Imagem da ${e.nome}`} className="h-full w-full" />
+        ) : (
+          <div className="topo-bg flex h-full items-end p-3">
+            <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+              {e.cidade}/{e.uf}
+            </span>
+          </div>
+        )}
       </div>
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-start justify-between gap-2">
