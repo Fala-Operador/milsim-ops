@@ -113,6 +113,8 @@ function Navegacao({ logado, aoNavegar, vertical = false }: { logado: boolean; a
   return (
     <>
       <Link to="/" activeOptions={{ exact: true }} className={cls} activeProps={{ className: linkNavAtivo }} onClick={aoNavegar}>Eventos</Link>
+      {/* Modalidades é público: explica o que existe, logado ou não. */}
+      <Link to="/modalidades" className={cls} activeProps={{ className: linkNavAtivo }} onClick={aoNavegar}>Modalidades</Link>
       {logado && (
         <Link to="/app/comunidades" className={cls} activeProps={{ className: linkNavAtivo }} onClick={aoNavegar}>Comunidades</Link>
       )}
