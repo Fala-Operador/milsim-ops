@@ -2,7 +2,17 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { useEffect, useState } from "react";
 import { restaurarBaseDemonstrativa } from "@/services/admin";
 import { useAuth } from "@/contexts/AuthContext";
-import { Botao, Modal, SkeletonPagina } from "@/components/ui";
+import { Botao, ErroSecao, Modal, SkeletonPagina } from "@/components/ui";
+import { reportLovableError } from "@/lib/lovable-error-reporting";
+import type { ErrorComponentProps } from "@tanstack/react-router";
+
+function ErroAdmin({ error, reset }: ErrorComponentProps) {
+  console.error(error);
+  useEffect(() => {
+    reportLovableError(error, { boundary: "admin_error_component" });
+  }, [error]);
+  return <ErroSecao onTentar={() => reset()} />;
+}
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
