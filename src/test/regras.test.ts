@@ -64,8 +64,8 @@ describe("inscrições", () => {
   });
 
   it("rejeita cupom expirado e esgotado", () => {
-    expect(() => validarCupom(base(), "evt-serra-verde", "EXPIRADO20", "tp-padrao")).toThrow("validade");
-    expect(() => validarCupom(base(), "evt-serra-verde", "ESGOTADO15", "tp-padrao")).toThrow("esgotado");
+    expect(() => validarCupom(base(), "evt-serra-verde", "EXPIRADO20", "tp-padrao")).toThrow("expirou");
+    expect(() => validarCupom(base(), "evt-serra-verde", "ESGOTADO15", "tp-padrao")).toThrow("limite");
   });
 
   it("cancelamento libera vaga, estorna e permite nova inscrição", async () => {

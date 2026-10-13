@@ -189,8 +189,8 @@ export interface Cupom {
   codigo: string; // normalizado em maiúsculas
   descontoPercentual: number; // 1..100
   validoDe: string;
-  validoAte: string;
-  limiteUsos: number;
+  validoAte: string | null; // null = sem data de término (opção explícita)
+  limiteUsos: number | null; // null = sem limite de utilizações (opção explícita)
   usos: number;
   tiposElegiveis: string[];
   ativo: boolean;

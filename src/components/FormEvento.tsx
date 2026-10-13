@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gerarId } from "@/services/db";
 import { AreaTexto, Botao, Campo, Entrada, Selecao } from "@/components/ui";
-import type { Evento } from "@/lib/domain/types";
+import type { Evento, Lote } from "@/lib/domain/types";
 import { pdfParaDataUrl } from "@/lib/imagens";
 import { ehModalidade, MODALIDADES } from "@/lib/modalidades";
 
@@ -47,7 +47,9 @@ export function FormEvento({
   inicial,
   onSalvar,
   onCancelar,
+  focarLotes = false,
 }: {
+  focarLotes?: boolean;
   inicial: Evento;
   onSalvar: (ev: Evento) => Promise<void>;
   onCancelar: () => void;
@@ -61,6 +63,22 @@ export function FormEvento({
     inicial.regras?.pdfDataUrl ? { dataUrl: inicial.regras.pdfDataUrl, nome: inicial.regras.nomeArquivo ?? "manual.pdf" } : null,
   );
   const set = <K extends keyof Evento>(k: K, v: Evento[K]) => setEv((p) => ({ ...p, [k]: v }));
+  const refLotes = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (focarLotes) refLotes.current?.scrollIntoView({ block: "start" });
+  }, [focarLotes]);
+  const setLote = (i: number, mud: Partial<Lote>) => set("lotes", ev.lotes.map((l, j) => (j === i ? { ...l, ...mud } : l)));
+  const novoLote = (): Lote => {
+    const fim = new Date(ev.inicioEm);
+    return {
+      id: gerarId("lt"),
+      nome: `${ev.lotes.length + 1}º lote`,
+      inicioVendas: new Date().toISOString(),
+      fimVendas: (fim.getTime() > Date.now() ? fim : new Date(Date.now() + 30 * 86400000)).toISOString(),
+      status: "ativo",
+      itens: ev.tipos.filter((t) => !t.arquivado).map((t) => ({ tipoId: t.id, precoCentavos: t.precoBaseCentavos, quantidade: t.quantidadeMaxima })),
+    };
+  };
 
   const salvar = async () => {
     setErro("");
@@ -68,6 +86,14 @@ export function FormEvento({
     if (new Date(ev.fimEm) <= new Date(ev.inicioEm)) return setErro("O término deve ser depois do início.");
     if (ev.exercitos.length === 0) return setErro("Cadastre ao menos um exército.");
     if (ev.tipos.length === 0) return setErro("Cadastre ao menos um tipo de ingresso.");
+    for (const l of ev.lotes) {
+      if (!l.nome.trim()) return setErro("Dê um nome a cada lote de venda.");
+      if (new Date(l.fimVendas) <= new Date(l.inicioVendas)) return setErro(`No ${l.nome}, o fim das vendas deve ser depois do início.`);
+      if (l.itens.length === 0) return setErro(`O ${l.nome} precisa incluir pelo menos um tipo de ingresso.`);
+      if (l.itens.some((it) => it.quantidade < 1 || it.precoCentavos < 0 || !ev.tipos.some((t) => t.id === it.tipoId))) {
+        return setErro(`Revise preço e quantidade dos ingressos do ${l.nome}.`);
+      }
+    }
     const proximo: Evento = { ...ev };
     proximo.regras = pdf
       ? {
@@ -169,6 +195,79 @@ export function FormEvento({
           </div>
         ))}
         <p className="text-xs text-muted-foreground">Preço em R$ · quantidade máxima</p>
+      </div>
+
+      <div className={secao} ref={refLotes} id="ev-lotes">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium">Lotes de venda</h3>
+          <Botao variante="fantasma" onClick={() => set("lotes", [...ev.lotes, novoLote()])}>+ Adicionar lote</Botao>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          As inscrições só abrem para tipos de ingresso incluídos em um lote ativo, dentro do período de vendas e com vagas. O preço cobrado é o do lote.
+        </p>
+        {ev.lotes.length === 0 && (
+          <p role="status" className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
+            Nenhum lote configurado: ninguém conseguirá se inscrever até que um lote seja criado.
+          </p>
+        )}
+        {ev.lotes.map((l, i) => (
+          <fieldset key={l.id} className="space-y-2 rounded-md border border-border p-3">
+            <legend className="px-1 text-xs font-medium">{l.nome || "Lote sem nome"}</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Campo rotulo="Nome do lote" htmlFor={`lt-nome-${l.id}`}>
+                <Entrada id={`lt-nome-${l.id}`} value={l.nome} onChange={(e) => setLote(i, { nome: e.target.value })} />
+              </Campo>
+              <Campo rotulo="Situação" htmlFor={`lt-st-${l.id}`}>
+                <Selecao id={`lt-st-${l.id}`} value={l.status} onChange={(e) => setLote(i, { status: e.target.value as Lote["status"] })}>
+                  <option value="ativo">Ativo</option>
+                  <option value="encerrado">Encerrado</option>
+                  <option value="arquivado">Arquivado</option>
+                </Selecao>
+              </Campo>
+              <Campo rotulo="Início das vendas" htmlFor={`lt-ini-${l.id}`}>
+                <Entrada id={`lt-ini-${l.id}`} type="datetime-local" value={paraLocal(l.inicioVendas)} onChange={(e) => e.target.value && setLote(i, { inicioVendas: new Date(e.target.value).toISOString() })} />
+              </Campo>
+              <Campo rotulo="Fim das vendas" htmlFor={`lt-fim-${l.id}`}>
+                <Entrada id={`lt-fim-${l.id}`} type="datetime-local" value={paraLocal(l.fimVendas)} onChange={(e) => e.target.value && setLote(i, { fimVendas: new Date(e.target.value).toISOString() })} />
+              </Campo>
+            </div>
+            <p className="text-xs font-medium">Ingressos neste lote</p>
+            {ev.tipos.filter((t) => !t.arquivado).map((t) => {
+              const item = l.itens.find((it) => it.tipoId === t.id);
+              const atualizarItem = (mud: Partial<Lote["itens"][number]>) =>
+                setLote(i, { itens: l.itens.map((it) => (it.tipoId === t.id ? { ...it, ...mud } : it)) });
+              return (
+                <div key={t.id} className="grid items-end gap-2 sm:grid-cols-[1fr_8rem_8rem]">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={!!item}
+                      onChange={(e) =>
+                        setLote(i, {
+                          itens: e.target.checked
+                            ? [...l.itens, { tipoId: t.id, precoCentavos: t.precoBaseCentavos, quantidade: t.quantidadeMaxima }]
+                            : l.itens.filter((it) => it.tipoId !== t.id),
+                        })
+                      }
+                    />
+                    {t.nome || "Ingresso sem nome"}
+                  </label>
+                  {item && (
+                    <>
+                      <Campo rotulo="Preço (R$)" htmlFor={`lt-pr-${l.id}-${t.id}`}>
+                        <Entrada id={`lt-pr-${l.id}-${t.id}`} type="number" min={0} step="0.01" value={item.precoCentavos / 100} onChange={(e) => atualizarItem({ precoCentavos: Math.round(Number(e.target.value) * 100) })} />
+                      </Campo>
+                      <Campo rotulo="Vagas no lote" htmlFor={`lt-qt-${l.id}-${t.id}`}>
+                        <Entrada id={`lt-qt-${l.id}-${t.id}`} type="number" min={1} value={item.quantidade} onChange={(e) => atualizarItem({ quantidade: Number(e.target.value) })} />
+                      </Campo>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+            <Botao variante="fantasma" onClick={() => set("lotes", ev.lotes.filter((_, j) => j !== i))}>Remover lote</Botao>
+          </fieldset>
+        ))}
       </div>
 
       <div className={secao}>

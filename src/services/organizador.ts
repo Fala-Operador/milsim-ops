@@ -1,3 +1,4 @@
+import { normalizarCodigoCupom, validarDadosCupom, type DadosCupom } from "@/lib/vendas";
 // Serviços do organizador: solicitação, eventos, cupons, cortesias.
 import { ehModalidade, erroModalidadeParaPublicar, nomeModalidade } from "@/lib/modalidades";
 import { restaurarVoucherDaInscricao } from "@/services/progressao";
@@ -216,19 +217,41 @@ export async function cancelarEvento(
   });
 }
 
-export async function criarCupom(
-  dados: Omit<import("@/lib/domain/types").Cupom, "id" | "usos" | "codigo"> & { codigo: string },
-): Promise<void> {
+export async function criarCupom(dados: DadosCupom & { eventoId: string }): Promise<void> {
   await latencia();
-  if (dados.descontoPercentual <= 0 || dados.descontoPercentual > 100) {
-    throw new ErroDominio("desconto", "Desconto deve ser maior que 0% e de até 100%.");
-  }
-  const codigo = dados.codigo.trim().toUpperCase();
   mutarBase((base) => {
-    if (base.cupons.some((c) => c.eventoId === dados.eventoId && c.codigo === codigo)) {
-      throw new ErroDominio("duplicado", "Já existe um cupom com este código neste evento.");
+    const evento = base.eventos.find((e) => e.id === dados.eventoId);
+    if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
+    const erros = validarDadosCupom(dados, {
+      codigosExistentes: base.cupons.filter((c) => c.eventoId === dados.eventoId).map((c) => c.codigo),
+      tiposDoEvento: evento.tipos.filter((t) => !t.arquivado).map((t) => t.id),
+    });
+    const primeiro = Object.values(erros)[0];
+    if (primeiro) throw new ErroDominio("cupom_dados", primeiro);
+    base.cupons.push({ ...dados, id: gerarId("cup"), codigo: normalizarCodigoCupom(dados.codigo), usos: 0 });
+  });
+}
+
+/**
+ * Edita um cupom sem tocar nas inscrições já feitas (o desconto aplicado fica
+ * gravado em cada inscrição). O código não muda, para preservar o histórico.
+ */
+export async function atualizarCupom(cupomId: string, dados: Omit<DadosCupom, "codigo">): Promise<void> {
+  await latencia();
+  mutarBase((base) => {
+    const cupom = base.cupons.find((c) => c.id === cupomId);
+    if (!cupom) throw new ErroDominio("cupom", "Cupom não encontrado.");
+    const evento = base.eventos.find((e) => e.id === cupom.eventoId)!;
+    const erros = validarDadosCupom({ ...dados, codigo: cupom.codigo }, {
+      codigosExistentes: [],
+      tiposDoEvento: evento.tipos.map((t) => t.id),
+    });
+    if (dados.limiteUsos !== null && dados.limiteUsos < cupom.usos) {
+      erros.limiteUsos = `O limite não pode ser menor que as ${cupom.usos} utilizações já feitas.`;
     }
-    base.cupons.push({ ...dados, id: gerarId("cup"), codigo, usos: 0 });
+    const primeiro = Object.values(erros)[0];
+    if (primeiro) throw new ErroDominio("cupom_dados", primeiro);
+    Object.assign(cupom, dados);
   });
 }
 

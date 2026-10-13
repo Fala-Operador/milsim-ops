@@ -100,8 +100,8 @@ export const excluirEventoFn = createServerFn({ method: "POST" })
 
 // ---------- Cupons e cortesias ----------
 const dadosCupom = z.object({
-  eventoId: id, codigo: texto(40), descontoPercentual: z.number(), validoDe: texto(40), validoAte: texto(40),
-  limiteUsos: z.number().int().min(0), tiposElegiveis: z.array(id), ativo: z.boolean(),
+  eventoId: id, codigo: texto(40), descontoPercentual: z.number(), validoDe: texto(40), validoAte: texto(40).nullable(),
+  limiteUsos: z.number().int().nullable(), tiposElegiveis: z.array(id).max(50), ativo: z.boolean(),
 });
 export const criarCupomFn = createServerFn({ method: "POST" })
   .validator(dadosCupom.parse)
@@ -109,6 +109,17 @@ export const criarCupomFn = createServerFn({ method: "POST" })
     mutar((ctx) => {
       exigirGestor(ctx, data.eventoId);
       return org.criarCupom(data);
+    }),
+  );
+
+export const atualizarCupomFn = createServerFn({ method: "POST" })
+  .validator(z.object({ cupomId: id, dados: dadosCupom.omit({ eventoId: true, codigo: true }) }).parse)
+  .handler(({ data }) =>
+    mutar((ctx) => {
+      const cupom = ctx.base.cupons.find((c) => c.id === data.cupomId);
+      if (!cupom) throw new ErroDominio("cupom", "Cupom não encontrado.");
+      exigirGestor(ctx, cupom.eventoId);
+      return org.atualizarCupom(data.cupomId, data.dados);
     }),
   );
 
@@ -133,4 +144,6 @@ export const publicarEvento = (eventoId: string) => chamar(publicarEventoFn({ da
 export const cancelarEvento = (eventoId: string, justificativa: string) => chamar(cancelarEventoFn({ data: { eventoId, justificativa } }));
 export const excluirEvento = (eventoId: string) => chamar(excluirEventoFn({ data: { eventoId } }));
 export const criarCupom = (dados: z.infer<typeof dadosCupom>) => chamar(criarCupomFn({ data: dados }));
+export const atualizarCupom = (cupomId: string, dados: Omit<z.infer<typeof dadosCupom>, "eventoId" | "codigo">) =>
+  chamar(atualizarCupomFn({ data: { cupomId, dados } }));
 export const criarCortesia = (dados: z.infer<typeof dadosCortesia>) => chamar(criarCortesiaFn({ data: dados }));
