@@ -10,6 +10,7 @@ import { formatarDataBR } from "@/lib/domain/money";
 import { nomeExibicao } from "@/services/comunidade";
 import type { CampanhaRecompensa, CriterioInsignia, Insignia } from "@/lib/domain/types";
 import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, Modal, Selecao } from "@/components/ui";
+import { IconeInsignia, ICONES_INSIGNIA } from "@/components/perfil/IconeInsignia";
 
 export const Route = createFileRoute("/admin/gamificacao")({
   head: () => ({

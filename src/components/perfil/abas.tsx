@@ -15,6 +15,7 @@ import { MAX_FOTOS_EQUIPAMENTO, TIPOS_EQUIPAMENTO } from "@/services/perfilOpera
 import type { EquipamentoDTO, FotoDTO, InsigniaDTO, OperacaoDTO, RecompensaDTO } from "@/lib/perfilSocial";
 import type { Equipamento, TipoEquipamento } from "@/lib/domain/types";
 import { AreaTexto, Badge, Botao, Campo, EstadoVazio, Entrada, Modal, Selecao } from "@/components/ui";
+import { IconeInsignia } from "./IconeInsignia";
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : "Algo deu errado.");
 
