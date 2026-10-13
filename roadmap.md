@@ -2,6 +2,7 @@
 
 ## Editor de eventos — validação
 - [ ] Testar celular e tema TAN, recortes, publicação e leitura pública; corrigir problemas encontrados.
+- [ ] Ajustar badges, proporções da tabela e filtros em Inscritos; verificar celular, larguras intermediárias e os dois temas.
 
 - [x] Carrosséis compartilhados sem scrollbar, com setas, indicadores, deslize e validação de overflow
 
