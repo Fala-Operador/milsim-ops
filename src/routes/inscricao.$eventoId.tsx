@@ -7,12 +7,14 @@ import { registrarInicioInscricao } from "@/services/analytics";
 import { loteVigente, ocupacaoExercito } from "@/services/inscricoes";
 import { confirmarInscricao, previsualizarCupom } from "@/api/inscricoes.functions";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatarBRL } from "@/lib/domain/money";
+import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
+import { descontoDoBeneficio, descreverBeneficio, statusVoucher } from "@/lib/participacao";
 import { Botao, Campo, Cartao, Entrada, Selecao, SkeletonPagina } from "@/components/ui";
 
 export const Route = createFileRoute("/inscricao/$eventoId")({
   validateSearch: (s: Record<string, unknown>) => ({
     cortesia: typeof s["cortesia"] === "string" ? s["cortesia"] : undefined,
+    voucher: typeof s["voucher"] === "string" ? s["voucher"] : undefined,
   }),
   loader: async ({ params }) => {
     const { evento } = await obterEventoFn({ data: { eventoId: params.eventoId } });
@@ -42,7 +44,7 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
 function PaginaInscricao() {
   const { evento: eventoCarregado } = Route.useLoaderData();
   const evento = useEventoAtual(eventoCarregado);
-  const { cortesia: codigoCortesia } = Route.useSearch();
+  const { cortesia: codigoCortesia, voucher: voucherInicial } = Route.useSearch();
   const { usuario } = useAuth();
   const navigate = useNavigate();
   const base = carregarBase();
@@ -58,6 +60,7 @@ function PaginaInscricao() {
   const [tipoId, setTipoId] = useState(cortesia?.tipoId ?? "");
   const [exercitoId, setExercitoId] = useState(cortesia?.exercitoId ?? "");
   const [cupom, setCupom] = useState("");
+  const [voucherId, setVoucherId] = useState(voucherInicial ?? "");
   const [desconto, setDesconto] = useState(0);
   const [erro, setErro] = useState("");
   const [ok, setOk] = useState("");
@@ -78,6 +81,14 @@ function PaginaInscricao() {
   const preco = cortesia
     ? 0
     : (lote?.itens.find((i) => i.tipoId === tipoId)?.precoCentavos ?? tipo?.precoBaseCentavos ?? 0);
+
+  // Benefícios de recompensa da própria conta válidos para este evento/ingresso.
+  const vouchers = base.vouchers.filter(
+    (v) => v.usuarioId === usuario?.id && statusVoucher(v) === "disponivel" && v.beneficio.eventosElegiveis.includes(evento.id),
+  );
+  const voucher = vouchers.find((v) => v.id === voucherId);
+  const voucherServe = !!voucher && !!tipo && (!voucher.beneficio.tiposElegiveis.length || voucher.beneficio.tiposElegiveis.includes(tipo.id));
+  const descontoVoucher = voucher && voucherServe ? descontoDoBeneficio(voucher.beneficio, preco) : 0;
 
   // Cadastro iniciado a partir do evento: preserva o destino e retorna após autenticação
   if (!usuario || !montado) {
@@ -136,8 +147,9 @@ function PaginaInscricao() {
         eventoId: evento.id,
         tipoId,
         exercitoId,
-        codigoCupom: desconto > 0 ? cupom : undefined,
+        codigoCupom: !voucherId && desconto > 0 ? cupom : undefined,
         cortesiaId: cortesia?.id,
+        voucherId: voucherId || undefined,
       });
       navigate({ to: "/app/ingressos" });
     } catch (err) {
@@ -195,7 +207,20 @@ function PaginaInscricao() {
             </Selecao>
           </Campo>
 
-          {!cortesia && (
+          {!cortesia && vouchers.length > 0 && (
+            <Campo rotulo="Benefício de recompensa (opcional)" htmlFor="voucher">
+              <Selecao id="voucher" value={voucherId} onChange={(e) => { setVoucherId(e.target.value); setDesconto(0); setOk(""); }}>
+                <option value="">Não usar benefício</option>
+                {vouchers.map((v) => (
+                  <option key={v.id} value={v.id}>{v.beneficio.nome} — {descreverBeneficio(v.beneficio)} (até {formatarDataBR(v.beneficio.resgatarAte)})</option>
+                ))}
+              </Selecao>
+              <p className="text-xs text-muted-foreground">O benefício não reserva vaga e não acumula com cupom. Ele só é consumido quando a inscrição for confirmada.</p>
+              {voucher && tipo && !voucherServe && <p role="alert" className="text-sm text-destructive">Este benefício não vale para o ingresso escolhido.</p>}
+            </Campo>
+          )}
+
+          {!cortesia && !voucherId && (
             <Campo rotulo="4. Cupom (opcional)" htmlFor="cupom">
               <div className="flex gap-2">
                 <Entrada id="cupom" value={cupom} onChange={(e) => setCupom(e.target.value)} placeholder="CODIGO" />
@@ -211,9 +236,10 @@ function PaginaInscricao() {
                 <p>Evento: {evento.nome}</p>
                 <p>Ingresso: {tipo.nome}{lote ? ` (${lote.nome})` : ""}</p>
                 <p>Valor original: {formatarBRL(preco)}</p>
-                {desconto > 0 && <p>Desconto: −{formatarBRL(desconto)}</p>}
+                {!voucherId && desconto > 0 && <p>Desconto: −{formatarBRL(desconto)}</p>}
+                {descontoVoucher > 0 && <p>Benefício de recompensa: −{formatarBRL(descontoVoucher)}</p>}
                 <p className="font-medium text-foreground">
-                  Valor final: {formatarBRL(Math.max(0, preco - desconto))}
+                  Valor final: {formatarBRL(Math.max(0, preco - (voucherId ? descontoVoucher : desconto)))}
                   {cortesia && " (cortesia por convite)"}
                   {desconto >= preco && preco > 0 && " (inscrição integralmente descontada)"}
                 </p>
