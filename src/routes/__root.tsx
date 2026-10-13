@@ -8,9 +8,10 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { Component, useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { ErroSecao } from "@/components/ui";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider, SCRIPT_TEMA_INICIAL } from "@/contexts/ThemeContext";
@@ -147,20 +148,55 @@ function Providers({ children }: { children: ReactNode }) {
   );
 }
 
+// O errorComponent da rota só captura falhas abaixo do componente da rota;
+// uma quebra dentro de AuthProvider/ThemeProvider derrubaria a árvore inteira
+// e deixaria a tela em branco. Este limite envolve os provedores e a página.
+class LimiteErroRaiz extends Component<{ children: ReactNode }, { quebrou: boolean }> {
+  override state = { quebrou: false };
+
+  static getDerivedStateFromError() {
+    return { quebrou: true };
+  }
+
+  override componentDidCatch(error: unknown) {
+    console.error(error);
+    reportLovableError(error, { boundary: "root_providers_error_boundary" });
+  }
+
+  override render() {
+    if (this.state.quebrou) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background px-4">
+          <div className="w-full max-w-lg">
+            <ErroSecao
+              titulo="O aplicativo não carregou"
+              descricao="Algo deu errado ao iniciar. Recarregue a página ou volte ao início."
+              onTentar={() => window.location.reload()}
+            />
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ThemeProvider>
-          <LocalizacaoProvider>
-          <Providers>
-            <Outlet />
-          </Providers>
-          </LocalizacaoProvider>
-        </ThemeProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <LimiteErroRaiz>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ThemeProvider>
+            <LocalizacaoProvider>
+            <Providers>
+              <Outlet />
+            </Providers>
+            </LocalizacaoProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </LimiteErroRaiz>
   );
 }
