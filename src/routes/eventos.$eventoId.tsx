@@ -1,3 +1,4 @@
+import { nomeModalidade } from "@/lib/modalidades";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { carregarBase } from "@/services/db";
@@ -70,6 +71,7 @@ function PaginaEvento() {
 
       <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
         <div>
+          <span className="inline-block rounded border border-border px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">{nomeModalidade(evento.modalidade)}</span>
           <h1 className="font-display text-3xl font-bold uppercase tracking-wide">{evento.nome}</h1>
           <p className="mt-1 text-muted-foreground">
             {organizacao?.nome} · {formatarDataHoraBR(evento.inicioEm)} a {formatarDataHoraBR(evento.fimEm)}

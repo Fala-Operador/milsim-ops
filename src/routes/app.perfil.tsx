@@ -5,6 +5,11 @@ import { formatarDataBR } from "@/lib/domain/money";
 import { mascararCpf, mascararTelefone } from "@/lib/domain/validators";
 import { Cartao, Selecao, Campo } from "@/components/ui";
 import { NomeExibicaoForm } from "@/components/NomeExibicaoForm";
+import { useEffect } from "react";
+import { Botao } from "@/components/ui";
+import { OpcoesModalidade, useSelecaoModalidades } from "@/components/PreferenciasModalidade";
+import { usePreferencias } from "@/contexts/PreferenciasContext";
+import { nomeModalidade } from "@/lib/modalidades";
 
 export const Route = createFileRoute("/app/perfil")({
   head: () => ({
@@ -52,6 +57,30 @@ function Perfil() {
           </Campo>
         </div>
       </Cartao>
+      <PreferenciasEventos />
     </div>
+  );
+}
+
+function PreferenciasEventos() {
+  const p = usePreferencias();
+  const { sel, setSel, alternar } = useSelecaoModalidades([]);
+  useEffect(() => { setSel(p.preferencia.modalidades); }, [p.preferencia, setSel]);
+  const atual = p.preferencia.estado === "selecionadas" ? p.preferencia.modalidades.map(nomeModalidade).join(", ")
+    : p.preferencia.estado === "todas" ? "Explorar todas" : "Ainda não escolhidas";
+  return (
+    <Cartao>
+      <h2 className="font-display text-lg font-semibold uppercase">Preferências de eventos</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Atual: {atual}. Suas favoritas aparecem primeiro em “Para você”, sem esconder as demais. Salvo nesta conta, neste navegador.</p>
+      {p.montado && (
+        <>
+          <div className="mt-3"><OpcoesModalidade selecionadas={sel} onAlternar={alternar} nome="perfil-mod" /></div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Botao disabled={!sel.length} onClick={() => p.salvar(sel)}>Salvar preferências</Botao>
+            <Botao variante="secundario" onClick={p.explorarTodas}>Explorar todas</Botao>
+          </div>
+        </>
+      )}
+    </Cartao>
   );
 }

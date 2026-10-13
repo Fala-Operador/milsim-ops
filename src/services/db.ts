@@ -34,6 +34,12 @@ export function carregarBase(): BaseDados {
     cache = existente;
     return cache;
   }
+  // Migração 3 → 4: modalidades. Preserva todos os dados; eventos antigos ficam sem modalidade.
+  if (existente && existente.versao === 3) {
+    cache = { ...existente, versao: VERSAO_BASE };
+    storage.gravar(CHAVE, cache);
+    return cache;
+  }
   // Inicializa somente quando ainda não existe (ou versão inválida)
   cache = criarBaseInicial();
   storage.gravar(CHAVE, cache);

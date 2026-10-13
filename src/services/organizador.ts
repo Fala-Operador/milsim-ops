@@ -1,4 +1,5 @@
 // Serviços do organizador: solicitação, eventos, cupons, cortesias.
+import { ehModalidade, erroModalidadeParaPublicar, nomeModalidade } from "@/lib/modalidades";
 import { carregarBase, mutarBase, latencia, ErroDominio, gerarId, gerarCodigo } from "./db";
 import { silenciado } from "./notificacoes";
 import { cnpjValido, normalizarEmail, somenteDigitos, telefoneValido } from "@/lib/domain/validators";
@@ -105,6 +106,16 @@ export async function salvarEvento(
       if (new Set(nomes).size !== nomes.length) {
         throw new ErroDominio("exercito_duplicado", "Há exércitos com nomes duplicados.");
       }
+      const anterior = base.eventos[idx]!.modalidade;
+      if (evento.status === "publicado" && !ehModalidade(evento.modalidade)) {
+        throw new ErroDominio("modalidade", "Eventos publicados precisam de uma modalidade principal.");
+      }
+      if (anterior !== evento.modalidade) {
+        base.auditoria.push({
+          id: gerarId("aud"), autorId: usuarioId, acao: "alterar_modalidade_evento", entidade: "evento", entidadeId: evento.id,
+          justificativa: `${nomeModalidade(anterior)} → ${nomeModalidade(evento.modalidade)}`, criadoEm: new Date().toISOString(),
+        });
+      }
       base.eventos[idx] = evento;
     } else {
       base.eventos.push(evento);
@@ -116,6 +127,8 @@ export async function salvarEvento(
 export function validarParaPublicacao(evento: Evento): string[] {
   const erros: string[] = [];
   if (!evento.nome.trim()) erros.push("Nome obrigatório.");
+  const erroMod = erroModalidadeParaPublicar(evento);
+  if (erroMod) erros.push(erroMod);
   if (!evento.descricaoResumida.trim()) erros.push("Descrição resumida obrigatória.");
   if (!evento.enredo.trim()) erros.push("Enredo obrigatório.");
   if (!evento.local.trim()) erros.push("Local obrigatório.");

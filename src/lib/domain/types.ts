@@ -1,3 +1,4 @@
+import type { ModalidadeId, PreferenciaModalidades } from "@/lib/modalidades";
 // Tipos de domínio da aplicação (base 100% mockada).
 
 export type Perfil = "admin" | "participante" | "organizador";
@@ -26,6 +27,8 @@ export interface Usuario {
   silencioNotificacoes?: { todas?: boolean; comunidade?: boolean } | undefined;
   /** Aparência escolhida pela conta; ausente = escuro. */
   tema?: "dark" | "light" | undefined;
+  /** Modalidades favoritas declaradas pela conta (nunca expostas nominalmente). */
+  preferenciasModalidade?: PreferenciaModalidades | undefined;
   autorizacaoResponsavel?: "pendente" | "aprovada" | "nao_aplicavel" | undefined;
   autorizacaoPromocional: boolean;
   aceiteTermosVersao: string;
@@ -146,6 +149,8 @@ export interface Evento {
   lotes: Lote[];
   cronograma: AtividadeCronograma[];
   regras?: DocumentoRegras | undefined;
+  /** Modalidade principal; ausente em eventos antigos ("Modalidade não informada"). */
+  modalidade?: ModalidadeId | undefined;
   whatsappGrupoUrl?: string | undefined;
   status: StatusEvento;
   criadoEm: string;

@@ -1,3 +1,4 @@
+import { nomeModalidade } from "@/lib/modalidades";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { carregarBase } from "@/services/db";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
@@ -63,7 +64,7 @@ function Dashboard() {
                     <tr key={ev.id} className="border-b border-border/50">
                       <td className="py-2 pr-3">
                         <p className="font-medium">{ev.nome}</p>
-                        <p className="text-xs text-muted-foreground">{org?.nome ?? "—"} · {ev.cidade}/{ev.uf}</p>
+                        <p className="text-xs text-muted-foreground">{org?.nome ?? "—"} · {ev.cidade}/{ev.uf} · {nomeModalidade(ev.modalidade)}</p>
                       </td>
                       <td className="py-2 pr-3">{formatarDataBR(ev.inicioEm)}</td>
                       <td className="py-2 pr-3"><Badge tom={tom}>{ev.status.replace("_", " ")}</Badge></td>

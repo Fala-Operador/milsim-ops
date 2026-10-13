@@ -17,3 +17,4 @@
 - [x] Check-in e credenciamento (QR Code, manual, offline com Service Worker + IndexedDB, sincronização demonstrativa)
 - [ ] "Adicionar participante" (módulo pendente)
 - [x] Página inicial refeita: tema escuro para visitantes, aparência por conta, localização real + seletor de cidade
+- [x] Modalidades dos eventos e preferências (sem configuração por seção automática ainda)

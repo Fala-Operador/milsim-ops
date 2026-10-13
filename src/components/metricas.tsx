@@ -1,4 +1,5 @@
 // Painel de métricas por evento (organizador) e consolidado (admin). Somente dados agregados.
+import { nomeModalidade } from "@/lib/modalidades";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { BaseDados, Evento } from "@/lib/domain/types";
@@ -230,6 +231,7 @@ export function PainelMetricas({ base, eventos, modo }: { base: BaseDados; event
           return agrupamento === "regiao" ? regiaoDaUf(e.uf) ?? "—" : agrupamento === "uf" ? e.uf : `${e.cidade}/${e.uf}`;
         }).sort((a, b) => b.ind.visitas - a.ind.visitas);
         const cab = ["Visitas", "Visitantes", "Confirmadas", "Conversão (volume)"];
+        const porModalidade = agrupar(regs, todos, (r) => { const e = evPorId.get(r.eventoId); return e ? nomeModalidade(e.modalidade) : undefined; }).sort((a, b) => b.ind.visitas - a.ind.visitas);
         return (
           <>
             <div className="grid gap-6 lg:grid-cols-3">
@@ -245,6 +247,9 @@ export function PainelMetricas({ base, eventos, modo }: { base: BaseDados; event
                 {(["regiao", "uf", "cidade"] as const).map((a) => <Botao key={a} variante={agrupamento === a ? "primario" : "contorno"} onClick={() => setAgrupamento(a)}>{a === "regiao" ? "Região" : a === "uf" ? "Estado" : "Cidade"}</Botao>)}
               </div>
               <Tabela cab={["Local", ...cab]} linhas={geo.map((g) => [g.chave, ...linhaComVolume(g.ind)])} />
+            </Bloco>
+            <Bloco titulo="Visitas e inscrições por modalidade" nota="Dados agregados por evento. Preferências declaradas não entram aqui e não indicam inscrição.">
+              <Tabela cab={["Modalidade", ...cab]} linhas={porModalidade.map((g) => [g.chave, ...linhaComVolume(g.ind)])} />
             </Bloco>
           </>
         );

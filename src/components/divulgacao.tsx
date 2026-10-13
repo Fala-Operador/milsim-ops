@@ -1,4 +1,5 @@
 // Componentes públicos da página inicial: seletor de região, seções, carrossel, parceiros e banner.
+import { nomeModalidade } from "@/lib/modalidades";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { registrarClique, registrarExibicao } from "@/services/analytics";
@@ -137,7 +138,10 @@ function CartaoEvento({ c }: { c: CartaoEventoResolvido }) {
       </div>
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-display text-lg font-semibold uppercase">{e.nome}</h3>
+          <div>
+            <h3 className="font-display text-lg font-semibold uppercase">{e.nome}</h3>
+            <span className="mt-1 inline-block rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{nomeModalidade(e.modalidade)}</span>
+          </div>
           {c.esgotado ? <Badge tom="perigo">Esgotado</Badge> : <Badge tom="sucesso">Vagas abertas</Badge>}
         </div>
         <p className="mt-1 text-sm text-muted-foreground">{formatarDataBR(e.inicioEm)} · {e.cidade}/{e.uf}</p>

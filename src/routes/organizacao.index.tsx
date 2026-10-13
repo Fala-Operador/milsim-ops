@@ -1,3 +1,4 @@
+import { nomeModalidade } from "@/lib/modalidades";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { selecionarEventoOrganizacao } from "@/contexts/OrganizationEventContext";
 import { useState } from "react";
@@ -105,6 +106,14 @@ function PainelEventos() {
         <h2 className="font-display text-lg font-semibold uppercase">
           {orgId ? (base.organizacoes.find((o) => o.id === orgId)?.nome ?? "Painel") : "Todas as organizações"}
         </h2>
+        {(() => {
+          const sem = eventos.filter((e) => !e.modalidade && e.status !== "cancelado" && e.status !== "concluido");
+          return sem.length > 0 ? (
+            <p role="status" className="basis-full rounded-md border border-dashed border-accent/60 px-3 py-2 text-sm">
+              {sem.length === 1 ? "1 evento está" : `${sem.length} eventos estão`} sem modalidade: {sem.map((e) => e.nome || "Sem nome").join(", ")}. Edite para completar o cadastro.
+            </p>
+          ) : null;
+        })()}
         <Botao onClick={() => setForm(eventoVazio(orgId ?? base.organizacoes[0]?.id ?? ""))}>+ Criar evento</Botao>
       </div>
 
@@ -157,7 +166,7 @@ function PainelEventos() {
                   <tr key={e.id} className="border-b border-border/50">
                     <td className="py-2 pr-3">
                       <p className="font-medium">{e.nome || "Sem nome"}</p>
-                      <p className="text-xs text-muted-foreground">{e.cidade || "—"}/{e.uf}</p>
+                      <p className="text-xs text-muted-foreground">{e.cidade || "—"}/{e.uf} · <span className={e.modalidade ? "" : "text-warning"}>{nomeModalidade(e.modalidade)}</span></p>
                     </td>
                     <td className="py-2 pr-3 whitespace-nowrap">{formatarDataBR(e.inicioEm)}</td>
                     <td className="py-2 pr-3"><Badge tom={tomStatusEvento[e.status]}>{e.status.replace("_", " ")}</Badge></td>
