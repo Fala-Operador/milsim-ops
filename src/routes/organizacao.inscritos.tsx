@@ -4,7 +4,8 @@ import { Download, Search, SlidersHorizontal, Ticket, Users, UserCheck, X, Eye }
 import { OperacaoSelecionada } from "@/components/OperacaoSelecionada";
 import { entradaAtiva, ROTULO_ORIGEM_ENTRADA, type RegistroCheckin } from "@/lib/checkin";
 import { registrosReferencia } from "@/services/checkin";
-import { Badge, Botao, Cartao, EstadoVazio, Selecao, Skeleton } from "@/components/ui";
+import { Botao, Cartao, EstadoVazio, Selecao, Skeleton } from "@/components/ui";
+import { StatusInscricao, StatusCheckin } from "@/components/StatusInscricao";
 import { useEventoSelecionado, useEventosOrg } from "@/components/organizacao";
 import { formatarDataBR } from "@/lib/domain/money";
 import { mascararCpf } from "@/lib/domain/validators";
@@ -153,24 +154,22 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
 
       <Cartao className="bg-elevated p-0">
         <div className="space-y-3 border-b border-border p-4">
-          <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-            <div className="flex min-w-0 flex-1 gap-2">
-              <div className="relative min-w-0 flex-1">
+          <div className="grid min-w-0 grid-cols-2 items-center gap-2 lg:grid-cols-[minmax(240px,1fr)_auto]">
+              <div className="relative col-span-2 min-w-0 lg:col-span-1">
                 <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <input
                   aria-label="Buscar por nome ou código"
-                  placeholder="Buscar por nome ou código da inscrição"
+                  placeholder="Buscar por nome ou código"
                   value={filtros.busca}
                   onChange={(e) => mudar({ busca: e.target.value })}
                   className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm focus:border-ring focus:outline-none"
                 />
               </div>
-              <Botao variante="contorno" className="shrink-0 lg:hidden" onClick={() => setFiltrosMobile((v) => !v)} aria-expanded={filtrosMobile}>
+              <Botao variante="contorno" className="shrink-0 whitespace-nowrap lg:hidden" onClick={() => setFiltrosMobile((v) => !v)} aria-expanded={filtrosMobile}>
                 <SlidersHorizontal className="h-4 w-4" /> Filtros{extras > 0 && ` (${extras})`}
               </Botao>
-            </div>
-            <div className="hidden gap-2 lg:flex">{filtrosSelect}</div>
-            <Botao variante="contorno" className="shrink-0" onClick={exportar}><Download className="h-4 w-4" /> Exportar CSV</Botao>
+            <Botao variante="contorno" className="shrink-0 whitespace-nowrap lg:col-start-2 lg:row-start-1" onClick={exportar}><Download className="h-4 w-4 shrink-0" /> Exportar CSV</Botao>
+            <div className="col-span-2 hidden min-w-0 grid-cols-3 gap-2 lg:grid">{filtrosSelect}</div>
           </div>
           {filtrosMobile && <div className="grid gap-2 sm:grid-cols-3 lg:hidden">{filtrosSelect}</div>}
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
@@ -189,14 +188,15 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
           <div className="p-4"><EstadoVazio titulo="Nenhum participante encontrado" descricao="Ajuste a busca ou limpe os filtros." /></div>
         ) : (
           <>
-            <table className="hidden w-full text-sm md:table">
+            <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[760px] text-[13px]">
               <thead className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Participante</th>
                   <th className="px-4 py-3">Tipo de ingresso</th>
                   <th className="px-4 py-3">Exército</th>
                   <th className="px-4 py-3">Origem</th>
-                  <th className="px-4 py-3">Status da inscrição</th>
+                  <th className="min-w-[168px] px-4 py-3">Situação</th>
                   <th className="px-4 py-3 text-right">Ações</th>
                 </tr>
               </thead>
@@ -207,9 +207,9 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
                     <td className="px-4 py-3">{nomeTipo(i.tipoId)}</td>
                     <td className="px-4 py-3">{nomeEx(i.exercitoId)}</td>
                     <td className="px-4 py-3">{ROTULO_ORIGEM[i.origem]}</td>
-                    <td className="px-4 py-3"><div className="flex flex-wrap gap-1"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div></td>
+                    <td className="min-w-[168px] px-4 py-3"><div className="flex flex-col items-start gap-1.5"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div></td>
                     <td className="px-4 py-3 text-right">
-                      <Botao variante="fantasma" className="px-2 py-1" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={`Ver detalhes de ${nomeDe(i)}`}>
+                      <Botao variante="fantasma" className="whitespace-nowrap px-2 py-1" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={`Ver detalhes de ${nomeDe(i)}`}>
                         <Eye className="h-4 w-4" /> Detalhes
                       </Botao>
                     </td>
@@ -217,12 +217,13 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
                 ))}
               </tbody>
             </table>
+            </div>
             <ul className="divide-y divide-border md:hidden">
               {visiveis.map((i) => (
                 <li key={i.id} className="space-y-2 p-4">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
                     <Participante nome={nomeDe(i)} codigo={i.codigo} />
-                    <div className="flex flex-col items-end gap-1"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div>
+                    <div className="flex flex-col items-start gap-1.5"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div>
                   </div>
                   <p className="text-xs text-muted-foreground">{nomeTipo(i.tipoId)} · {nomeEx(i.exercitoId)} · {ROTULO_ORIGEM[i.origem]}</p>
                   <Botao variante="contorno" className="w-full py-1.5" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={`Ver detalhes de ${nomeDe(i)}`}><Eye className="h-4 w-4" /> Detalhes</Botao>
@@ -260,21 +261,11 @@ function Participante({ nome, codigo }: { nome: string; codigo: string }) {
     <div className="flex min-w-0 items-center gap-3">
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground" aria-hidden="true">{iniciais}</span>
       <span className="min-w-0">
-        <span className="block truncate font-medium">{nome}</span>
+        <span className="block font-medium">{nome}</span>
         <span className="block font-mono text-xs text-muted-foreground">{codigo}</span>
       </span>
     </div>
   );
-}
-
-function StatusInscricao({ status }: { status: Inscricao["status"] }) {
-  return <Badge tom={status === "confirmada" ? "sucesso" : "perigo"}>{status === "confirmada" ? "✓ " : "✕ "}{ROTULO_STATUS_INSCRICAO[status]}</Badge>;
-}
-
-function StatusCheckin({ presenca }: { presenca: RegistroCheckin | undefined }) {
-  return presenca
-    ? <Badge tom="destaque">⛳ Check-in {new Date(presenca.em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</Badge>
-    : <Badge>○ Sem check-in</Badge>;
 }
 
 function PainelDetalhes({ inscricao, evento, nome, cpf, presenca, onFechar }: {

@@ -33,7 +33,7 @@ export function Cartao({ children, className = "" }: { children: ReactNode; clas
 
 type TomBadge = "padrao" | "sucesso" | "aviso" | "perigo" | "destaque";
 
-export function Badge({ tom = "padrao", children }: { tom?: TomBadge; children: ReactNode }) {
+export function Badge({ tom = "padrao", children, "aria-label": ariaLabel }: { tom?: TomBadge; children: ReactNode; "aria-label"?: string }) {
   const tons: Record<TomBadge, string> = {
     padrao: "bg-secondary text-secondary-foreground",
     sucesso: "bg-success text-success-foreground",
@@ -42,7 +42,7 @@ export function Badge({ tom = "padrao", children }: { tom?: TomBadge; children: 
     destaque: "bg-accent text-accent-foreground",
   };
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${tons[tom]}`}>
+    <span aria-label={ariaLabel} className={`status-badge inline-flex w-max max-w-full shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium leading-4 [&_svg]:size-3 [&_svg]:shrink-0 ${tons[tom]}`}>
       {children}
     </span>
   );
