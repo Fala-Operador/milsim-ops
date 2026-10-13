@@ -7,14 +7,14 @@ import { ErroSecao } from "@/components/ui";
 // Limite de erro clássico para simular o que o errorComponent das rotas faz:
 // uma quebra de renderização dentro da árvore deve cair na tela de recuperação.
 class LimiteErro extends Component<{ children: ReactNode }, { quebrou: boolean }> {
-  state = { quebrou: false };
+  override state = { quebrou: false };
   static getDerivedStateFromError() {
     return { quebrou: true };
   }
-  componentDidCatch(error: unknown) {
+  override componentDidCatch(error: unknown) {
     void error;
   }
-  render() {
+  override render() {
     if (this.state.quebrou) return <ErroSecao onTentar={() => this.setState({ quebrou: false })} />;
     return this.props.children;
   }
