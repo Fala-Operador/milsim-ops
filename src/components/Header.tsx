@@ -53,7 +53,7 @@ function ItensConta({ fechar, aoSair }: { fechar: () => void; aoSair: () => void
   const { usuario } = useAuth();
   const { abrirEditor } = usePreferencias();
   if (!usuario) return null;
-  const gestao = usuario.perfil !== "participante" || usuario.perfil === "participante";
+  const gestao = true;
   return (
     <>
       <Grupo titulo="Conta">
