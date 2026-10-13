@@ -2,7 +2,8 @@
 
 ## Editor de eventos — validação
 - [x] Testar celular e tema TAN, recortes, publicação e leitura pública; corrigir problemas encontrados.
-- [ ] Persistir recorte independente do banner após reabrir — bloqueado pela aplicação da migração de imagem/CEP no banco externo.
+- [x] Validar recorte imediato de banner/card e restauração ao voltar à etapa com testes de regressão.
+- [ ] Persistir recorte independente do banner e CEP após reabrir do servidor — bloqueado: coluna imagem ausente (API 42703); sem conexão SQL nem acesso de migração ao banco externo atual. Aplicar docs/migracoes/20261013220000_evento_imagem_cep.sql no editor SQL do projeto existente e confirmar leitura após salvar.
 - [x] Ajustar badges, proporções da tabela e filtros em Inscritos; verificar celular, larguras intermediárias e os dois temas (390, 820, 1024 e 1280 px; 154 testes passando).
 
 - [x] Carrosséis compartilhados sem scrollbar, com setas, indicadores, deslize e validação de overflow
