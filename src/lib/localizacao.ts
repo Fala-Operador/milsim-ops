@@ -37,6 +37,8 @@ export function buscarLocalidades(lista: Localidade[], termo: string, max = 8): 
   const q = normalizar(termo);
   if (!q) return lista.slice(0, max);
   const porUf = q.length === 2 ? lista.filter((l) => l.uf.toLowerCase() === q) : [];
+  // Termo que é exatamente uma UF filtra o estado inteiro; nomes de cidade não entram.
+  if (porUf.length > 0) return porUf.slice(0, max);
   const porNome = lista
     .filter((l) => normalizar(l.cidade).includes(q) || normalizar(`${l.cidade} ${l.uf}`).includes(q))
     .sort((a, b) => Number(!normalizar(a.cidade).startsWith(q)) - Number(!normalizar(b.cidade).startsWith(q)));
