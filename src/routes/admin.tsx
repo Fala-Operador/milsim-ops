@@ -33,6 +33,7 @@ const abas = [
   { to: "/admin/insights", rotulo: "Insights IA" },
   { to: "/admin/metricas", rotulo: "Métricas" },
   { to: "/admin/divulgacao", rotulo: "Página inicial e divulgação" },
+  { to: "/admin/gamificacao", rotulo: "Gamificação e recompensas" },
   { to: "/admin/solicitacoes", rotulo: "Solicitações" },
   { to: "/admin/notificacoes", rotulo: "Notificações" },
   { to: "/admin/usuarios", rotulo: "Usuários" },

@@ -12,7 +12,7 @@ function ErroOrganizacao({ error, reset }: ErrorComponentProps) {
   }, [error]);
   return <ErroSecao onTentar={() => reset()} />;
 }
-import { LayoutDashboard, Users, MessagesSquare, Wallet, Bell, BarChart3, QrCode } from "lucide-react";
+import { LayoutDashboard, Users, MessagesSquare, Wallet, Gift, Bell, BarChart3, QrCode } from "lucide-react";
 import { useNotifications } from "@/contexts/NotificationContext";
 
 export const Route = createFileRoute("/organizacao")({
@@ -37,6 +37,7 @@ const itens = [
   { to: "/organizacao/comunidade", rotulo: "Comunidade", icone: MessagesSquare },
   { to: "/organizacao/financeiro", rotulo: "Financeiro", icone: Wallet },
   { to: "/organizacao/metricas", rotulo: "Métricas", icone: BarChart3 },
+  { to: "/organizacao/recompensas", rotulo: "Recompensas", icone: Gift },
   { to: "/organizacao/notificacoes", rotulo: "Notificações", icone: Bell },
 ] as const;
 
