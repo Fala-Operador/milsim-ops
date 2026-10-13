@@ -3,6 +3,7 @@ import { gerarId } from "@/services/db";
 import { AreaTexto, Botao, Campo, Entrada, Selecao } from "@/components/ui";
 import type { Evento } from "@/lib/domain/types";
 import { pdfParaDataUrl } from "@/lib/imagens";
+import { ehModalidade, MODALIDADES } from "@/lib/modalidades";
 
 const UFS = "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" ");
 
@@ -94,6 +95,17 @@ export function FormEvento({
     <div className="space-y-4 text-sm">
       <Campo rotulo="Nome do evento" htmlFor="ev-nome">
         <Entrada id="ev-nome" value={ev.nome} onChange={(e) => set("nome", e.target.value)} />
+      </Campo>
+      <Campo rotulo="Modalidade principal" htmlFor="ev-mod">
+        <Selecao id="ev-mod" value={ev.modalidade ?? ""} aria-describedby="ev-mod-ajuda"
+          onChange={(e) => set("modalidade", ehModalidade(e.target.value) ? e.target.value : undefined)}>
+          <option value="">Selecione…</option>
+          {MODALIDADES.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
+        </Selecao>
+        <p id="ev-mod-ajuda" className="mt-1 text-xs text-muted-foreground">
+          Selecione a modalidade que melhor representa esta operação. Detalhe as regras específicas no caderno de regras.
+          {ev.status !== "rascunho" && !ev.modalidade && " Obrigatória para publicar."}
+        </p>
       </Campo>
       <Campo rotulo="Descrição resumida" htmlFor="ev-desc">
         <Entrada id="ev-desc" maxLength={200} value={ev.descricaoResumida} onChange={(e) => set("descricaoResumida", e.target.value)} />
