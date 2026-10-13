@@ -1,7 +1,7 @@
 // Serviços administrativos da página inicial (exclusivos do administrador), com auditoria.
 import { mutarBase, latencia, ErroDominio, gerarId } from "./db";
 import type { BaseDados, Parceiro, SecaoInicial, StatusSecao, Usuario } from "@/lib/domain/types";
-import { hrefDoLink, rotuloDoLink, validarUrlExterna } from "@/lib/divulgacao";
+import { erroDoLink, normalizarLinks, rotuloDoLink, validarUrlExterna } from "@/lib/divulgacao";
 
 function exigirAdmin(u: Usuario | null) {
   if (!u || u.perfil !== "admin") throw new ErroDominio("permissao", "Somente administradores gerenciam a página inicial.");
@@ -94,21 +94,15 @@ export function validarParceiro(d: DadosParceiro): void {
   if (!d.nome.trim()) throw new ErroDominio("nome", "Informe o nome do parceiro.");
   if (d.logoUrl && !d.textoAlt.trim()) throw new ErroDominio("textoAlt", "Informe o texto alternativo do logo.");
   for (const l of d.links) {
-    if (l.tipo === "outro" && !l.rotulo?.trim()) throw new ErroDominio("links", "Informe o rótulo do link personalizado.");
-    if (!hrefDoLink(l)) {
-      throw new ErroDominio(
-        "links",
-        l.tipo === "whatsapp"
-          ? "WhatsApp inválido: informe o telefone com código do país (ex.: +55 11 99999-0000)."
-          : `Link "${rotuloDoLink(l)}" inválido: use um endereço http ou https.`,
-      );
-    }
+    const erro = erroDoLink(l);
+    if (erro) throw new ErroDominio("links", `${rotuloDoLink(l)}: ${erro}`);
   }
 }
 
 export async function salvarParceiro(admin: Usuario | null, d: DadosParceiro): Promise<Parceiro> {
   exigirAdmin(admin);
   validarParceiro(d);
+  d = { ...d, links: normalizarLinks(d.links) }; // Instagram sempre na forma canônica
   await latencia(150);
   return mutarBase((b) => {
     const agora = new Date().toISOString();

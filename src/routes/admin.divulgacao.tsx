@@ -8,7 +8,7 @@ import type {
   Abrangencia, BaseDados, DestaqueEvento, LinkParceiro, Parceiro, SecaoInicial, TipoSecao,
 } from "@/lib/domain/types";
 import {
-  NACIONAL, REGIOES, UF_REGIAO, eventoElegivel, hrefDoLink, montarPaginaInicial, rotuloAbrangencia, rotuloDoLink,
+  NACIONAL, REGIOES, UF_REGIAO, eventoElegivel, erroDoLink, hrefDoLink, linksPendentes, montarPaginaInicial, rotuloAbrangencia, rotuloDoLink,
 } from "@/lib/divulgacao";
 import type { DadosParceiro, DadosSecao } from "@/services/divulgacao";
 import {
@@ -426,6 +426,12 @@ function GestaoParceiros({ base }: { base: BaseDados }) {
               </div>
               <Badge tom={p.ativo ? "sucesso" : "padrao"}>{p.ativo ? "ativo" : "inativo"}</Badge>
             </div>
+            {/* Pendências: links antigos que não puderam ser normalizados com segurança */}
+            {linksPendentes(p).map(({ link, erro }) => (
+              <p key={link.id} role="status" className="mt-2 rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-xs text-warning">
+                Pendência — {rotuloDoLink(link)} “{link.url ?? link.telefone ?? ""}”: {erro}
+              </p>
+            ))}
             <div className="mt-3 flex gap-2">
               <Botao variante="contorno" onClick={() => setEditando(structuredClone(p))}>Editar</Botao>
               <Botao variante="fantasma" onClick={() => excluirParceiro(p.id)}>Excluir</Botao>
@@ -474,6 +480,8 @@ function EditorParceiro({ inicial, onFechar }: { inicial: DadosParceiro; onFecha
           <legend className="text-sm font-medium">Links (nenhum é obrigatório)</legend>
           {d.links.map((l, i) => {
             const href = hrefDoLink(l);
+            const erroLink = erroDoLink(l);
+            const vazio = l.tipo === "whatsapp" ? !l.telefone?.trim() : !l.url?.trim();
             return (
               <div key={l.id} className="grid gap-2 rounded-md border border-border p-2 sm:grid-cols-2">
                 <Selecao aria-label="Tipo de link" value={l.tipo} onChange={(e) => setLink(i, { tipo: e.target.value as LinkParceiro["tipo"] })}>
@@ -485,14 +493,28 @@ function EditorParceiro({ inicial, onFechar }: { inicial: DadosParceiro; onFecha
                     <Entrada aria-label="Telefone com código do país" placeholder="+55 11 99999-0000" value={l.telefone ?? ""} onChange={(e) => setLink(i, { telefone: e.target.value })} />
                     <Entrada aria-label="Mensagem inicial (opcional)" placeholder="Mensagem inicial (opcional)" className="sm:col-span-2" value={l.mensagem ?? ""} onChange={(e) => setLink(i, { mensagem: e.target.value || undefined })} />
                   </>
+                ) : l.tipo === "instagram" ? (
+                  <div className="space-y-1">
+                    <label htmlFor={`pa-ig-${l.id}`} className="block text-xs font-medium">Instagram do parceiro</label>
+                    <Entrada id={`pa-ig-${l.id}`} placeholder="@nomedoperfil" value={l.url ?? ""}
+                      aria-describedby={`pa-ig-${l.id}-ajuda`} aria-invalid={!vazio && !!erroLink}
+                      onChange={(e) => setLink(i, { url: e.target.value })} />
+                    <p id={`pa-ig-${l.id}-ajuda`} className="text-xs text-muted-foreground">Informe o @ do perfil ou cole o link completo do Instagram.</p>
+                  </div>
                 ) : (
-                  <Entrada aria-label="Endereço" placeholder={l.tipo === "instagram" ? "@perfil ou link" : "https://..."} value={l.url ?? ""} onChange={(e) => setLink(i, { url: e.target.value })} />
+                  <Entrada aria-label="Endereço" placeholder="https://..." value={l.url ?? ""} onChange={(e) => setLink(i, { url: e.target.value })} />
                 )}
                 {l.tipo === "outro" && <Entrada aria-label="Rótulo" placeholder="Rótulo do botão" value={l.rotulo ?? ""} onChange={(e) => setLink(i, { rotulo: e.target.value })} />}
                 <div className="flex flex-wrap items-center gap-2 text-xs sm:col-span-2">
                   <label className="flex items-center gap-1"><input type="radio" name="principal" checked={!!l.principal} onChange={() => set({ links: d.links.map((x, j) => ({ ...x, principal: j === i })) })} /> Link principal</label>
-                  <span className={href ? "text-muted-foreground" : "text-destructive"}>{href ? `Formato válido: ${href}` : "Formato inválido"}</span>
-                  <Botao variante="contorno" className="!py-1" disabled={!href} aria-label={`Testar ${rotuloDoLink(l)}`}
+                  {href && !erroLink ? (
+                    <span className="break-all text-muted-foreground">Destino: {href}</span>
+                  ) : (
+                    <span role={vazio ? undefined : "alert"} className={vazio ? "text-muted-foreground" : "text-destructive"}>
+                      {vazio ? "Preencha para validar o link." : erroLink}
+                    </span>
+                  )}
+                  <Botao variante="contorno" className="!py-1" disabled={!href || !!erroLink} aria-label={`Testar ${rotuloDoLink(l)}`}
                     onClick={() => href && window.open(href, "_blank", "noopener,noreferrer")}>Testar link</Botao>
                   <Botao variante="fantasma" className="ml-auto !py-1" onClick={() => set({ links: d.links.filter((_, j) => j !== i) })}>Remover</Botao>
                 </div>

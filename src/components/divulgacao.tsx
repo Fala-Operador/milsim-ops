@@ -4,8 +4,8 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { registrarClique, registrarExibicao } from "@/services/analytics";
 import type { OrigemAcesso } from "@/lib/analytics";
-import { ImageOff } from "lucide-react";
-import type { Abrangencia, BaseDados, Parceiro, SecaoInicial } from "@/lib/domain/types";
+import { ExternalLink, Globe, ImageOff, Instagram, MessageCircle } from "lucide-react";
+import type { Abrangencia, BaseDados, LinkParceiro, Parceiro, SecaoInicial } from "@/lib/domain/types";
 import {
   REGIOES, UF_REGIAO, hrefDoLink, linkPrincipal, rotuloAbrangencia, rotuloDoLink,
   type CartaoEventoResolvido, type SecaoResolvida,
@@ -155,16 +155,23 @@ function CartaoEvento({ c }: { c: CartaoEventoResolvido }) {
 const TAM_LOGO = { p: "h-14", m: "h-20", g: "h-28" } as const;
 const SUPERFICIE = { nenhuma: "", clara: "bg-[oklch(0.98_0_0)]", escura: "bg-[oklch(0.2_0_0)]" } as const;
 
+const ICONE_LINK: Record<LinkParceiro["tipo"], typeof Globe> = {
+  site: Globe, instagram: Instagram, whatsapp: MessageCircle, externo: ExternalLink, outro: ExternalLink,
+};
+// Instagram primeiro, depois a ordem cadastrada.
+const ordemBotao = (l: LinkParceiro) => (l.tipo === "instagram" ? 0 : 1);
+
 function CartaoParceiro({ p, secao, carrossel }: { p: Parceiro; secao: SecaoInicial; carrossel: boolean }) {
   const principal = linkPrincipal(p);
-  const extras = p.links.filter((l) => hrefDoLink(l) && hrefDoLink(l) !== principal);
+  // Todo link válido vira botão — inclusive o principal (o logo também leva a ele).
+  const botoes = p.links.filter((l) => hrefDoLink(l)).sort((a, b) => ordemBotao(a) - ordemBotao(b));
   const logo = (
     <div className={`rounded-md p-2 ${SUPERFICIE[secao.superficieLogo]}`}>
       <ImagemSegura src={p.logoUrl} alt={p.textoAlt || p.nome} contain className={`w-full ${TAM_LOGO[secao.tamanhoLogo]}`} />
     </div>
   );
   return (
-    <div id={`parceiro-${p.id}`} className={`rounded-lg border border-border bg-card p-3 ${carrossel ? "w-60 shrink-0 snap-start" : ""}`}>
+    <div id={`parceiro-${p.id}`} className={`flex flex-col rounded-lg border border-border bg-card p-3 ${carrossel ? "w-60 shrink-0 snap-start" : "h-full"}`}>
       {principal ? (
         <a href={principal} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${p.nome} (nova aba)`} className="block rounded-md focus-visible:ring-2 focus-visible:ring-ring">
           {logo}
@@ -177,15 +184,20 @@ function CartaoParceiro({ p, secao, carrossel }: { p: Parceiro; secao: SecaoInic
         </>
       )}
       {secao.mostrarDescricoes && p.descricao && <p className="mt-1 text-center text-xs text-muted-foreground">{p.descricao}</p>}
-      {extras.length > 0 && (
-        <div className="mt-2 flex flex-wrap justify-center gap-1">
-          {extras.map((l) => (
-            <a key={l.id} href={hrefDoLink(l)!} target="_blank" rel="noopener noreferrer"
-              aria-label={`Abrir ${rotuloDoLink(l)} de ${p.nome}`}
-              className="rounded-md border border-border px-2 py-1 text-xs hover:bg-secondary">
-              {rotuloDoLink(l)}
-            </a>
-          ))}
+      {botoes.length > 0 && (
+        // mt-auto: os botões ficam alinhados na base, mesmo com descrições de alturas diferentes
+        <div className="mt-auto flex flex-wrap justify-center gap-1 pt-2">
+          {botoes.map((l) => {
+            const Icone = ICONE_LINK[l.tipo];
+            return (
+              <a key={l.id} href={hrefDoLink(l)!} target="_blank" rel="noopener noreferrer"
+                aria-label={`Abrir ${rotuloDoLink(l)} de ${p.nome} (nova aba)`}
+                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
+                <Icone className="h-3.5 w-3.5" aria-hidden="true" />
+                {rotuloDoLink(l)}
+              </a>
+            );
+          })}
         </div>
       )}
     </div>

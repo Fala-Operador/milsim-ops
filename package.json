@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "db:seed": "node --env-file=.env.local --import tsx --import ./scripts/registrar-assets.mjs scripts/seed.ts",
     "db:push": "supabase db push",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:normalizar-links": "node --env-file=.env.local --import tsx scripts/normalizar-links.ts"
   },
   "overrides": {
     "rolldown": "1.2.1"

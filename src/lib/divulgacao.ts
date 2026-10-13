@@ -196,13 +196,64 @@ export function validarUrlExterna(entrada: string | undefined): string | null {
   }
 }
 
-export function normalizarInstagram(entrada: string | undefined): string | null {
+// ----- Instagram -----
+// Uma única regra para cadastro, edição e leitura de dados antigos. Aceita
+// "@perfil", "perfil", "instagram.com/perfil" e "https://www.instagram.com/perfil/",
+// e devolve sempre https://www.instagram.com/perfil/. Valida só o formato: não
+// garante que a conta exista.
+
+export type ResultadoInstagram =
+  | { ok: true; usuario: string; url: string }
+  | { ok: false; erro: string };
+
+const HOSTS_INSTAGRAM = new Set(["instagram.com", "www.instagram.com", "m.instagram.com"]);
+/** Primeiros segmentos que não são perfis (publicações, reels, stories, páginas do sistema). */
+const CAMINHOS_RESERVADOS = new Set(["p", "reel", "reels", "stories", "tv", "explore", "accounts", "direct", "about", "legal", "developer", "web"]);
+const TEM_ESQUEMA = /^[a-z][a-z0-9+.-]*:\/\//i;
+const PARECE_SITE = /\.(com|net|org|io|app|gov|edu)(\.[a-z]{2})?$|\.br$/i;
+
+function validarUsuarioInstagram(bruto: string): ResultadoInstagram {
+  const usuario = bruto.toLowerCase();
+  if (!usuario) return { ok: false, erro: "Informe o nome do perfil depois do @." };
+  if (usuario.length > 30) return { ok: false, erro: "O nome do perfil tem no máximo 30 caracteres." };
+  if (!/^[a-z0-9._]+$/.test(usuario)) return { ok: false, erro: "Use apenas letras, números, ponto e sublinhado no nome do perfil." };
+  if (usuario.startsWith(".") || usuario.endsWith(".") || usuario.includes("..")) {
+    return { ok: false, erro: "O nome do perfil não pode começar ou terminar com ponto, nem ter dois pontos seguidos." };
+  }
+  return { ok: true, usuario, url: `https://www.instagram.com/${usuario}/` };
+}
+
+export function analisarInstagram(entrada: string | undefined): ResultadoInstagram {
   const v = (entrada ?? "").trim();
-  if (!v) return null;
-  const m = v.match(/instagram\.com\/([A-Za-z0-9._]+)/i);
-  const usuario = m?.[1] ?? v.replace(/^@/, "");
-  if (!/^[A-Za-z0-9._]{1,30}$/.test(usuario)) return null;
-  return `https://www.instagram.com/${usuario}/`;
+  if (!v) return { ok: false, erro: "Informe o @ do perfil ou o link do Instagram." };
+  if (/\s/.test(v)) return { ok: false, erro: "O perfil não pode ter espaços." };
+  if (v.startsWith("@")) return validarUsuarioInstagram(v.slice(1));
+
+  const pareceLink = TEM_ESQUEMA.test(v) || v.includes("/") || /instagram\.com/i.test(v);
+  if (!pareceLink) {
+    if (PARECE_SITE.test(v)) return { ok: false, erro: "Isso parece um site. Informe o @ do perfil ou um link do Instagram." };
+    return validarUsuarioInstagram(v);
+  }
+  let url: URL;
+  try {
+    url = new URL(TEM_ESQUEMA.test(v) ? v : `https://${v}`);
+  } catch {
+    return { ok: false, erro: "Link inválido." };
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") return { ok: false, erro: "Link inválido." };
+  if (!HOSTS_INSTAGRAM.has(url.hostname.toLowerCase())) return { ok: false, erro: "Use um link do Instagram (instagram.com)." };
+  // Parâmetros de compartilhamento (?igsh=…, ?hl=…) e âncoras são descartados.
+  const partes = url.pathname.split("/").filter(Boolean);
+  if (partes.length === 0) return { ok: false, erro: "Falta o nome do perfil no link." };
+  if (partes.length > 1 || CAMINHOS_RESERVADOS.has(partes[0]!.toLowerCase())) {
+    return { ok: false, erro: "Use o link do perfil, não de uma publicação, reel ou story." };
+  }
+  return validarUsuarioInstagram(decodeURIComponent(partes[0]!));
+}
+
+export function normalizarInstagram(entrada: string | undefined): string | null {
+  const r = analisarInstagram(entrada);
+  return r.ok ? r.url : null;
 }
 
 /** Monta wa.me com telefone (código do país) e mensagem opcional; não envia nada. */
@@ -229,6 +280,36 @@ export const ROTULO_LINK: Record<LinkParceiro["tipo"], string> = {
 
 export function rotuloDoLink(l: LinkParceiro): string {
   return l.tipo === "outro" && l.rotulo?.trim() ? l.rotulo.trim() : ROTULO_LINK[l.tipo];
+}
+
+/** Mensagem de erro de um link (null = válido); usada no formulário, no serviço e nas pendências. */
+export function erroDoLink(l: LinkParceiro): string | null {
+  if (l.tipo === "outro" && !l.rotulo?.trim()) return "Informe o rótulo do link personalizado.";
+  if (l.tipo === "instagram") {
+    const r = analisarInstagram(l.url);
+    return r.ok ? null : r.erro;
+  }
+  if (hrefDoLink(l)) return null;
+  return l.tipo === "whatsapp"
+    ? "WhatsApp inválido: informe o telefone com código do país (ex.: +55 11 99999-0000)."
+    : "Endereço inválido: use um link http ou https.";
+}
+
+/** Links com o Instagram gravado na forma canônica (demais tipos inalterados). */
+export function normalizarLinks(links: LinkParceiro[]): LinkParceiro[] {
+  return links.map((l) => {
+    if (l.tipo !== "instagram") return l;
+    const url = normalizarInstagram(l.url);
+    return url && url !== l.url ? { ...l, url } : l;
+  });
+}
+
+/** Links que não puderam ser interpretados (pendências para o admin corrigir). */
+export function linksPendentes(p: Pick<Parceiro, "links">): { link: LinkParceiro; erro: string }[] {
+  return p.links.flatMap((link) => {
+    const erro = erroDoLink(link);
+    return erro ? [{ link, erro }] : [];
+  });
 }
 
 export function linkPrincipal(p: Parceiro): string | null {
