@@ -8,8 +8,16 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { getCookies, setCookie, setResponseHeader } from "@tanstack/react-start/server";
 
+// Nomes alternativos usados pelos segredos do projeto (o prefixo SUPABASE_ é reservado lá).
+const ALTERNATIVAS: Record<string, string> = {
+  SUPABASE_URL: "BANCO_URL",
+  SUPABASE_PUBLISHABLE_KEY: "BANCO_CHAVE_PUBLICA",
+  SUPABASE_SECRET_KEY: "BANCO_CHAVE_SECRETA",
+};
+
 function variavel(nome: string): string {
-  const valor = process.env[nome];
+  const alt = ALTERNATIVAS[nome];
+  const valor = process.env[nome] || (alt ? process.env[alt] : undefined);
   if (!valor) throw new Error(`Variável de ambiente ${nome} não configurada.`);
   return valor;
 }
