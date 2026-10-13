@@ -1,7 +1,7 @@
 // Botão de localização + seletor (popover no desktop, painel inferior no celular).
 import { createPortal } from "react-dom";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { Check, Crosshair, Loader2, MapPin, Search, X } from "lucide-react";
+import { Check, ChevronDown, Crosshair, Loader2, MapPin, Search, X } from "lucide-react";
 import { useLocalizacao, mensagemStatus } from "@/contexts/LocalizacaoContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { carregarBase } from "@/services/db";
@@ -127,12 +127,12 @@ export function SeletorCidade({ compacto = false, className = "" }: { compacto?:
         onClick={() => (aberto ? fechar() : setAberto(true))}
         aria-expanded={aberto}
         aria-haspopup="dialog"
-        aria-label={`Localização: ${rotulo}. Alterar`}
-        className={`flex max-w-full items-center gap-1.5 rounded-md border border-border bg-background/60 text-sm hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${compacto ? "px-2.5 py-1.5" : "h-10 w-full px-3"}`}
+        aria-label={obtendo ? "Obtendo sua localização" : `Localização: ${rotulo}. Alterar localização`}
+        className={`flex max-w-full items-center gap-1.5 rounded-md border border-border bg-secondary/40 text-sm hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${compacto ? "h-10 px-3" : "h-10 w-full px-3"}`}
       >
-        {obtendo ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-accent" /> : <MapPin className="h-4 w-4 shrink-0 text-accent" />}
-        <span className="truncate font-medium text-foreground">{obtendo ? "Localizando…" : rotulo}</span>
-        <span className="shrink-0 text-muted-foreground">· Alterar</span>
+        {obtendo ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-accent motion-reduce:animate-none" /> : <MapPin className="h-4 w-4 shrink-0 text-accent" />}
+        <span className={`truncate font-medium text-foreground ${compacto ? "max-w-[11rem]" : ""}`}>{obtendo ? "Localizando…" : rotulo}</span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none ${aberto ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
       {aberto && (celular ? createPortal(
         <>
