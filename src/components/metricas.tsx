@@ -341,7 +341,7 @@ function Campanhas({ evento, campanhas, regs, onCriada }: { evento: Evento; camp
           linhas={campanhas.map((c) => {
             const r = regs.filter((x) => x.campanhaId === c.id);
             return [c.nome, <Badge key="b">{ROTULO_ORIGEM_CAMPANHA[c.origem]}</Badge>, fmtN(r.filter((x) => x.tipo === "visita").length), fmtN(r.filter((x) => x.tipo === "inscricao_confirmada").length),
-              <Botao key="c" variante="contorno" className="!py-1" onClick={async () => { await navigator.clipboard?.writeText(linkCampanha(c)); setCopiado(c.id); }}>{copiado === c.id ? "Copiado!" : "Copiar link"}</Botao>];
+              <Botao key="c" variante="contorno" className="!py-1" onClick={() => copiar(c)}>{copiado === c.id ? "Link copiado" : "Copiar link"}</Botao>];
           })} />
       </div>
     </Bloco>
