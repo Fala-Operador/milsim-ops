@@ -4,6 +4,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Exclusivo ao viewport dos carrosséis; não altera tabelas ou a barra vertical. */
+.carousel-viewport {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior-x: contain;
+}
+.carousel-viewport::-webkit-scrollbar {
+  display: none;
+}
+
 /*
  * Sistema de design — identidade militar.
  * Dark: verde-oliva militar. Light: TAN militar.
