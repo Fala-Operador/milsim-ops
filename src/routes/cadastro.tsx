@@ -8,6 +8,8 @@ import {
   mascaraTelefone,
 } from "@/lib/domain/validators";
 import { Botao, Campo, Cartao, Entrada, Selecao } from "@/components/ui";
+import { EditorFoto } from "@/components/EditorFoto";
+import { TIPOS_FOTO, erroArquivoFoto } from "@/lib/recorteFoto";
 
 export const Route = createFileRoute("/cadastro")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -50,6 +52,7 @@ function PaginaCadastro() {
     complemento: "", bairro: "", cidade: "", uf: "", instagram: "", squad: "",
   });
   const [fotoUrl, setFotoUrl] = useState<string>(FOTO_PADRAO);
+  const [arquivoFoto, setArquivoFoto] = useState<File | null>(null);
   const [aceite, setAceite] = useState(false);
   const [privacidade, setPrivacidade] = useState(false);
   const [promocional, setPromocional] = useState(false);
@@ -74,20 +77,17 @@ function PaginaCadastro() {
     }
   };
 
+  // A foto escolhida abre o editor (recorte, zoom, girar, ajustes) antes de ser usada.
   const aoSelecionarFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const arquivo = e.target.files?.[0];
+    e.target.value = ""; // permite escolher o mesmo arquivo de novo
     if (!arquivo) return;
-    if (arquivo.size > 2 * 1024 * 1024) {
-      setErro("A foto deve ter no máximo 2 MB.");
+    const erroFoto = erroArquivoFoto(arquivo);
+    if (erroFoto) {
+      setErro(erroFoto);
       return;
     }
-    if (!["image/jpeg", "image/png", "image/webp"].includes(arquivo.type)) {
-      setErro("Formato de foto inválido. Use JPG, PNG ou WebP.");
-      return;
-    }
-    const leitor = new FileReader();
-    leitor.onload = () => setFotoUrl(String(leitor.result));
-    leitor.readAsDataURL(arquivo);
+    setArquivoFoto(arquivo);
   };
 
   const aoEnviar = async (e: React.FormEvent) => {
@@ -125,13 +125,23 @@ function PaginaCadastro() {
           <div className="sm:col-span-2 flex items-center gap-4">
             <img
               src={fotoUrl}
-              alt="Foto de perfil (recorte quadrado 1:1)"
-              className="h-20 w-20 rounded-md border border-border object-cover"
+              alt="Prévia da foto de perfil"
+              className="h-20 w-20 rounded-full border border-border object-cover"
             />
-            <Campo rotulo="Foto de perfil (1:1, até 2 MB)" htmlFor="foto">
-              <Entrada id="foto" type="file" accept="image/jpeg,image/png,image/webp" onChange={aoSelecionarFoto} />
+            <Campo rotulo="Foto de perfil (opcional — você ajusta o recorte)" htmlFor="foto">
+              <Entrada id="foto" type="file" accept={TIPOS_FOTO.join(",")} onChange={aoSelecionarFoto} />
             </Campo>
           </div>
+          {arquivoFoto && (
+            <EditorFoto
+              arquivo={arquivoFoto}
+              onCancelar={() => setArquivoFoto(null)}
+              onConfirmar={(dataUrl) => {
+                setFotoUrl(dataUrl);
+                setArquivoFoto(null);
+              }}
+            />
+          )}
 
           <Campo rotulo="CPF" htmlFor="cpf">
             <Entrada id="cpf" inputMode="numeric" value={f.cpf} onChange={(e) => setF((p) => ({ ...p, cpf: mascaraCpf(e.target.value) }))} placeholder="000.000.000-00" required />

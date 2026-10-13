@@ -115,6 +115,25 @@ export function marcarNotificacoesLidas(usuario: Usuario, plataforma = false): v
   });
 }
 
+// ---------- Foto de perfil ----------
+const FOTO_DATA_URL = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+export const TAMANHO_MAXIMO_FOTO = 3 * 1024 * 1024; // caracteres do data URL (~2,2 MB de imagem)
+
+/**
+ * Define (data URL da foto já recortada) ou remove (null) a foto da própria conta.
+ * Só aceita imagem enviada agora: a unidade de trabalho a envia ao Storage e grava a URL.
+ */
+export function definirFoto(usuario: Usuario, foto: string | null): void {
+  if (foto !== null) validarFoto(foto);
+  usuario.fotoUrl = foto ?? undefined;
+}
+
+/** Foto nova enviada pelo navegador: data URL de imagem, dentro do limite. */
+export function validarFoto(foto: string): void {
+  if (foto.length > TAMANHO_MAXIMO_FOTO) throw new ErroDominio("foto", "A foto é grande demais. Tente uma imagem menor.");
+  if (!FOTO_DATA_URL.test(foto)) throw new ErroDominio("foto", "Formato de foto inválido. Use JPG, PNG ou WebP.");
+}
+
 // ---------- Aparência e preferências ----------
 export function definirTema(usuario: Usuario, tema: Tema): void {
   if (tema !== "dark" && tema !== "light") throw new ErroDominio("tema", "Tema inválido.");

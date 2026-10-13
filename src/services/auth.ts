@@ -12,6 +12,7 @@ import {
   idadeEmAnos,
   IDADE_MINIMA,
 } from "@/lib/domain/validators";
+import { validarFoto } from "@/services/conta";
 import type { Usuario } from "@/lib/domain/types";
 
 export interface DadosCadastro {
@@ -67,6 +68,7 @@ export function validarCadastro(dados: DadosCadastro) {
 /** Cria o perfil do participante para um usuário já criado no Supabase Auth (`id`). */
 export function registrarPerfil(id: string, dados: DadosCadastro): Usuario {
   const { email, cpf, whatsapp, idade } = validarCadastro(dados);
+  if (dados.fotoUrl) validarFoto(dados.fotoUrl);
   return mutarBase((base) => {
     if (base.usuarios.some((u) => u.cpf === cpf)) {
       throw new ErroDominio("cpf_duplicado", "Já existe um cadastro com este CPF.");

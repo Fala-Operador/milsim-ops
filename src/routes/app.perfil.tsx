@@ -5,6 +5,7 @@ import { formatarDataBR } from "@/lib/domain/money";
 import { mascararCpf, mascararTelefone } from "@/lib/domain/validators";
 import { Cartao, Selecao, Campo } from "@/components/ui";
 import { NomeExibicaoForm } from "@/components/NomeExibicaoForm";
+import { FotoPerfil } from "@/components/FotoPerfil";
 import { useEffect } from "react";
 import { Botao } from "@/components/ui";
 import { OpcoesModalidade, useSelecaoModalidades } from "@/components/PreferenciasModalidade";
@@ -44,6 +45,10 @@ function Perfil() {
           {usuario.instagram && <div><dt className="text-muted-foreground">Instagram</dt><dd>{usuario.instagram}</dd></div>}
           <div><dt className="text-muted-foreground">Aceite dos termos</dt><dd>{usuario.aceiteTermosVersao} em {formatarDataBR(usuario.aceiteTermosEm)}</dd></div>
         </dl>
+      </Cartao>
+      <Cartao>
+        <h2 className="font-display text-lg font-semibold uppercase">Foto</h2>
+        <div className="mt-3"><FotoPerfil /></div>
       </Cartao>
       <Cartao>
         <h2 className="font-display text-lg font-semibold uppercase">Configurações</h2>

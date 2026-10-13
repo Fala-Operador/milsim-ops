@@ -42,6 +42,10 @@ export const definirSilencioFn = createServerFn({ method: "POST" })
   .validator(z.object({ todas: z.boolean().optional(), comunidade: z.boolean().optional() }).parse)
   .handler(({ data }) => mutar(({ usuario }) => silencio(exigirUsuario(usuario).id, data)));
 
+export const definirFotoFn = createServerFn({ method: "POST" })
+  .validator(z.object({ foto: z.string().max(conta.TAMANHO_MAXIMO_FOTO).nullable() }).parse)
+  .handler(({ data }) => mutar(({ usuario }) => conta.definirFoto(exigirUsuario(usuario), data.foto)));
+
 export const definirTemaFn = createServerFn({ method: "POST" })
   .validator(z.object({ tema: z.enum(["dark", "light"]) }).parse)
   .handler(({ data }) => mutar(({ usuario }) => conta.definirTema(exigirUsuario(usuario), data.tema)));
@@ -61,6 +65,8 @@ export const responderChamado = (chamadoId: string, corpo: string) => chamar(res
 export const marcarNotificacaoLida = (notificacaoId: string) => chamar(marcarNotificacaoLidaFn({ data: { id: notificacaoId } }));
 export const marcarNotificacoesLidas = (plataforma = false) => chamar(marcarNotificacoesLidasFn({ data: { plataforma } }));
 export const definirSilencio = (parcial: { todas?: boolean; comunidade?: boolean }) => chamar(definirSilencioFn({ data: parcial }));
+/** `null` remove a foto. */
+export const definirFoto = (foto: string | null) => chamar(definirFotoFn({ data: { foto } }));
 export const definirTema = (tema: Tema) => chamar(definirTemaFn({ data: { tema } }));
 export const salvarPreferenciaConta = (p: PreferenciaModalidades) =>
   chamar(salvarPreferenciaFn({ data: p as unknown as { estado: "pendente" | "todas" | "selecionadas"; modalidades: string[] } }));
