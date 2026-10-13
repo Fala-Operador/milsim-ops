@@ -11,40 +11,13 @@
 
 # Regras técnicas do projeto
 
-- Public carousel sections share SectionCarousel with native scrolling and scoped scrollbar suppression. Why: navigation, alignment and accessibility remain consistent without affecting analytics wrappers or other scrollable components.
-
-- Monolith with Supabase: the browser never talks to the database. Every write
-  goes through a server function in `src/api/*.functions.ts`, which runs the
-  existing service code inside the unit of work (`src/server/unidade.server.ts`:
-  load base → run rule → upload media → one transactional, version-checked
-  `aplicar_mudancas` RPC). Never call `mutarBase` from components; it throws in
-  the browser. Identity always comes from the Supabase Auth session on the
-  server — never accept `usuarioId`/`perfil` from the client. Why: rules and
-  authorization run where the user cannot tamper with them.
-- Reads: the server returns a per-user "visão" (`src/lib/visao.ts`), the only
-  read authorization boundary; `carregarBase()` in the browser returns that
-  snapshot and every API response replaces it. Any new collection or sensitive
-  field must be filtered in `visaoParaUsuario` (with a test in
-  `src/test/visao.test.ts`). Why: the browser only ever holds what the person may see.
-- Pages render only after the first visão loads (`AuthContext.carga`, gated in
-  `__root.tsx`); SSR shows the skeleton. Re-render on new data through
-  `useVersaoBase()`; effects that call the API must depend on `usuario?.id`, not
-  the `usuario` object (a new object arrives with every response). Route
-  loaders use server functions (`obterEventoFn`), never the local base.
-- Schema changes: new migration in `supabase/migrations` (RLS on, no policies,
-  grants only to `service_role`), update `TABELAS` in `src/lib/persistencia.ts`
-  and `tabelas_base()` in SQL together. Why: the generic mapper and the RPCs
-  assume one column per top-level field, in snake_case.
-- Free text typed by users (event rules manual) is converted to HTML only
-  through `src/lib/regras.ts`, which escapes everything before adding tags.
-  Never inject user text as raw HTML.
-- Home-page eligibility rules (location, schedule, event status, link validation) live only in `src/lib/divulgacao.ts`; admin writes go through `src/services/divulgacao.ts`, which enforces admin-only access and audit logging. Why: one place decides what the public page shows.
-- All analytics collection goes through `src/services/analytics.ts` (anonymous random ids, exclusions, dedupe, attribution), which batches records to `src/api/analytics.functions.ts`; the server revalidates and re-applies exclusions in `src/server/analytics.server.ts`; aggregations/formulas live in `src/lib/analytics.ts`. Why: tracking rules stay out of components and stay consistent across panels.
-- Check-in decisions live in `src/lib/checkin.ts` (pure validation/sync rules); persistence in `src/services/checkinStore.ts` keeps the server reference base (`checkins` table, read from the visão) separate from the device offline base and queue (IndexedDB, presence + queue in one transaction); `src/services/checkin.ts` orchestrates and `aplicarSincronizacao` accepts the queue on the server; `public/sw.js` caches app files network-first. Why: offline rules stay testable and storage layers never mix.
-- Theme rules (visitor always dark, per-account preference) live in `src/contexts/ThemeContext.tsx` + `src/lib/localizacao.ts`; the pre-paint script there must mirror them. Why: avoid wrong-theme flashes and cross-user leakage.
-- Home location: pure rules in `src/lib/localizacao.ts`, device reading + reverse geocoding (OpenStreetMap Nominatim, coords rounded to 2 decimals, never stored) in `src/services/geolocalizacao.ts`, shared state in `LocalizacaoContext` (stores only city/UF + mode). Why: header, search and sections share one location and manual choices are never overwritten silently.
-- Event modality catalog, publish validation, preference normalization and "Para você" ordering live only in `src/lib/modalidades.ts`; persistence (device vs account) in `src/services/preferencias.ts`; shared state in `PreferenciasContext`. Why: forms, cards, filters and profile use the same stable ids and deterministic rules.
-- Operator profile: participation/badge rules are pure in `src/lib/participacao.ts`; grants and vouchers only through `recalcularProgressao` in `src/services/progressao.ts` (deterministic ids, idempotent; called after check-in sync, admin corrections, rule edits and when the owner opens the profile). Other people's profiles are read only through `montarPerfil` (`src/lib/perfilSocial.ts`), never from the visão. Why: one place decides what counts and what leaks.
-- Equipment invoices live outside the transactional base (private `documentos` bucket + `documentos_privados` table, `src/server/documentos.server.ts`), owner-only via short signed URLs. Why: they must never reach the visão, organizers or admins.
-- This project uses an external database without the migration tool: SQL changes are applied with psql and kept in `docs/migracoes/`. Why: `supabase/migrations` is managed and read-only here.
-- Ticket availability (lot in force, sold out, scheduled) and coupon rules (normalization, status, validation, discount rounding) live only in `src/lib/vendas.ts`; registration screen, organizer panels and server confirmation all use it. Why: a valid coupon never makes a ticket available and there is no silent fallback to the base price.
+- Writes: browser never talks to the DB; every write is a server fn in `src/api/*.functions.ts` running services inside `src/server/unidade.server.ts` (one version-checked `aplicar_mudancas` RPC). Never call `mutarBase` from components; identity only from the server session. Why: rules/authz run where users can't tamper.
+- Reads: per-user "visão" (`src/lib/visao.ts`) is the only read boundary; new collections/sensitive fields are filtered in `visaoParaUsuario` with a test. Pages render after first load (`AuthContext.carga`); re-render via `useVersaoBase()`; API effects depend on `usuario?.id`. Why: browser holds only what the user may see.
+- Schema: external DB, SQL applied with psql and kept in `docs/migracoes/` (RLS on, no policies, grants to `service_role`); update `TABELAS` in `src/lib/persistencia.ts` and `tabelas_base()` together. Why: generic mapper assumes one snake_case column per top-level field.
+- User free text becomes HTML only via `src/lib/regras.ts` (escapes first).
+- Domain rules live in one pure module each: home eligibility `src/lib/divulgacao.ts` (admin writes `src/services/divulgacao.ts`); modalities `src/lib/modalidades.ts`; ticket/coupon availability `src/lib/vendas.ts`; location `src/lib/localizacao.ts` (geocoding in `src/services/geolocalizacao.ts`, coords never stored); theme `src/contexts/ThemeContext.tsx` (pre-paint script mirrors it); event editor steps/review `src/lib/eventoEditor.ts`. Why: one place decides each rule.
+- Analytics only via `src/services/analytics.ts` → `src/api/analytics.functions.ts`, revalidated in `src/server/analytics.server.ts`; formulas in `src/lib/analytics.ts`.
+- Check-in: rules in `src/lib/checkin.ts`; `src/services/checkinStore.ts` keeps server base and offline IndexedDB queue separate. Why: offline rules testable, storage never mixes.
+- Operator profile: grants/vouchers only via `recalcularProgressao` (`src/services/progressao.ts`, idempotent); others' profiles only via `montarPerfil`. Invoices live in private `documentos` bucket, owner-only signed URLs, never in the visão.
+- Carousels share `SectionCarousel` (scoped scrollbar suppression).
+- Event editor drawer (`src/components/editorEvento/`): no `<form>`, buttons `type="button"`, backdrop never closes; drafts autosave to server, non-draft edits stay in IndexedDB until "Salvar alterações". Why: closes only on explicit action; public data not overwritten early.

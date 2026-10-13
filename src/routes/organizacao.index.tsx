@@ -5,11 +5,12 @@ import { useEffect, useState } from "react";
 import { carregarBase } from "@/services/db";
 import { inscricoesAtivasDoEvento } from "@/services/inscricoes";
 import { validarParaPublicacao } from "@/services/organizador";
-import { cancelarEvento, excluirEvento, publicarEvento, salvarEvento } from "@/api/organizador.functions";
+import { cancelarEvento, excluirEvento, publicarEvento } from "@/api/organizador.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, Modal, Selecao } from "@/components/ui";
-import { FormEvento, eventoVazio } from "@/components/FormEvento";
+import { eventoVazio } from "@/components/editorEvento/eventoVazio";
+import { EventEditorDrawer } from "@/components/editorEvento/EventEditorDrawer";
 import { AvisoLotes, useEventosOrg } from "@/components/organizacao";
 import type { Evento } from "@/lib/domain/types";
 
@@ -43,23 +44,35 @@ function PainelEventos() {
   const [cancelarEvt, setCancelarEvt] = useState<Evento | null>(null);
   const [justificativa, setJustificativa] = useState("");
   const [erro, setErro] = useState("");
-  const [form, setForm] = useState<Evento | null>(null);
+  const [form, setFormEstado] = useState<{ evento: Evento; existente: boolean } | null>(null);
+  const [aviso, setAviso] = useState("");
   const [excluirEvt, setExcluirEvt] = useState<Evento | null>(null);
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<"todos" | Evento["status"]>("todos");
   const [focarLotes, setFocarLotes] = useState(false);
   const { lotes: lotesDe } = Route.useSearch();
+  const abrirEditor = (e: Evento, lotes: boolean) => {
+    setAviso("");
+    setFocarLotes(lotes);
+    setFormEstado({ evento: structuredClone(e), existente: true });
+  };
   useEffect(() => {
     const e = lotesDe && eventos.find((x) => x.id === lotesDe);
     if (e && !["cancelado", "concluido"].includes(e.status)) {
-      setForm(structuredClone(e));
-      setFocarLotes(true);
+      abrirEditor(e, true);
       navigate({ to: "/organizacao", search: {}, replace: true });
     }
   }, [lotesDe, eventos, navigate]);
-  const configurarLotes = (e: Evento) => { setForm(structuredClone(e)); setFocarLotes(true); };
+  const configurarLotes = (e: Evento) => abrirEditor(e, true);
 
   if (!usuario) return null;
+
+  const ocupacaoDe = (id: string) => {
+    const ativas = base.inscricoes.filter((i) => i.eventoId === id && i.status === "confirmada");
+    const porExercito: Record<string, number> = {};
+    for (const i of ativas) porExercito[i.exercitoId] = (porExercito[i.exercitoId] ?? 0) + 1;
+    return { total: ativas.length, porExercito };
+  };
 
   const ativasPorEvento = (id: string) => base.inscricoes.filter((i) => i.eventoId === id && i.status === "confirmada").length;
   const receitaEvento = (id: string) => base.movimentacoes.filter((m) => m.eventoId === id).reduce((t, m) => t + m.valorCentavos, 0);
@@ -72,11 +85,6 @@ function PainelEventos() {
     (e) => (filtroStatus === "todos" || e.status === filtroStatus) && e.nome.toLowerCase().includes(busca.toLowerCase()),
   );
 
-  const aoSalvarForm = async (ev: Evento) => {
-    await salvarEvento(ev);
-    setForm(null);
-    setVersao((v) => v + 1);
-  };
 
   const aoExcluir = async () => {
     if (!excluirEvt) return;
@@ -129,9 +137,10 @@ function PainelEventos() {
             </p>
           ) : null;
         })()}
-        <Botao onClick={() => setForm(eventoVazio(orgId ?? base.organizacoes[0]?.id ?? ""))}>+ Criar evento</Botao>
+        <Botao onClick={() => { setFocarLotes(false); setFormEstado({ evento: eventoVazio(orgId ?? base.organizacoes[0]?.id ?? ""), existente: false }); }}>+ Criar evento</Botao>
       </div>
 
+      {aviso && <p role="status" className="mt-3 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm">{aviso}</p>}
       {erro && <p role="alert" className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
 
       <section aria-label="Visão geral" className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -206,7 +215,7 @@ function PainelEventos() {
                           </Link>
                         )}
                         <Botao variante="fantasma" onClick={() => { selecionarEventoOrganizacao(e.id); navigate({ to: "/organizacao/checkin" }); }}>Abrir check-in</Botao>
-                        <Botao variante="contorno" onClick={() => { setForm(structuredClone(e)); setFocarLotes(false); }} disabled={["cancelado", "concluido"].includes(e.status)}>Editar</Botao>
+                        <Botao variante="contorno" onClick={() => abrirEditor(e, false)} disabled={["cancelado", "concluido"].includes(e.status)}>Editar</Botao>
                         <Botao variante="perigo" onClick={() => setExcluirEvt(e)}>Excluir</Botao>
                       </div>
                     </td>
@@ -221,9 +230,20 @@ function PainelEventos() {
         </div>
       </Cartao>
 
-      <Modal aberto={!!form} titulo={form && eventos.some((e) => e.id === form.id) ? "Editar evento" : "Criar evento"} onFechar={() => setForm(null)}>
-        {form && <FormEvento key={form.id} inicial={form} focarLotes={focarLotes} onSalvar={aoSalvarForm} onCancelar={() => setForm(null)} />}
-      </Modal>
+      {form && (
+        <EventEditorDrawer
+          key={form.evento.id}
+          inicial={form.evento}
+          existente={form.existente}
+          {...(focarLotes ? { etapaInicial: 4 } : {})}
+          ocupacao={ocupacaoDe(form.evento.id)}
+          ocupacaoLote={(loteId, tipoId) => base.inscricoes.filter((i) => i.eventoId === form.evento.id && i.status === "confirmada" && i.loteId === loteId && i.tipoId === tipoId).length}
+          organizacoes={base.organizacoes.filter((o) => usuario.perfil === "admin" || o.id === form.evento.organizacaoId).map((o) => ({ id: o.id, nome: o.nome }))}
+          podeEscolherOrg={usuario.perfil === "admin"}
+          onFechar={() => { setFormEstado(null); setVersao((v) => v + 1); }}
+          onConcluido={(m) => setAviso(m)}
+        />
+      )}
 
       <Modal aberto={!!excluirEvt} titulo="Excluir evento" onFechar={() => setExcluirEvt(null)}>
         {excluirEvt && (

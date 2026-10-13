@@ -134,6 +134,7 @@ export function validarParaPublicacao(evento: Evento): string[] {
   if (!evento.descricaoResumida.trim()) erros.push("Descrição resumida obrigatória.");
   if (!evento.enredo.trim()) erros.push("Enredo obrigatório.");
   if (!evento.local.trim()) erros.push("Local obrigatório.");
+  if (!evento.imagemUrl) erros.push("Adicione a imagem principal do evento.");
   if (evento.exercitos.length === 0) erros.push("Cadastre ao menos um exército.");
   if (evento.tipos.length === 0) erros.push("Cadastre ao menos um tipo de ingresso.");
   if (evento.cronograma.length === 0) erros.push("O cronograma precisa de ao menos uma atividade.");

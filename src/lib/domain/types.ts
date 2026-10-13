@@ -128,6 +128,23 @@ export interface DocumentoRegras {
   conteudoHtml?: string | undefined; // usado no leitor interno demonstrativo
   nomeArquivo?: string | undefined;
   pdfDataUrl?: string | undefined; // PDF enviado pelo organizador (data URL, persistência local demo)
+  arquivoUrl?: string | undefined; // DOCX enviado (sem leitor interno; oferecido para download)
+}
+
+/** Enquadramento de um recorte: zoom ≥ 1 e posição normalizada (-1..1) do centro. */
+export interface Recorte {
+  zoom: number;
+  x: number;
+  y: number;
+}
+
+/** Imagem principal: original + dois recortes (banner 21:9 e card 16:9) gerados a partir dela. */
+export interface ImagemEvento {
+  originalUrl: string;
+  alt: string;
+  banner: Recorte;
+  card: Recorte;
+  bannerUrl: string;
 }
 
 export interface Evento {
@@ -140,11 +157,14 @@ export interface Evento {
   fimEm: string;
   fuso: string;
   local: string;
+  cep?: string | undefined;
   endereco: string;
   cidade: string;
   uf: string;
   capacidadeTotal: number;
+  /** Imagem dos cards (recorte 16:9). */
   imagemUrl?: string | undefined;
+  imagem?: ImagemEvento | undefined;
   exercitos: Exercito[];
   tipos: TipoIngresso[];
   lotes: Lote[];

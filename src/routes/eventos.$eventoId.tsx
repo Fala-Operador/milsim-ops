@@ -63,8 +63,11 @@ function PaginaEvento() {
         <Link to="/" className="hover:underline">Eventos</Link> / <span>{evento.nome}</span>
       </nav>
 
-      <div className="topo-bg mt-3 flex h-48 items-end rounded-lg border border-border bg-secondary p-4">
-        <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+      <div className="topo-bg relative mt-3 flex aspect-[21/9] max-h-72 w-full items-end overflow-hidden rounded-lg border border-border bg-secondary p-4">
+        {(evento.imagem?.bannerUrl || evento.imagemUrl) && (
+          <img src={evento.imagem?.bannerUrl || evento.imagemUrl} alt={evento.imagem?.alt ?? ""} className="absolute inset-0 h-full w-full object-cover" />
+        )}
+        <span className="relative rounded bg-background/70 px-2 py-0.5 font-mono text-xs uppercase tracking-widest text-muted-foreground">
           {evento.cidade}/{evento.uf} · {evento.fuso}
         </span>
       </div>
@@ -194,7 +197,8 @@ function PaginaEvento() {
           />
         ) : (
           <p className="text-sm text-muted-foreground">
-            Este arquivo não pôde ser renderizado no leitor interno. Ofereça download na versão de produção.
+            Este arquivo não pode ser exibido no leitor interno.{" "}
+            {evento.regras?.arquivoUrl && <a className="underline" href={evento.regras.arquivoUrl} download={evento.regras.nomeArquivo}>Baixar {evento.regras.nomeArquivo ?? "arquivo"}</a>}
           </p>
         )}
       </Modal>
