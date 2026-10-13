@@ -17,6 +17,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider, SCRIPT_TEMA_INICIAL } from "@/contexts/ThemeContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { LocalizacaoProvider } from "@/contexts/LocalizacaoContext";
+import { PreferenciasProvider } from "@/contexts/PreferenciasContext";
+import { PreferenciasModal } from "@/components/PreferenciasModalidade";
 import { Header } from "@/components/Header";
 
 function NotFoundComponent() {
@@ -190,9 +192,12 @@ function RootComponent() {
         <AuthProvider>
           <ThemeProvider>
             <LocalizacaoProvider>
+            <PreferenciasProvider>
             <Providers>
               <Outlet />
             </Providers>
+            <PreferenciasModal />
+            </PreferenciasProvider>
             </LocalizacaoProvider>
           </ThemeProvider>
         </AuthProvider>
