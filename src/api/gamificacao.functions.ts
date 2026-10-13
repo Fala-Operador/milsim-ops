@@ -33,4 +33,4 @@ export const corrigirParticipacaoFn = createServerFn({ method: "POST" })
 
 export const salvarInsignia = (d: gam.DadosInsignia) => chamar(salvarInsigniaFn({ data: d }));
 export const salvarCampanha = (d: gam.DadosCampanha) => chamar(salvarCampanhaFn({ data: d }));
-export const corrigirParticipacao = (d: Parameters<typeof corrigirParticipacaoFn>[0]["data"]) => chamar(corrigirParticipacaoFn({ data: d }));
+export const corrigirParticipacao = (d: { usuarioId: string; eventoId: string; tipo: "invalidar" | "validar"; justificativa: string }) => chamar(corrigirParticipacaoFn({ data: d }));

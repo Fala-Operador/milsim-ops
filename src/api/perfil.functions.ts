@@ -8,6 +8,7 @@ import { montarPerfil, type PerfilDTO } from "@/lib/perfilSocial";
 import { contextoSomenteLeitura, exigirUsuario, idDaSessao, ler, mutar } from "@/server/unidade.server";
 import { gravarNota, lerArquivoNota, removerNota, urlDaNota } from "@/server/documentos.server";
 import { chamar } from "@/api/cliente";
+import type { PrivacidadePerfil } from "@/lib/domain/types";
 
 const id = z.string().min(1).max(120);
 const vis = z.enum(["eu", "autenticados"]);
@@ -130,14 +131,14 @@ export const excluirNotaFn = createServerFn({ method: "POST" })
 
 // ---------- Uso no navegador ----------
 export const obterPerfil = (usuarioId: string): Promise<PerfilDTO | null> => chamar(obterPerfilFn({ data: { usuarioId } }));
-export const salvarPerfil = (d: Parameters<typeof salvarPerfilFn>[0]["data"]) => chamar(salvarPerfilFn({ data: d }));
-export const salvarPrivacidade = (d: Parameters<typeof salvarPrivacidadeFn>[0]["data"]) => chamar(salvarPrivacidadeFn({ data: d }));
+export const salvarPerfil = (d: perfil.DadosPerfil) => chamar(salvarPerfilFn({ data: d }));
+export const salvarPrivacidade = (d: PrivacidadePerfil) => chamar(salvarPrivacidadeFn({ data: d }));
 export const marcarIntro = () => chamar(marcarIntroFn());
 export const ocultarOperacao = (eventoId: string, oculta: boolean) => chamar(ocultarOperacaoFn({ data: { eventoId, oculta } }));
-export const salvarEquipamento = (d: Parameters<typeof salvarEquipamentoFn>[0]["data"]) => chamar(salvarEquipamentoFn({ data: d }));
+export const salvarEquipamento = (d: perfil.DadosEquipamento) => chamar(salvarEquipamentoFn({ data: d }));
 export const excluirEquipamento = (eid: string) => chamar(excluirEquipamentoFn({ data: { id: eid } }));
-export const adicionarFoto = (d: Parameters<typeof adicionarFotoFn>[0]["data"]) => chamar(adicionarFotoFn({ data: d }));
-export const editarFoto = (d: Parameters<typeof editarFotoFn>[0]["data"]) => chamar(editarFotoFn({ data: d }));
+export const adicionarFoto = (d: { dataUrl: string; legenda?: string; alt?: string }) => chamar(adicionarFotoFn({ data: d }));
+export const editarFoto = (d: { id: string; legenda?: string; alt?: string; visivel: boolean }) => chamar(editarFotoFn({ data: d }));
 export const excluirFoto = (fid: string) => chamar(excluirFotoFn({ data: { id: fid } }));
 export const enviarNota = (equipamentoId: string, nome: string, dataUrl: string) => chamar(enviarNotaFn({ data: { equipamentoId, nome, dataUrl } }));
 export const linkNota = (equipamentoId: string, baixar: boolean) => linkNotaFn({ data: { equipamentoId, baixar } });
