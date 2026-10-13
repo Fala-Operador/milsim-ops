@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { carregarBase, mutarBase, gerarId } from "@/services/db";
+import { carregarBase } from "@/services/db";
+import { abrirChamado, responderChamado } from "@/api/conta.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, EstadoVazio, Modal, Selecao } from "@/components/ui";
@@ -29,6 +30,7 @@ const rotulos: Record<StatusChamado, string> = {
 function PaginaSuporte() {
   const { usuario } = useAuth();
   const [, setVersao] = useState(0);
+  const [erro, setErro] = useState("");
   const [novo, setNovo] = useState(false);
   const [aberto, setAberto] = useState<string | null>(null);
   const [resposta, setResposta] = useState("");
@@ -45,40 +47,29 @@ function PaginaSuporte() {
     .map((i) => base.eventos.find((e) => e.id === i.eventoId))
     .filter(Boolean);
 
-  const abrir = () => {
+  const abrir = async () => {
     if (!form.assunto.trim() || !form.descricao.trim()) return;
-    mutarBase((b) => {
-      b.chamados.push({
-        id: gerarId("cha"),
-        eventoId: form.eventoId || undefined,
-        solicitanteId: usuario.id,
-        assunto: form.assunto.trim(),
-        categoria: form.categoria,
-        descricao: form.descricao.trim(),
-        status: "aberto",
-        mensagens: [
-          { id: gerarId("msg"), autorId: usuario.id, corpo: form.descricao.trim(), criadoEm: new Date().toISOString() },
-        ],
-        criadoEm: new Date().toISOString(),
-        atualizadoEm: new Date().toISOString(),
-      });
-    });
-    setNovo(false);
-    setForm({ assunto: "", categoria: "Logística", descricao: "", eventoId: "" });
-    setVersao((v) => v + 1);
+    setErro("");
+    try {
+      await abrirChamado({ ...form, eventoId: form.eventoId || undefined });
+      setNovo(false);
+      setForm({ assunto: "", categoria: "Logística", descricao: "", eventoId: "" });
+      setVersao((v) => v + 1);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Falha ao abrir o chamado.");
+    }
   };
 
-  const responder = (chamadoId: string) => {
+  const responder = async (chamadoId: string) => {
     if (!resposta.trim()) return;
-    mutarBase((b) => {
-      const c = b.chamados.find((x) => x.id === chamadoId);
-      if (!c) return;
-      c.mensagens.push({ id: gerarId("msg"), autorId: usuario.id, corpo: resposta.trim(), criadoEm: new Date().toISOString() });
-      c.status = "aberto";
-      c.atualizadoEm = new Date().toISOString();
-    });
-    setResposta("");
-    setVersao((v) => v + 1);
+    setErro("");
+    try {
+      await responderChamado(chamadoId, resposta);
+      setResposta("");
+      setVersao((v) => v + 1);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Falha ao enviar a mensagem.");
+    }
   };
 
   const chamadoAberto = meus.find((c) => c.id === aberto);
@@ -89,6 +80,7 @@ function PaginaSuporte() {
         <h1 className="font-display text-2xl font-semibold uppercase">Suporte</h1>
         <Botao onClick={() => setNovo(true)}>Abrir chamado</Botao>
       </div>
+      {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
 
       {meus.length === 0 ? (
         <div className="mt-4">

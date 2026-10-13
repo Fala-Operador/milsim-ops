@@ -18,7 +18,7 @@ function Auditoria() {
   const auditoria = listarAuditoria().slice(0, 50);
   return (
     <section>
-      <h2 className="font-display text-lg font-semibold uppercase">Auditoria (demonstrativa)</h2>
+      <h2 className="font-display text-lg font-semibold uppercase">Auditoria</h2>
       <p className="text-xs text-muted-foreground">O armazenamento local não oferece integridade de auditoria de produção.</p>
       {auditoria.length === 0 && <p className="mt-2 text-sm text-muted-foreground">Nenhum registro.</p>}
       <ul className="mt-2 space-y-1 text-sm">

@@ -4,7 +4,8 @@ import { selecionarEventoOrganizacao } from "@/contexts/OrganizationEventContext
 import { useState } from "react";
 import { carregarBase } from "@/services/db";
 import { inscricoesAtivasDoEvento } from "@/services/inscricoes";
-import { cancelarEvento, excluirEvento, publicarEvento, salvarEvento, validarParaPublicacao } from "@/services/organizador";
+import { validarParaPublicacao } from "@/services/organizador";
+import { cancelarEvento, excluirEvento, publicarEvento, salvarEvento } from "@/api/organizador.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, Modal, Selecao } from "@/components/ui";
@@ -58,7 +59,7 @@ function PainelEventos() {
   );
 
   const aoSalvarForm = async (ev: Evento) => {
-    await salvarEvento(ev, usuario.id, usuario.perfil);
+    await salvarEvento(ev);
     setForm(null);
     setVersao((v) => v + 1);
   };
@@ -67,7 +68,7 @@ function PainelEventos() {
     if (!excluirEvt) return;
     setErro("");
     try {
-      await excluirEvento(excluirEvt.id, usuario.id, usuario.perfil);
+      await excluirEvento(excluirEvt.id);
       setExcluirEvt(null);
       setVersao((v) => v + 1);
     } catch (err) {
@@ -79,7 +80,7 @@ function PainelEventos() {
   const aoPublicar = async (ev: Evento) => {
     setErro("");
     try {
-      await publicarEvento(ev.id, usuario.id, usuario.perfil);
+      await publicarEvento(ev.id);
       setVersao((v) => v + 1);
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha ao publicar.");
@@ -90,8 +91,8 @@ function PainelEventos() {
     if (!cancelarEvt) return;
     setErro("");
     try {
-      const r = await cancelarEvento(cancelarEvt.id, justificativa, usuario.id, usuario.perfil);
-      alert(`Evento cancelado. ${r.canceladas} inscrições estornadas (simulado) e participantes notificados.`);
+      const r = await cancelarEvento(cancelarEvt.id, justificativa);
+      alert(`Evento cancelado. ${r.canceladas} inscrições estornadas e participantes notificados.`);
       setCancelarEvt(null);
       setJustificativa("");
       setVersao((v) => v + 1);
@@ -124,7 +125,7 @@ function PainelEventos() {
           ["Eventos", String(eventos.length), `${eventos.filter((e) => e.status === "publicado").length} publicados · ${eventos.filter((e) => e.status === "rascunho").length} rascunhos`],
           ["Próximos eventos", String(proximos.length), proximos[0] ? `Próximo: ${formatarDataBR([...proximos].sort((x, y) => x.inicioEm.localeCompare(y.inicioEm))[0]!.inicioEm)}` : "Nenhum agendado"],
           ["Inscrições ativas", String(totalInscritos), totalCapacidade ? `${Math.round((totalInscritos / totalCapacidade) * 100)}% da capacidade total` : "—"],
-          ["Receita simulada", formatarBRL(totalReceita), "Soma das movimentações"],
+          ["Receita registrada", formatarBRL(totalReceita), "Soma das movimentações"],
         ] as const).map(([rotulo, valor, sub]) => (
           <Cartao key={rotulo}>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">{rotulo}</p>
@@ -229,7 +230,7 @@ function PainelEventos() {
           <div className="space-y-3 text-sm">
             <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-warning">
               Impacto: {inscricoesAtivasDoEvento(carregarBase(), cancelarEvt.id).length} inscrições ativas serão
-              canceladas com estorno integral simulado e os participantes serão notificados na plataforma.
+              canceladas com estorno integral e os participantes serão notificados na plataforma.
             </p>
             <Campo rotulo="Justificativa (obrigatória)" htmlFor="just">
               <AreaTexto id="just" value={justificativa} onChange={(e) => setJustificativa(e.target.value)} />

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { carregarBase } from "@/services/db";
-import { cancelarInscricao } from "@/services/inscricoes";
+import { cancelarInscricao } from "@/api/inscricoes.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { Badge, Botao, Cartao, EstadoVazio, Modal, AreaTexto } from "@/components/ui";
@@ -45,7 +45,7 @@ function MeusIngressos() {
     if (!cancelando) return;
     setErro("");
     try {
-      await cancelarInscricao(cancelando.id, motivo, usuario.id);
+      await cancelarInscricao(cancelando.id, motivo);
       setCancelando(null);
       setMotivo("");
       setVersao((v) => v + 1);
@@ -92,7 +92,7 @@ function MeusIngressos() {
                       {ins.status === "confirmada" ? "Confirmada" : ins.status === "estornada" ? "Estornada" : "Cancelada"}
                     </Badge>
                     <p className="mt-2 font-mono text-sm text-accent">{ins.codigo}</p>
-                    <p className="text-[11px] text-muted-foreground">Código fictício — sem dados pessoais</p>
+                    <p className="text-[11px] text-muted-foreground">Código do ingresso — sem dados pessoais</p>
                   </div>
                 </div>
                 {ins.status === "confirmada" && (
@@ -112,7 +112,7 @@ function MeusIngressos() {
       {qrDe && <IngressoQr inscricao={qrDe} evento={base.eventos.find((e) => e.id === qrDe.eventoId)} usuarioId={usuario.id} onFechar={() => setQrDe(null)} />}
       <Modal aberto={!!cancelando} titulo="Cancelar inscrição" onFechar={() => setCancelando(null)}>
         <p className="text-sm text-muted-foreground">
-          O cancelamento invalida o ingresso, libera a vaga e registra o estorno integral simulado.
+          O cancelamento invalida o ingresso, libera a vaga e registra o estorno integral.
           O histórico é preservado.
         </p>
         <div className="mt-3">

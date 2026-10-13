@@ -3,8 +3,9 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { useAuth } from "@/contexts/AuthContext";
 import { criarPreferencia, PREF_PENDENTE, resolverAoEntrar, type ModalidadeId, type PreferenciaModalidades } from "@/lib/modalidades";
 import {
-  conviteDispensado, dispensarConvite, preferenciaDaConta, preferenciaDoAparelho, salvarNaConta, salvarNoAparelho,
+  conviteDispensado, dispensarConvite, preferenciaDaConta, preferenciaDoAparelho, salvarNoAparelho,
 } from "@/services/preferencias";
+import { salvarPreferenciaConta } from "@/api/conta.functions";
 
 interface Valor {
   montado: boolean;
@@ -52,7 +53,7 @@ export function PreferenciasProvider({ children }: { children: ReactNode }) {
   }, [usuarioId]);
 
   const gravar = useCallback((p: PreferenciaModalidades) => {
-    if (usuarioId) salvarNaConta(usuarioId, p); else salvarNoAparelho(p);
+    if (usuarioId) void salvarPreferenciaConta(p).catch(() => {}); else salvarNoAparelho(p);
     setPreferencia(p);
     setOferta(null);
     setEditor(false);

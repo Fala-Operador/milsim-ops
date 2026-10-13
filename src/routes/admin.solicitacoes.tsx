@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { carregarBase } from "@/services/db";
-import { analisarSolicitacao } from "@/services/admin";
+import { analisarSolicitacao } from "@/api/admin.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import { AreaTexto, Badge, Botao, Cartao } from "@/components/ui";
@@ -33,7 +33,7 @@ function Solicitacoes() {
   const agir = async (id: string, acao: "iniciar" | "aprovar" | "ajustes" | "rejeitar") => {
     setErro("");
     try {
-      await analisarSolicitacao(id, usuario.id, acao, justificativa[id]);
+      await analisarSolicitacao(id, acao, justificativa[id]);
       setVersao((v) => v + 1);
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha na ação.");

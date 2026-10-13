@@ -1,9 +1,8 @@
-// Serviço de autenticação demonstrativa.
-// ATENÇÃO: senhas usam hash demonstrativo apenas para não ficarem em texto puro.
-// Autenticação segura será implementada no backend na etapa de produção.
-import { carregarBase, mutarBase, latencia, ErroDominio, gerarId } from "./db";
-import { storage } from "@/lib/storage";
-import { hashDemo, VERSAO_TERMOS } from "@/data/seed";
+// Regras de cadastro (validação e montagem do perfil). A autenticação em si é feita
+// pelo Supabase Auth no servidor (src/server/auth.server.ts); a senha nunca é
+// guardada nas tabelas da aplicação.
+import { mutarBase, ErroDominio } from "./db";
+import { VERSAO_TERMOS } from "@/data/termos";
 import {
   cpfValido,
   emailValido,
@@ -14,8 +13,6 @@ import {
   IDADE_MINIMA,
 } from "@/lib/domain/validators";
 import type { Usuario } from "@/lib/domain/types";
-
-const CHAVE_SESSAO = "sessao";
 
 export interface DadosCadastro {
   cpf: string;
@@ -40,39 +37,10 @@ export interface DadosCadastro {
   autorizacaoPromocional: boolean;
 }
 
-export function sessaoAtual(): string | null {
-  return storage.ler<string>(CHAVE_SESSAO);
-}
+export const SENHA_MINIMA = 6;
 
-export function usuarioDaSessao(): Usuario | null {
-  const id = sessaoAtual();
-  if (!id) return null;
-  const base = carregarBase();
-  return base.usuarios.find((u) => u.id === id && u.ativo) ?? null;
-}
-
-export async function entrar(email: string, senha: string): Promise<Usuario> {
-  await latencia();
-  const base = carregarBase();
-  const emailNorm = normalizarEmail(email);
-  const hash = base.credenciais[emailNorm];
-  if (!hash || hash !== hashDemo(senha)) {
-    throw new ErroDominio("credenciais_invalidas", "E-mail ou senha incorretos.");
-  }
-  const usuario = base.usuarios.find(
-    (u) => u.email === emailNorm && u.ativo,
-  );
-  if (!usuario) throw new ErroDominio("usuario_inativo", "Conta inativa.");
-  storage.gravar(CHAVE_SESSAO, usuario.id);
-  return usuario;
-}
-
-export function sair(): void {
-  storage.remover(CHAVE_SESSAO);
-}
-
-export async function cadastrar(dados: DadosCadastro): Promise<Usuario> {
-  await latencia(400);
+/** Valida o formulário de cadastro; devolve os campos normalizados. */
+export function validarCadastro(dados: DadosCadastro) {
   const email = normalizarEmail(dados.email);
   const cpf = somenteDigitos(dados.cpf);
   const whatsapp = somenteDigitos(dados.whatsapp);
@@ -83,7 +51,9 @@ export async function cadastrar(dados: DadosCadastro): Promise<Usuario> {
   if (!emailValido(email)) throw new ErroDominio("email", "Informe um e-mail válido.");
   if (!cpfValido(cpf)) throw new ErroDominio("cpf", "CPF inválido.");
   if (!telefoneValido(whatsapp)) throw new ErroDominio("telefone", "Telefone/WhatsApp inválido.");
-  if (dados.senha.length < 6) throw new ErroDominio("senha", "A senha deve ter ao menos 6 caracteres.");
+  if (dados.senha.length < SENHA_MINIMA) {
+    throw new ErroDominio("senha", `A senha deve ter ao menos ${SENHA_MINIMA} caracteres.`);
+  }
   if (dados.senha !== dados.confirmacaoSenha) {
     throw new ErroDominio("senha_confirmacao", "A confirmação de senha não confere.");
   }
@@ -91,16 +61,22 @@ export async function cadastrar(dados: DadosCadastro): Promise<Usuario> {
   if (idade < IDADE_MINIMA) {
     throw new ErroDominio("idade", `É necessário ter ao menos ${IDADE_MINIMA} anos.`);
   }
+  return { email, cpf, whatsapp, idade };
+}
 
+/** Cria o perfil do participante para um usuário já criado no Supabase Auth (`id`). */
+export function registrarPerfil(id: string, dados: DadosCadastro): Usuario {
+  const { email, cpf, whatsapp, idade } = validarCadastro(dados);
   return mutarBase((base) => {
-    const cpfDuplicado = base.usuarios.some((u) => u.cpf === cpf);
-    const emailDuplicado = base.usuarios.some((u) => u.email === email);
-    if (cpfDuplicado) throw new ErroDominio("cpf_duplicado", "Já existe um cadastro com este CPF.");
-    if (emailDuplicado) throw new ErroDominio("email_duplicado", "Já existe um cadastro com este e-mail.");
-
+    if (base.usuarios.some((u) => u.cpf === cpf)) {
+      throw new ErroDominio("cpf_duplicado", "Já existe um cadastro com este CPF.");
+    }
+    if (base.usuarios.some((u) => u.email === email)) {
+      throw new ErroDominio("email_duplicado", "Já existe um cadastro com este e-mail.");
+    }
     const menor = idade < 18;
     const usuario: Usuario = {
-      id: gerarId("usr"),
+      id,
       perfil: "participante",
       nomeCompleto: dados.nomeCompleto.trim(),
       cpf,
@@ -129,29 +105,17 @@ export async function cadastrar(dados: DadosCadastro): Promise<Usuario> {
       criadoEm: new Date().toISOString(),
     };
     base.usuarios.push(usuario);
-    base.credenciais[email] = hashDemo(dados.senha);
-    storage.gravar(CHAVE_SESSAO, usuario.id);
     return usuario;
   });
 }
 
-/** Recuperação de senha simulada — nenhum e-mail é enviado. */
-export async function recuperarSenha(email: string): Promise<void> {
-  await latencia();
-  const emailNorm = normalizarEmail(email);
-  if (!emailValido(emailNorm)) throw new ErroDominio("email", "Informe um e-mail válido.");
-  // Simulação: sempre responde sucesso para não revelar contas existentes.
-}
-
-/** Consulta de CEP simulada: preenche cidade/UF plausíveis, editáveis. */
+/** Consulta o CEP no ViaCEP (serviço público e gratuito). Os campos continuam editáveis. */
 export async function consultarCep(cep: string) {
-  await latencia(300);
   const d = somenteDigitos(cep);
   if (d.length !== 8) throw new ErroDominio("cep", "CEP inválido.");
-  return {
-    logradouro: "",
-    bairro: "",
-    cidade: "Cidade demonstrativa",
-    uf: "SP",
-  };
+  const resposta = await fetch(`https://viacep.com.br/ws/${d}/json/`);
+  if (!resposta.ok) throw new ErroDominio("cep", "Não foi possível consultar o CEP agora.");
+  const r = (await resposta.json()) as { erro?: boolean | string; logradouro?: string; bairro?: string; localidade?: string; uf?: string };
+  if (r.erro) throw new ErroDominio("cep", "CEP não encontrado.");
+  return { logradouro: r.logradouro ?? "", bairro: r.bairro ?? "", cidade: r.localidade ?? "", uf: r.uf ?? "" };
 }

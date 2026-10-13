@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { carregarBase } from "@/services/db";
-import { responderPrivacidade } from "@/services/admin";
+import { responderPrivacidade } from "@/api/admin.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge, Botao, Cartao } from "@/components/ui";
 
@@ -43,7 +43,7 @@ function Privacidade() {
                   className="mt-2"
                   onClick={() => {
                     const r = prompt("Resposta ao participante:");
-                    if (r) responderPrivacidade(p.id, usuario.id, r).then(() => setVersao((v) => v + 1));
+                    if (r) responderPrivacidade(p.id, r).then(() => setVersao((v) => v + 1));
                   }}
                 >
                   Responder

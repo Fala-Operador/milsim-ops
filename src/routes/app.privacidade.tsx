@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { carregarBase, mutarBase, gerarId } from "@/services/db";
+import { carregarBase } from "@/services/db";
+import { solicitarPrivacidade } from "@/api/conta.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarDataBR } from "@/lib/domain/money";
 import { AreaTexto, Badge, Botao, Campo, Cartao, Selecao } from "@/components/ui";
@@ -23,40 +24,26 @@ function Privacidade() {
   const [tipo, setTipo] = useState<SolicitacaoPrivacidade["tipo"]>("acesso");
   const [detalhes, setDetalhes] = useState("");
   const [, setVersao] = useState(0);
+  const [erro, setErro] = useState("");
   if (!usuario) return null;
   const minhas = carregarBase().privacidade.filter((p) => p.usuarioId === usuario.id);
 
-  const enviar = () => {
-    mutarBase((b) => {
-      b.privacidade.push({
-        id: gerarId("priv"),
-        usuarioId: usuario.id,
-        tipo,
-        detalhes,
-        status: "aberta",
-        criadoEm: new Date().toISOString(),
-      });
-      for (const admin of b.usuarios.filter((u) => u.perfil === "admin")) {
-        b.notificacoes.push({
-          id: gerarId("not"),
-          usuarioId: admin.id,
-          titulo: "Solicitação de privacidade",
-          corpo: `Nova solicitação de ${tipo}.`,
-          link: "/admin",
-          lida: false,
-          criadoEm: new Date().toISOString(),
-        });
-      }
-    });
-    setDetalhes("");
-    setVersao((v) => v + 1);
+  const enviar = async () => {
+    setErro("");
+    try {
+      await solicitarPrivacidade(tipo, detalhes);
+      setDetalhes("");
+      setVersao((v) => v + 1);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Falha ao enviar a solicitação.");
+    }
   };
 
   return (
     <div className="space-y-4">
       <h1 className="font-display text-2xl font-semibold uppercase">Privacidade</h1>
       <p className="text-sm text-muted-foreground">
-        Fluxo demonstrativo. Critérios de exclusão e retenção precisarão ser definidos antes da produção.
+        As solicitações são analisadas e respondidas pela administração da plataforma.
       </p>
       <Cartao>
         <div className="space-y-3">
@@ -71,6 +58,7 @@ function Privacidade() {
           <Campo rotulo="Detalhes" htmlFor="det">
             <AreaTexto id="det" value={detalhes} onChange={(e) => setDetalhes(e.target.value)} />
           </Campo>
+          {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
           <Botao onClick={enviar}>Enviar solicitação</Botao>
         </div>
       </Cartao>

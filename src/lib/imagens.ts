@@ -1,4 +1,4 @@
-// Converte uma imagem escolhida pelo usuário em data URL reduzida (persistência local demo).
+// Converte uma imagem escolhida pelo usuário em data URL reduzida; o servidor a envia ao Storage.
 export async function arquivoParaDataUrl(arquivo: File, max = 1024, tipo: "image/jpeg" | "image/png" = "image/jpeg"): Promise<string> {
   if (!arquivo.type.startsWith("image/")) throw new Error("Selecione um arquivo de imagem.");
   if (arquivo.size > 10 * 1024 * 1024) throw new Error("Imagem muito grande (máx. 10 MB).");
@@ -21,7 +21,7 @@ export async function arquivoParaDataUrl(arquivo: File, max = 1024, tipo: "image
   }
 }
 
-// Converte um PDF escolhido pelo usuário em data URL (persistência local demo).
+// Converte um PDF escolhido pelo usuário em data URL; o servidor o envia ao Storage.
 export async function pdfParaDataUrl(arquivo: File): Promise<string> {
   if (arquivo.type !== "application/pdf") throw new Error("Selecione um arquivo PDF.");
   if (arquivo.size > 5 * 1024 * 1024) throw new Error("PDF muito grande (máx. 5 MB).");
@@ -34,7 +34,9 @@ export async function pdfParaDataUrl(arquivo: File): Promise<string> {
 }
 
 // Converte data URL em URL de objeto (blob) — navegadores abrem PDFs assim no leitor interno.
+// Arquivos já enviados ao Storage chegam como URL http(s) e são usados diretamente.
 export function dataUrlParaBlobUrl(dataUrl: string): string {
+  if (!dataUrl.startsWith("data:")) return dataUrl;
   const [cab, dados] = dataUrl.split(",");
   const mime = /data:(.*?);/.exec(cab ?? "")?.[1] ?? "application/pdf";
   const bin = atob(dados ?? "");

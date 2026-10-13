@@ -62,7 +62,13 @@ function PaginaCadastro() {
   const aoBuscarCep = async () => {
     try {
       const r = await consultarCep(f.cep);
-      setF((p) => ({ ...p, cidade: r.cidade, uf: r.uf }));
+      setF((p) => ({
+        ...p,
+        logradouro: p.logradouro || r.logradouro,
+        bairro: p.bairro || r.bairro,
+        cidade: r.cidade || p.cidade,
+        uf: r.uf || p.uf,
+      }));
     } catch {
       /* preenchimento manual permitido */
     }
@@ -113,7 +119,6 @@ function PaginaCadastro() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Seus dados são usados apenas para identificação no evento e comunicação operacional.
-          Protótipo demonstrativo — não use dados reais.
         </p>
 
         <form onSubmit={aoEnviar} className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -192,13 +197,13 @@ function PaginaCadastro() {
             <label className="flex items-start gap-2">
               <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)} className="mt-1" required />
               <span>
-                Li e aceito os <Link to="/termos" className="text-accent hover:underline">termos de uso</Link> (demonstrativos, versão termos-demo-v1).
+                Li e aceito os <Link to="/termos" className="text-accent hover:underline">termos de uso</Link> .
               </span>
             </label>
             <label className="flex items-start gap-2">
               <input type="checkbox" checked={privacidade} onChange={(e) => setPrivacidade(e.target.checked)} className="mt-1" required />
               <span>
-                Estou ciente do <Link to="/privacidade" className="text-accent hover:underline">aviso de privacidade</Link> (demonstrativo).
+                Estou ciente do <Link to="/privacidade" className="text-accent hover:underline">aviso de privacidade</Link>.
               </span>
             </label>
             <label className="flex items-start gap-2">

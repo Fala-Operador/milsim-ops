@@ -4,14 +4,13 @@ import { useComunidade } from "@/hooks/useComunidade";
 import {
   TAMANHO_PAGINA,
   buscarForuns,
-  definirPreferenciaForum,
   forunsVisiveis,
   listarFeed,
   novidadesPorForum,
   podePublicar,
   preferenciaForum,
-  registrarVisita,
 } from "@/services/comunidade";
+import { definirPreferenciaForum, registrarVisita } from "@/api/comunidade.functions";
 import { CartaoPublicacao, Compositor, SemAcesso } from "@/components/comunidade";
 import { Badge, Cartao, Entrada, EstadoVazio, Selecao, SkeletonPagina, Botao } from "@/components/ui";
 import { formatarDataBR } from "@/lib/domain/money";
@@ -36,11 +35,13 @@ function ComunidadeInicio() {
   const [busca, setBusca] = useState(q ?? "");
 
   // Novidades desde a última visita (calculadas antes de registrar a visita atual)
+  // Depende só do id: cada resposta da API gera um objeto de usuário novo.
+  const usuarioId = usuario?.id;
   useEffect(() => {
     if (!montado || !usuario || !papel) return;
     setNovidades(novidadesPorForum(usuario, eventoId));
-    registrarVisita(usuario.id, eventoId);
-  }, [montado, usuario, papel, eventoId]);
+    void registrarVisita(eventoId);
+  }, [montado, usuarioId, papel, eventoId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Preserva quantidade carregada e posição de leitura ao voltar de uma publicação
   useEffect(() => {
@@ -160,7 +161,7 @@ function ComunidadeInicio() {
                   <Selecao
                     aria-label="Notificações deste fórum"
                     value={pref}
-                    onChange={(e) => { definirPreferenciaForum(usuario, forumAtual.id, e.target.value as "seguir" | "silenciar" | "padrao"); atualizar(); }}
+                    onChange={async (e) => { await definirPreferenciaForum(forumAtual.id, e.target.value as "seguir" | "silenciar" | "padrao"); atualizar(); }}
                   >
                     <option value="padrao">Notificações: padrão</option>
                     <option value="seguir">Seguir novas publicações</option>

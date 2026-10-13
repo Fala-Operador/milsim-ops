@@ -1,18 +1,61 @@
-# MilSim Ops — protótipo demonstrativo
+# MilSim Ops
 
-Aplicação web responsiva (pt-BR) para divulgação e gestão de eventos de simulação militar.
-**Versão 100% mockada**: dados fictícios, autenticação demonstrativa e persistência local.
-Sem backend real, envio de mensagens ou pagamentos.
+Aplicação web responsiva (pt-BR) para divulgação e gestão de eventos de simulação militar
+(airsoft / milsim): descoberta de operações, inscrição, ingressos com QR Code, comunidade por
+evento, painel do organizador e administração da plataforma.
+
+**Monólito TanStack Start + Supabase.** As páginas e as APIs (server functions) vivem no mesmo
+app. O Supabase fornece Postgres, Auth e Storage, e o navegador **nunca** acessa o banco
+diretamente: toda leitura e escrita passa pelas server functions, que autenticam a pessoa e
+aplicam as regras de negócio. Pagamentos, estornos e mensagens externas (e-mail, WhatsApp) continuam
+simulados.
+
+> Projeto conectado ao [Lovable](https://lovable.dev): commits na branch `main` sincronizam com o
+> editor. Não reescreva histórico já publicado (force push, rebase, amend). Veja `AGENTS.md`.
+
+## Stack
+
+- **TanStack Start** (React 19 + SSR) com roteamento por arquivos (`src/routes/`) e server functions (`src/api/`)
+- **Supabase**: Postgres (tabelas com RLS, acesso só pelo servidor), Auth (sessão em cookies via `@supabase/ssr`) e Storage (bucket `midia`)
+- **Vite 8** via `@lovable.dev/vite-tanstack-config` (build com Nitro, alvo Cloudflare)
+- **Tailwind CSS 4**, `lucide-react`, `recharts`; **Vitest** + Testing Library
+- Apoio: `qrcode` / `jsqr` (check-in), `jspdf` (relatórios), `zod` (validação das APIs), `ai` (insights)
 
 ## Execução
 
 ```bash
 bun install
-bun run dev
-bunx vitest run   # testes das regras de negócio
+cp .env.example .env.local   # preencha as chaves do Supabase
+bun run dev                  # http://localhost:8080
+bun run test                 # 104 testes (regras, persistência, visão por perfil)
+bun run typecheck
+bun run build
 ```
 
-## Contas demonstrativas
+### Variáveis de ambiente
+
+| Variável | Uso |
+|---|---|
+| `SUPABASE_URL` | URL do projeto |
+| `SUPABASE_PUBLISHABLE_KEY` | chave publicável; o servidor a usa para a sessão do Supabase Auth |
+| `SUPABASE_SECRET_KEY` | chave secreta, **somente servidor** (acesso ao banco, Storage e Auth admin) |
+| `SUPABASE_DB_PASSWORD` | só para `supabase link` / `db push` |
+| `LOVABLE_API_KEY` | opcional, habilita Admin › Insights IA |
+
+Na publicação (Lovable/Cloudflare), configure as três primeiras como **segredos** do ambiente.
+
+### Banco de dados
+
+O projeto Supabase de desenvolvimento é `milsim-ops` (ref `fezrmoyjsffufdjptamp`, região São Paulo).
+
+```bash
+npx supabase link --project-ref <ref>           # uma vez
+bun run db:push                                 # aplica supabase/migrations
+bun run db:seed                                 # grava a base demonstrativa (substitui as tabelas)
+bun run db:seed -- --limpar-contas              # idem, removendo também as contas criadas fora da seed
+```
+
+## Contas criadas pela seed
 
 | Perfil | Login | Senha |
 |---|---|---|
@@ -20,41 +63,34 @@ bunx vitest run   # testes das regras de negócio
 | Participante | `usuario@teste.com.br` | `user@123` |
 | Organizador aprovado | `organizador@teste.com.br` | `organizador@123` |
 
-## Organização do projeto
+> **Atenção:** essas senhas são públicas (estão neste repositório). Antes de abrir o app para
+> pessoas reais, troque a senha do admin e desative ou remova as contas de exemplo. A restauração
+> da base existe só como script de desenvolvimento (`bun run db:seed`) e apaga todos os dados.
 
-- `src/lib/domain/` — tipos, validações (CPF/CNPJ/idade), dinheiro em centavos
-- `src/lib/storage.ts` — único ponto de acesso ao localStorage (prefixo `milsim-demo:`)
-- `src/data/seed.ts` — base fictícia inicial (criada só quando não existe)
-- `src/services/` — serviços mockados assíncronos com erros de domínio (`ErroDominio`)
-- `src/contexts/` — `AuthContext`, `ThemeContext`, `NotificationContext`
-- `src/routes/` — páginas (TanStack Router, equivalente ao React Router)
-- `src/test/regras.test.ts` — testes das regras centrais
+## Funcionalidades
 
-## Temas
+| Área | Rotas | O que faz |
+|---|---|---|
+| Pública | `/`, `/eventos/$id`, `/inscricao/$id`, `/login`, `/cadastro`, `/recuperar-senha` | Página inicial com seções por região, busca por cidade, preferências de modalidade, página do evento, inscrição com lotes, cupons (validados no servidor) e cortesias, recuperação de senha por e-mail |
+| Participante | `/app/*` | Ingressos com QR Code, comunidades, missões, notificações, suporte, perfil e solicitações de privacidade (LGPD) |
+| Comunidade | `/comunidade/$eventoId/*` | Fóruns com feed social, imagens no Storage, curtidas, denúncias, moderação e gestão de fóruns |
+| Organizador | `/organizacao/*`, `/app/organizador` | Eventos, inscritos, check-in (QR/manual/offline com sincronização), comunidade, financeiro simulado, métricas e campanhas |
+| Admin | `/admin/*` | Dashboard, Insights IA, métricas consolidadas, divulgação, solicitações, usuários, privacidade e auditoria |
 
-Dark verde-oliva e light TAN, com opção "Sistema". Preferência persistida e aplicada antes da
-primeira pintura (script inline no `__root.tsx`).
+## Documentação
 
-## Limitações do mock e pontos de substituição
+- [docs/ARQUITETURA.md](docs/ARQUITETURA.md): camadas, APIs, unidade de trabalho, visão por perfil, banco, segurança e mapa de arquivos
+- [AGENTS.md](AGENTS.md): regras técnicas obrigatórias
+- [roadmap.md](roadmap.md): status das entregas
 
-- **Autenticação**: senhas usam hash demonstrativo (`hashDemo`) apenas para não ficarem em texto
-  puro no localStorage. Em produção: autenticação e autorização no servidor.
-- **Persistência**: localStorage via `src/services/db.ts`. Substitua `carregarBase`/`mutarBase`
-  por chamadas de API mantendo as assinaturas dos serviços.
-- **Uploads**: fotos de perfil viram data URLs locais (limite 2 MB). Em produção: storage
-  protegido com validação no servidor.
-- **Comunicações**: nenhum e-mail, WhatsApp ou push real é enviado; notificações são internas.
-- **Pagamentos**: inscrições e estornos são simulados; não há gateway, PIX ou cartão.
-- **Auditoria**: demonstrativa — armazenamento local não oferece integridade de produção.
-- **LGPD**: fluxos de privacidade são demonstrativos; retenção, exclusão e validação jurídica
-  (incl. dados de adolescentes 15–17 anos) ficam para a etapa de produção.
+## Limitações e próximos passos
 
-## Regras centrais implementadas
-
-- Uma inscrição ativa por usuário por evento (qualquer origem), com confirmação atômica.
-- Capacidades de evento, exército, tipo e lote consumidas conjuntamente por inscrição.
-- Cupons: normalização, validade, limite de usos, elegibilidade por tipo, uso contabilizado só
-  na confirmação; cortesias não aceitam cupom e exigem e-mail correspondente.
-- Cancelamento/estorno integral libera vaga, invalida ingresso e preserva histórico.
-- Privacidade de exércitos: o participante vê apenas o próprio exército.
-- Financeiro derivado dos registros de origem (sem números fixos).
+- **Escala**: cada requisição carrega a base inteira (uma RPC) e a visão do usuário vai inteira
+  ao navegador. Funciona bem no volume atual; para crescer, troque por consultas por página/agregado
+  (ver `docs/ARQUITETURA.md`, seção 9).
+- **Cadastro**: a conta é criada já com o e-mail confirmado. Em produção, exija confirmação.
+- **E-mails do Auth**: o SMTP embutido do Supabase só entrega para membros da organização e tem
+  limite baixo. Configure um SMTP próprio para a recuperação de senha funcionar para todos.
+- **Pagamentos e mensagens externas**: simulados (sem gateway, PIX, e-mail transacional ou WhatsApp).
+- **Storage**: arquivos substituídos ou removidos não são apagados do bucket (sem limpeza de órfãos).
+- **LGPD**: retenção, exclusão e validação jurídica (incl. adolescentes de 15–17 anos) ainda pendentes.

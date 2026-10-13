@@ -1,7 +1,8 @@
 // Testes das regras de negócio centrais (valores concretos do briefing).
 import { describe, it, expect, beforeEach } from "vitest";
 import { cpfValido, cnpjValido, idadeEmAnos, normalizarEmail } from "@/lib/domain/validators";
-import { restaurarBase, carregarBase } from "@/services/db";
+import { carregarBase } from "@/services/db";
+import { restaurarBase } from "@/test/baseTeste";
 import { confirmarInscricao, validarCupom, cancelarInscricao, resumoFinanceiro } from "@/services/inscricoes";
 import { solicitarOrganizador } from "@/services/organizador";
 import { analisarSolicitacao } from "@/services/admin";

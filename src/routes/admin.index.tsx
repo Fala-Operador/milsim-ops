@@ -8,7 +8,7 @@ export const Route = createFileRoute("/admin/")({
   head: () => ({
     meta: [
       { title: "Dashboard admin — MilSim Ops" },
-      { name: "description", content: "Visão geral de eventos, inscrições e receita simulada." },
+      { name: "description", content: "Visão geral de eventos, inscrições e receita registrada." },
       { property: "og:title", content: "Dashboard admin — MilSim Ops" },
       { property: "og:description", content: "Visão geral de eventos e inscrições." },
     ],
@@ -21,7 +21,7 @@ function Dashboard() {
   const cards = [
     ["Eventos", base.eventos.length],
     ["Inscrições ativas", base.inscricoes.filter((i) => i.status === "confirmada").length],
-    ["Receita simulada", formatarBRL(base.movimentacoes.reduce((s, m) => s + m.valorCentavos, 0))],
+    ["Receita registrada", formatarBRL(base.movimentacoes.reduce((s, m) => s + m.valorCentavos, 0))],
     ["Usuários ativos", base.usuarios.filter((u) => u.ativo).length],
   ] as const;
 

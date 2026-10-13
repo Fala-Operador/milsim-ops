@@ -1,14 +1,11 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { carregarBase } from "@/services/db";
+import { obterEventoFn } from "@/api/sessao.functions";
 import { useEventoAtual } from "@/hooks/useEventoAtual";
 import { registrarInicioInscricao } from "@/services/analytics";
-import {
-  confirmarInscricao,
-  validarCupom,
-  loteVigente,
-  ocupacaoExercito,
-} from "@/services/inscricoes";
+import { loteVigente, ocupacaoExercito } from "@/services/inscricoes";
+import { confirmarInscricao, previsualizarCupom } from "@/api/inscricoes.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL } from "@/lib/domain/money";
 import { Botao, Campo, Cartao, Entrada, Selecao, SkeletonPagina } from "@/components/ui";
@@ -17,9 +14,8 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
   validateSearch: (s: Record<string, unknown>) => ({
     cortesia: typeof s["cortesia"] === "string" ? s["cortesia"] : undefined,
   }),
-  loader: ({ params }) => {
-    const base = carregarBase();
-    const evento = base.eventos.find((e) => e.id === params.eventoId);
+  loader: async ({ params }) => {
+    const { evento } = await obterEventoFn({ data: { eventoId: params.eventoId } });
     if (!evento || evento.status !== "publicado") throw notFound();
     return { evento };
   },
@@ -27,9 +23,9 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
     meta: loaderData
       ? [
           { title: `Inscrição — ${loaderData.evento.nome}` },
-          { name: "description", content: "Confirmação de inscrição simulada. Nenhuma cobrança será feita." },
+          { name: "description", content: "Confirme sua inscrição no evento." },
           { property: "og:title", content: `Inscrição — ${loaderData.evento.nome}` },
-          { property: "og:description", content: "Inscrição simulada, sem cobrança." },
+          { property: "og:description", content: "Confirme sua inscrição no evento." },
         ]
       : [{ title: "Inscrição — MilSim Ops" }],
   }),
@@ -107,7 +103,7 @@ function PaginaInscricao() {
     );
   }
 
-  const aoAplicarCupom = () => {
+  const aoAplicarCupom = async () => {
     setErro("");
     setOk("");
     setDesconto(0);
@@ -116,7 +112,8 @@ function PaginaInscricao() {
       return;
     }
     try {
-      const c = validarCupom(base, evento.id, cupom, tipo.id);
+      // Validado no servidor: os códigos de cupom nunca são enviados ao navegador.
+      const c = await previsualizarCupom(evento.id, cupom, tipo.id);
       const d = Math.round((preco * c.descontoPercentual) / 100);
       setDesconto(d);
       setOk(`Cupom ${c.codigo} aplicado: -${c.descontoPercentual}%.`);
@@ -137,7 +134,6 @@ function PaginaInscricao() {
     try {
       await confirmarInscricao({
         eventoId: evento.id,
-        usuarioId: usuario.id,
         tipoId,
         exercitoId,
         codigoCupom: desconto > 0 ? cupom : undefined,
@@ -229,10 +225,10 @@ function PaginaInscricao() {
           {erro && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
 
           <Botao onClick={aoConfirmar} disabled={confirmando} className="w-full">
-            {confirmando ? "Confirmando..." : "Confirmar inscrição simulada"}
+            {confirmando ? "Confirmando..." : "Confirmar inscrição"}
           </Botao>
           <p className="text-center text-xs text-muted-foreground">
-            Nenhuma cobrança será feita. Não pedimos cartão, PIX ou dados de pagamento.
+            A plataforma não processa pagamentos: não pedimos cartão, PIX ou dados de pagamento.
           </p>
         </div>
       </Cartao>

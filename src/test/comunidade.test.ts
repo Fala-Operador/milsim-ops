@@ -1,6 +1,7 @@
 // Regras da comunidade: permissões de fórum, curtida única, fóruns restritos e arquivados.
 import { describe, it, expect, beforeEach } from "vitest";
-import { restaurarBase, carregarBase } from "@/services/db";
+import { carregarBase } from "@/services/db";
+import { restaurarBase } from "@/test/baseTeste";
 import {
   alternarArquivoForum, alternarCurtida, contarCurtidas, criarPublicacao, detalhePublicacao,
   excluirForum, listarFeed, moverPublicacao, responder, suspenderUsuario,

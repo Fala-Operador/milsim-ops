@@ -7,7 +7,7 @@ import type { Evento, SolicitacaoOrganizador } from "@/lib/domain/types";
 
 export async function solicitarOrganizador(
   usuarioId: string,
-  dados: { possuiCnpj: boolean; cnpj?: string; nomeOrganizacao: string; instagram?: string; telefone: string },
+  dados: { possuiCnpj: boolean; cnpj?: string | undefined; nomeOrganizacao: string; instagram?: string | undefined; telefone: string },
 ): Promise<SolicitacaoOrganizador> {
   await latencia();
   if (dados.possuiCnpj && !cnpjValido(dados.cnpj ?? "")) {
@@ -54,7 +54,7 @@ export async function solicitarOrganizador(
 
 export async function reenviarSolicitacao(
   solicitacaoId: string,
-  dados: { nomeOrganizacao: string; instagram?: string; telefone: string },
+  dados: { nomeOrganizacao: string; instagram?: string | undefined; telefone: string },
 ): Promise<void> {
   await latencia();
   mutarBase((base) => {
@@ -186,7 +186,7 @@ export async function cancelarEvento(
           inscricaoId: ins.id,
           tipo: "estorno",
           valorCentavos: -valorFinal,
-          descricao: "Estorno integral simulado — evento cancelado",
+          descricao: "Estorno integral — evento cancelado",
           criadoEm: new Date().toISOString(),
         });
       }
@@ -195,7 +195,7 @@ export async function cancelarEvento(
         id: gerarId("not"),
         usuarioId: ins.usuarioId,
         titulo: "Evento cancelado",
-        corpo: `${evento.nome} foi cancelado. Estorno integral simulado registrado.`,
+        corpo: `${evento.nome} foi cancelado. O estorno integral foi registrado.`,
         link: "/app/ingressos",
         lida: false,
         criadoEm: new Date().toISOString(),
@@ -231,7 +231,7 @@ export async function criarCupom(
 }
 
 export async function criarCortesia(
-  dados: { eventoId: string; nomeConvidado: string; emailConvidado: string; tipoId: string; exercitoId?: string; validade: string },
+  dados: { eventoId: string; nomeConvidado: string; emailConvidado: string; tipoId: string; exercitoId?: string | undefined; validade: string },
 ): Promise<string> {
   await latencia();
   const codigo = gerarCodigo("CORT");

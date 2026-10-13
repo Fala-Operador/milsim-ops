@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { carregarBase, restaurarBase, mutarBase } from "@/services/db";
+import { carregarBase, mutarBase } from "@/services/db";
+import { restaurarBase } from "@/test/baseTeste";
 import { linkWhatsapp, montarPaginaInicial, normalizarInstagram, validarUrlExterna, NACIONAL } from "@/lib/divulgacao";
 import { salvarParceiro } from "@/services/divulgacao";
 
@@ -62,11 +63,10 @@ describe("métricas por evento", async () => {
   const { indicadores, filtrar } = await import("@/lib/analytics");
   const { storage } = await import("@/lib/storage");
   const limpar = () => {
-    ["analytics-registros", "analytics-atribuicao", "analytics-fluxos-abertos", "analytics-clique-pendente", "sessao"].forEach((k) => storage.remover(k));
-    storage.gravar("analytics-semeado", true);
+    ["analytics-atribuicao", "analytics-fluxos-abertos", "analytics-clique-pendente"].forEach((k) => storage.remover(k));
     a._reiniciarMemoria();
   };
-  const doEvento = (id: string) => filtrar(a.listarRegistros(), { eventoIds: new Set([id]) });
+  const doEvento = (id: string) => filtrar(a.registrosDaSessao(), { eventoIds: new Set([id]) });
   const insc = (id: string, extra = {}) => ({ id, eventoId: "evt-araucaria", origem: "plataforma", ...extra }) as never;
 
   it("visita direta não cria clique e repetição imediata (Strict Mode) não duplica", () => {

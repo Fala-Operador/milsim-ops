@@ -2,6 +2,7 @@ import { nomeModalidade } from "@/lib/modalidades";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { carregarBase } from "@/services/db";
+import { obterEventoFn } from "@/api/sessao.functions";
 import { dataUrlParaBlobUrl } from "@/lib/imagens";
 import { useEventoAtual } from "@/hooks/useEventoAtual";
 import { registrarCliqueInscrever, registrarVisita } from "@/services/analytics";
@@ -10,13 +11,12 @@ import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/mo
 import { Badge, Botao, Cartao, Modal, SkeletonPagina } from "@/components/ui";
 
 export const Route = createFileRoute("/eventos/$eventoId")({
-  loader: ({ params }) => {
-    const base = carregarBase();
-    const evento = base.eventos.find((e) => e.id === params.eventoId);
+  loader: async ({ params }) => {
+    const { evento, organizacao } = await obterEventoFn({ data: { eventoId: params.eventoId } });
     if (!evento || !["publicado", "inscricoes_encerradas", "concluido", "cancelado"].includes(evento.status)) {
       throw notFound();
     }
-    return { evento, organizacao: base.organizacoes.find((o) => o.id === evento.organizacaoId) };
+    return { evento, organizacao: organizacao ?? undefined };
   },
   head: ({ loaderData }) => ({
     meta: loaderData

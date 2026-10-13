@@ -22,13 +22,14 @@ export type BaseSemDivulgacao = Omit<BaseDados, "parceiros" | "secoesInicio">;
 
 const h = (horas: number) => new Date(Date.now() - horas * 3600_000).toISOString();
 
+let cpfFicticio = 0;
 function usuarioFicticio(id: string, nome: string, exibicao: string): Usuario {
   return {
     id,
     perfil: "participante",
     nomeCompleto: nome,
     nomeExibicao: exibicao,
-    cpf: "00000000000",
+    cpf: `9990000000${cpfFicticio++}`, // fictício e único (CPF é chave única no banco)
     dataNascimento: "1995-01-01",
     email: `${id}@exemplo.invalid`,
     whatsapp: "11900000000",
@@ -44,6 +45,7 @@ function usuarioFicticio(id: string, nome: string, exibicao: string): Usuario {
 
 export function aplicarSeedComunidade(b: BaseSemComunidade): BaseSemDivulgacao {
   const ev = "evt-serra-verde";
+  cpfFicticio = 0;
   const extras = [
     usuarioFicticio("usr-ana", "Ana Fictícia Rocha", "Ana Sniper"),
     usuarioFicticio("usr-bruno", "Bruno Exemplo Lima", "Bruno Recon"),

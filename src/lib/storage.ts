@@ -24,7 +24,7 @@ export const storage = {
       window.localStorage.setItem(PREFIXO + chave, JSON.stringify(valor));
     } catch {
       throw new Error(
-        "Espaço de armazenamento insuficiente. Remova imagens grandes ou restaure a base demonstrativa.",
+        "Espaço de armazenamento do navegador insuficiente. Libere espaço e tente novamente.",
       );
     }
   },

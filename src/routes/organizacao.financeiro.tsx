@@ -1,7 +1,7 @@
 import { OperacaoSelecionada } from "@/components/OperacaoSelecionada";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { criarCortesia, criarCupom } from "@/services/organizador";
+import { criarCortesia, criarCupom } from "@/api/organizador.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarDataBR } from "@/lib/domain/money";
 import { Badge, Botao, Cartao, Entrada, Selecao } from "@/components/ui";
@@ -11,7 +11,7 @@ export const Route = createFileRoute("/organizacao/financeiro")({
   head: () => ({
     meta: [
       { title: "Financeiro — Minha organização — MilSim Ops" },
-      { name: "description", content: "Resumo financeiro simulado, cupons e cortesias por evento." },
+      { name: "description", content: "Resumo financeiro, cupons e cortesias por evento." },
     ],
   }),
   component: PaginaFinanceiro,
@@ -66,7 +66,7 @@ function PaginaFinanceiro() {
         tipoId: cortesiaForm.tipoId,
         validade: cortesiaForm.validade ? new Date(cortesiaForm.validade).toISOString() : new Date(Date.now() + 15 * 86400000).toISOString(),
       });
-      alert(`Cortesia criada. Link fictício de uso único: /inscricao/${evento.id}?cortesia=${codigo}`);
+      alert(`Cortesia criada. Link de uso único: /inscricao/${evento.id}?cortesia=${codigo}`);
       setCortesiaForm({ nome: "", email: "", tipoId: "", validade: "" });
       setVersao((v) => v + 1);
     } catch (err) {

@@ -1,15 +1,34 @@
-// Repositório da base mockada: carrega, persiste e restaura a demonstração.
-import { storage } from "@/lib/storage";
-import { criarBaseInicial, VERSAO_BASE } from "@/data/seed";
+// Acesso à BaseDados com três origens possíveis:
+//  1) Servidor: a base da requisição atual, carregada do Supabase pela unidade de
+//     trabalho (src/server/unidade.server.ts). Os serviços leem e mutam essa base;
+//     a unidade de trabalho grava as diferenças no banco ao final.
+//  2) Cliente: o snapshot (visão) devolvido pela API para o usuário logado —
+//     SOMENTE LEITURA. Toda escrita passa pelas server functions em src/api/.
+//  3) Testes: base demonstrativa em memória (definirBaseEmMemoria).
+import { baseVazia } from "@/lib/persistencia";
 import type { BaseDados } from "@/lib/domain/types";
 
-const CHAVE = "base";
+/** Contexto da requisição no servidor (registrado por src/server/unidade.server.ts). */
+export interface ContextoBase {
+  base: BaseDados;
+}
+interface ProvedorContexto {
+  obter(): ContextoBase | undefined;
+}
+const g = globalThis as unknown as { __milsimProvedorBase?: ProvedorContexto };
 
-let cache: BaseDados | null = null;
+export function registrarProvedorContexto(p: ProvedorContexto): void {
+  g.__milsimProvedorBase = p;
+}
+
+const noServidor = () => typeof window === "undefined";
+
+let snapshot: BaseDados = baseVazia();
+let memoria: BaseDados | null = null;
 let versao = 0;
 const ouvintes = new Set<() => void>();
 
-/** Versão da base em memória: aumenta a cada escrita. */
+/** Versão da base em memória: aumenta a cada atualização. */
 export function versaoBase(): number {
   return versao;
 }
@@ -28,45 +47,37 @@ function notificarMudanca(): void {
 }
 
 export function carregarBase(): BaseDados {
-  if (cache) return cache;
-  const existente = storage.ler<BaseDados>(CHAVE);
-  if (existente && existente.versao === VERSAO_BASE) {
-    cache = existente;
-    return cache;
-  }
-  // Migração 3 → 4: modalidades. Preserva todos os dados; eventos antigos ficam sem modalidade.
-  if (existente && existente.versao === 3) {
-    cache = { ...existente, versao: VERSAO_BASE };
-    storage.gravar(CHAVE, cache);
-    return cache;
-  }
-  // Inicializa somente quando ainda não existe (ou versão inválida)
-  cache = criarBaseInicial();
-  storage.gravar(CHAVE, cache);
-  return cache;
+  const ctx = g.__milsimProvedorBase?.obter();
+  if (ctx) return ctx.base;
+  if (memoria) return memoria;
+  // No servidor, fora de uma unidade de trabalho, nunca compartilha dados entre requisições.
+  if (noServidor()) return baseVazia();
+  return snapshot;
 }
 
-export function salvarBase(base: BaseDados): void {
-  cache = base;
-  storage.gravar(CHAVE, base);
+/** Substitui o snapshot do cliente pela visão mais recente devolvida pela API. */
+export function definirBaseCliente(base: BaseDados): void {
+  snapshot = base;
   notificarMudanca();
 }
 
-/** Restaura a base demonstrativa: limpa apenas os dados desta aplicação. */
-export function restaurarBase(): BaseDados {
-  storage.limparTudo();
-  cache = criarBaseInicial();
-  storage.gravar(CHAVE, cache);
-  notificarMudanca();
-  return cache;
-}
-
-/** Executa uma mutação na base e persiste. */
+/** Executa uma mutação. Só é permitida no servidor (ou na base em memória dos testes). */
 export function mutarBase<T>(fn: (base: BaseDados) => T): T {
-  const base = carregarBase();
-  const resultado = fn(base);
-  salvarBase(base);
-  return resultado;
+  const ctx = g.__milsimProvedorBase?.obter();
+  if (ctx) return fn(ctx.base);
+  if (memoria) {
+    const r = fn(memoria);
+    notificarMudanca();
+    return r;
+  }
+  throw new ErroDominio("somente_servidor", "Esta operação precisa passar pela API do servidor.");
+}
+
+/** Testes: usa a base informada, em memória, no lugar do snapshot (null desliga). */
+export function definirBaseEmMemoria(base: BaseDados | null): BaseDados | null {
+  memoria = base;
+  notificarMudanca();
+  return memoria;
 }
 
 export function gerarId(prefixo: string): string {
@@ -80,9 +91,9 @@ export function gerarCodigo(prefixo: string): string {
   return `${prefixo}-${s}`;
 }
 
-// Simula latência de rede nos serviços mockados.
-export function latencia(ms = 250): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
+// Mantida por compatibilidade dos serviços: a latência real agora é a da rede.
+export function latencia(_ms = 0): Promise<void> {
+  return Promise.resolve();
 }
 
 export class ErroDominio extends Error {

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { carregarBase } from "@/services/db";
-import { solicitarOrganizador, reenviarSolicitacao } from "@/services/organizador";
+import { solicitarOrganizador, reenviarSolicitacao } from "@/api/organizador.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import { mascaraTelefone } from "@/lib/domain/validators";
@@ -52,7 +52,7 @@ function QueroSerOrganizador() {
       if (precisaAjuste && atual) {
         await reenviarSolicitacao(atual.id, f);
       } else {
-        await solicitarOrganizador(usuario.id, { possuiCnpj, ...f });
+        await solicitarOrganizador({ possuiCnpj, ...f });
       }
       setVersao((v) => v + 1);
       recarregar();

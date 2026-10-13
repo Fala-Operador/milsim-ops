@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { carregarBase, restaurarBase } from "@/services/db";
+import { carregarBase } from "@/services/db";
+import { restaurarBase } from "@/test/baseTeste";
 import { definirSilencio, silenciado } from "@/services/notificacoes";
 import { criarPublicacao, responder } from "@/services/comunidade";
 

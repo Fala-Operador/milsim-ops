@@ -3,20 +3,22 @@ import { useState } from "react";
 import { useComunidade } from "@/hooks/useComunidade";
 import {
   MOTIVOS_DENUNCIA,
+  listarDenuncias,
+  membrosParaModeracao,
+  nomeExibicao,
+  type DadosForum,
+} from "@/services/comunidade";
+import {
   alternarArquivoForum,
   analisarDenuncia,
   criarForum,
   editarForum,
   excluirForum,
-  listarDenuncias,
-  membrosParaModeracao,
   moverOrdemForum,
-  nomeExibicao,
   ocultarConteudo,
   reativarUsuario,
   suspenderUsuario,
-  type DadosForum,
-} from "@/services/comunidade";
+} from "@/api/comunidade.functions";
 import { ModalJustificativa, SemAcesso } from "@/components/comunidade";
 import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, Modal, Selecao, SkeletonPagina } from "@/components/ui";
 import { formatarDataHoraBR } from "@/lib/domain/money";
@@ -50,7 +52,7 @@ function Gerenciar() {
   if (!gestao) return <SemAcesso eventoId={eventoId} />;
   const evento = base.eventos.find((e) => e.id === eventoId)!;
   const foruns = base.foruns.filter((f) => f.eventoId === eventoId).sort((a, b) => a.ordem - b.ordem);
-  const run = (fn: () => void) => { try { fn(); setErro(""); atualizar(); } catch (e) { setErro(e instanceof Error ? e.message : "Erro"); } };
+  const run = async (fn: () => Promise<unknown>) => { try { await fn(); setErro(""); atualizar(); } catch (e) { setErro(e instanceof Error ? e.message : "Erro"); } };
   const denuncias = listarDenuncias(usuario, eventoId);
   const membros = membrosParaModeracao(usuario, eventoId);
   const publicoNome = (p: string) => (p === "todos" ? "Todos os confirmados" : `Restrito: ${evento.exercitos.find((e) => e.id === p)?.nome ?? "?"}`);
@@ -85,12 +87,12 @@ function Gerenciar() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    <Botao variante="fantasma" aria-label="Subir" disabled={i === 0} onClick={() => run(() => moverOrdemForum(usuario, f.id, -1))}>↑</Botao>
-                    <Botao variante="fantasma" aria-label="Descer" disabled={i === foruns.length - 1} onClick={() => run(() => moverOrdemForum(usuario, f.id, 1))}>↓</Botao>
+                    <Botao variante="fantasma" aria-label="Subir" disabled={i === 0} onClick={() => run(() => moverOrdemForum(f.id, -1))}>↑</Botao>
+                    <Botao variante="fantasma" aria-label="Descer" disabled={i === foruns.length - 1} onClick={() => run(() => moverOrdemForum(f.id, 1))}>↓</Botao>
                     <Botao variante="contorno" onClick={() => setEditando(f)}>Editar</Botao>
-                    <Botao variante="contorno" onClick={() => run(() => alternarArquivoForum(usuario, f.id))}>{f.status === "ativo" ? "Arquivar" : "Reativar"}</Botao>
+                    <Botao variante="contorno" onClick={() => run(() => alternarArquivoForum(f.id))}>{f.status === "ativo" ? "Arquivar" : "Reativar"}</Botao>
                     {qtd === 0 && (
-                      <Botao variante="perigo" onClick={() => window.confirm(`Excluir o fórum "${f.nome}"?`) && run(() => excluirForum(usuario, f.id))}>Excluir</Botao>
+                      <Botao variante="perigo" onClick={() => window.confirm(`Excluir o fórum "${f.nome}"?`) && run(() => excluirForum(f.id))}>Excluir</Botao>
                     )}
                   </div>
                 </div>
@@ -130,8 +132,8 @@ function Gerenciar() {
                     {item && !item.oculta && <Botao variante="contorno" onClick={() => setOcultarAlvo({ alvo: d.alvo, id: d.alvoId })}>Ocultar</Botao>}
                     {d.status === "pendente" && (
                       <>
-                        <Botao variante="perigo" onClick={() => run(() => analisarDenuncia(usuario, d.id, "procedente"))}>Procedente</Botao>
-                        <Botao variante="contorno" onClick={() => run(() => analisarDenuncia(usuario, d.id, "descartada"))}>Descartar</Botao>
+                        <Botao variante="perigo" onClick={() => run(() => analisarDenuncia(d.id, "procedente"))}>Procedente</Botao>
+                        <Botao variante="contorno" onClick={() => run(() => analisarDenuncia(d.id, "descartada"))}>Descartar</Botao>
                       </>
                     )}
                   </div>
@@ -150,7 +152,7 @@ function Gerenciar() {
               <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
                 <span>{m.nome} <span className="text-muted-foreground">({m.exibicao})</span> {m.suspenso && <Badge tom="perigo">Suspenso</Badge>}</span>
                 {m.suspenso
-                  ? <Botao variante="contorno" onClick={() => run(() => reativarUsuario(usuario, eventoId, m.id))}>Reativar</Botao>
+                  ? <Botao variante="contorno" onClick={() => run(() => reativarUsuario(eventoId, m.id))}>Reativar</Botao>
                   : <Botao variante="perigo" onClick={() => setSuspender(m.id)}>Suspender</Botao>}
               </li>
             ))}
@@ -164,20 +166,20 @@ function Gerenciar() {
           titulo={editando === "novo" ? "Novo fórum" : "Editar fórum"}
           exercitos={evento.exercitos}
           onFechar={() => setEditando(null)}
-          onSalvar={(d) => {
-            if (editando === "novo") criarForum(usuario, eventoId, d);
-            else editarForum(usuario, editando.id, d);
+          onSalvar={async (d) => {
+            if (editando === "novo") await criarForum(eventoId, d);
+            else await editarForum(editando.id, d);
             atualizar();
           }}
         />
       )}
-      {suspender && <ModalJustificativa titulo="Suspender participação" onFechar={() => setSuspender(null)} onConfirmar={(j) => { suspenderUsuario(usuario, eventoId, suspender, j); atualizar(); }} />}
-      {ocultarAlvo && <ModalJustificativa titulo="Ocultar conteúdo" onFechar={() => setOcultarAlvo(null)} onConfirmar={(j) => { ocultarConteudo(usuario, ocultarAlvo.alvo, ocultarAlvo.id, j); atualizar(); }} />}
+      {suspender && <ModalJustificativa titulo="Suspender participação" onFechar={() => setSuspender(null)} onConfirmar={async (j) => { await suspenderUsuario(eventoId, suspender, j); atualizar(); }} />}
+      {ocultarAlvo && <ModalJustificativa titulo="Ocultar conteúdo" onFechar={() => setOcultarAlvo(null)} onConfirmar={async (j) => { await ocultarConteudo(ocultarAlvo.alvo, ocultarAlvo.id, j); atualizar(); }} />}
     </div>
   );
 }
 
-function ModalForum({ inicial, titulo, exercitos, onFechar, onSalvar }: { inicial: DadosForum; titulo: string; exercitos: { id: string; nome: string }[]; onFechar: () => void; onSalvar: (d: DadosForum) => void }) {
+function ModalForum({ inicial, titulo, exercitos, onFechar, onSalvar }: { inicial: DadosForum; titulo: string; exercitos: { id: string; nome: string }[]; onFechar: () => void; onSalvar: (d: DadosForum) => Promise<unknown> }) {
   const [d, setD] = useState<DadosForum>(inicial);
   const [erro, setErro] = useState("");
   const set = (k: keyof DadosForum, v: string) => setD((x) => ({ ...x, [k]: v }));
@@ -214,7 +216,7 @@ function ModalForum({ inicial, titulo, exercitos, onFechar, onSalvar }: { inicia
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex justify-end gap-2">
           <Botao variante="contorno" onClick={onFechar}>Cancelar</Botao>
-          <Botao onClick={() => { try { onSalvar(d); onFechar(); } catch (e) { setErro(e instanceof Error ? e.message : "Erro"); } }}>Salvar</Botao>
+          <Botao onClick={async () => { try { await onSalvar(d); onFechar(); } catch (e) { setErro(e instanceof Error ? e.message : "Erro"); } }}>Salvar</Botao>
         </div>
       </div>
     </Modal>

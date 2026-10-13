@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { carregarBase, mutarBase, gerarId } from "@/services/db";
+import { carregarBase } from "@/services/db";
+import { enviarEntregaMissao } from "@/api/conta.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarDataBR } from "@/lib/domain/money";
 import { AreaTexto, Badge, Botao, Cartao, EstadoVazio } from "@/components/ui";
@@ -30,6 +31,7 @@ function PaginaMissoes() {
   const { usuario } = useAuth();
   const [, setVersao] = useState(0);
   const [texto, setTexto] = useState<Record<string, string>>({});
+  const [erro, setErro] = useState("");
   const base = carregarBase();
   if (!usuario) return null;
 
@@ -47,33 +49,20 @@ function PaginaMissoes() {
   const entregaDe = (missaoId: string) =>
     base.entregas.find((e) => e.missaoId === missaoId && e.usuarioId === usuario.id);
 
-  const enviar = (missaoId: string, tipo: string) => {
-    mutarBase((b) => {
-      const missao = b.missoes.find((m) => m.id === missaoId);
-      if (!missao) return;
-      const status: StatusMissao = missao.exigeAprovacao ? "enviada" : "concluida";
-      const existente = b.entregas.find((e) => e.missaoId === missaoId && e.usuarioId === usuario.id);
-      if (existente) {
-        existente.status = status;
-        existente.conteudo = tipo === "texto" ? texto[missaoId] : undefined;
-        existente.enviadoEm = new Date().toISOString();
-      } else {
-        b.entregas.push({
-          id: gerarId("ent"),
-          missaoId,
-          usuarioId: usuario.id,
-          status,
-          conteudo: tipo === "texto" ? texto[missaoId] : undefined,
-          enviadoEm: new Date().toISOString(),
-        });
-      }
-    });
-    setVersao((v) => v + 1);
+  const enviar = async (missaoId: string, tipo: string) => {
+    setErro("");
+    try {
+      await enviarEntregaMissao(missaoId, tipo === "texto" ? texto[missaoId] : undefined);
+      setVersao((v) => v + 1);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Falha ao enviar a entrega.");
+    }
   };
 
   return (
     <div>
       <h1 className="font-display text-2xl font-semibold uppercase">Missões</h1>
+      {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
       {visiveis.length === 0 ? (
         <div className="mt-4">
           <EstadoVazio titulo="Nenhuma missão para você" descricao="Missões aparecem quando você tem inscrição confirmada." />

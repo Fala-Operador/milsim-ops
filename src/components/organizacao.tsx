@@ -74,7 +74,7 @@ export function TabelaInscritos({ eventoId }: { eventoId: string }) {
               const u = base.usuarios.find((x) => x.id === i.usuarioId);
               return (
                 <tr key={i.id} className="border-b border-border/50">
-                  <td className="py-2 pr-3">{u?.nomeCompleto ?? "Participante fictício"}</td>
+                  <td className="py-2 pr-3">{u?.nomeCompleto ?? "Participante"}</td>
                   <td className="py-2 pr-3 font-mono text-xs">{u ? mascararCpf(u.cpf) : "***"}</td>
                   <td className="py-2 pr-3">{evento.tipos.find((t) => t.id === i.tipoId)?.nome}</td>
                   <td className="py-2 pr-3">{evento.exercitos.find((e) => e.id === i.exercitoId)?.nome}</td>
@@ -101,7 +101,7 @@ export function TabelaInscritos({ eventoId }: { eventoId: string }) {
         onClick={() => {
           const linhas = inscricoes.map((i) => {
             const u = base.usuarios.find((x) => x.id === i.usuarioId);
-            return [u?.nomeCompleto ?? "fictício", i.codigo, i.status, i.origem].join(";");
+            return [u?.nomeCompleto ?? "Participante", i.codigo, i.status, i.origem].join(";");
           });
           const csv = "nome;codigo;status;origem\n" + linhas.join("\n");
           const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
@@ -122,11 +122,11 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
   const r = resumoFinanceiro(eventoId);
   const itens: Array<[string, string]> = [
     ["Inscritos ativos", String(r.inscritosAtivos)],
-    ["Valor bruto simulado", formatarBRL(r.bruto)],
+    ["Valor bruto", formatarBRL(r.bruto)],
     ["Descontos concedidos", formatarBRL(r.descontos)],
-    ["Ajustes simulados", formatarBRL(r.ajustes)],
-    ["Estornos simulados", formatarBRL(r.estornos)],
-    ["Total líquido simulado", formatarBRL(r.liquido)],
+    ["Ajustes", formatarBRL(r.ajustes)],
+    ["Estornos", formatarBRL(r.estornos)],
+    ["Total líquido", formatarBRL(r.liquido)],
     ["Cortesias emitidas / resgatadas", `${r.cortesiasEmitidas} / ${r.cortesiasResgatadas}`],
     ["Cupons utilizados", String(r.cuponsUtilizados)],
     ["Integralmente descontadas", String(r.integralmenteDescontadas)],
@@ -134,7 +134,7 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
   return (
     <div>
       <p className="text-xs text-muted-foreground">
-        Valores demonstrativos, derivados dos registros de origem. Não incluem taxas de gateway.
+        Valores derivados das inscrições, descontos e estornos registrados. Pagamentos não são processados pela plataforma.
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
         {itens.map(([rotulo, valor]) => (

@@ -1,5 +1,6 @@
 import type { ModalidadeId, PreferenciaModalidades } from "@/lib/modalidades";
-// Tipos de domínio da aplicação (base 100% mockada).
+import type { RegistroCheckin } from "@/lib/checkin";
+// Tipos de domínio da aplicação (persistidos no Supabase pelo servidor).
 
 export type Perfil = "admin" | "participante" | "organizador";
 
@@ -345,7 +346,6 @@ export interface BaseDados {
   movimentacoes: Movimentacao[];
   auditoria: RegistroAuditoria[];
   privacidade: SolicitacaoPrivacidade[];
-  credenciais: Record<string, string>; // email -> hash demonstrativo
   foruns: Forum[];
   publicacoes: Publicacao[];
   respostas: Resposta[];
@@ -357,6 +357,8 @@ export interface BaseDados {
   visitasComunidade: Record<string, string>; // `${usuarioId}:${eventoId}` -> ISO
   parceiros: Parceiro[];
   secoesInicio: SecaoInicial[];
+  /** Base de referência do credenciamento (registros já aceitos pelo servidor). */
+  checkins: RegistroCheckin[];
 }
 
 // ===== Comunidade: fóruns com feed social =====

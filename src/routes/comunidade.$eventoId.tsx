@@ -1,12 +1,11 @@
 import { createFileRoute, notFound, Outlet } from "@tanstack/react-router";
-import { carregarBase } from "@/services/db";
+import { obterEventoFn } from "@/api/sessao.functions";
 import { SkeletonPagina } from "@/components/ui";
 
 // Layout da comunidade do evento: Comunidade → Fórum → Publicação.
 export const Route = createFileRoute("/comunidade/$eventoId")({
-  loader: ({ params }) => {
-    const base = carregarBase();
-    const evento = base.eventos.find((e) => e.id === params.eventoId);
+  loader: async ({ params }) => {
+    const { evento } = await obterEventoFn({ data: { eventoId: params.eventoId } });
     if (!evento) throw notFound();
     return { eventoNome: evento.nome };
   },

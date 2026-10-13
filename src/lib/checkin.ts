@@ -65,6 +65,16 @@ export function lerConteudoQr(texto: string): string | null {
 
 export const normalizarCodigo = (s: string) => s.trim().toUpperCase();
 
+const ALFABETO_TOKEN = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+/** Texto aleatório (criptográfico) no alfabeto sem caracteres ambíguos. */
+export function aleatorioSeguro(n: number): string {
+  const bytes = new Uint8Array(n);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => ALFABETO_TOKEN[b % ALFABETO_TOKEN.length]).join("");
+}
+/** Token opaco e estável do QR Code de entrada (gerado na confirmação da inscrição). */
+export const gerarTokenEntrada = () => `T${aleatorioSeguro(20)}`;
+
 /** Entrada vigente de uma inscrição: a mais antiga não revertida e sem conflito. */
 export function entradaAtiva(registros: RegistroCheckin[], inscricaoId: string): RegistroCheckin | undefined {
   const revertidos = new Set(registros.filter((r) => r.tipo === "reversao").map((r) => r.revertidoId));

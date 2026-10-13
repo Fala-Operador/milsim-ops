@@ -1,6 +1,7 @@
-// Persistência das preferências de modalidade: aparelho (visitante) e conta (base mockada).
+// Preferências de modalidade: aparelho (visitante, localStorage) e conta (lida da visão;
+// gravada pela API de conta).
 import { storage } from "@/lib/storage";
-import { carregarBase, mutarBase } from "@/services/db";
+import { carregarBase } from "@/services/db";
 import { normalizarPreferencia, type PreferenciaModalidades } from "@/lib/modalidades";
 
 const CHAVE_APARELHO = "preferencias-modalidade";
@@ -15,12 +16,6 @@ export function salvarNoAparelho(p: PreferenciaModalidades): void {
 
 export function preferenciaDaConta(usuarioId: string): PreferenciaModalidades {
   return normalizarPreferencia(carregarBase().usuarios.find((u) => u.id === usuarioId)?.preferenciasModalidade);
-}
-export function salvarNaConta(usuarioId: string, p: PreferenciaModalidades): void {
-  mutarBase((b) => {
-    const u = b.usuarios.find((x) => x.id === usuarioId);
-    if (u) u.preferenciasModalidade = p;
-  });
 }
 
 /** "Agora não": guarda só que o convite foi dispensado, sem criar preferência. */

@@ -3,17 +3,16 @@ import type { BaseDados } from "@/lib/domain/types";
 import { aplicarSeedComunidade, type BaseSemComunidade } from "@/data/seedComunidade";
 import { aplicarSeedDivulgacao } from "@/data/seedDivulgacao";
 
-export const VERSAO_BASE = 4;
-export const VERSAO_TERMOS = "termos-demo-v1";
+import { VERSAO_TERMOS } from "@/data/termos";
+import { gerarTokenEntrada } from "@/lib/checkin";
+import { VERSAO_FORMATO as VERSAO_BASE } from "@/lib/persistencia";
 
-// Hash demonstrativo (NÃO é segurança real — documentado no README).
-export function hashDemo(texto: string): string {
-  let h = 5381;
-  for (let i = 0; i < texto.length; i++) {
-    h = (h * 33) ^ texto.charCodeAt(i);
-  }
-  return "h" + (h >>> 0).toString(36);
-}
+/** Senhas das contas demonstrativas (usadas só pelo script de seed do Supabase Auth). */
+export const SENHAS_DEMO: Record<string, string> = {
+  "admin@admin": "admin@123",
+  "usuario@teste.com.br": "user@123",
+  "organizador@teste.com.br": "organizador@123",
+};
 
 const agora = new Date();
 const iso = (d: Date) => d.toISOString();
@@ -24,7 +23,37 @@ const dias = (n: number) => {
 };
 
 export function criarBaseInicial(): BaseDados {
-  return aplicarSeedDivulgacao(aplicarSeedComunidade(criarBaseLegada()));
+  const base = aplicarSeedDivulgacao(aplicarSeedComunidade(criarBaseLegada()));
+  completarInscritosFicticios(base);
+  // Todo ingresso confirmado tem token de QR (gerado na confirmação, em produção).
+  for (const i of base.inscricoes) if (i.status === "confirmada" && !i.tokenEntrada) i.tokenEntrada = gerarTokenEntrada();
+  return base;
+}
+
+/** Cria perfis fictícios para inscrições de lotação (todo inscrito precisa existir no banco). */
+function completarInscritosFicticios(base: BaseDados): void {
+  const existentes = new Set(base.usuarios.map((u) => u.id));
+  let n = 0;
+  for (const id of new Set(base.inscricoes.map((i) => i.usuarioId))) {
+    if (existentes.has(id)) continue;
+    n += 1;
+    base.usuarios.push({
+      id,
+      perfil: "participante",
+      nomeCompleto: `Participante Fictício ${n}`,
+      cpf: `888${String(n).padStart(8, "0")}`,
+      dataNascimento: "1995-01-01",
+      email: `${id}@exemplo.invalid`,
+      whatsapp: "11900000000",
+      endereco: { cep: "00000000", logradouro: "Rua Fictícia", numero: "0", bairro: "Centro", cidade: "São Paulo", uf: "SP" },
+      autorizacaoResponsavel: "nao_aplicavel",
+      autorizacaoPromocional: false,
+      aceiteTermosVersao: VERSAO_TERMOS,
+      aceiteTermosEm: iso(dias(-30)),
+      ativo: true,
+      criadoEm: iso(dias(-30)),
+    });
+  }
 }
 
 function criarBaseLegada(): BaseSemComunidade {
@@ -707,10 +736,6 @@ function criarBaseLegada(): BaseSemComunidade {
       },
     ],
     privacidade: [],
-    credenciais: {
-      "admin@admin": hashDemo("admin@123"),
-      "usuario@teste.com.br": hashDemo("user@123"),
-      "organizador@teste.com.br": hashDemo("organizador@123"),
-    },
+    checkins: [],
   };
 }

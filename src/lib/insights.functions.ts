@@ -7,7 +7,7 @@ const entrada = z.object({
 });
 
 export const gerarInsights = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => entrada.parse(d))
+  .validator((d: unknown) => entrada.parse(d))
   .handler(async ({ data }) => {
     const { gerarInsightsIA } = await import("./insights.server");
     try {

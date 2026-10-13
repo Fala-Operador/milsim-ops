@@ -1,6 +1,6 @@
 // Regras puras da página inicial: localização, agendamento, elegibilidade e links.
-// Na versão de demonstração não há tarefas no servidor: a elegibilidade dos
-// agendamentos é calculada a cada carregamento/atualização da página.
+// Não há tarefas agendadas no servidor: a elegibilidade dos agendamentos é
+// calculada a cada carregamento/atualização da página.
 import type {
   Abrangencia,
   Agendamento,

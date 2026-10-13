@@ -8,7 +8,8 @@ import {
   type Campanha, type Filtro, type Indicadores, type OrigemAcesso, type OrigemCampanha, type RegistroAnalytics,
 } from "@/lib/analytics";
 import { regiaoDaUf } from "@/lib/divulgacao";
-import { criarCampanha, linkCampanha, listarCampanhas, listarRegistros } from "@/services/analytics";
+import { linkCampanha } from "@/services/analytics";
+import { criarCampanha, listarMetricas } from "@/api/analytics.functions";
 import { inscricoesAtivasDoEvento } from "@/services/inscricoes";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import { Badge, Botao, Cartao, Entrada, EstadoVazio, Selecao, Skeleton } from "@/components/ui";
@@ -18,7 +19,7 @@ const DIA = 86400000;
 const fmtN = (n: number) => n.toLocaleString("pt-BR");
 const fmtP = (v: number | null) => (v === null ? "Sem dados suficientes" : `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`);
 
-export const AVISO_DEMO = "Métricas de demonstração: os dados deste navegador não representam acessos reais de outros dispositivos.";
+export const AVISO_METRICAS = "Métricas anônimas coletadas pela plataforma. Acessos da administração e da própria organização não entram na contagem.";
 
 function Indicador({ rotulo, valor, ajuda, anterior }: { rotulo: string; valor: string; ajuda: string; anterior?: ReactNode }) {
   return (
@@ -75,7 +76,12 @@ function intervalo(p: Periodo, regs: RegistroAnalytics[], agora: number): { desd
 
 export function PainelMetricas({ base, eventos, modo }: { base: BaseDados; eventos: Evento[]; modo: "organizador" | "admin" }) {
   const [dados, setDados] = useState<{ regs: RegistroAnalytics[]; campanhas: Campanha[]; em: number } | null>(null);
-  const recarregar = () => setDados({ regs: listarRegistros(), campanhas: listarCampanhas(), em: Date.now() });
+  const [erroCarga, setErroCarga] = useState("");
+  const recarregar = () => {
+    listarMetricas()
+      .then((r) => setDados({ regs: r.registros, campanhas: r.campanhas, em: Date.now() }))
+      .catch((e) => setErroCarga(e instanceof Error ? e.message : "Falha ao carregar as métricas."));
+  };
   useEffect(recarregar, []);
   const [eventoId, setEventoId] = useState(modo === "admin" ? "todos" : (eventos[0]?.id ?? ""));
   const [periodo, setPeriodo] = useState<Periodo>({ tipo: "30", de: "", ate: "" });
@@ -86,6 +92,7 @@ export function PainelMetricas({ base, eventos, modo }: { base: BaseDados; event
   const idsPermitidos = useMemo(() => new Set(eventos.map((e) => e.id)), [eventos]);
   const evAtual = eventos.find((e) => e.id === eventoId);
 
+  if (erroCarga && !dados) return <EstadoVazio titulo="Métricas indisponíveis" descricao={erroCarga} />;
   if (!dados) return <Skeleton className="h-96 w-full" />;
   if (!eventos.length) return <EstadoVazio titulo="Nenhum evento para analisar" />;
 
@@ -123,7 +130,7 @@ export function PainelMetricas({ base, eventos, modo }: { base: BaseDados; event
 
   return (
     <div className="space-y-8">
-      <p className="rounded-md border border-border bg-secondary px-3 py-2 text-xs">{AVISO_DEMO}</p>
+      <p className="rounded-md border border-border bg-secondary px-3 py-2 text-xs">{AVISO_METRICAS}</p>
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="text-sm"><span className="mb-1 block text-xs text-muted-foreground">Evento</span>
@@ -276,7 +283,7 @@ function Campanhas({ evento, campanhas, regs, onCriada }: { evento: Evento; camp
         <Selecao aria-label="Origem da campanha" value={origem} onChange={(e) => setOrigem(e.target.value as OrigemCampanha)}>
           {Object.entries(ROTULO_ORIGEM_CAMPANHA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </Selecao>
-        <Botao onClick={() => { setErro(""); try { criarCampanha(evento.id, nome, origem); setNome(""); onCriada(); } catch (e) { setErro((e as Error).message); } }}>Criar link</Botao>
+        <Botao onClick={async () => { setErro(""); try { await criarCampanha(evento.id, nome, origem); setNome(""); onCriada(); } catch (e) { setErro((e as Error).message); } }}>Criar link</Botao>
       </div>
       {erro && <p role="alert" className="mt-1 text-sm text-destructive">{erro}</p>}
       <div className="mt-3">

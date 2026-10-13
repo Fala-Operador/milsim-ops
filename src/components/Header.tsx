@@ -44,10 +44,12 @@ export function Header() {
   useEffect(() => setMontado(true), []);
   const usuarioVisivel = montado ? usuario : null;
 
-  const aoSair = () => {
-    logout();
+  const aoSair = async () => {
     setMenuAberto(false);
-    navigate({ to: "/" });
+    // Sai da área restrita antes de encerrar a sessão: senão o layout dela
+    // percebe a sessão encerrada e redireciona para o login.
+    await navigate({ to: "/" });
+    await logout();
   };
 
   return (
@@ -140,9 +142,6 @@ export function Header() {
       <div className="border-t border-border px-4 py-2 md:hidden">
         <SeletorCidade compacto />
       </div>
-      <p className="border-t border-border bg-secondary/50 py-1 text-center text-[11px] text-muted-foreground">
-        Ambiente de demonstração — utilize apenas dados fictícios.
-      </p>
     </header>
   );
 }

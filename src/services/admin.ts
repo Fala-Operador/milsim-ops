@@ -1,5 +1,5 @@
-// Serviços administrativos: análise de solicitações, auditoria, restauração.
-import { mutarBase, restaurarBase, latencia, ErroDominio, gerarId } from "./db";
+// Serviços administrativos: análise de solicitações, usuários, privacidade e auditoria.
+import { mutarBase, latencia, ErroDominio, gerarId } from "./db";
 import { carregarBase } from "./db";
 import { silenciado } from "./notificacoes";
 import type { StatusSolicitacao } from "@/lib/domain/types";
@@ -139,11 +139,6 @@ export async function responderPrivacidade(
     }
     base.auditoria.push(auditar(adminId, "responder_privacidade", "privacidade", solicitacaoId));
   });
-}
-
-export async function restaurarBaseDemonstrativa(): Promise<void> {
-  await latencia(400);
-  restaurarBase();
 }
 
 export function listarAuditoria() {

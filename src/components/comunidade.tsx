@@ -6,12 +6,17 @@ import {
   LIMITE_IMAGENS,
   LIMITE_TEXTO,
   MOTIVOS_DENUNCIA,
-  alternarCurtida,
-  alternarRespostas,
   contarCurtidas,
   contarRespostas,
-  criarPublicacao,
   curtiu,
+  nomeExibicao,
+  podeCurtir,
+  seloAutor,
+} from "@/services/comunidade";
+import {
+  alternarCurtida,
+  alternarRespostas,
+  criarPublicacao,
   denunciar,
   editarPublicacao,
   editarResposta,
@@ -19,11 +24,8 @@ import {
   excluirResposta,
   fixarPublicacao,
   moverPublicacao,
-  nomeExibicao,
   ocultarConteudo,
-  podeCurtir,
-  seloAutor,
-} from "@/services/comunidade";
+} from "@/api/comunidade.functions";
 import { arquivoParaDataUrl } from "@/lib/imagens";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import { AreaTexto, Badge, Botao, Campo, Entrada, Modal, Selecao } from "@/components/ui";
@@ -141,9 +143,8 @@ export function Compositor({
     setErro("");
     if (!destino) return setErro("Selecione o fórum de destino.");
     setEnviando(true);
-    await new Promise((r) => setTimeout(r, 300));
     try {
-      criarPublicacao(usuario, { forumId: destino.id, texto, imagens, importante });
+      await criarPublicacao({ forumId: destino.id, texto, imagens, importante });
       setTexto("");
       setImagens([]);
       setImportante(false);
@@ -254,9 +255,9 @@ export function CartaoPublicacao({
   const [aviso, setAviso] = useState("");
   const proprio = pub.autorId === usuario.id;
   const curtido = curtiu(base, pub.id, usuario.id);
-  const executar = (fn: () => void) => {
+  const executar = async (fn: () => Promise<unknown>) => {
     try {
-      fn();
+      await fn();
       setAviso("");
       onMudou();
     } catch (e) {
@@ -298,16 +299,16 @@ export function CartaoPublicacao({
                   <ItemMenu onClick={copiarLink}>Copiar link</ItemMenu>
                   {proprio && !pub.removidaPeloAutor && <ItemMenu onClick={() => { setModal("editar"); setMenu(false); }}>Editar</ItemMenu>}
                   {proprio && (
-                    <ItemMenu onClick={() => window.confirm("Excluir esta publicação?") && executar(() => excluirPublicacao(usuario, pub.id))}>Excluir</ItemMenu>
+                    <ItemMenu onClick={() => window.confirm("Excluir esta publicação?") && executar(() => excluirPublicacao(pub.id))}>Excluir</ItemMenu>
                   )}
                   {!proprio && <ItemMenu onClick={() => { setModal("denunciar"); setMenu(false); }}>Denunciar</ItemMenu>}
                   {gestao && (
                     <>
                       <div className="my-1 border-t border-border" />
-                      <ItemMenu onClick={() => executar(() => fixarPublicacao(usuario, pub.id))}>{pub.fixada ? "Desafixar" : "Fixar"}</ItemMenu>
-                      <ItemMenu onClick={() => executar(() => alternarRespostas(usuario, pub.id))}>{pub.respostasFechadas ? "Reabrir respostas" : "Fechar respostas"}</ItemMenu>
+                      <ItemMenu onClick={() => executar(() => fixarPublicacao(pub.id))}>{pub.fixada ? "Desafixar" : "Fixar"}</ItemMenu>
+                      <ItemMenu onClick={() => executar(() => alternarRespostas(pub.id))}>{pub.respostasFechadas ? "Reabrir respostas" : "Fechar respostas"}</ItemMenu>
                       {pub.oculta ? (
-                        <ItemMenu onClick={() => executar(() => ocultarConteudo(usuario, "publicacao", pub.id, "", false))}>Restaurar</ItemMenu>
+                        <ItemMenu onClick={() => executar(() => ocultarConteudo("publicacao", pub.id, "", false))}>Restaurar</ItemMenu>
                       ) : (
                         <ItemMenu onClick={() => { setModal("ocultar"); setMenu(false); }}>Ocultar…</ItemMenu>
                       )}
@@ -335,7 +336,7 @@ export function CartaoPublicacao({
               aria-pressed={curtido}
               aria-label={curtido ? "Remover curtida" : "Curtir"}
               disabled={!podeCurtir(base, usuario, pub)}
-              onClick={() => executar(() => alternarCurtida(usuario, pub.id))}
+              onClick={() => executar(() => alternarCurtida(pub.id))}
             >
               {curtido ? "♥" : "♡"} {contarCurtidas(base, pub.id)}
             </button>
@@ -364,17 +365,17 @@ export function CartaoPublicacao({
           imagensIniciais={pub.imagens}
           maxImagens={LIMITE_IMAGENS}
           onFechar={() => setModal(null)}
-          onSalvar={(t, imgs) => { editarPublicacao(usuario, pub.id, t, imgs); onMudou(); }}
+          onSalvar={async (t, imgs) => { await editarPublicacao(pub.id, t, imgs); onMudou(); }}
         />
       )}
-      {modal === "denunciar" && <ModalDenuncia onFechar={() => setModal(null)} onEnviar={(m, d) => denunciar(usuario, { alvo: "publicacao", alvoId: pub.id, motivo: m, descricao: d })} />}
-      {modal === "ocultar" && <ModalJustificativa titulo="Ocultar publicação" onFechar={() => setModal(null)} onConfirmar={(j) => { ocultarConteudo(usuario, "publicacao", pub.id, j); onMudou(); }} />}
+      {modal === "denunciar" && <ModalDenuncia onFechar={() => setModal(null)} onEnviar={(m, d) => denunciar({ alvo: "publicacao", alvoId: pub.id, motivo: m, descricao: d })} />}
+      {modal === "ocultar" && <ModalJustificativa titulo="Ocultar publicação" onFechar={() => setModal(null)} onConfirmar={async (j) => { await ocultarConteudo("publicacao", pub.id, j); onMudou(); }} />}
       {modal === "mover" && forum && (
         <ModalMover
           origem={forum}
           foruns={foruns}
           onFechar={() => setModal(null)}
-          onMover={(id) => { moverPublicacao(usuario, pub.id, id); onMudou(); }}
+          onMover={async (id) => { await moverPublicacao(pub.id, id); onMudou(); }}
         />
       )}
     </article>
@@ -394,8 +395,8 @@ export function ItemResposta({ base, r, usuario, gestao, eventoId, arquivado, on
   const [modal, setModal] = useState<null | "editar" | "denunciar" | "ocultar">(null);
   const [erro, setErro] = useState("");
   const proprio = r.autorId === usuario.id;
-  const run = (fn: () => void) => {
-    try { fn(); onMudou(); } catch (e) { setErro(msg(e)); }
+  const run = async (fn: () => Promise<unknown>) => {
+    try { await fn(); onMudou(); } catch (e) { setErro(msg(e)); }
   };
   return (
     <div className={`flex gap-3 border-t border-border py-3 ${r.oculta ? "opacity-60" : ""}`}>
@@ -406,30 +407,30 @@ export function ItemResposta({ base, r, usuario, gestao, eventoId, arquivado, on
         {r.imagem && <Galeria imagens={[r.imagem]} />}
         <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
           {proprio && !arquivado && <button className="hover:text-foreground" onClick={() => setModal("editar")}>Editar</button>}
-          {proprio && <button className="hover:text-foreground" onClick={() => window.confirm("Excluir esta resposta?") && run(() => excluirResposta(usuario, r.id))}>Excluir</button>}
+          {proprio && <button className="hover:text-foreground" onClick={() => window.confirm("Excluir esta resposta?") && run(() => excluirResposta(r.id))}>Excluir</button>}
           {!proprio && <button className="hover:text-foreground" onClick={() => setModal("denunciar")}>Denunciar</button>}
           {gestao && (r.oculta
-            ? <button className="hover:text-foreground" onClick={() => run(() => ocultarConteudo(usuario, "resposta", r.id, "", false))}>Restaurar</button>
+            ? <button className="hover:text-foreground" onClick={() => run(() => ocultarConteudo("resposta", r.id, "", false))}>Restaurar</button>
             : <button className="hover:text-foreground" onClick={() => setModal("ocultar")}>Ocultar</button>)}
         </div>
         {erro && <p role="alert" className="text-xs text-destructive">{erro}</p>}
       </div>
       {modal === "editar" && (
-        <ModalEditar titulo="Editar resposta" textoInicial={r.texto} imagensIniciais={r.imagem ? [r.imagem] : []} maxImagens={1} onFechar={() => setModal(null)} onSalvar={(t, imgs) => { editarResposta(usuario, r.id, t, imgs[0]); onMudou(); }} />
+        <ModalEditar titulo="Editar resposta" textoInicial={r.texto} imagensIniciais={r.imagem ? [r.imagem] : []} maxImagens={1} onFechar={() => setModal(null)} onSalvar={async (t, imgs) => { await editarResposta(r.id, t, imgs[0]); onMudou(); }} />
       )}
-      {modal === "denunciar" && <ModalDenuncia onFechar={() => setModal(null)} onEnviar={(m, d) => denunciar(usuario, { alvo: "resposta", alvoId: r.id, motivo: m, descricao: d })} />}
-      {modal === "ocultar" && <ModalJustificativa titulo="Ocultar resposta" onFechar={() => setModal(null)} onConfirmar={(j) => { ocultarConteudo(usuario, "resposta", r.id, j); onMudou(); }} />}
+      {modal === "denunciar" && <ModalDenuncia onFechar={() => setModal(null)} onEnviar={(m, d) => denunciar({ alvo: "resposta", alvoId: r.id, motivo: m, descricao: d })} />}
+      {modal === "ocultar" && <ModalJustificativa titulo="Ocultar resposta" onFechar={() => setModal(null)} onConfirmar={async (j) => { await ocultarConteudo("resposta", r.id, j); onMudou(); }} />}
     </div>
   );
 }
 
-export function CompositorResposta({ onEnviar }: { onEnviar: (texto: string, imagem?: ImagemPost) => void }) {
+export function CompositorResposta({ onEnviar }: { onEnviar: (texto: string, imagem?: ImagemPost) => Promise<unknown> }) {
   const [texto, setTexto] = useState("");
   const [imagens, setImagens] = useState<ImagemPost[]>([]);
   const [erro, setErro] = useState("");
-  const enviar = () => {
+  const enviar = async () => {
     try {
-      onEnviar(texto, imagens[0]);
+      await onEnviar(texto, imagens[0]);
       setTexto("");
       setImagens([]);
       setErro("");
@@ -453,7 +454,7 @@ export function CompositorResposta({ onEnviar }: { onEnviar: (texto: string, ima
 }
 
 // ---------- Modais ----------
-function ModalEditar({ titulo, textoInicial, imagensIniciais, maxImagens, onFechar, onSalvar }: { titulo: string; textoInicial: string; imagensIniciais: ImagemPost[]; maxImagens: number; onFechar: () => void; onSalvar: (t: string, i: ImagemPost[]) => void }) {
+function ModalEditar({ titulo, textoInicial, imagensIniciais, maxImagens, onFechar, onSalvar }: { titulo: string; textoInicial: string; imagensIniciais: ImagemPost[]; maxImagens: number; onFechar: () => void; onSalvar: (t: string, i: ImagemPost[]) => Promise<unknown> }) {
   const [texto, setTexto] = useState(textoInicial);
   const [imagens, setImagens] = useState(imagensIniciais);
   const [erro, setErro] = useState("");
@@ -466,14 +467,14 @@ function ModalEditar({ titulo, textoInicial, imagensIniciais, maxImagens, onFech
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex justify-end gap-2">
           <Botao variante="contorno" onClick={onFechar}>Cancelar</Botao>
-          <Botao onClick={() => { try { onSalvar(texto, imagens); onFechar(); } catch (e) { setErro(msg(e)); } }}>Salvar</Botao>
+          <Botao onClick={async () => { try { await onSalvar(texto, imagens); onFechar(); } catch (e) { setErro(msg(e)); } }}>Salvar</Botao>
         </div>
       </div>
     </Modal>
   );
 }
 
-function ModalDenuncia({ onFechar, onEnviar }: { onFechar: () => void; onEnviar: (m: MotivoDenuncia, d: string) => void }) {
+function ModalDenuncia({ onFechar, onEnviar }: { onFechar: () => void; onEnviar: (m: MotivoDenuncia, d: string) => Promise<unknown> }) {
   const [motivo, setMotivo] = useState<MotivoDenuncia>("ofensa");
   const [descricao, setDescricao] = useState("");
   const [estado, setEstado] = useState<"" | "ok" | string>("");
@@ -497,7 +498,7 @@ function ModalDenuncia({ onFechar, onEnviar }: { onFechar: () => void; onEnviar:
           {estado && <p role="alert" className="text-sm text-destructive">{estado}</p>}
           <div className="flex justify-end gap-2">
             <Botao variante="contorno" onClick={onFechar}>Cancelar</Botao>
-            <Botao onClick={() => { try { onEnviar(motivo, descricao); setEstado("ok"); } catch (e) { setEstado(msg(e)); } }}>Enviar denúncia</Botao>
+            <Botao onClick={async () => { try { await onEnviar(motivo, descricao); setEstado("ok"); } catch (e) { setEstado(msg(e)); } }}>Enviar denúncia</Botao>
           </div>
         </div>
       )}
@@ -505,7 +506,7 @@ function ModalDenuncia({ onFechar, onEnviar }: { onFechar: () => void; onEnviar:
   );
 }
 
-export function ModalJustificativa({ titulo, onFechar, onConfirmar }: { titulo: string; onFechar: () => void; onConfirmar: (j: string) => void }) {
+export function ModalJustificativa({ titulo, onFechar, onConfirmar }: { titulo: string; onFechar: () => void; onConfirmar: (j: string) => Promise<unknown> }) {
   const [j, setJ] = useState("");
   const [erro, setErro] = useState("");
   return (
@@ -517,14 +518,14 @@ export function ModalJustificativa({ titulo, onFechar, onConfirmar }: { titulo: 
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex justify-end gap-2">
           <Botao variante="contorno" onClick={onFechar}>Cancelar</Botao>
-          <Botao variante="perigo" onClick={() => { try { onConfirmar(j); onFechar(); } catch (e) { setErro(msg(e)); } }}>Confirmar</Botao>
+          <Botao variante="perigo" onClick={async () => { try { await onConfirmar(j); onFechar(); } catch (e) { setErro(msg(e)); } }}>Confirmar</Botao>
         </div>
       </div>
     </Modal>
   );
 }
 
-function ModalMover({ origem, foruns, onFechar, onMover }: { origem: Forum; foruns: Forum[]; onFechar: () => void; onMover: (id: string) => void }) {
+function ModalMover({ origem, foruns, onFechar, onMover }: { origem: Forum; foruns: Forum[]; onFechar: () => void; onMover: (id: string) => Promise<unknown> }) {
   const opcoes = foruns.filter((f) => f.id !== origem.id && f.publico === origem.publico && f.status === "ativo");
   const [destino, setDestino] = useState(opcoes[0]?.id ?? "");
   const [erro, setErro] = useState("");
@@ -542,7 +543,7 @@ function ModalMover({ origem, foruns, onFechar, onMover }: { origem: Forum; foru
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex justify-end gap-2">
           <Botao variante="contorno" onClick={onFechar}>Cancelar</Botao>
-          <Botao disabled={!destino} onClick={() => { try { onMover(destino); onFechar(); } catch (e) { setErro(msg(e)); } }}>Mover</Botao>
+          <Botao disabled={!destino} onClick={async () => { try { await onMover(destino); onFechar(); } catch (e) { setErro(msg(e)); } }}>Mover</Botao>
         </div>
       </div>
     </Modal>

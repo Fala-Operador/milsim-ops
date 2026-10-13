@@ -9,6 +9,7 @@ import {
 } from "@/services/checkin";
 import { guardarArquivosApp, registrarSW, type EstadoSW } from "@/lib/sw";
 import { idbDisponivel } from "@/services/checkinStore";
+import { enviarFilaCheckin } from "@/api/checkin.functions";
 import type { OrigemEntrada, RegistroCheckin, ResultadoValidacao } from "@/lib/checkin";
 
 interface Valor {
@@ -65,7 +66,7 @@ export function CheckinProvider({ eventoId, children }: { eventoId: string; chil
 
   const sincronizarAgora = useCallback(async () => {
     if (!online) { setAviso("Sem conexão: os registros continuam guardados neste aparelho."); return; }
-    const r = await sincronizar(simularFalha);
+    const r = await sincronizar(simularFalha, enviarFilaCheckin);
     setAviso(r.falhas ? `Falha simulada: ${r.falhas} registro(s) continuam na fila.`
       : r.conflitos ? `${r.enviados} sincronizado(s) e ${r.conflitos} conflito(s) preservado(s) para revisão.`
       : r.enviados ? `${r.enviados} registro(s) sincronizado(s).` : "");
@@ -75,7 +76,7 @@ export function CheckinProvider({ eventoId, children }: { eventoId: string; chil
   // Troca de evento: limpa estado anterior. Retorno da conexão: sincroniza a fila.
   useEffect(() => { setFonte(null); setAviso(""); }, [eventoId]);
   useEffect(() => { recarregar(); }, [recarregar, versao]);
-  useEffect(() => { if (online && !simularFalha) sincronizar(false).then(recarregar); }, [online]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (online && !simularFalha) sincronizar(false, enviarFilaCheckin).then(recarregar); }, [online]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const validar: Valor["validar"] = (b) => (fonte ? validarEntrada(fonte, eventoId, b) : null);
 
@@ -83,7 +84,7 @@ export function CheckinProvider({ eventoId, children }: { eventoId: string; chil
     setOcupado(true);
     try {
       const { resultado, registro } = await confirmarEntrada({ usuario, eventoId, inscricaoId, origem, motivo, online });
-      if (registro && online) await sincronizar(simularFalha);
+      if (registro && online) await sincronizar(simularFalha, enviarFilaCheckin);
       await recarregar();
       return resultado;
     } finally { setOcupado(false); }
@@ -91,7 +92,7 @@ export function CheckinProvider({ eventoId, children }: { eventoId: string; chil
 
   const desfazer: Valor["desfazer"] = async (r, motivo) => {
     await reverterEntrada({ usuario, registro: r, motivo });
-    if (online) await sincronizar(simularFalha);
+    if (online) await sincronizar(simularFalha, enviarFilaCheckin);
     await recarregar();
   };
 

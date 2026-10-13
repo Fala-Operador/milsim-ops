@@ -78,6 +78,6 @@ export async function baixarPdf(r: Relatorio, nome: string) {
     if (y > 180) { doc.addPage(); y = 16; }
   }
   doc.setFontSize(8);
-  doc.text("Somente dados agregados e anônimos. Métricas de demonstração deste navegador.", 14, doc.internal.pageSize.getHeight() - 8);
+  doc.text("Somente dados agregados e anônimos.", 14, doc.internal.pageSize.getHeight() - 8);
   baixar(doc.output("blob"), nome);
 }

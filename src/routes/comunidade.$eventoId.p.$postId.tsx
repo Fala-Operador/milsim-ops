@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useComunidade } from "@/hooks/useComunidade";
-import { detalhePublicacao, forunsVisiveis, podeResponder, responder } from "@/services/comunidade";
+import { detalhePublicacao, forunsVisiveis, podeResponder } from "@/services/comunidade";
+import { responder } from "@/api/comunidade.functions";
 import { CartaoPublicacao, CompositorResposta, ItemResposta, SemAcesso } from "@/components/comunidade";
 import { Botao, SkeletonPagina } from "@/components/ui";
 
@@ -57,7 +58,7 @@ function DetalhePublicacao() {
           <ItemResposta key={r.id} base={base} r={r} usuario={usuario} gestao={gestao} eventoId={eventoId} arquivado={forum.status !== "ativo"} onMudou={atualizar} />
         ))}
         {podeResponder(base, usuario, pub) ? (
-          <CompositorResposta onEnviar={(t, img) => { responder(usuario, pub.id, t, img); atualizar(); }} />
+          <CompositorResposta onEnviar={async (t, img) => { await responder(pub.id, t, img); atualizar(); }} />
         ) : (
           <p className="border-t border-border pt-3 text-sm text-muted-foreground">
             {forum.status !== "ativo" ? "Fórum arquivado: sem novas respostas." : pub.respostasFechadas ? "As respostas foram fechadas pela organização." : "Você não pode responder a esta publicação."}

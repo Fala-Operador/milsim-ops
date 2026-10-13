@@ -1,28 +1,58 @@
-// AnalyticsService: único ponto de coleta das métricas de evento (demonstração local).
-// Não há coleta real: antes da produção será preciso definir base legal, retenção e consentimento.
+// AnalyticsService: único ponto de coleta das métricas de evento (no navegador).
+// Antes da produção: definir base legal, retenção e consentimento.
 // Registra apenas ids aleatórios; nunca nome, e-mail, CPF, telefone, endereço, exército ou conteúdo digitado.
+// Os registros são enviados em lote ao servidor (src/api/analytics.functions.ts), que
+// revalida campos, campanhas e exclusões antes de gravar em analytics_registros.
 import { storage } from "@/lib/storage";
 import { carregarBase } from "@/services/db";
-import { usuarioDaSessao } from "@/services/auth";
+import { usuarioIdDaVisao } from "@/api/cliente";
 import type { Inscricao } from "@/lib/domain/types";
-import type { Campanha, OrigemAcesso, OrigemCampanha, RegistroAnalytics, TipoAnalytics } from "@/lib/analytics";
+import type { Campanha, OrigemAcesso, RegistroAnalytics, TipoAnalytics } from "@/lib/analytics";
 
 const K = {
-  registros: "analytics-registros",
   visitante: "analytics-visitante",
   sessao: "analytics-sessao",
   pendente: "analytics-clique-pendente",
   atribuicao: "analytics-atribuicao",
   fluxos: "analytics-fluxos-abertos",
-  campanhas: "analytics-campanhas",
-  semeado: "analytics-semeado",
 };
-const LIMITE = 8000;
 const SESSAO_MS = 30 * 60000;
+const ESPERA_ENVIO_MS = 1500;
+const LOTE_MAXIMO = 50;
 
 const rid = (p: string) => `${p}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)}`;
 
 interface Atribuicao { origem: OrigemAcesso; secaoId?: string | undefined; posicao?: number | undefined; campanhaId?: string | undefined; sessaoId: string }
+
+// ===== Envio em lote =====
+type Envio = (registros: RegistroAnalytics[]) => Promise<unknown>;
+let envio: Envio | null = null;
+let fila: RegistroAnalytics[] = [];
+let temporizador: ReturnType<typeof setTimeout> | null = null;
+/** Registros desta sessão do navegador (deduplicação e testes). */
+const daSessao: RegistroAnalytics[] = [];
+
+/** Registrado pela aplicação no navegador; sem destino (testes/SSR), os registros ficam só na memória. */
+export function definirEnvioAnalytics(fn: Envio | null): void {
+  envio = fn;
+}
+
+function agendarEnvio() {
+  if (!envio || temporizador) return;
+  temporizador = setTimeout(() => {
+    temporizador = null;
+    const lote = fila.splice(0, LOTE_MAXIMO);
+    if (lote.length === 0 || !envio) return;
+    envio(lote).catch(() => {
+      fila = [...lote, ...fila].slice(-500); // tenta de novo no próximo registro
+    });
+    if (fila.length) agendarEnvio();
+  }, ESPERA_ENVIO_MS);
+}
+
+export function registrosDaSessao(): RegistroAnalytics[] {
+  return daSessao;
+}
 
 // ===== Identificadores anônimos =====
 function visitanteId(): string {
@@ -38,29 +68,27 @@ function sessaoId(): string {
   return id;
 }
 
-/** Admin autenticado e organizador nos próprios eventos não entram na coleta. */
+/** Admin autenticado e organizador nos próprios eventos não entram na coleta (o servidor reaplica). */
 function excluido(eventoId: string): boolean {
-  const u = usuarioDaSessao();
+  const id = usuarioIdDaVisao();
+  if (!id) return false;
+  const base = carregarBase();
+  const u = base.usuarios.find((x) => x.id === id);
   if (!u) return false;
   if (u.perfil === "admin") return true;
   if (u.perfil === "organizador") {
-    const ev = carregarBase().eventos.find((e) => e.id === eventoId);
+    const ev = base.eventos.find((e) => e.id === eventoId);
     return !!ev && ev.organizacaoId === u.organizacaoId;
   }
   return false;
 }
 
-export function listarRegistros(): RegistroAnalytics[] {
-  semearHistorico();
-  return storage.ler<RegistroAnalytics[]>(K.registros) ?? [];
-}
-
 function gravar(r: Omit<RegistroAnalytics, "id" | "visitanteId" | "sessaoId" | "em"> & { id?: string }): RegistroAnalytics {
   const reg: RegistroAnalytics = { id: r.id ?? rid("an"), visitanteId: visitanteId(), sessaoId: sessaoId(), em: Date.now(), ...r };
-  const lista = listarRegistros();
-  if (!lista.some((x) => x.id === reg.id)) {
-    lista.push(reg);
-    storage.gravar(K.registros, lista.slice(-LIMITE));
+  if (!daSessao.some((x) => x.id === reg.id)) {
+    daSessao.push(reg);
+    fila.push(reg);
+    agendarEnvio();
   }
   return reg;
 }
@@ -85,17 +113,18 @@ let ultimaVisita: { eventoId: string; em: number } | null = null;
 /**
  * Visita: chamada quando a página do evento carrega com sucesso.
  * Ignora a segunda execução do Strict Mode/re-render (mesmo evento em < 1,5s); recarregar conta nova visita.
- * `campanhaId` vem apenas do parâmetro permitido `cmp` — nunca a URL completa.
+ * `campanhaId` vem apenas do parâmetro permitido `cmp` — nunca a URL completa. O servidor
+ * descarta campanhas que não pertencem ao evento.
  */
 export function registrarVisita(eventoId: string, campanhaParam?: string | null) {
   if (ultimaVisita && ultimaVisita.eventoId === eventoId && Date.now() - ultimaVisita.em < 1500) return;
   ultimaVisita = { eventoId, em: Date.now() };
   if (excluido(eventoId)) return;
   const ses = sessaoId();
-  const campanha = campanhaParam ? listarCampanhas().find((c) => c.id === campanhaParam && c.eventoId === eventoId) : undefined;
+  const campanhaId = campanhaParam && /^[\w-]{1,40}$/.test(campanhaParam) ? campanhaParam : undefined;
   const pend = storage.ler<{ eventoId: string; origem: OrigemAcesso; secaoId?: string; posicao?: number; em: number }>(K.pendente);
   let at: Atribuicao;
-  if (campanha) at = { origem: "campanha", campanhaId: campanha.id, sessaoId: ses };
+  if (campanhaId) at = { origem: "campanha", campanhaId, sessaoId: ses };
   else if (pend && pend.eventoId === eventoId && Date.now() - pend.em < 60000) at = { origem: pend.origem, secaoId: pend.secaoId, posicao: pend.posicao, sessaoId: ses };
   else at = { origem: "direto", sessaoId: ses };
   storage.remover(K.pendente);
@@ -134,7 +163,7 @@ export function registrarInicioInscricao(eventoId: string) {
   storage.gravar(K.fluxos, fluxos);
 }
 
-/** Chamado pelo serviço de inscrições; id derivado da inscrição evita duplicidade. */
+/** Chamado após a confirmação da inscrição; id derivado da inscrição evita duplicidade. */
 export function registrarConfirmacao(insc: Inscricao) {
   if (typeof window === "undefined") return;
   const tipo: TipoAnalytics = insc.cortesiaId
@@ -150,93 +179,13 @@ export function registrarConfirmacao(insc: Inscricao) {
 }
 
 // ===== Campanhas =====
-export function listarCampanhas(): Campanha[] {
-  return storage.ler<Campanha[]>(K.campanhas) ?? [];
-}
-export function criarCampanha(eventoId: string, nome: string, origem: OrigemCampanha): Campanha {
-  const u = usuarioDaSessao();
-  const ev = carregarBase().eventos.find((e) => e.id === eventoId);
-  if (!u || !ev || !(u.perfil === "admin" || (u.perfil === "organizador" && u.organizacaoId === ev.organizacaoId))) {
-    throw new Error("Você não pode criar campanhas para este evento.");
-  }
-  if (!nome.trim()) throw new Error("Informe o nome da campanha.");
-  const c: Campanha = { id: rid("cmp").slice(0, 16), eventoId, nome: nome.trim().slice(0, 60), origem, criadoEm: new Date().toISOString() };
-  storage.gravar(K.campanhas, [...listarCampanhas(), c]);
-  return c;
-}
 export function linkCampanha(c: Campanha): string {
   const origem = typeof window !== "undefined" ? window.location.origin : "";
   return `${origem}/eventos/${c.eventoId}?cmp=${encodeURIComponent(c.id)}`;
 }
 
-// ===== Histórico fictício determinístico =====
-function prng(semente: number) {
-  let a = semente;
-  return () => {
-    a |= 0; a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-export function semearHistorico() {
-  if (typeof window === "undefined" || storage.ler<boolean>(K.semeado)) return;
-  storage.gravar(K.semeado, true);
-  const base = carregarBase();
-  const rnd = prng(20261012);
-  const eventos = base.eventos.filter((e) => e.status === "publicado");
-  const camps: Campanha[] = eventos.slice(0, 2).map((e, i) => ({
-    id: `cmp-demo-${i + 1}`, eventoId: e.id, nome: i === 0 ? "Instagram da organização" : "Grupo de WhatsApp",
-    origem: i === 0 ? "instagram" : "whatsapp", criadoEm: new Date(Date.now() - 40 * 86400000).toISOString(),
-  }));
-  storage.gravar(K.campanhas, [...camps, ...listarCampanhas()]);
-  const regs: RegistroAnalytics[] = [];
-  let n = 0;
-  const secaoDe = (o: OrigemAcesso) => (o === "destaques" ? "sec-destaques" : o === "regional" ? "sec-sudeste" : undefined);
-  for (const e of eventos) {
-    const peso = 0.5 + rnd();
-    for (let d = 60; d >= 0; d--) {
-      const diaBase = Date.now() - d * 86400000;
-      const exib = Math.round((2 + rnd() * 5) * peso);
-      for (let i = 0; i < exib; i++) {
-        const origem: OrigemAcesso = rnd() < 0.5 ? "destaques" : rnd() < 0.6 ? "regional" : "busca";
-        const vis = `vis-demo-${Math.floor(rnd() * 400)}`;
-        const ses = `ses-demo-${n}`;
-        const em = diaBase - Math.floor(rnd() * 80000000);
-        const comum = { eventoId: e.id, visitanteId: vis, sessaoId: ses, origem, secaoId: secaoDe(origem), posicao: 1 + Math.floor(rnd() * 4) };
-        regs.push({ id: `h-${n++}`, tipo: "exibicao", em, ...comum });
-        if (rnd() < 0.12) {
-          regs.push({ id: `h-${n++}`, tipo: "clique", em: em + 1000, ...comum });
-          regs.push({ id: `h-${n++}`, tipo: "visita", em: em + 2000, ...comum });
-          funil(comum, em + 3000);
-        }
-      }
-      // Acessos diretos e por campanha (sem clique fictício)
-      const diretos = Math.floor(rnd() * 3 * peso);
-      for (let i = 0; i < diretos; i++) {
-        const cmp = camps.find((c) => c.eventoId === e.id && rnd() < 0.5);
-        const comum = { eventoId: e.id, visitanteId: `vis-demo-${Math.floor(rnd() * 400)}`, sessaoId: `ses-demo-${n}`, origem: (cmp ? "campanha" : "direto") as OrigemAcesso, campanhaId: cmp?.id };
-        const em = diaBase - Math.floor(rnd() * 80000000);
-        regs.push({ id: `h-${n++}`, tipo: "visita", em, ...comum });
-        funil(comum, em + 1000);
-      }
-    }
-  }
-  function funil(comum: Omit<RegistroAnalytics, "id" | "tipo" | "em">, em: number) {
-    if (rnd() > 0.35) return;
-    regs.push({ id: `h-${n++}`, tipo: "clique_inscrever", em, ...comum });
-    if (rnd() > 0.7) return;
-    const fluxoId = `h-${n++}`;
-    regs.push({ id: fluxoId, tipo: "inscricao_iniciada", em: em + 500, ...comum });
-    if (rnd() < 0.55) regs.push({ id: `h-${n++}`, tipo: "inscricao_confirmada", em: em + 60000, fluxoId, ...comum });
-  }
-  if (eventos[0]) {
-    regs.push({ id: `h-${n++}`, tipo: "cortesia_resgatada", eventoId: eventos[0].id, visitanteId: "vis-demo-c", sessaoId: "ses-demo-c", origem: "direto", em: Date.now() - 5 * 86400000 });
-  }
-  storage.gravar(K.registros, [...regs, ...(storage.ler<RegistroAnalytics[]>(K.registros) ?? [])].slice(-LIMITE));
-}
-
 /** Somente para testes: limpa o estado em memória de deduplicação. */
 export function _reiniciarMemoria() {
   exibicoesVistas.clear(); ultimaVisita = null; ultimoInicio = null;
+  daSessao.length = 0; fila = [];
 }

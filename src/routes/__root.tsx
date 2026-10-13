@@ -11,7 +11,9 @@ import {
 import { Component, useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { ErroSecao } from "@/components/ui";
+import { ErroSecao, SkeletonPagina } from "@/components/ui";
+import { definirEnvioAnalytics } from "@/services/analytics";
+import { enviarRegistros } from "@/api/analytics.functions";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider, SCRIPT_TEMA_INICIAL } from "@/contexts/ThemeContext";
@@ -90,12 +92,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Plataforma de divulgação e gestão de eventos de simulação militar, operações e comunidades de participantes. Ambiente de demonstração.",
+          "Plataforma de divulgação e gestão de eventos de simulação militar, operações e comunidades de participantes.",
       },
       { property: "og:title", content: "MilSim Ops — Eventos de Simulação Militar" },
       {
         property: "og:description",
-        content: "Descubra operações, inscreva-se e acompanhe sua comunidade. Ambiente de demonstração.",
+        content: "Descubra operações, inscreva-se e acompanhe sua comunidade.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -119,7 +121,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR">
+    // O script de tema altera a classe do <html> antes da hidratação (intencional).
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
         <HeadContent />
         {/* Aplica o tema antes da primeira pintura para evitar flashes */}
@@ -138,13 +141,28 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function Providers({ children }: { children: ReactNode }) {
-  const { usuario } = useAuth();
+  const { usuario, carga, recarregar } = useAuth();
+  // Métricas anônimas são enviadas em lote para a API (só no navegador).
+  useEffect(() => {
+    definirEnvioAnalytics(enviarRegistros);
+    return () => definirEnvioAnalytics(null);
+  }, []);
+  // As páginas leem a visão de forma síncrona: só renderizam depois da primeira carga.
+  // No SSR e no primeiro desenho do navegador o esqueleto é o mesmo (sem divergência).
+  const conteudo =
+    carga === "pronto" ? children
+    : carga === "erro" ? (
+      <div className="mx-auto max-w-lg px-4 py-16">
+        <ErroSecao titulo="Não foi possível carregar os dados" descricao="Verifique a conexão e tente novamente." onTentar={() => void recarregar()} />
+      </div>
+    )
+    : <SkeletonPagina />;
   return (
     <NotificationProvider usuarioId={usuario?.id}>
       <Header />
-      <main>{children}</main>
+      <main>{conteudo}</main>
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        MilSim Ops — protótipo demonstrativo. Nenhum dado, pagamento ou mensagem é real.
+        MilSim Ops — eventos de simulação militar. Pagamentos não são processados pela plataforma.
       </footer>
     </NotificationProvider>
   );

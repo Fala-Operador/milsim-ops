@@ -1,5 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useState, type Context, type ReactNode } from "react";
-import { carregarBase, mutarBase } from "@/services/db";
+import { createContext, useCallback, useContext, type Context, type ReactNode } from "react";
+import { carregarBase } from "@/services/db";
+import { useVersaoBase } from "@/hooks/useVersaoBase";
+import { recarregarVisao } from "@/api/sessao.functions";
+import { marcarNotificacaoLida, marcarNotificacoesLidas } from "@/api/conta.functions";
 import type { Notificacao } from "@/lib/domain/types";
 
 interface NotificationContextValue {
@@ -15,38 +18,17 @@ const g = globalThis as unknown as { __notifCtx?: Context<NotificationContextVal
 const NotificationContext = (g.__notifCtx ??= createContext<NotificationContextValue | null>(null));
 
 export function NotificationProvider({ usuarioId, children }: { usuarioId?: string | undefined; children: ReactNode }) {
-  const [notificacoes, setNotificacoes] = useState<Notificacao[]>(() => lerDoUsuario(usuarioId));
+  // As notificações chegam na visão de cada resposta da API.
+  useVersaoBase();
+  const notificacoes = usuarioId
+    ? carregarBase()
+        .notificacoes.filter((n) => n.usuarioId === usuarioId)
+        .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm))
+    : [];
 
-  function lerDoUsuario(uid?: string) {
-    if (!uid) return [];
-    return carregarBase()
-      .notificacoes.filter((n) => n.usuarioId === uid)
-      .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
-  }
-
-  const recarregar = useCallback(() => setNotificacoes(lerDoUsuario(usuarioId)), [usuarioId]);
-
-  // A sessão é restaurada depois da montagem: relê as notificações quando o usuário aparece.
-  useEffect(() => {
-    recarregar();
-  }, [recarregar]);
-
-  const marcarLida = useCallback((id: string) => {
-    mutarBase((base) => {
-      const n = base.notificacoes.find((x) => x.id === id);
-      if (n) n.lida = true;
-    });
-    setNotificacoes((prev) => prev.map((n) => (n.id === id ? { ...n, lida: true } : n)));
-  }, []);
-
-  const marcarTodasLidas = useCallback(() => {
-    mutarBase((base) => {
-      base.notificacoes.forEach((n) => {
-        if (n.usuarioId === usuarioId) n.lida = true;
-      });
-    });
-    setNotificacoes((prev) => prev.map((n) => ({ ...n, lida: true })));
-  }, [usuarioId]);
+  const recarregar = useCallback(() => void recarregarVisao().catch(() => {}), []);
+  const marcarLida = useCallback((id: string) => void marcarNotificacaoLida(id).catch(() => {}), []);
+  const marcarTodasLidas = useCallback(() => void marcarNotificacoesLidas().catch(() => {}), []);
 
   return (
     <NotificationContext.Provider

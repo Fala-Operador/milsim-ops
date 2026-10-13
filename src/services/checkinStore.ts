@@ -1,11 +1,10 @@
 // Persistência do check-in, separada em três camadas:
-// 1) Base de referência simulada (o "servidor" mockado) — localStorage.
+// 1) Base de referência (servidor) — tabela checkins no Supabase, lida pela visão da API.
 // 2) Base offline do aparelho (ingressos baixados) — IndexedDB.
 // 3) Registros locais + fila de sincronização — IndexedDB, gravados na mesma transação.
-import { storage } from "@/lib/storage";
+import { carregarBase } from "@/services/db";
 import type { IngressoCredenciamento, RegistroCheckin } from "@/lib/checkin";
 
-const CHAVE_REF = "checkin-referencia";
 const NOME_DB = "milsim-checkin";
 
 export interface SnapshotOffline {
@@ -17,12 +16,9 @@ export interface SnapshotOffline {
   registros: RegistroCheckin[];
 }
 
-// ---------- Base de referência simulada ----------
+// ---------- Base de referência (servidor) ----------
 export function lerReferencia(): RegistroCheckin[] {
-  return storage.ler<RegistroCheckin[]>(CHAVE_REF) ?? [];
-}
-export function gravarReferencia(regs: RegistroCheckin[]): void {
-  storage.gravar(CHAVE_REF, regs);
+  return carregarBase().checkins;
 }
 
 // ---------- IndexedDB ----------

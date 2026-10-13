@@ -304,7 +304,7 @@ function obterResposta(b: BaseDados, id: string): Resposta {
 // ---------- Publicações ----------
 export function criarPublicacao(
   usuario: Usuario | null,
-  dados: { forumId: string; texto: string; imagens: ImagemPost[]; importante?: boolean },
+  dados: { forumId: string; texto: string; imagens: ImagemPost[]; importante?: boolean | undefined },
 ): Publicacao {
   const u = exigirUsuario(usuario);
   return mutarBase((b) => {

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { carregarBase, mutarBase } from "@/services/db";
+import { carregarBase } from "@/services/db";
+import { marcarNotificacaoLida, marcarNotificacoesLidas } from "@/api/conta.functions";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import { Botao, Cartao, EstadoVazio, Badge } from "@/components/ui";
@@ -37,18 +38,11 @@ function NotificacoesAdmin() {
   const lista = soNaoLidas ? todas.filter((n) => !n.lida) : todas;
 
   function marcarLida(id: string) {
-    mutarBase((base) => {
-      const n = base.notificacoes.find((x) => x.id === id);
-      if (n) n.lida = true;
-    });
+    void marcarNotificacaoLida(id);
   }
 
   function marcarTodasLidas() {
-    mutarBase((base) => {
-      base.notificacoes.forEach((n) => {
-        n.lida = true;
-      });
-    });
+    void marcarNotificacoesLidas(true);
   }
 
   return (

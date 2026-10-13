@@ -93,7 +93,7 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
   const fecharDetalhe = () => { setDetalhe(null); requestAnimationFrame(() => origemFoco.current?.focus()); };
   const [pagina, setPagina] = useState(1);
   const POR_PAGINA = 10;
-  const nomeDe = (i: Inscricao) => usuarios.find((u) => u.id === i.usuarioId)?.nomeCompleto ?? "Participante fictício";
+  const nomeDe = (i: Inscricao) => usuarios.find((u) => u.id === i.usuarioId)?.nomeCompleto ?? "Participante";
   const ind = indicadoresInscritos(evento, inscricoes);
   const filtradas = filtrarInscritos(inscricoes, filtros, nomeDe);
   const totalPaginas = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));

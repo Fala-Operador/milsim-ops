@@ -91,13 +91,12 @@ function Portaria() {
               {ck.online ? <Wifi className="h-5 w-5" /> : <WifiOff className="h-5 w-5" />}
               {ck.online ? "Conectado" : ck.redeReal ? "Sem conexão (simulado)" : "Sem conexão"}
             </span>
-            <Badge tom="destaque">Sincronização demonstrativa</Badge>
           </div>
           <div className="flex flex-col gap-2 text-sm">
             <label className="flex items-center gap-2"><input type="checkbox" className="h-5 w-5" checked={ck.simularOffline} onChange={(e) => ck.setSimularOffline(e.target.checked)} /> Simular perda de conexão</label>
             <label className="flex items-center gap-2"><input type="checkbox" className="h-5 w-5" checked={ck.simularFalha} onChange={(e) => ck.setSimularFalha(e.target.checked)} /> Simular falha de sincronização</label>
           </div>
-          <p className="text-xs text-muted-foreground">Sem servidor real: a sincronização envia os registros a uma base de referência simulada neste navegador. Aparelhos diferentes não compartilham dados.</p>
+          <p className="text-xs text-muted-foreground">Os registros feitos sem conexão ficam guardados neste aparelho e são enviados ao servidor assim que a conexão volta. As opções acima servem para testar a portaria antes do evento.</p>
         </Cartao>
         <Cartao className="space-y-2">
           <p className="flex items-center gap-2 font-semibold">

@@ -10,10 +10,10 @@ import type {
 import {
   NACIONAL, REGIOES, UF_REGIAO, eventoElegivel, hrefDoLink, montarPaginaInicial, rotuloAbrangencia, rotuloDoLink,
 } from "@/lib/divulgacao";
+import type { DadosParceiro, DadosSecao } from "@/services/divulgacao";
 import {
   alterarStatusSecao, excluirParceiro, excluirSecao, reordenarSecoes, salvarParceiro, salvarSecao,
-  type DadosParceiro, type DadosSecao,
-} from "@/services/divulgacao";
+} from "@/api/divulgacao.functions";
 import { arquivoParaDataUrl } from "@/lib/imagens";
 import { SecoesPublicas, SeletorLocalizacao } from "@/components/divulgacao";
 import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, EstadoVazio, Modal, Selecao, SkeletonPagina } from "@/components/ui";
@@ -54,7 +54,7 @@ function PaginaDivulgacao() {
         <div>
           <h2 className="font-display text-xl font-semibold uppercase">Página inicial e divulgação</h2>
           <p className="text-sm text-muted-foreground">
-            Agendamentos são calculados ao abrir e atualizar a página (demonstração sem tarefas no servidor).
+            Agendamentos são aplicados sempre que a página inicial é carregada.
           </p>
         </div>
         <div className="flex gap-1" role="tablist">
@@ -82,7 +82,7 @@ function GestaoSecoes({ base }: { base: BaseDados }) {
     const [x] = ids.splice(de, 1);
     if (!x) return;
     ids.splice(para, 0, x);
-    reordenarSecoes(usuario, ids);
+    reordenarSecoes(ids);
   };
 
   return (
@@ -114,9 +114,9 @@ function GestaoSecoes({ base }: { base: BaseDados }) {
               <Botao variante="fantasma" className="!px-2" aria-label={`Mover ${s.titulo} para baixo`} disabled={i === ordenadas.length - 1} onClick={() => mover(i, i + 1)}><ArrowDown className="h-4 w-4" /></Botao>
               <Botao variante="contorno" onClick={() => setEditando(structuredClone(s))}>Editar</Botao>
               {s.status !== "publicada" ? (
-                <Botao variante="secundario" onClick={() => alterarStatusSecao(usuario, s.id, "publicada")}>Publicar</Botao>
+                <Botao variante="secundario" onClick={() => alterarStatusSecao(s.id, "publicada")}>Publicar</Botao>
               ) : (
-                <Botao variante="secundario" onClick={() => alterarStatusSecao(usuario, s.id, "desativada")}>Desativar</Botao>
+                <Botao variante="secundario" onClick={() => alterarStatusSecao(s.id, "desativada")}>Desativar</Botao>
               )}
               <Botao variante="fantasma" onClick={() => setExcluir(s)}>Excluir</Botao>
             </div>
@@ -131,7 +131,7 @@ function GestaoSecoes({ base }: { base: BaseDados }) {
         <p className="text-sm text-muted-foreground">A seção “{excluir?.titulo}” será removida. Eventos e parceiros continuam cadastrados.</p>
         <div className="mt-4 flex justify-end gap-2">
           <Botao variante="fantasma" onClick={() => setExcluir(null)}>Voltar</Botao>
-          <Botao variante="perigo" onClick={async () => { await excluirSecao(usuario, excluir!.id); setExcluir(null); }}>Excluir</Botao>
+          <Botao variante="perigo" onClick={async () => { await excluirSecao(excluir!.id); setExcluir(null); }}>Excluir</Botao>
         </div>
       </Modal>
     </div>
@@ -191,7 +191,7 @@ function EditorSecao({ base, inicial, onFechar }: { base: BaseDados; inicial: Da
   const salvar = async (status?: SecaoInicial["status"]) => {
     setErro("");
     try {
-      await salvarSecao(usuario, { ...d, status: status ?? d.status });
+      await salvarSecao({ ...d, status: status ?? d.status });
       onFechar();
     } catch (e) { setErro((e as Error).message); }
   };
@@ -428,7 +428,7 @@ function GestaoParceiros({ base }: { base: BaseDados }) {
             </div>
             <div className="mt-3 flex gap-2">
               <Botao variante="contorno" onClick={() => setEditando(structuredClone(p))}>Editar</Botao>
-              <Botao variante="fantasma" onClick={() => excluirParceiro(usuario, p.id)}>Excluir</Botao>
+              <Botao variante="fantasma" onClick={() => excluirParceiro(p.id)}>Excluir</Botao>
             </div>
           </Cartao>
         ))}
@@ -505,7 +505,7 @@ function EditorParceiro({ inicial, onFechar }: { inicial: DadosParceiro; onFecha
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex justify-end gap-2">
           <Botao variante="fantasma" onClick={onFechar}>Cancelar</Botao>
-          <Botao onClick={async () => { setErro(""); try { await salvarParceiro(usuario, d); onFechar(); } catch (e) { setErro((e as Error).message); } }}>Salvar parceiro</Botao>
+          <Botao onClick={async () => { setErro(""); try { await salvarParceiro(d); onFechar(); } catch (e) { setErro((e as Error).message); } }}>Salvar parceiro</Botao>
         </div>
       </div>
     </Modal>

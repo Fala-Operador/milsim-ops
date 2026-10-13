@@ -12,7 +12,7 @@ export const Route = createFileRoute("/login")({
       { title: "Entrar — MilSim Ops" },
       { name: "description", content: "Acesse sua conta na plataforma de eventos de simulação militar." },
       { property: "og:title", content: "Entrar — MilSim Ops" },
-      { property: "og:description", content: "Acesse sua conta. Ambiente de demonstração." },
+      { property: "og:description", content: "Acesse sua conta." },
     ],
   }),
   component: PaginaLogin,
@@ -45,10 +45,6 @@ function PaginaLogin() {
     <div className="mx-auto flex max-w-md flex-col px-4 py-12">
       <Cartao>
         <h1 className="font-display text-2xl font-semibold uppercase tracking-wide">Entrar</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Contas demonstrativas: admin@admin / admin@123 · usuario@teste.com.br / user@123 ·
-          organizador@teste.com.br / organizador@123
-        </p>
         <form onSubmit={aoEnviar} className="mt-5 space-y-4">
           <Campo rotulo="E-mail" htmlFor="email" erro={erro && undefined}>
             <Entrada

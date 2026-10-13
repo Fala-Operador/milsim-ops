@@ -19,7 +19,7 @@ export const Route = createFileRoute("/organizacao")({
   head: () => ({
     meta: [
       { title: "Minha organização — MilSim Ops" },
-      { name: "description", content: "Painel do organizador: eventos, inscritos, comunidade e financeiro simulado." },
+      { name: "description", content: "Painel do organizador: eventos, inscritos, comunidade e financeiro." },
       { property: "og:title", content: "Minha organização — MilSim Ops" },
       { property: "og:description", content: "Painel do organizador." },
       { property: "og:type", content: "website" },

@@ -1,7 +1,7 @@
 // Regras de inscrição, vagas, cupons, cortesias e cancelamento.
-import { registrarConfirmacao } from "./analytics";
 import { carregarBase, mutarBase, latencia, ErroDominio, gerarId, gerarCodigo } from "./db";
 import { idadeEmAnos } from "@/lib/domain/validators";
+import { gerarTokenEntrada } from "@/lib/checkin";
 import type { Cupom, Evento, Inscricao, Usuario } from "@/lib/domain/types";
 
 export function inscricoesAtivasDoEvento(base: ReturnType<typeof carregarBase>, eventoId: string) {
@@ -173,6 +173,7 @@ export async function confirmarInscricao(dados: DadosInscricao): Promise<Inscric
       loteId,
       exercitoId: exercito.id,
       codigo: gerarCodigo("OP"),
+      tokenEntrada: gerarTokenEntrada(),
       status: "confirmada",
       origem: dados.origem ?? (dados.cortesiaId ? "cortesia" : "plataforma"),
       valorCentavos,
@@ -182,7 +183,6 @@ export async function confirmarInscricao(dados: DadosInscricao): Promise<Inscric
       criadoEm: new Date().toISOString(),
     };
     base.inscricoes.push(inscricao);
-    registrarConfirmacao(inscricao);
 
     if (valorFinal > 0) {
       base.movimentacoes.push({
@@ -246,7 +246,7 @@ export async function cancelarInscricao(
         inscricaoId: inscricao.id,
         tipo: "estorno",
         valorCentavos: -valorFinal,
-        descricao: "Estorno integral simulado — cancelamento",
+        descricao: "Estorno integral — cancelamento",
         criadoEm: new Date().toISOString(),
       });
     }
@@ -254,7 +254,7 @@ export async function cancelarInscricao(
       id: gerarId("not"),
       usuarioId: inscricao.usuarioId,
       titulo: "Inscrição cancelada",
-      corpo: "Sua inscrição foi cancelada e o estorno integral simulado foi registrado.",
+      corpo: "Sua inscrição foi cancelada e o estorno integral foi registrado.",
       link: "/app/ingressos",
       lida: false,
       criadoEm: new Date().toISOString(),

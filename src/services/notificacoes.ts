@@ -12,10 +12,11 @@ export function silenciado(base: BaseDados, usuarioId: string, categoria: Catego
 }
 
 /** Atualiza as preferências de silêncio do usuário. */
-export function definirSilencio(usuarioId: string, parcial: { todas?: boolean; comunidade?: boolean }): void {
+export function definirSilencio(usuarioId: string, parcial: { todas?: boolean | undefined; comunidade?: boolean | undefined }): void {
   mutarBase((base) => {
     const u = base.usuarios.find((x) => x.id === usuarioId);
     if (!u) return;
-    u.silencioNotificacoes = { ...u.silencioNotificacoes, ...parcial };
+    const definidos = Object.fromEntries(Object.entries(parcial).filter(([, v]) => v !== undefined));
+    u.silencioNotificacoes = { ...u.silencioNotificacoes, ...definidos };
   });
 }

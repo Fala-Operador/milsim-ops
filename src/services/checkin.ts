@@ -1,28 +1,25 @@
 // Serviço de check-in: tokens, validação, registro, reversão, preparação offline e
-// sincronização demonstrativa. Regras de decisão ficam em src/lib/checkin.ts.
+// sincronização. Regras de decisão ficam em src/lib/checkin.ts.
+//  - No aparelho da portaria: validação, registros locais e fila (IndexedDB).
+//  - No servidor: base de referência (tabela checkins) e aceite da fila
+//    (aplicarSincronizacao), chamado pela API src/api/checkin.functions.ts.
 import { carregarBase, mutarBase, ErroDominio } from "@/services/db";
 import { storage } from "@/lib/storage";
 import {
-  mesclarRegistros, normalizarCodigo, resolverSincronizacao, validarIngresso,
+  aleatorioSeguro, gerarTokenEntrada, mesclarRegistros, normalizarCodigo, resolverSincronizacao, validarIngresso,
   type IngressoCredenciamento, type OrigemEntrada, type RegistroCheckin, type ResultadoValidacao,
 } from "@/lib/checkin";
 import {
-  atualizarOperacao, gravarReferencia, lerReferencia, lerSnapshot, listarFila, listarRegistrosLocais,
+  atualizarOperacao, lerReferencia, lerSnapshot, listarFila, listarRegistrosLocais,
   registrarLocal, salvarSnapshot, type SnapshotOffline,
 } from "@/services/checkinStore";
 import type { BaseDados, Evento, Usuario } from "@/lib/domain/types";
 
-const ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-function aleatorio(n: number): string {
-  const bytes = new Uint8Array(n);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => ALFABETO[b % ALFABETO.length]).join("");
-}
-const novoId = () => `ck-${Date.now().toString(36)}-${aleatorio(8)}`;
+const novoId = () => `ck-${Date.now().toString(36)}-${aleatorioSeguro(8)}`;
 
 export function dispositivoId(): string {
   let id = storage.ler<string>("dispositivo-id");
-  if (!id) { id = `disp-${aleatorio(6)}`; storage.gravar("dispositivo-id", id); }
+  if (!id) { id = `disp-${aleatorioSeguro(6)}`; storage.gravar("dispositivo-id", id); }
   return id;
 }
 
@@ -36,23 +33,18 @@ function exigirPermissao(usuario: Usuario | null, eventoId: string) {
   return usuario!;
 }
 
-/** Garante token estável para inscrições confirmadas. Nunca troca um token existente. */
+/** Servidor: garante token estável para inscrições confirmadas. Nunca troca um token existente. */
 export function garantirTokens(eventoId?: string): void {
-  const faltando = carregarBase().inscricoes.some(
-    (i) => i.status === "confirmada" && !i.tokenEntrada && (!eventoId || i.eventoId === eventoId),
-  );
-  if (!faltando) return;
   mutarBase((b) => b.inscricoes.forEach((i) => {
-    if (i.status === "confirmada" && !i.tokenEntrada && (!eventoId || i.eventoId === eventoId)) i.tokenEntrada = `T${aleatorio(20)}`;
+    if (i.status === "confirmada" && !i.tokenEntrada && (!eventoId || i.eventoId === eventoId)) i.tokenEntrada = gerarTokenEntrada();
   }));
 }
 
 /** Token do participante (só o dono da inscrição). */
 export function tokenDaInscricao(inscricaoId: string, usuarioId: string): string {
   const ins = carregarBase().inscricoes.find((i) => i.id === inscricaoId && i.usuarioId === usuarioId);
-  if (!ins || ins.status !== "confirmada") throw new ErroDominio("sem_ingresso", "Ingresso indisponível.");
-  if (!ins.tokenEntrada) garantirTokens(ins.eventoId);
-  return carregarBase().inscricoes.find((i) => i.id === inscricaoId)!.tokenEntrada!;
+  if (!ins || ins.status !== "confirmada" || !ins.tokenEntrada) throw new ErroDominio("sem_ingresso", "Ingresso indisponível.");
+  return ins.tokenEntrada;
 }
 
 export function ingressosDoEvento(base: BaseDados, eventoId: string): IngressoCredenciamento[] {
@@ -142,7 +134,6 @@ export async function reverterEntrada(p: { usuario: Usuario | null; registro: Re
 /** Baixa a base mínima do evento para o aparelho (sem CPF, telefone, e-mail ou endereço). */
 export async function prepararOffline(usuario: Usuario | null, eventoId: string): Promise<SnapshotOffline> {
   exigirPermissao(usuario, eventoId);
-  garantirTokens();
   const base = carregarBase();
   const snapshot: SnapshotOffline = {
     eventoId,
@@ -155,21 +146,52 @@ export async function prepararOffline(usuario: Usuario | null, eventoId: string)
   return snapshot;
 }
 
-/** Envia a fila à base de referência simulada. Conflitos são preservados e sinalizados. */
-export async function sincronizar(simularFalha: boolean): Promise<{ enviados: number; conflitos: number; falhas: number }> {
-  const fila = await listarFila();
-  let enviados = 0, conflitos = 0, falhas = 0;
-  for (const op of fila) {
-    if (simularFalha) { falhas++; await atualizarOperacao({ ...op, sync: "falhou" }, false); continue; }
-    const ref = lerReferencia();
-    const status = carregarBase().inscricoes.find((i) => i.id === op.inscricaoId)?.status;
-    const r = resolverSincronizacao(ref, op, status);
+/**
+ * Servidor: aceita operações da fila na base de referência. Idempotente por id;
+ * conflitos são preservados e sinalizados. Devolve o estado final de cada operação.
+ */
+export function aplicarSincronizacao(usuario: Usuario, ops: RegistroCheckin[]): RegistroCheckin[] {
+  return mutarBase((b) => ops.map((op) => {
+    const evento = b.eventos.find((e) => e.id === op.eventoId);
+    if (!podeOperar(usuario, evento)) throw new ErroDominio("sem_permissao", "Você não tem acesso ao check-in deste evento.");
+    const inscricao = b.inscricoes.find((i) => i.id === op.inscricaoId);
+    if (!inscricao || inscricao.eventoId !== op.eventoId) {
+      return { ...op, sync: "conflito" as const, conflito: "Ingresso não pertence a este evento." };
+    }
+    if (op.operadorId !== usuario.id) {
+      return { ...op, sync: "conflito" as const, conflito: "Registro feito por outro operador; sincronize com a conta dele." };
+    }
+    const r = resolverSincronizacao(b.checkins, op, inscricao.status);
     const final: RegistroCheckin = { ...op, sync: r.status, conflito: r.conflito };
-    if (!ref.some((x) => x.id === op.id)) gravarReferencia([...ref, final]);
-    await atualizarOperacao(final, true);
-    if (r.status === "conflito") conflitos++; else enviados++;
+    if (!b.checkins.some((x) => x.id === op.id)) b.checkins.push(final);
+    return final;
+  }));
+}
+
+/** Aparelho: envia a fila ao servidor (`enviar`) e atualiza o estado local de cada operação. */
+export async function sincronizar(
+  simularFalha: boolean,
+  enviar: (ops: RegistroCheckin[]) => Promise<RegistroCheckin[]>,
+): Promise<{ enviados: number; conflitos: number; falhas: number }> {
+  const fila = await listarFila();
+  if (fila.length === 0) return { enviados: 0, conflitos: 0, falhas: 0 };
+  if (simularFalha) {
+    for (const op of fila) await atualizarOperacao({ ...op, sync: "falhou" }, false);
+    return { enviados: 0, conflitos: 0, falhas: fila.length };
   }
-  return { enviados, conflitos, falhas };
+  let finais: RegistroCheckin[];
+  try {
+    finais = await enviar(fila);
+  } catch {
+    for (const op of fila) await atualizarOperacao({ ...op, sync: "falhou" }, false);
+    return { enviados: 0, conflitos: 0, falhas: fila.length };
+  }
+  let enviados = 0, conflitos = 0;
+  for (const final of finais) {
+    await atualizarOperacao(final, true);
+    if (final.sync === "conflito") conflitos++; else enviados++;
+  }
+  return { enviados, conflitos, falhas: 0 };
 }
 
 export async function contarPendentes(): Promise<number> {

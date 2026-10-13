@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { carregarBase } from "@/services/db";
-import { aprovarAutorizacaoResponsavel, desativarUsuario } from "@/services/admin";
+import { aprovarAutorizacaoResponsavel, desativarUsuario } from "@/api/admin.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { mascararCpf } from "@/lib/domain/validators";
 import { Badge, Botao } from "@/components/ui";
@@ -55,7 +55,7 @@ function Usuarios() {
                 <td className="py-2">
                   <div className="flex gap-1">
                     {u.autorizacaoResponsavel === "pendente" && (
-                      <Botao variante="contorno" onClick={() => aprovarAutorizacaoResponsavel(u.id, usuario.id).then(() => setVersao((v) => v + 1))}>
+                      <Botao variante="contorno" onClick={() => aprovarAutorizacaoResponsavel(u.id).then(() => setVersao((v) => v + 1))}>
                         Aprovar autorização
                       </Botao>
                     )}
@@ -64,7 +64,7 @@ function Usuarios() {
                         variante="perigo"
                         onClick={() => {
                           const j = prompt("Justificativa para desativar (obrigatória):");
-                          if (j) desativarUsuario(u.id, usuario.id, j).then(() => setVersao((v) => v + 1)).catch((e) => setErro(e.message));
+                          if (j) desativarUsuario(u.id, j).then(() => setVersao((v) => v + 1)).catch((e) => setErro(e.message));
                         }}
                       >
                         Desativar
