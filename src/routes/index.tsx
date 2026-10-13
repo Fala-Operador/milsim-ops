@@ -178,7 +178,7 @@ function PaginaInicial() {
         </div>
       </section>
 
-      {base && pref.montado && pref.preferencia.estado === "selecionadas" && regionais.length > 0 && (
+      {base && pref.montado && pref.preferencia.estado === "selecionadas" && !modsSel.length && regionais.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pt-8" aria-label="Operações para você">
           {paraVoce.favoritas.length > 0 ? (
             <SectionCarousel rotulo="Operações para você" cabecalho={
