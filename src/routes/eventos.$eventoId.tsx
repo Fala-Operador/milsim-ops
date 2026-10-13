@@ -25,8 +25,21 @@ export const Route = createFileRoute("/eventos/$eventoId")({
           { name: "description", content: loaderData.evento.descricaoResumida },
           { property: "og:title", content: `${loaderData.evento.nome} — MilSim Ops` },
           { property: "og:description", content: loaderData.evento.descricaoResumida },
+          { property: "og:type", content: "website" },
+          { name: "twitter:card", content: "summary_large_image" },
+          ...(/^https:\/\//.test(loaderData.evento.imagem?.bannerUrl || loaderData.evento.imagemUrl || "") ? [
+            { property: "og:image", content: loaderData.evento.imagem?.bannerUrl || loaderData.evento.imagemUrl },
+            { name: "twitter:image", content: loaderData.evento.imagem?.bannerUrl || loaderData.evento.imagemUrl },
+          ] : []),
         ]
-      : [{ title: "Evento — MilSim Ops" }],
+      : [
+          { title: "Evento — MilSim Ops" },
+          { name: "description", content: "Operações de airsoft e simulação militar no MilSim Ops." },
+          { property: "og:title", content: "Evento — MilSim Ops" },
+          { property: "og:description", content: "Operações de airsoft e simulação militar no MilSim Ops." },
+          { property: "og:type", content: "website" },
+          { name: "twitter:card", content: "summary" },
+        ],
   }),
   pendingComponent: SkeletonPagina,
   component: PaginaEvento,

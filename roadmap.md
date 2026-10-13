@@ -1,5 +1,8 @@
 # Roadmap
 
+## Editor de eventos — validação
+- [ ] Testar celular e tema TAN, recortes, publicação e leitura pública; corrigir problemas encontrados.
+
 - [x] Carrosséis compartilhados sem scrollbar, com setas, indicadores, deslize e validação de overflow
 
 - [x] Base mockada, autenticação, temas, páginas públicas e áreas (participante/organizador/admin)

@@ -87,6 +87,8 @@ export function EventEditorDrawer(p: PropsEditor) {
         silencioso.current = true;
         form.reset(r.evento);
         silencioso.current = false;
+        versaoRef.current += 1;
+        setVersao(versaoRef.current);
         setMsg("Alterações não publicadas restauradas deste dispositivo.");
       }
       if (p.etapaInicial === undefined && r.etapa > 0) {
@@ -102,6 +104,7 @@ export function EventEditorDrawer(p: PropsEditor) {
   const pendente = versao !== salvoRef.current;
 
   const persistir = useCallback(async (manual: boolean): Promise<boolean> => {
+    if (salvandoRef.current) return false;
     const snap = structuredClone(form.getValues());
     const v = versaoRef.current;
     if (modoServidor && !existeRef.current && !snap.nome.trim()) {
@@ -231,7 +234,7 @@ export function EventEditorDrawer(p: PropsEditor) {
     const probs = validarEtapa(form.getValues(), etapa, ocupacao);
     if (probs.length) {
       setErros(Object.fromEntries(probs.map((x) => [x.campo, x.mensagem])));
-      focoPendente.current = probs[0]!.campo;
+      focoPendente.current = probs[0]?.campo ?? null;
       setVersao((v) => v); // força o efeito de foco
       setMsg(`Revise ${probs.length === 1 ? "1 campo" : `${probs.length} campos`} desta etapa.`);
       return;
@@ -330,7 +333,7 @@ export function EventEditorDrawer(p: PropsEditor) {
               <Botao type="button" variante="fantasma" disabled={enviando || estado === "salvando"} onClick={salvarESair}
                 title={modoServidor ? undefined : "Guarda as alterações neste dispositivo sem alterar a página pública"}>Salvar e sair</Botao>
               {ultima ? (
-                <Botao type="button" disabled={enviando} onClick={finalizar}>
+                <Botao type="button" disabled={enviando || estado === "salvando"} onClick={finalizar}>
                   {enviando ? "Enviando…" : modoServidor ? "Publicar operação" : "Salvar alterações"}
                 </Botao>
               ) : (

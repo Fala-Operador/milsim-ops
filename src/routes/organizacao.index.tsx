@@ -22,6 +22,10 @@ export const Route = createFileRoute("/organizacao/")({
     meta: [
       { title: "Painel da organização — MilSim Ops" },
       { name: "description", content: "Visão geral dos eventos da organização: ocupação, receita e gestão." },
+      { property: "og:title", content: "Painel da organização — MilSim Ops" },
+      { property: "og:description", content: "Visão geral dos eventos da organização: ocupação, receita e gestão." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PainelEventos,

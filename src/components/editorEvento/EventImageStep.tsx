@@ -17,11 +17,13 @@ function EditorRecorte({ img, formato, recorte, onChange }: { img: HTMLImageElem
 
   useEffect(() => {
     const c = ref.current;
-    if (c) desenhar(c.getContext("2d")!, img, W, H, recorte);
+    const ctx = c?.getContext("2d");
+    if (ctx) desenhar(ctx, img, W, H, recorte);
   }, [img, recorte, W, H]);
 
   const mover = (dxPx: number, dyPx: number, base: Recorte) => {
-    const c = ref.current!;
+    const c = ref.current;
+    if (!c || !c.getBoundingClientRect().width) return;
     const fator = W / c.getBoundingClientRect().width;
     const g = geometria(img.naturalWidth, img.naturalHeight, W, H, base);
     onChange(normalizarRecorte({
@@ -78,34 +80,14 @@ export function EtapaImagem({ ev, set, erros, onErro }: PropsEtapa & { onErro: (
   const [arrastando, setArrastando] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const imagem = ev.imagem;
-  const ultimoGerado = useRef("");
 
   useEffect(() => {
     let vivo = true;
+    setImg(null);
     if (!imagem?.originalUrl) return setImg(null);
     carregarImagem(imagem.originalUrl).then((i) => vivo && setImg(i)).catch(() => vivo && onErro("Não foi possível carregar a imagem salva."));
     return () => { vivo = false; };
   }, [imagem?.originalUrl, onErro]);
-
-  // Gera as duas apresentações a partir da mesma original (com espera para não regerar a cada movimento).
-  useEffect(() => {
-    if (!img || !imagem) return;
-    const chave = JSON.stringify([imagem.originalUrl.slice(-64), imagem.banner, imagem.card]);
-    if (chave === ultimoGerado.current) return;
-    if (!ultimoGerado.current && imagem.bannerUrl && ev.imagemUrl) { ultimoGerado.current = chave; return; } // já gerados ao reabrir
-    const t = setTimeout(() => {
-      try {
-        const card = gerarRecorte(img, "card", imagem.card);
-        const banner = gerarRecorte(img, "banner", imagem.banner);
-        ultimoGerado.current = chave;
-        set("imagemUrl", card);
-        set("imagem", { ...imagem, bannerUrl: banner });
-      } catch {
-        onErro("Não foi possível gerar os recortes desta imagem. Envie o arquivo novamente.");
-      }
-    }, 500);
-    return () => clearTimeout(t);
-  }, [img, imagem, ev.imagemUrl, set, onErro]);
 
   const escolher = async (arquivo: File | undefined) => {
     if (!arquivo) return;
@@ -114,9 +96,12 @@ export function EtapaImagem({ ev, set, erros, onErro }: PropsEtapa & { onErro: (
     setProcessando(true);
     try {
       const originalUrl = await arquivoParaDataUrl(arquivo, 2400);
-      ultimoGerado.current = "";
-      set("imagem", { originalUrl, alt: imagem?.alt ?? "", banner: RECORTE_INICIAL, card: RECORTE_INICIAL, bannerUrl: "" });
-      set("imagemUrl", undefined);
+      const original = await carregarImagem(originalUrl);
+      const card = gerarRecorte(original, "card", RECORTE_INICIAL);
+      const bannerUrl = gerarRecorte(original, "banner", RECORTE_INICIAL);
+      set("imagemUrl", card);
+      set("imagem", { originalUrl, alt: imagem?.alt ?? "", banner: RECORTE_INICIAL, card: RECORTE_INICIAL, bannerUrl });
+      onErro("");
     } catch (e) {
       onErro(e instanceof Error ? e.message : "Falha ao ler a imagem.");
     } finally {
@@ -124,7 +109,17 @@ export function EtapaImagem({ ev, set, erros, onErro }: PropsEtapa & { onErro: (
     }
   };
 
-  const recorte = (f: FormatoRecorte, r: Recorte) => imagem && set("imagem", { ...imagem, [f]: r });
+  // Commit crop pixels in the same interaction: leaving this step cannot cancel generation.
+  const recorte = (f: FormatoRecorte, r: Recorte) => {
+    if (!imagem || !img) return;
+    try {
+      const url = gerarRecorte(img, f, r);
+      if (f === "card") set("imagemUrl", url);
+      set("imagem", { ...imagem, [f]: r, ...(f === "banner" ? { bannerUrl: url } : {}) });
+    } catch {
+      onErro("Não foi possível gerar o recorte. Tente novamente.");
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -147,8 +142,16 @@ export function EtapaImagem({ ev, set, erros, onErro }: PropsEtapa & { onErro: (
           )}
         </div>
         <MsgErro erros={erros} id="ev-img-arquivo" />
-        {!imagem && <Ajuda>O rascunho pode ficar sem imagem; para publicar, ela é obrigatória.</Ajuda>}
+        {!imagem && !ev.imagemUrl && <Ajuda>O rascunho pode ficar sem imagem; para publicar, ela é obrigatória.</Ajuda>}
       </div>
+
+      {!imagem && ev.imagemUrl && (
+        <figure className="space-y-2">
+          <figcaption className="text-sm font-medium">Imagem atual do evento</figcaption>
+          <img src={ev.imagemUrl} alt={`Imagem de ${ev.nome}`} className="aspect-video w-full max-w-lg rounded-md object-cover" />
+          <Botao type="button" variante="fantasma" onClick={() => set("imagemUrl", undefined)}>Remover imagem</Botao>
+        </figure>
+      )}
 
       {imagem && (
         <>
@@ -169,7 +172,7 @@ export function EtapaImagem({ ev, set, erros, onErro }: PropsEtapa & { onErro: (
           {ev.imagemUrl && (
             <div>
               <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Prévia do card</p>
-              <div className="w-64 overflow-hidden rounded-lg border border-border bg-card">
+              <div className="w-64 max-w-full overflow-hidden rounded-lg border border-border bg-card">
                 <img src={ev.imagemUrl} alt={imagem.alt} className="aspect-video w-full object-cover" />
                 <div className="p-3">
                   <p className="truncate font-display text-sm font-semibold uppercase">{ev.nome || "Nome da operação"}</p>
