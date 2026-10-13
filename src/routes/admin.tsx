@@ -26,6 +26,7 @@ export const Route = createFileRoute("/admin")({
     ],
   }),
   component: LayoutAdmin,
+  errorComponent: ErroAdmin,
 });
 
 const abas = [

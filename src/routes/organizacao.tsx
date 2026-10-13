@@ -27,6 +27,7 @@ export const Route = createFileRoute("/organizacao")({
     ],
   }),
   component: LayoutOrganizacao,
+  errorComponent: ErroOrganizacao,
 });
 
 const itens = [
