@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSuporte } from "@/contexts/SuporteContext";
 import { ErroSecao, SkeletonPagina } from "@/components/ui";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
 import type { ErrorComponentProps } from "@tanstack/react-router";
@@ -34,6 +35,7 @@ const abas = [
   { to: "/admin/metricas", rotulo: "Métricas" },
   { to: "/admin/divulgacao", rotulo: "Página inicial e divulgação" },
   { to: "/admin/gamificacao", rotulo: "Gamificação e recompensas" },
+  { to: "/admin/suporte", rotulo: "Suporte" },
   { to: "/admin/solicitacoes", rotulo: "Solicitações" },
   { to: "/admin/notificacoes", rotulo: "Notificações" },
   { to: "/admin/usuarios", rotulo: "Usuários" },
@@ -43,6 +45,7 @@ const abas = [
 
 function LayoutAdmin() {
   const { usuario } = useAuth();
+  const { atencaoEquipe } = useSuporte();
   const navigate = useNavigate();
   const [montado, setMontado] = useState(false);
   const caminho = useRouterState({ select: (s) => s.location.pathname });
@@ -69,7 +72,7 @@ function LayoutAdmin() {
           onChange={(e) => navigate({ to: e.target.value })}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground"
         >
-          {abas.map((a) => <option key={a.to} value={a.to}>{a.rotulo}</option>)}
+          {abas.map((a) => <option key={a.to} value={a.to}>{a.rotulo}{a.to === "/admin/suporte" && atencaoEquipe > 0 ? ` (${atencaoEquipe})` : ""}</option>)}
         </select>
       </label>
       <nav aria-label="Seções da administração" className="mt-4 hidden flex-wrap gap-1 border-b border-border md:flex">
@@ -82,6 +85,9 @@ function LayoutAdmin() {
             activeProps={{ className: "!border-primary bg-secondary !text-foreground", "aria-current": "page" }}
           >
             {a.rotulo}
+            {a.to === "/admin/suporte" && atencaoEquipe > 0 && (
+              <span className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground" aria-label={`${atencaoEquipe} chamados exigem atenção`}>{atencaoEquipe}</span>
+            )}
           </Link>
         ))}
       </nav>

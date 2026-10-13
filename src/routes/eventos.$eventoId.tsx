@@ -105,6 +105,7 @@ function PaginaEvento() {
                   <Botao>Inscrever-se</Botao>
                 </Link>
               </div>
+              <Link to="/app/suporte" search={{ evento: evento.id }} className="mt-2 inline-block text-sm text-accent hover:underline">Dúvidas? Falar com o suporte do evento</Link>
             </>
           ) : (
             <Badge tom="perigo">

@@ -1,3 +1,4 @@
+import { destinoDoLink } from "@/lib/links";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { carregarBase } from "@/services/db";
@@ -88,7 +89,7 @@ function NotificacoesAdmin() {
                     </p>
                     {n.link && (
                       <Link
-                        to={n.link}
+                        {...(destinoDoLink(n.link) as { to: string })}
                         className="mt-1 inline-block text-sm text-accent hover:underline"
                         onClick={() => marcarLida(n.id)}
                       >
