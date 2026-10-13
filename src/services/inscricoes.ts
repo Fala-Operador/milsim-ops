@@ -2,6 +2,8 @@
 import { carregarBase, mutarBase, latencia, ErroDominio, gerarId, gerarCodigo } from "./db";
 import { idadeEmAnos } from "@/lib/domain/validators";
 import { gerarTokenEntrada } from "@/lib/checkin";
+import { descontoDoBeneficio, statusVoucher } from "@/lib/participacao";
+import { restaurarVoucherDaInscricao } from "@/services/progressao";
 import type { Cupom, Evento, Inscricao, Usuario } from "@/lib/domain/types";
 
 export function inscricoesAtivasDoEvento(base: ReturnType<typeof carregarBase>, eventoId: string) {
@@ -77,6 +79,7 @@ export interface DadosInscricao {
   exercitoId: string;
   codigoCupom?: string | undefined;
   cortesiaId?: string | undefined;
+  voucherId?: string | undefined;
   origem?: Inscricao["origem"];
 }
 
@@ -127,6 +130,7 @@ export async function confirmarInscricao(dados: DadosInscricao): Promise<Inscric
     let loteId: string | undefined;
     let cupomId: string | undefined;
     let descontoCentavos = 0;
+    let voucherUsado: (typeof base.vouchers)[number] | undefined;
 
     if (dados.cortesiaId) {
       // Resgate de cortesia: e-mail deve corresponder; sem lote comercial; sem cupom
@@ -156,7 +160,21 @@ export async function confirmarInscricao(dados: DadosInscricao): Promise<Inscric
       loteId = lote.id;
       valorCentavos = item.precoCentavos;
 
-      if (dados.codigoCupom) {
+      if (dados.voucherId) {
+        if (dados.codigoCupom) throw new ErroDominio("voucher_cupom", "O benefício não pode ser combinado com cupom.");
+        const v = base.vouchers.find((x) => x.id === dados.voucherId && x.usuarioId === usuario.id);
+        if (!v || statusVoucher(v) !== "disponivel") throw new ErroDominio("voucher", "Benefício indisponível ou fora da validade.");
+        const campanha = base.campanhasRecompensa.find((c) => c.id === v.campanhaId);
+        if (!campanha?.ativa) throw new ErroDominio("voucher_campanha", "A campanha deste benefício não está ativa.");
+        if (evento.organizacaoId !== v.beneficio.organizacaoId || !v.beneficio.eventosElegiveis.includes(evento.id)) {
+          throw new ErroDominio("voucher_evento", "Este benefício não vale para este evento.");
+        }
+        if (v.beneficio.tiposElegiveis.length && !v.beneficio.tiposElegiveis.includes(tipo.id)) {
+          throw new ErroDominio("voucher_tipo", "Este benefício não vale para este tipo de ingresso.");
+        }
+        descontoCentavos = descontoDoBeneficio(v.beneficio, valorCentavos);
+        voucherUsado = v;
+      } else if (dados.codigoCupom) {
         const cupom = validarCupom(base, evento.id, dados.codigoCupom, tipo.id);
         descontoCentavos = Math.round((valorCentavos * cupom.descontoPercentual) / 100);
         cupom.usos += 1; // uso contabilizado somente na confirmação
@@ -180,9 +198,17 @@ export async function confirmarInscricao(dados: DadosInscricao): Promise<Inscric
       descontoCentavos,
       cupomId,
       cortesiaId: dados.cortesiaId,
+      voucherId: voucherUsado?.id,
       criadoEm: new Date().toISOString(),
     };
     base.inscricoes.push(inscricao);
+    if (voucherUsado) {
+      // Consumido só aqui, junto com a confirmação (mesma transação).
+      voucherUsado.status = "utilizada";
+      voucherUsado.inscricaoId = inscricao.id;
+      voucherUsado.usadoEm = inscricao.criadoEm;
+      voucherUsado.motivo = undefined;
+    }
 
     if (valorFinal > 0) {
       base.movimentacoes.push({
@@ -202,7 +228,9 @@ export async function confirmarInscricao(dados: DadosInscricao): Promise<Inscric
         inscricaoId: inscricao.id,
         tipo: "desconto_cupom",
         valorCentavos: 0,
-        descricao: `Desconto de cupom aplicado (${descontoCentavos / 100} reais)`,
+        descricao: voucherUsado
+          ? `Benefício de recompensa aplicado (${descontoCentavos / 100} reais)`
+          : `Desconto de cupom aplicado (${descontoCentavos / 100} reais)`,
         criadoEm: new Date().toISOString(),
       });
     }
@@ -237,6 +265,7 @@ export async function cancelarInscricao(
     inscricao.status = "estornada";
     inscricao.canceladoEm = new Date().toISOString();
     inscricao.motivoCancelamento = motivo;
+    restaurarVoucherDaInscricao(base, inscricao.id, "inscrição cancelada");
 
     const valorFinal = inscricao.valorCentavos - inscricao.descontoCentavos;
     if (valorFinal > 0) {

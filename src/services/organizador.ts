@@ -1,5 +1,6 @@
 // Serviços do organizador: solicitação, eventos, cupons, cortesias.
 import { ehModalidade, erroModalidadeParaPublicar, nomeModalidade } from "@/lib/modalidades";
+import { restaurarVoucherDaInscricao } from "@/services/progressao";
 import { carregarBase, mutarBase, latencia, ErroDominio, gerarId, gerarCodigo } from "./db";
 import { silenciado } from "./notificacoes";
 import { cnpjValido, normalizarEmail, somenteDigitos, telefoneValido } from "@/lib/domain/validators";
@@ -178,6 +179,7 @@ export async function cancelarEvento(
       ins.status = "estornada";
       ins.canceladoEm = new Date().toISOString();
       ins.motivoCancelamento = `Evento cancelado: ${justificativa}`;
+      restaurarVoucherDaInscricao(base, ins.id, "evento cancelado pelo organizador");
       const valorFinal = ins.valorCentavos - ins.descontoCentavos;
       if (valorFinal > 0) {
         base.movimentacoes.push({
