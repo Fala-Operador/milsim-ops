@@ -191,11 +191,9 @@ function PaginaInicial() {
               </div>
             }>
               {paraVoce.favoritas.map((e, i) => (
-                <div key={e.id} className="w-[85%] shrink-0 snap-start sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.7rem)]">
-                  <CardRastreado ativo eventoId={e.id} origem="busca" posicao={i + 1} visualizacaoId={visualizacaoId}>
-                    <CartaoEvento evento={e} base={base} organizacao={organizacaoDe(e.organizacaoId)} />
-                  </CardRastreado>
-                </div>
+                <CardRastreado key={e.id} ativo eventoId={e.id} origem="busca" posicao={i + 1} visualizacaoId={visualizacaoId} className="w-72 max-w-full shrink-0 snap-start">
+                  <CartaoEvento evento={e} base={base} organizacao={organizacaoDe(e.organizacaoId)} />
+                </CardRastreado>
               ))}
             </SectionCarousel>
           ) : (
