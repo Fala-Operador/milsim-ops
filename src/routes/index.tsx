@@ -19,7 +19,7 @@ import {
   type ModalidadeId, type Ordenacao,
 } from "@/lib/modalidades";
 
-interface BuscaInicio { q?: string; periodo?: Periodo; mod?: string; ordem?: Ordenacao }
+interface BuscaInicio { q?: string | undefined; periodo?: "30d" | "90d" | undefined; mod?: string | undefined; ordem?: Ordenacao | undefined }
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -39,7 +39,7 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  validateSearch: (s: Record<string, unknown>): BuscaInicio => ({
+  validateSearch: (s: { q?: unknown; periodo?: unknown; mod?: unknown; ordem?: unknown }): BuscaInicio => ({
     q: typeof s.q === "string" && s.q ? s.q.slice(0, 100) : undefined,
     periodo: s.periodo === "30d" || s.periodo === "90d" ? s.periodo : undefined,
     mod: typeof s.mod === "string" && s.mod ? s.mod.split(",").filter(ehModalidade).join(",") || undefined : undefined,
