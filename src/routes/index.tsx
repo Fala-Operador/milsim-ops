@@ -12,6 +12,14 @@ import { filtrarEventos, rotuloCurto, type FiltroDescoberta, type Periodo } from
 import { CardRastreado, SecoesPublicas } from "@/components/divulgacao";
 import { SeletorCidade } from "@/components/SeletorCidade";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
+import { SectionCarousel } from "@/components/SectionCarousel";
+import { usePreferencias } from "@/contexts/PreferenciasContext";
+import {
+  ehModalidade, filtrarPorModalidades, MODALIDADES, nomeModalidade, ordenarEventos, ROTULO_ORDENACAO, separarPorPreferencia,
+  type ModalidadeId, type Ordenacao,
+} from "@/lib/modalidades";
+
+interface BuscaInicio { q?: string; periodo?: Periodo; mod?: string; ordem?: Ordenacao }
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -31,6 +39,12 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): BuscaInicio => ({
+    q: typeof s.q === "string" && s.q ? s.q.slice(0, 100) : undefined,
+    periodo: s.periodo === "30d" || s.periodo === "90d" ? s.periodo : undefined,
+    mod: typeof s.mod === "string" && s.mod ? s.mod.split(",").filter(ehModalidade).join(",") || undefined : undefined,
+    ordem: s.ordem === "data" || s.ordem === "recentes" ? s.ordem : undefined,
+  }),
   component: PaginaInicial,
 });
 
@@ -48,9 +62,24 @@ function PaginaInicial() {
   const versao = useVersaoBase();
   const [visualizacaoId] = useState(() => `vz-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`);
   const { local, definirLocal, pedirPermissao, usarLocalizacaoAtual, status } = useLocalizacao();
-  const [busca, setBusca] = useState("");
-  const [periodo, setPeriodo] = useState<Periodo>("");
-  const [aplicado, setAplicado] = useState<FiltroDescoberta>({ busca: "", periodo: "" });
+  // Filtros ficam no endereço: abrir um evento e voltar preserva a busca.
+  const pesquisa = Route.useSearch();
+  const navegar = Route.useNavigate();
+  const aplicado: FiltroDescoberta = { busca: pesquisa.q ?? "", periodo: pesquisa.periodo ?? "" };
+  const modsSel = (pesquisa.mod?.split(",") ?? []) as ModalidadeId[];
+  const ordem: Ordenacao = pesquisa.ordem ?? "para_voce";
+  const [busca, setBusca] = useState(aplicado.busca);
+  const [periodo, setPeriodo] = useState<Periodo>(aplicado.periodo);
+  const pref = usePreferencias();
+  const atualizar = (m: Partial<BuscaInicio>) =>
+    void navegar({ search: (prev) => ({ ...prev, ...m }), replace: true, resetScroll: false });
+  const setAplicado = (f: FiltroDescoberta) => atualizar({ q: f.busca || undefined, periodo: f.periodo || undefined });
+  const alternarMod = (id: ModalidadeId) => {
+    const prox = modsSel.includes(id) ? modsSel.filter((x) => x !== id) : [...modsSel, id];
+    atualizar({ mod: prox.join(",") || undefined });
+  };
+  const filtrosAtivos = !!(aplicado.busca || aplicado.periodo || modsSel.length);
+  const limparFiltros = () => { setBusca(""); setPeriodo(""); void navegar({ search: {}, replace: true, resetScroll: false }); };
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -63,7 +92,10 @@ function PaginaInicial() {
   const secoes = base ? montarPaginaInicial(base, local, agora) : [];
   const organizacaoDe = (id: string) => base?.organizacoes.find((o) => o.id === id)?.nome ?? "—";
   const publicados = base?.eventos.filter((e) => e.status === "publicado" && eventoElegivel(e, agora)) ?? [];
-  const resultados = base ? filtrarEventos(publicados, local, aplicado, organizacaoDe, agora) : [];
+  const regionais = base ? filtrarEventos(publicados, local, aplicado, organizacaoDe, agora) : [];
+  const resultados = ordenarEventos(filtrarPorModalidades(regionais, modsSel), ordem, pref.preferencia);
+  // "Para você": respeita local e filtros explícitos; nunca amplia a região sozinho.
+  const paraVoce = separarPorPreferencia(filtrarPorModalidades(regionais, modsSel), pref.preferencia);
   const nacional = local.escopo === "nacional";
   const tituloSecao = nacional
     ? "Explore operações pelo Brasil"
@@ -115,6 +147,24 @@ function PaginaInicial() {
             <Botao type="submit" className="h-10 px-5">Buscar operações</Botao>
           </form>
 
+          <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="Modalidades">
+            <span className="text-xs font-medium text-muted-foreground">Modalidades:</span>
+            {MODALIDADES.map((m) => {
+              const ativo = modsSel.includes(m.id);
+              return (
+                <button key={m.id} type="button" aria-pressed={ativo} onClick={() => alternarMod(m.id)}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${ativo ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background/70 text-muted-foreground hover:border-accent hover:text-foreground"}`}>
+                  {ativo && <span aria-hidden>✓ </span>}{m.nome}
+                </button>
+              );
+            })}
+            {pref.montado && (
+              <button type="button" onClick={pref.abrirEditor} className="ml-auto text-xs text-accent underline-offset-2 hover:underline">
+                Personalizar modalidades
+              </button>
+            )}
+          </div>
+
           {pedirPermissao && (
             <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-dashed border-accent/50 bg-background/60 px-3 py-2 text-sm">
               <Crosshair className="h-4 w-4 text-accent" aria-hidden />
@@ -128,6 +178,45 @@ function PaginaInicial() {
         </div>
       </section>
 
+      {base && pref.montado && pref.preferencia.estado === "selecionadas" && regionais.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 pt-8" aria-label="Operações para você">
+          {paraVoce.favoritas.length > 0 ? (
+            <SectionCarousel rotulo="Operações para você" cabecalho={
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <div>
+                  <h2 className="font-display text-2xl font-semibold uppercase tracking-wide">Operações para você</h2>
+                  <p className="text-sm text-muted-foreground">Priorizadas pelas suas modalidades favoritas e pela localização selecionada.</p>
+                </div>
+                <button type="button" onClick={pref.abrirEditor} className="text-sm text-accent underline-offset-2 hover:underline">Editar preferências</button>
+              </div>
+            }>
+              {paraVoce.favoritas.map((e, i) => (
+                <div key={e.id} className="w-[85%] shrink-0 snap-start sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.7rem)]">
+                  <CardRastreado ativo eventoId={e.id} origem="busca" posicao={i + 1} visualizacaoId={visualizacaoId}>
+                    <CartaoEvento evento={e} base={base} organizacao={organizacaoDe(e.organizacaoId)} />
+                  </CardRastreado>
+                </div>
+              ))}
+            </SectionCarousel>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border p-4">
+              <h2 className="font-display text-xl font-semibold uppercase">Operações para você</h2>
+              <p className="mt-1 text-sm">
+                Nenhuma operação de {pref.preferencia.modalidades.map(nomeModalidade).join(", ")} em {rotuloCurto(local)} no momento.
+                {paraVoce.outras.length > 0 && " Veja abaixo outras modalidades desta região."}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {local.escopo === "cidade" && local.uf && (
+                  <Botao variante="secundario" onClick={() => definirLocal({ escopo: "estado", uf: local.uf })}>Ampliar para o estado</Botao>
+                )}
+                {!nacional && <Botao variante="secundario" onClick={() => definirLocal(NACIONAL)}>Ampliar para todo o Brasil</Botao>}
+                <Botao variante="fantasma" onClick={pref.abrirEditor}>Editar preferências</Botao>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
       <section id="resultados" className="mx-auto max-w-6xl scroll-mt-24 px-4 py-8">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
@@ -138,13 +227,27 @@ function PaginaInicial() {
               {base && <> · {resultados.length} {resultados.length === 1 ? "operação encontrada" : "operações encontradas"}</>}
             </p>
           </div>
-          {(aplicado.busca || aplicado.periodo) && (
-            <button type="button" className="text-sm text-accent underline-offset-2 hover:underline" onClick={() => { setBusca(""); setPeriodo(""); setAplicado({ busca: "", periodo: "" }); }}>
-              Limpar busca
-            </button>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              Ordenar por
+              <select value={ordem} onChange={(e) => atualizar({ ordem: e.target.value === "para_voce" ? undefined : (e.target.value as Ordenacao) })}
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+                {(Object.keys(ROTULO_ORDENACAO) as Ordenacao[]).map((o) => <option key={o} value={o}>{ROTULO_ORDENACAO[o]}</option>)}
+              </select>
+            </label>
+            {filtrosAtivos && (
+              <button type="button" className="text-sm text-accent underline-offset-2 hover:underline" onClick={limparFiltros}>
+                Limpar filtros
+              </button>
+            )}
+          </div>
         </div>
 
+        {filtrosAtivos && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Filtros ativos: {[aplicado.busca && `“${aplicado.busca}”`, aplicado.periodo && (aplicado.periodo === "30d" ? "próximos 30 dias" : "próximos 90 dias"), ...modsSel.map(nomeModalidade)].filter(Boolean).join(" · ")}
+          </p>
+        )}
         {falha ? (
           <div role="alert" className="mt-4 rounded-lg border border-destructive/50 p-6 text-center">
             <p className="font-medium">Não foi possível carregar as operações.</p>
@@ -155,7 +258,7 @@ function PaginaInicial() {
         ) : resultados.length === 0 ? (
           <div className="mt-4 rounded-lg border border-dashed border-border p-6 text-center">
             <p className="font-medium">
-              {aplicado.busca || aplicado.periodo
+              {filtrosAtivos
                 ? "Nenhuma operação encontrada para esta busca."
                 : local.escopo === "cidade" ? "Nenhuma operação encontrada nesta cidade." : "Nenhuma operação encontrada nesta localização."}
             </p>
@@ -204,6 +307,7 @@ function CartaoEvento({ evento: e, base, organizacao }: { evento: Evento; base: 
             : <Badge tom="sucesso">Vagas abertas</Badge>}
         </div>
         <p className="mt-1 text-sm text-muted-foreground">{formatarDataBR(e.inicioEm)} · {e.cidade}/{e.uf}</p>
+        <p className="mt-1"><span className="inline-block rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{nomeModalidade(e.modalidade)}</span></p>
         <p className="truncate text-sm text-muted-foreground">{organizacao}</p>
         <div className="mt-auto flex items-center justify-between pt-3">
           <p className="text-sm">A partir de <span className="font-semibold text-accent">{formatarBRL(precoInicial(e))}</span></p>
