@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { carregarBase } from "@/services/db";
 import { inscricoesAtivasDoEvento } from "@/services/inscricoes";
 import { validarParaPublicacao } from "@/services/organizador";
-import { cancelarEvento, excluirEvento, publicarEvento, salvarEvento } from "@/api/organizador.functions";
+import { cancelarEvento, excluirEvento, publicarEvento } from "@/api/organizador.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, Modal, Selecao } from "@/components/ui";
@@ -51,6 +51,11 @@ function PainelEventos() {
   const [filtroStatus, setFiltroStatus] = useState<"todos" | Evento["status"]>("todos");
   const [focarLotes, setFocarLotes] = useState(false);
   const { lotes: lotesDe } = Route.useSearch();
+  const abrirEditor = (e: Evento, lotes: boolean) => {
+    setAviso("");
+    setFocarLotes(lotes);
+    setFormEstado({ evento: structuredClone(e), existente: true });
+  };
   useEffect(() => {
     const e = lotesDe && eventos.find((x) => x.id === lotesDe);
     if (e && !["cancelado", "concluido"].includes(e.status)) {
