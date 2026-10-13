@@ -10,7 +10,7 @@ export interface Pendente {
   corpo: string;
   anexo?: AnexoEnvio | undefined;
   estado: "enviando" | "falha";
-  erro?: string;
+  erro?: string | undefined;
   criadoEm: string;
 }
 
@@ -52,7 +52,7 @@ export function useConversa(chamadoId: string, usuarioId: string) {
   }, [usuarioId, chamadoId]);
 
   const despachar = useCallback(async (p: Pendente) => {
-    atualizarPendentes((l) => l.map((x) => (x.clienteId === p.clienteId ? { ...x, estado: "enviando", erro: undefined } as Pendente : x)));
+    atualizarPendentes((l) => l.map((x) => (x.clienteId === p.clienteId ? { ...x, estado: "enviando", erro: undefined }  : x)));
     try {
       await enviarMensagemSuporte(p.chamadoId, p.clienteId, p.corpo, p.anexo);
       atualizarPendentes((l) => l.filter((x) => x.clienteId !== p.clienteId));

@@ -77,7 +77,8 @@ export const linkAnexoFn = createServerFn({ method: "POST" })
 
 // ---------- Uso no navegador ----------
 export type AnexoEnvio = { nome: string; dataUrl: string };
-export const abrirChamadoSuporte = (d: Parameters<typeof abrirChamadoSuporteFn>[0]["data"]) => chamar(abrirChamadoSuporteFn({ data: d }));
+export interface DadosNovoChamado { clienteId: string; tipo: "evento" | "plataforma"; eventoId?: string | undefined; assunto: string; categoria: string; descricao: string; vinculadoA?: string | undefined; anexo?: AnexoEnvio | undefined }
+export const abrirChamadoSuporte = (d: DadosNovoChamado) => chamar(abrirChamadoSuporteFn({ data: d }));
 export const enviarMensagemSuporte = (chamadoId: string, clienteIdMsg: string, corpo: string, a?: AnexoEnvio) =>
   chamar(enviarMensagemSuporteFn({ data: { chamadoId, clienteId: clienteIdMsg, corpo, anexo: a } }));
 export const assumirChamado = (chamadoId: string, responsavelId?: string) => chamar(definirResponsavelFn({ data: { chamadoId, responsavelId } }));

@@ -26,7 +26,7 @@ export function NovoChamado({ base, usuarioId, eventoInicial, anterior, onCriado
     descricao: "",
   });
   const [anexo, setAnexo] = useState<AnexoEnvio | null>(null);
-  const [erros, setErros] = useState<Record<string, string>>({});
+  const [erros, setErros] = useState<{ eventoId?: string; assunto?: string; descricao?: string }>({});
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
   const clienteId = useRef(novoId()); // mesmo id em cliques repetidos = um chamado só
@@ -34,7 +34,7 @@ export function NovoChamado({ base, usuarioId, eventoInicial, anterior, onCriado
 
   const enviar = async () => {
     if (enviando) return;
-    const e: Record<string, string> = {};
+    const e: { eventoId?: string; assunto?: string; descricao?: string } = {};
     if (f.tipo === "evento" && !f.eventoId) e.eventoId = "Escolha o evento.";
     if (!f.assunto.trim()) e.assunto = "Informe o assunto.";
     if (!f.descricao.trim()) e.descricao = "Descreva a solicitação.";
