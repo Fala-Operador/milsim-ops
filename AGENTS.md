@@ -11,6 +11,8 @@
 
 # Regras técnicas do projeto
 
+- Public carousel sections share SectionCarousel with native scrolling and scoped scrollbar suppression. Why: navigation, alignment and accessibility remain consistent without affecting analytics wrappers or other scrollable components.
+
 - Route loaders and module-level base reads run on the server, where browser
   storage is empty and always holds the seed data. Any screen that must show
   what the organizer just saved has to re-read the local base after mount —

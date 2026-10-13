@@ -3,14 +3,15 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { registrarClique, registrarExibicao } from "@/services/analytics";
 import type { OrigemAcesso } from "@/lib/analytics";
-import { ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
+import { ImageOff } from "lucide-react";
 import type { Abrangencia, BaseDados, Parceiro, SecaoInicial } from "@/lib/domain/types";
 import {
   REGIOES, UF_REGIAO, hrefDoLink, linkPrincipal, rotuloAbrangencia, rotuloDoLink,
   type CartaoEventoResolvido, type SecaoResolvida,
 } from "@/lib/divulgacao";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
-import { Badge, Botao, Selecao } from "@/components/ui";
+import { Badge, Selecao } from "@/components/ui";
+import { SectionCarousel } from "@/components/SectionCarousel";
 
 const UFS = Object.keys(UF_REGIAO).sort();
 
@@ -78,28 +79,6 @@ export function ImagemSegura({ src, alt, className = "", contain = false }: { sr
   return (
     <img src={src} alt={alt} loading="lazy" decoding="async" onError={() => setErro(true)}
       className={`${contain ? "object-contain" : "object-cover"} ${className}`} />
-  );
-}
-
-/** Carrossel sem avanço automático, com botões e rolagem por teclado. */
-function Carrossel({ rotulo, children }: { rotulo: string; children: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const mover = (dir: number) => {
-    const el = ref.current;
-    if (!el) return;
-    const reduzir = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: reduzir ? "auto" : "smooth" });
-  };
-  return (
-    <div className="relative" role="region" aria-roledescription="carrossel" aria-label={rotulo}>
-      <div ref={ref} tabIndex={0} className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        {children}
-      </div>
-      <div className="mt-2 flex justify-end gap-2">
-        <Botao variante="contorno" className="!px-2" onClick={() => mover(-1)} aria-label={`Anterior em ${rotulo}`}><ChevronLeft className="h-4 w-4" /></Botao>
-        <Botao variante="contorno" className="!px-2" onClick={() => mover(1)} aria-label={`Próximo em ${rotulo}`}><ChevronRight className="h-4 w-4" /></Botao>
-      </div>
-    </div>
   );
 }
 
@@ -259,35 +238,36 @@ export function SecoesPublicas({
   secoes, base, local, celular = false, rastrear = false, visualizacaoId = "previa",
 }: { secoes: SecaoResolvida[]; base: BaseDados; local: Abrangencia; celular?: boolean; rastrear?: boolean; visualizacaoId?: string }) {
   return (
-    <div className="space-y-10">
+    <div className="min-w-0 max-w-full space-y-10">
       {secoes.map(({ secao, eventos, parceiros }) => {
         const carrossel = secao.layout === "carrossel";
         const origemSecao: OrigemAcesso = secao.tipo === "regional" ? "regional" : "destaques";
         const regional = local.escopo === "nacional" && secao.abrangencia.escopo !== "nacional";
         const grade = celular ? "grid gap-4" : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3";
         const gradeParceiros = celular ? "grid grid-cols-2 gap-3" : "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4";
+        const cabecalho = (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 id={`t-${secao.id}`} className="font-display text-2xl font-semibold uppercase tracking-wide">{secao.titulo}</h2>
+              {regional && <Badge>{rotuloAbrangencia(secao.abrangencia)}</Badge>}
+              {secao.status === "rascunho" && <Badge tom="aviso">Rascunho</Badge>}
+            </div>
+            {secao.subtitulo && <p className="text-sm text-muted-foreground">{secao.subtitulo}</p>}
+          </>
+        );
         return (
-          <section key={secao.id} id={`secao-${secao.id}`} aria-labelledby={`t-${secao.id}`}>
-            {secao.tipo !== "banner" && (
-              <div className="mb-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 id={`t-${secao.id}`} className="font-display text-2xl font-semibold uppercase tracking-wide">{secao.titulo}</h2>
-                  {regional && <Badge>{rotuloAbrangencia(secao.abrangencia)}</Badge>}
-                  {secao.status === "rascunho" && <Badge tom="aviso">Rascunho</Badge>}
-                </div>
-                {secao.subtitulo && <p className="text-sm text-muted-foreground">{secao.subtitulo}</p>}
-              </div>
-            )}
+          <section key={secao.id} id={`secao-${secao.id}`} className="min-w-0 max-w-full" aria-labelledby={`t-${secao.id}`}>
+            {secao.tipo !== "banner" && !carrossel && <div className="mb-3">{cabecalho}</div>}
             {secao.tipo === "banner" && <h2 id={`t-${secao.id}`} className="sr-only">{secao.titulo}</h2>}
             {secao.tipo === "banner" ? (
               <Banner secao={secao} base={base} celular={celular} rastrear={rastrear} />
             ) : eventos.length ? (
               carrossel ? (
-                <Carrossel rotulo={secao.titulo}>{eventos.map((c, i) => (
-                  <CardRastreado key={c.evento.id} ativo={rastrear} eventoId={c.evento.id} origem={origemSecao} secaoId={secao.id} posicao={i + 1} visualizacaoId={visualizacaoId} className="w-72 shrink-0 snap-start">
+                <SectionCarousel rotulo={secao.titulo} cabecalho={cabecalho}>{eventos.map((c, i) => (
+                  <CardRastreado key={c.evento.id} ativo={rastrear} eventoId={c.evento.id} origem={origemSecao} secaoId={secao.id} posicao={i + 1} visualizacaoId={visualizacaoId} className="w-72 max-w-full shrink-0 snap-start">
                     <CartaoEvento c={c} />
                   </CardRastreado>
-                ))}</Carrossel>
+                ))}</SectionCarousel>
               ) : (
                 <div className={grade}>{eventos.map((c, i) => (
                   <CardRastreado key={c.evento.id} ativo={rastrear} eventoId={c.evento.id} origem={origemSecao} secaoId={secao.id} posicao={i + 1} visualizacaoId={visualizacaoId} className="h-full">
@@ -296,7 +276,7 @@ export function SecoesPublicas({
                 ))}</div>
               )
             ) : carrossel ? (
-              <Carrossel rotulo={secao.titulo}>{parceiros.map((p) => <CartaoParceiro key={p.id} p={p} secao={secao} carrossel />)}</Carrossel>
+              <SectionCarousel rotulo={secao.titulo} cabecalho={cabecalho}>{parceiros.map((p) => <CartaoParceiro key={p.id} p={p} secao={secao} carrossel />)}</SectionCarousel>
             ) : (
               <div className={gradeParceiros}>{parceiros.map((p) => <CartaoParceiro key={p.id} p={p} secao={secao} carrossel={false} />)}</div>
             )}
