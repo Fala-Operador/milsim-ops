@@ -9,7 +9,7 @@ import { cancelarEvento, excluirEvento, publicarEvento } from "@/api/organizador
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, Modal, Selecao } from "@/components/ui";
-import { eventoVazio } from "@/components/FormEvento";
+import { eventoVazio } from "@/components/editorEvento/eventoVazio";
 import { EventEditorDrawer } from "@/components/editorEvento/EventEditorDrawer";
 import { AvisoLotes, useEventosOrg } from "@/components/organizacao";
 import type { Evento } from "@/lib/domain/types";
