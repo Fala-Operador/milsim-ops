@@ -85,7 +85,7 @@
   --warning-foreground: oklch(0.2 0.02 80);
   --border: oklch(0.72 0.035 85);
   --input: oklch(0.72 0.035 85);
-  --ring: oklch(0.45 0.055 125);
+  --ring: oklch(0.45 0.055 125); --focus-ring: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
 }
 
 .dark,

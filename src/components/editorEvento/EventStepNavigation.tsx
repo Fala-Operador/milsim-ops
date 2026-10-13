@@ -21,7 +21,7 @@ export function EventStepNavigation({ atual, alcancada, irPara }: { atual: numbe
                 disabled={i > alcancada}
                 aria-current={i === atual ? "step" : undefined}
                 onClick={() => irPara(i)}
-                className={`flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-50 ${
+                className={`flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium focus-visible:outline focus-visible:outline-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
                   estado === "atual" ? "bg-primary text-primary-foreground" : estado === "concluida" ? "bg-secondary text-secondary-foreground hover:opacity-90" : "text-muted-foreground"
                 }`}
               >

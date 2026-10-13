@@ -20,4 +20,6 @@
 - Check-in: rules in `src/lib/checkin.ts`; `src/services/checkinStore.ts` keeps server base and offline IndexedDB queue separate. Why: offline rules testable, storage never mixes.
 - Operator profile: grants/vouchers only via `recalcularProgressao` (`src/services/progressao.ts`, idempotent); others' profiles only via `montarPerfil`. Invoices live in private `documentos` bucket, owner-only signed URLs, never in the visão.
 - Carousels share `SectionCarousel` (scoped scrollbar suppression).
+- Status labels use shared nonwrapping `Badge` with fixed-size SVG icons; registration and attendance use `StatusInscricao`. Why: labels stay intact across tables, cards and detail views.
 - Event editor drawer (`src/components/editorEvento/`): no `<form>`, buttons `type="button"`, backdrop never closes; drafts autosave to server, non-draft edits stay in IndexedDB until "Salvar alterações". Why: closes only on explicit action; public data not overwritten early.
+- Event image crops commit their generated pixels in the crop interaction, never in a delayed step effect. Why: navigation must not cancel pending image generation.
