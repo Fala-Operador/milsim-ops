@@ -108,8 +108,8 @@ describe("insígnias e vouchers", () => {
   it("voucher não acumula com cupom", async () => {
     recalcularProgressao(base);
     await expect(confirmarInscricao({
-      eventoId: "evt-serra-verde", usuarioId: PART, tipoId: base.eventos.find((e) => e.id === "evt-serra-verde")!.tipos[0]!.id,
-      exercitoId: base.eventos.find((e) => e.id === "evt-serra-verde")!.exercitos[0]!.id, voucherId: base.vouchers[0]!.id, codigoCupom: "QUALQUER",
+      eventoId: "evt-serra-verde", usuarioId: "usr-admin", tipoId: base.eventos.find((e) => e.id === "evt-serra-verde")!.tipos[0]!.id,
+      exercitoId: base.eventos.find((e) => e.id === "evt-serra-verde")!.exercitos[0]!.id, voucherId: (base.vouchers[0]!.usuarioId = "usr-admin", base.vouchers[0]!.id), codigoCupom: "QUALQUER",
     })).rejects.toThrow(/cupom/i);
   });
 });
