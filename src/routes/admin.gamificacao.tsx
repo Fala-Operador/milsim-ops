@@ -34,7 +34,14 @@ function FormInsignia({ inicial, onFechar }: { inicial: Insignia | null; onFecha
   return (
     <Modal aberto titulo={inicial ? `Editar insígnia (versão ${inicial.versao})` : "Nova insígnia"} onFechar={onFechar}>
       <div className="grid gap-3 sm:grid-cols-[5rem_1fr]">
-        <Campo rotulo="Ícone" htmlFor="in-ic"><Entrada id="in-ic" value={d.icone} maxLength={4} onChange={(e) => setD({ ...d, icone: e.target.value })} /></Campo>
+        <Campo rotulo="Ícone" htmlFor="in-ic">
+          <div className="flex items-center gap-2">
+            <Selecao id="in-ic" value={d.icone} onChange={(e) => setD({ ...d, icone: e.target.value })}>
+              {ICONES_INSIGNIA.map((ic) => <option key={ic} value={ic}>{ic}</option>)}
+            </Selecao>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-secondary text-muted-foreground"><IconeInsignia icone={d.icone} size={18} /></span>
+          </div>
+        </Campo>
         <Campo rotulo="Nome" htmlFor="in-nome"><Entrada id="in-nome" value={d.nome} maxLength={60} onChange={(e) => setD({ ...d, nome: e.target.value })} /></Campo>
       </div>
       <div className="mt-3 space-y-3">
@@ -125,7 +132,7 @@ function Gamificacao() {
           {base.insignias.map((i) => (
             <li key={i.id} className="flex items-center justify-between gap-2 rounded-md border border-border bg-card p-3 text-sm">
               <div>
-                <p className="font-medium">{i.icone} {i.nome} <span className="text-xs text-muted-foreground">v{i.versao}</span> {!i.ativa && <Badge>Sem novas concessões</Badge>}</p>
+                <p className="flex items-center gap-2 font-medium"><IconeInsignia icone={i.icone} size={18} /> {i.nome} <span className="text-xs text-muted-foreground">v{i.versao}</span> {!i.ativa && <Badge>Sem novas concessões</Badge>}</p>
                 <p className="text-xs text-muted-foreground">{descreverCriterio(i.criterio)} · {base.concessoesInsignia.filter((c) => c.insigniaId === i.id && !c.revogadaEm).length} concedidas</p>
               </div>
               <Botao variante="contorno" className="px-3 py-1 text-xs" onClick={() => setInsignia(i)}>Editar</Botao>
