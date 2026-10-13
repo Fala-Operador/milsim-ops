@@ -221,3 +221,5 @@ from public.usuarios u where u.email = 'organizador@teste.com.br'
 on conflict (id) do nothing;
 
 update public.controle_base set versao = versao + 1 where id = 1;
+
+alter table public.vouchers add column beneficio jsonb not null;
