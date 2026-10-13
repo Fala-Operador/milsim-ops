@@ -126,7 +126,7 @@ export function lerResultado(md: string): ResultadoAnalise {
       secoes.push(atual);
     }
     const item = l.replace(/^([-*]|\d+\.)\s+/, "");
-    const partes = item.split("|").map((p) => limpar(p.replace(/^(Observado|Evidência|Evidencia|Ação|Acao)\s*:\s*/i, "")));
+    const partes = item.split("|").map((p) => limpar(p).replace(/^(Observado|Evidência|Evidencia|Ação|Acao)\s*:\s*/i, ""));
     if (/^(Observado)\s*:/i.test(limpar(item)) || partes.length >= 2) {
       atual.achados.push({ observado: partes[0] ?? "", evidencia: partes[1] || undefined, acao: partes[2] || undefined });
     } else {
