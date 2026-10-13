@@ -39,7 +39,7 @@ export function SectionCarousel({ rotulo, cabecalho, children }: { rotulo: strin
     const posicao = ref.current?.scrollLeft ?? 0;
     const indice = direcao > 0
       ? estado.paginas.findIndex((alvo) => alvo > posicao + 1)
-      : estado.paginas.findLastIndex((alvo) => alvo < posicao - 1);
+      : estado.paginas.reduce((ultimo, alvo, i) => alvo < posicao - 1 ? i : ultimo, -1);
     if (indice >= 0) irPara(indice);
   };
   const controles = estado.paginas.length > 1;
