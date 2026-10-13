@@ -59,7 +59,9 @@ function ItensConta({ fechar, aoSair }: { fechar: () => void; aoSair: () => void
       <Grupo titulo="Conta">
         <Link to="/app" activeOptions={{ exact: true }} className={itemMenu} onClick={fechar}>Minha área</Link>
         <Link to="/app/ingressos" className={itemMenu} onClick={fechar}>Meus ingressos</Link>
-        <Link to="/app/perfil" className={itemMenu} onClick={fechar}>Meu perfil</Link>
+        <Link to="/operador/$usuarioId" params={{ usuarioId: usuario.id }} search={{ aba: undefined }} className={itemMenu} onClick={fechar}>Perfil do operador</Link>
+        <Link to="/operador/$usuarioId" params={{ usuarioId: usuario.id }} search={{ aba: "recompensas" }} className={itemMenu} onClick={fechar}>Minhas recompensas</Link>
+        <Link to="/app/perfil" className={itemMenu} onClick={fechar}>Dados da conta</Link>
         <button type="button" className={itemMenu} onClick={() => { fechar(); abrirEditor(); }}>Preferências de eventos</button>
         <Aparencia onEscolher={fechar} />
       </Grupo>

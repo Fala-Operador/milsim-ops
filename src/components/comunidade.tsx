@@ -212,13 +212,25 @@ function Galeria({ imagens }: { imagens: ImagemPost[] }) {
   );
 }
 
+/** Avatar que abre o perfil do operador (mantém o fórum no histórico para voltar). */
+function AvatarLink({ usuario }: { usuario: Usuario | undefined }) {
+  if (!usuario) return <Avatar usuario={undefined} />;
+  return (
+    <Link to="/operador/$usuarioId" params={{ usuarioId: usuario.id }} search={{ aba: undefined }} aria-label={`Perfil de ${nomeExibicao(usuario)}`} className="shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-ring">
+      <Avatar usuario={usuario} />
+    </Link>
+  );
+}
+
 // ---------- Cabeçalho de autor ----------
 function CabecalhoAutor({ base, autorId, eventoId, criadoEm, editadoEm, extra }: { base: BaseDados; autorId: string; eventoId: string; criadoEm: string; editadoEm?: string | undefined; extra?: React.ReactNode }) {
   const autor = base.usuarios.find((u) => u.id === autorId);
   const selo = seloAutor(base, autorId, eventoId);
   return (
     <div className="flex flex-wrap items-center gap-x-2 text-sm">
-      <span className="font-semibold">{nomeExibicao(autor)}</span>
+      {autor ? (
+        <Link to="/operador/$usuarioId" params={{ usuarioId: autor.id }} search={{ aba: undefined }} className="font-semibold hover:underline">{nomeExibicao(autor)}</Link>
+      ) : <span className="font-semibold">{nomeExibicao(autor)}</span>}
       {selo && <Badge tom={selo === "Admin" ? "perigo" : "destaque"}>{selo}</Badge>}
       <span className="text-xs text-muted-foreground">· {formatarDataHoraBR(criadoEm)}</span>
       {editadoEm && <span className="text-xs text-muted-foreground">(editado)</span>}
@@ -279,7 +291,7 @@ export function CartaoPublicacao({
   return (
     <article className={`rounded-lg border bg-card p-4 ${pub.fixada ? "border-accent" : "border-border"} ${pub.oculta ? "opacity-60" : ""}`}>
       <div className="flex gap-3">
-        <Avatar usuario={pub.removidaPeloAutor ? undefined : base.usuarios.find((u) => u.id === pub.autorId)} />
+        <AvatarLink usuario={pub.removidaPeloAutor ? undefined : base.usuarios.find((u) => u.id === pub.autorId)} />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div>
@@ -400,7 +412,7 @@ export function ItemResposta({ base, r, usuario, gestao, eventoId, arquivado, on
   };
   return (
     <div className={`flex gap-3 border-t border-border py-3 ${r.oculta ? "opacity-60" : ""}`}>
-      <Avatar usuario={base.usuarios.find((u) => u.id === r.autorId)} />
+      <AvatarLink usuario={base.usuarios.find((u) => u.id === r.autorId)} />
       <div className="min-w-0 flex-1">
         <CabecalhoAutor base={base} autorId={r.autorId} eventoId={eventoId} criadoEm={r.criadoEm} editadoEm={r.editadoEm} extra={r.oculta ? <Badge tom="perigo">Oculta: {r.motivoOcultacao}</Badge> : null} />
         {r.texto && <p className="mt-1 whitespace-pre-wrap break-words text-sm">{r.texto}</p>}
