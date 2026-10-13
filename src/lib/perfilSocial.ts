@@ -158,7 +158,7 @@ export function montarPerfil(base: BaseDados, alvoId: string, quem: Usuario | nu
   const verIns = pode(priv.insignias, proprio, autenticado);
   if (verHist) { dto.operacoes = historico.map(paraDTO); dto.resumo.operacoes = proprio ? resumoReal.operacoes : resumoPublico.operacoes; }
   if (verMapa) {
-    dto.mapa = historico.filter((p) => p.estado === "confirmada" && p.uf && (proprio ? !ocultas.has(p.eventoId) : true)).map(paraDTO);
+    dto.mapa = historico.filter((p) => p.estado === "confirmada" && p.uf).map(paraDTO);
     dto.resumo.estados = proprio ? resumoReal.estados.length : resumoPublico.estados.length;
   }
   if (verIns) {
