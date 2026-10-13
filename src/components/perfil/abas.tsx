@@ -15,6 +15,7 @@ import { MAX_FOTOS_EQUIPAMENTO, TIPOS_EQUIPAMENTO } from "@/services/perfilOpera
 import type { EquipamentoDTO, FotoDTO, InsigniaDTO, OperacaoDTO, RecompensaDTO } from "@/lib/perfilSocial";
 import type { Equipamento, TipoEquipamento } from "@/lib/domain/types";
 import { AreaTexto, Badge, Botao, Campo, EstadoVazio, Entrada, Modal, Selecao } from "@/components/ui";
+import { IconeInsignia } from "./IconeInsignia";
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : "Algo deu errado.");
 
@@ -88,7 +89,7 @@ export function AbaInsignias({ insignias }: { insignias?: InsigniaDTO[] | undefi
           return (
             <li key={i.id} className={`rounded-lg border p-4 ${i.estado === "conquistada" ? "border-warning bg-card" : "border-border bg-card/60"}`}>
               <div className="flex items-start gap-3">
-                <span aria-hidden="true" className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 text-2xl ${i.estado === "conquistada" ? "border-warning bg-warning/15" : "border-border bg-secondary grayscale"}`}>{i.icone}</span>
+                <span aria-hidden="true" className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 ${i.estado === "conquistada" ? "border-warning bg-warning/15 text-warning" : "border-border bg-secondary text-muted-foreground"}`}><IconeInsignia icone={i.icone} /></span>
                 <div className="min-w-0">
                   <p className="font-display text-base font-semibold uppercase">{i.nome}</p>
                   <p className="text-xs text-muted-foreground">{i.descricao}</p>
