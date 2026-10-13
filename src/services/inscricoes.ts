@@ -5,6 +5,7 @@ import { gerarTokenEntrada } from "@/lib/checkin";
 import { descontoDoBeneficio, statusVoucher } from "@/lib/participacao";
 import { restaurarVoucherDaInscricao } from "@/services/progressao";
 import type { Cupom, Evento, Inscricao, Usuario } from "@/lib/domain/types";
+import { descontoCupom, disponibilidadeTipo, normalizarCodigoCupom, situacaoCupom, TEXTO_MOTIVO } from "@/lib/vendas";
 
 export function inscricoesAtivasDoEvento(base: ReturnType<typeof carregarBase>, eventoId: string) {
   return base.inscricoes.filter((i) => i.eventoId === eventoId && i.status === "confirmada");
@@ -49,25 +50,35 @@ export function loteVigente(evento: Evento, tipoId: string) {
   );
 }
 
+/** Disponibilidade do tipo considerando as inscrições já confirmadas. */
+export function disponibilidadeNaBase(base: ReturnType<typeof carregarBase>, evento: Evento, tipoId: string, agora = new Date()) {
+  return disponibilidadeTipo(
+    evento,
+    tipoId,
+    (loteId, t) => ocupacaoLote(base, evento.id, loteId, t),
+    agora,
+    ocupacaoTipo(base, evento.id, tipoId),
+  );
+}
+
 export function validarCupom(
   base: ReturnType<typeof carregarBase>,
   eventoId: string,
   codigo: string,
   tipoId: string,
 ): Cupom {
-  const codigoNorm = codigo.trim().toUpperCase();
+  const codigoNorm = normalizarCodigoCupom(codigo);
   const cupom = base.cupons.find(
     (c) => c.eventoId === eventoId && c.codigo === codigoNorm,
   );
-  if (!cupom) throw new ErroDominio("cupom_invalido", "Cupom não encontrado para este evento.");
-  if (!cupom.ativo) throw new ErroDominio("cupom_inativo", "Cupom inativo.");
-  const agora = new Date();
-  if (agora < new Date(cupom.validoDe) || agora > new Date(cupom.validoAte)) {
-    throw new ErroDominio("cupom_expirado", "Cupom fora do período de validade.");
-  }
-  if (cupom.usos >= cupom.limiteUsos) throw new ErroDominio("cupom_esgotado", "Cupom esgotado.");
+  if (!cupom) throw new ErroDominio("cupom_invalido", "Cupom não encontrado para esta operação.");
+  const situacao = situacaoCupom(cupom);
+  if (situacao === "inativo") throw new ErroDominio("cupom_inativo", "Este cupom está inativo.");
+  if (situacao === "esgotado") throw new ErroDominio("cupom_esgotado", "Este cupom atingiu o limite de utilizações.");
+  if (situacao === "agendado") throw new ErroDominio("cupom_agendado", "Este cupom ainda não está valendo.");
+  if (situacao === "expirado") throw new ErroDominio("cupom_expirado", "Este cupom expirou.");
   if (!cupom.tiposElegiveis.includes(tipoId)) {
-    throw new ErroDominio("cupom_tipo", "Cupom não elegível para este tipo de ingresso.");
+    throw new ErroDominio("cupom_tipo", "Este cupom não vale para o tipo de ingresso escolhido.");
   }
   return cupom;
 }
@@ -152,12 +163,12 @@ export async function confirmarInscricao(dados: DadosInscricao): Promise<Inscric
       cortesia.status = "resgatada";
       valorCentavos = 0;
     } else {
-      const lote = loteVigente(evento, tipo.id);
-      if (!lote) throw new ErroDominio("lote", "Nenhum lote vigente para este tipo de ingresso.");
-      const item = lote.itens.find((it) => it.tipoId === tipo.id)!;
-      if (ocupacaoLote(base, evento.id, lote.id, tipo.id) >= item.quantidade) {
-        throw new ErroDominio("lote_lotado", "As vagas deste lote esgotaram.");
+      const disp = disponibilidadeNaBase(base, evento, tipo.id);
+      if (!disp.disponivel) {
+        throw new ErroDominio("lote", `As inscrições deste ingresso estão indisponíveis: ${TEXTO_MOTIVO[disp.motivo]}.`);
       }
+      const lote = disp.lote;
+      const item = lote.itens.find((it) => it.tipoId === tipo.id)!;
       loteId = lote.id;
       valorCentavos = item.precoCentavos;
 
@@ -177,7 +188,7 @@ export async function confirmarInscricao(dados: DadosInscricao): Promise<Inscric
         voucherUsado = v;
       } else if (dados.codigoCupom) {
         const cupom = validarCupom(base, evento.id, dados.codigoCupom, tipo.id);
-        descontoCentavos = Math.round((valorCentavos * cupom.descontoPercentual) / 100);
+        descontoCentavos = descontoCupom(valorCentavos, cupom.descontoPercentual);
         cupom.usos += 1; // uso contabilizado somente na confirmação
         cupomId = cupom.id;
       }

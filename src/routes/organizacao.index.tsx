@@ -1,7 +1,7 @@
 import { nomeModalidade } from "@/lib/modalidades";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { selecionarEventoOrganizacao } from "@/contexts/OrganizationEventContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { carregarBase } from "@/services/db";
 import { inscricoesAtivasDoEvento } from "@/services/inscricoes";
 import { validarParaPublicacao } from "@/services/organizador";
@@ -10,10 +10,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, Modal, Selecao } from "@/components/ui";
 import { FormEvento, eventoVazio } from "@/components/FormEvento";
-import { useEventosOrg } from "@/components/organizacao";
+import { AvisoLotes, useEventosOrg } from "@/components/organizacao";
 import type { Evento } from "@/lib/domain/types";
 
 export const Route = createFileRoute("/organizacao/")({
+  // ?lotes=<eventoId> abre a edição do evento direto na seção de lotes de venda.
+  validateSearch: (s: Record<string, unknown>): { lotes?: string } =>
+    typeof s["lotes"] === "string" ? { lotes: s["lotes"] } : {},
   head: () => ({
     meta: [
       { title: "Painel da organização — MilSim Ops" },
@@ -44,6 +47,17 @@ function PainelEventos() {
   const [excluirEvt, setExcluirEvt] = useState<Evento | null>(null);
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<"todos" | Evento["status"]>("todos");
+  const [focarLotes, setFocarLotes] = useState(false);
+  const { lotes: lotesDe } = Route.useSearch();
+  useEffect(() => {
+    const e = lotesDe && eventos.find((x) => x.id === lotesDe);
+    if (e && !["cancelado", "concluido"].includes(e.status)) {
+      setForm(structuredClone(e));
+      setFocarLotes(true);
+      navigate({ to: "/organizacao", search: {}, replace: true });
+    }
+  }, [lotesDe, eventos, navigate]);
+  const configurarLotes = (e: Evento) => { setForm(structuredClone(e)); setFocarLotes(true); };
 
   if (!usuario) return null;
 
@@ -168,6 +182,9 @@ function PainelEventos() {
                     <td className="py-2 pr-3">
                       <p className="font-medium">{e.nome || "Sem nome"}</p>
                       <p className="text-xs text-muted-foreground">{e.cidade || "—"}/{e.uf} · <span className={e.modalidade ? "" : "text-warning"}>{nomeModalidade(e.modalidade)}</span></p>
+                      {!["cancelado", "concluido", "arquivado"].includes(e.status) && (
+                        <AvisoLotes evento={e} compacto onConfigurar={() => configurarLotes(e)} />
+                      )}
                     </td>
                     <td className="py-2 pr-3 whitespace-nowrap">{formatarDataBR(e.inicioEm)}</td>
                     <td className="py-2 pr-3"><Badge tom={tomStatusEvento[e.status]}>{e.status.replace("_", " ")}</Badge></td>
@@ -189,7 +206,7 @@ function PainelEventos() {
                           </Link>
                         )}
                         <Botao variante="fantasma" onClick={() => { selecionarEventoOrganizacao(e.id); navigate({ to: "/organizacao/checkin" }); }}>Abrir check-in</Botao>
-                        <Botao variante="contorno" onClick={() => setForm(structuredClone(e))} disabled={["cancelado", "concluido"].includes(e.status)}>Editar</Botao>
+                        <Botao variante="contorno" onClick={() => { setForm(structuredClone(e)); setFocarLotes(false); }} disabled={["cancelado", "concluido"].includes(e.status)}>Editar</Botao>
                         <Botao variante="perigo" onClick={() => setExcluirEvt(e)}>Excluir</Botao>
                       </div>
                     </td>
@@ -205,7 +222,7 @@ function PainelEventos() {
       </Cartao>
 
       <Modal aberto={!!form} titulo={form && eventos.some((e) => e.id === form.id) ? "Editar evento" : "Criar evento"} onFechar={() => setForm(null)}>
-        {form && <FormEvento key={form.id} inicial={form} onSalvar={aoSalvarForm} onCancelar={() => setForm(null)} />}
+        {form && <FormEvento key={form.id} inicial={form} focarLotes={focarLotes} onSalvar={aoSalvarForm} onCancelar={() => setForm(null)} />}
       </Modal>
 
       <Modal aberto={!!excluirEvt} titulo="Excluir evento" onFechar={() => setExcluirEvt(null)}>

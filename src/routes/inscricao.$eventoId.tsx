@@ -4,7 +4,8 @@ import { carregarBase } from "@/services/db";
 import { obterEventoFn } from "@/api/sessao.functions";
 import { useEventoAtual } from "@/hooks/useEventoAtual";
 import { registrarInicioInscricao } from "@/services/analytics";
-import { loteVigente, ocupacaoExercito } from "@/services/inscricoes";
+import { disponibilidadeNaBase, ocupacaoExercito } from "@/services/inscricoes";
+import { descontoCupom, TEXTO_MOTIVO } from "@/lib/vendas";
 import { confirmarInscricao, previsualizarCupom } from "@/api/inscricoes.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
@@ -61,9 +62,11 @@ function PaginaInscricao() {
   const [exercitoId, setExercitoId] = useState(cortesia?.exercitoId ?? "");
   const [cupom, setCupom] = useState("");
   const [voucherId, setVoucherId] = useState(voucherInicial ?? "");
-  const [desconto, setDesconto] = useState(0);
+  // Cupom aplicado guarda só o percentual; o desconto é recalculado a cada troca de ingresso.
+  const [cupomAplicado, setCupomAplicado] = useState<{ codigo: string; percentual: number } | null>(null);
+  const [erroCupom, setErroCupom] = useState("");
+  const [avisoCupom, setAvisoCupom] = useState("");
   const [erro, setErro] = useState("");
-  const [ok, setOk] = useState("");
   const [confirmando, setConfirmando] = useState(false);
   const emAndamento = useRef(false); // impede duplicidade por cliques repetidos
   // O servidor não conhece a sessão guardada no navegador: só após montar decidimos
@@ -76,11 +79,18 @@ function PaginaInscricao() {
     if (formularioVisivel) registrarInicioInscricao(evento.id);
   }, [formularioVisivel, evento.id]);
 
+  const tiposAtivos = evento.tipos.filter((t) => !t.arquivado);
+  const disponibilidades = new Map(tiposAtivos.map((t) => [t.id, disponibilidadeNaBase(base, evento, t.id)]));
+  const algumDisponivel = [...disponibilidades.values()].some((d) => d.disponivel);
   const tipo = evento.tipos.find((t) => t.id === tipoId);
-  const lote = tipo ? loteVigente(evento, tipo.id) : undefined;
-  const preco = cortesia
-    ? 0
-    : (lote?.itens.find((i) => i.tipoId === tipoId)?.precoCentavos ?? tipo?.precoBaseCentavos ?? 0);
+  const disp = tipo ? disponibilidades.get(tipo.id) : undefined;
+  const lote = disp?.disponivel ? disp.lote : undefined;
+  // Sem lote vigente não existe preço: nunca usamos o preço base como alternativa.
+  const preco = cortesia ? 0 : disp?.disponivel ? disp.precoCentavos : 0;
+  const desconto = cupomAplicado && !cortesia ? descontoCupom(preco, cupomAplicado.percentual) : 0;
+  const proximaAbertura = [...disponibilidades.values()]
+    .flatMap((d) => (!d.disponivel && d.motivo === "agendado" && d.inicioVendas ? [d.inicioVendas] : []))
+    .sort()[0];
 
   // Benefícios de recompensa da própria conta válidos para este evento/ingresso.
   const vouchers = base.vouchers.filter(
@@ -115,26 +125,49 @@ function PaginaInscricao() {
   }
 
   const aoAplicarCupom = async () => {
-    setErro("");
-    setOk("");
-    setDesconto(0);
+    setErroCupom("");
+    setAvisoCupom("");
+    setCupomAplicado(null);
     if (!tipo) {
-      setErro("Selecione o tipo de ingresso antes do cupom.");
+      setErroCupom("Selecione o tipo de ingresso antes do cupom.");
       return;
     }
     try {
       // Validado no servidor: os códigos de cupom nunca são enviados ao navegador.
       const c = await previsualizarCupom(evento.id, cupom, tipo.id);
-      const d = Math.round((preco * c.descontoPercentual) / 100);
-      setDesconto(d);
-      setOk(`Cupom ${c.codigo} aplicado: -${c.descontoPercentual}%.`);
+      setCupomAplicado({ codigo: c.codigo, percentual: c.descontoPercentual });
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Cupom inválido.");
+      setErroCupom(err instanceof Error ? err.message : "Não foi possível validar o cupom.");
     }
   };
 
+  const removerCupom = () => { setCupomAplicado(null); setCupom(""); setErroCupom(""); setAvisoCupom(""); };
+
+  // Troca de ingresso: revalida o cupom aplicado para o novo tipo.
+  const aoTrocarTipo = async (novo: string) => {
+    setTipoId(novo);
+    setErro("");
+    if (!cupomAplicado) return;
+    try {
+      const c = await previsualizarCupom(evento.id, cupomAplicado.codigo, novo);
+      setCupomAplicado({ codigo: c.codigo, percentual: c.descontoPercentual });
+      setAvisoCupom("");
+    } catch (err) {
+      setCupomAplicado(null);
+      setAvisoCupom(`Cupom removido do cálculo: ${err instanceof Error ? err.message : "não vale para este ingresso."}`);
+    }
+  };
+
+  const impedimento = cortesia
+    ? ""
+    : !algumDisponivel
+      ? "Inscrições indisponíveis no momento: não há lote de venda vigente para nenhum ingresso."
+      : disp && !disp.disponivel
+        ? `As inscrições deste ingresso estão indisponíveis porque ${TEXTO_MOTIVO[disp.motivo]}.`
+        : "";
+
   const aoConfirmar = async () => {
-    if (emAndamento.current) return;
+    if (emAndamento.current || impedimento) return;
     setErro("");
     if (!tipoId || !exercitoId) {
       setErro("Selecione o tipo de ingresso e o exército.");
@@ -147,7 +180,7 @@ function PaginaInscricao() {
         eventoId: evento.id,
         tipoId,
         exercitoId,
-        codigoCupom: !voucherId && desconto > 0 ? cupom : undefined,
+        codigoCupom: !voucherId && cupomAplicado ? cupomAplicado.codigo : undefined,
         cortesiaId: cortesia?.id,
         voucherId: voucherId || undefined,
       });
@@ -176,20 +209,32 @@ function PaginaInscricao() {
         )}
 
         <div className="mt-5 space-y-4">
+          {!cortesia && !algumDisponivel && (
+            <div role="status" className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">
+              <p className="font-medium">Inscrições indisponíveis no momento</p>
+              <p className="text-xs">
+                {proximaAbertura ? `As vendas abrem em ${formatarDataBR(proximaAbertura)}.` : "A organização ainda não abriu um lote de venda para esta operação."}
+              </p>
+            </div>
+          )}
+
           <Campo rotulo="1. Tipo de ingresso" htmlFor="tipo">
-            <Selecao id="tipo" value={tipoId} onChange={(e) => { setTipoId(e.target.value); setDesconto(0); }} disabled={!!cortesia}>
+            <Selecao id="tipo" value={tipoId} onChange={(e) => aoTrocarTipo(e.target.value)} disabled={!!cortesia}>
               <option value="">Selecione</option>
-              {evento.tipos.filter((t) => !t.arquivado).map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nome} — {formatarBRL(loteVigente(evento, t.id)?.itens.find((i) => i.tipoId === t.id)?.precoCentavos ?? t.precoBaseCentavos)}
-                </option>
-              ))}
+              {tiposAtivos.map((t) => {
+                const d = disponibilidades.get(t.id)!;
+                return (
+                  <option key={t.id} value={t.id} disabled={!cortesia && !d.disponivel}>
+                    {t.nome} — {cortesia ? "cortesia" : d.disponivel ? formatarBRL(d.precoCentavos) : `indisponível (${TEXTO_MOTIVO[d.motivo]}${d.motivo === "agendado" && d.inicioVendas ? `, abre em ${formatarDataBR(d.inicioVendas)}` : ""})`}
+                  </option>
+                );
+              })}
             </Selecao>
           </Campo>
 
           {tipo && !cortesia && (
             <p className="text-sm text-muted-foreground">
-              2. Lote vigente: <strong>{lote?.nome ?? "nenhum lote vigente"}</strong>
+              2. Lote vigente: <strong>{lote ? lote.nome : "nenhum lote vigente"}</strong>
             </p>
           )}
 
@@ -209,7 +254,7 @@ function PaginaInscricao() {
 
           {!cortesia && vouchers.length > 0 && (
             <Campo rotulo="Benefício de recompensa (opcional)" htmlFor="voucher">
-              <Selecao id="voucher" value={voucherId} onChange={(e) => { setVoucherId(e.target.value); setDesconto(0); setOk(""); }}>
+              <Selecao id="voucher" value={voucherId} onChange={(e) => { setVoucherId(e.target.value); setCupomAplicado(null); }}>
                 <option value="">Não usar benefício</option>
                 {vouchers.map((v) => (
                   <option key={v.id} value={v.id}>{v.beneficio.nome} — {descreverBeneficio(v.beneficio)} (até {formatarDataBR(v.beneficio.resgatarAte)})</option>
@@ -222,9 +267,20 @@ function PaginaInscricao() {
 
           {!cortesia && !voucherId && (
             <Campo rotulo="4. Cupom (opcional)" htmlFor="cupom">
-              <div className="flex gap-2">
-                <Entrada id="cupom" value={cupom} onChange={(e) => setCupom(e.target.value)} placeholder="CODIGO" />
-                <Botao type="button" variante="contorno" onClick={aoAplicarCupom}>Aplicar</Botao>
+              {cupomAplicado ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm text-success" role="status">
+                  <span>{cupomAplicado.codigo} aplicado: {cupomAplicado.percentual}% de desconto.</span>
+                  <Botao type="button" variante="fantasma" onClick={removerCupom}>Remover cupom</Botao>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Entrada id="cupom" value={cupom} onChange={(e) => { setCupom(e.target.value); setErroCupom(""); }} placeholder="CODIGO" aria-describedby="cupom-msg" />
+                  <Botao type="button" variante="contorno" onClick={aoAplicarCupom} disabled={!cupom.trim()}>Aplicar</Botao>
+                </div>
+              )}
+              <div id="cupom-msg">
+                {erroCupom && <p role="alert" className="text-sm text-destructive">{erroCupom}</p>}
+                {avisoCupom && <p role="status" className="text-sm text-warning">{avisoCupom}</p>}
               </div>
             </Campo>
           )}
@@ -232,25 +288,32 @@ function PaginaInscricao() {
           {tipo && (
             <div className="rounded-md border border-border bg-elevated p-4 text-sm">
               <p className="font-medium">5. Revisão</p>
-              <div className="mt-2 space-y-1 text-muted-foreground">
-                <p>Evento: {evento.nome}</p>
-                <p>Ingresso: {tipo.nome}{lote ? ` (${lote.nome})` : ""}</p>
-                <p>Valor original: {formatarBRL(preco)}</p>
-                {!voucherId && desconto > 0 && <p>Desconto: −{formatarBRL(desconto)}</p>}
-                {descontoVoucher > 0 && <p>Benefício de recompensa: −{formatarBRL(descontoVoucher)}</p>}
-                <p className="font-medium text-foreground">
-                  Valor final: {formatarBRL(Math.max(0, preco - (voucherId ? descontoVoucher : desconto)))}
-                  {cortesia && " (cortesia por convite)"}
-                  {desconto >= preco && preco > 0 && " (inscrição integralmente descontada)"}
-                </p>
-              </div>
+              <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-muted-foreground">
+                <dt>Evento</dt><dd className="text-right text-foreground">{evento.nome}</dd>
+                <dt>Ingresso</dt><dd className="text-right text-foreground">{tipo.nome}</dd>
+                {!cortesia && <><dt>Lote</dt><dd className="text-right text-foreground">{lote?.nome ?? "—"}</dd></>}
+                <dt>Exército</dt><dd className="text-right text-foreground">{evento.exercitos.find((x) => x.id === exercitoId)?.nome ?? "—"}</dd>
+                <dt>Valor original</dt><dd className="text-right font-mono">{impedimento ? "—" : formatarBRL(preco)}</dd>
+                {!voucherId && cupomAplicado && !impedimento && (
+                  <><dt>Cupom {cupomAplicado.codigo} ({cupomAplicado.percentual}%)</dt><dd className="text-right font-mono">−{formatarBRL(desconto)}</dd></>
+                )}
+                {descontoVoucher > 0 && <><dt>Benefício de recompensa</dt><dd className="text-right font-mono">−{formatarBRL(descontoVoucher)}</dd></>}
+                <dt className="font-medium text-foreground">Valor final</dt>
+                <dd className="text-right font-mono font-medium text-foreground">
+                  {impedimento ? "—" : formatarBRL(Math.max(0, preco - (voucherId ? descontoVoucher : desconto)))}
+                  {cortesia && " (cortesia)"}
+                </dd>
+              </dl>
+              {!impedimento && !cortesia && preco > 0 && desconto >= preco && <p className="mt-1 text-xs">Inscrição integralmente descontada.</p>}
             </div>
           )}
 
-          {ok && <p role="status" className="rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm text-success">{ok}</p>}
+          {impedimento && algumDisponivel && (
+            <p role="alert" className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">{impedimento}</p>
+          )}
           {erro && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
 
-          <Botao onClick={aoConfirmar} disabled={confirmando} className="w-full">
+          <Botao onClick={aoConfirmar} disabled={confirmando || !!impedimento} className="w-full">
             {confirmando ? "Confirmando..." : "Confirmar inscrição"}
           </Botao>
           <p className="text-center text-xs text-muted-foreground">

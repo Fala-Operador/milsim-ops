@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { useEventoOrganizacao } from "@/contexts/OrganizationEventContext";
 import { carregarBase } from "@/services/db";
-import { resumoFinanceiro } from "@/services/inscricoes";
+import { disponibilidadeNaBase, resumoFinanceiro } from "@/services/inscricoes";
+import { TEXTO_MOTIVO } from "@/lib/vendas";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { mascararCpf } from "@/lib/domain/validators";
 import { Badge, Botao, Selecao } from "@/components/ui";
@@ -165,4 +166,50 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
 /** Evento selecionado compartilhado entre as páginas da organização. */
 export function useEventoSelecionado(eventos: Evento[]) {
   return useEventoOrganizacao(eventos);
+}
+
+/**
+ * Tipos de ingresso com e sem venda aberta. Mostra o motivo de cada bloqueio e
+ * o atalho para configurar os lotes do evento correto.
+ */
+export function AvisoLotes({ evento, compacto = false, onConfigurar }: { evento: Evento; compacto?: boolean; onConfigurar: () => void }) {
+  const base = carregarBase();
+  const tipos = evento.tipos.filter((t) => !t.arquivado).map((t) => ({ t, d: disponibilidadeNaBase(base, evento, t.id) }));
+  const bloqueados = tipos.filter((x) => !x.d.disponivel);
+  if (compacto) {
+    if (bloqueados.length === 0) return null;
+    return (
+      <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-warning">
+        {bloqueados.length === tipos.length ? "Inscrições indisponíveis" : `${bloqueados.length} ingresso(s) sem venda aberta`}
+        <button type="button" onClick={onConfigurar} className="underline underline-offset-2 hover:text-foreground">Configurar lotes</button>
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-display text-base font-semibold uppercase">Disponibilidade dos ingressos</h3>
+        <Botao variante="contorno" onClick={onConfigurar}>Configurar lotes</Botao>
+      </div>
+      <ul className="space-y-1 text-sm">
+        {tipos.map(({ t, d }) => (
+          <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-elevated px-3 py-2">
+            <span>{t.nome}</span>
+            {d.disponivel ? (
+              <span className="flex items-center gap-2 text-muted-foreground">
+                {d.lote.nome} · {formatarBRL(d.precoCentavos)} · {d.restantes} vagas
+                <Badge tom="sucesso">disponível</Badge>
+              </span>
+            ) : (
+              <span className="flex items-center gap-2 text-muted-foreground">
+                {TEXTO_MOTIVO[d.motivo]}
+                {d.motivo === "agendado" && d.inicioVendas ? ` (a partir de ${formatarDataBR(d.inicioVendas)})` : ""}
+                <Badge tom="aviso">indisponível</Badge>
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
