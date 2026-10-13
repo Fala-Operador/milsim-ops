@@ -28,6 +28,7 @@ import { Route as AdminMetricasRouteImport } from './routes/admin.metricas'
 import { Route as AdminNotificacoesRouteImport } from './routes/admin.notificacoes'
 import { Route as AdminPrivacidadeRouteImport } from './routes/admin.privacidade'
 import { Route as AdminSolicitacoesRouteImport } from './routes/admin.solicitacoes'
+import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
 import { Route as AdminUsuariosRouteImport } from './routes/admin.usuarios'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppComunidadesRouteImport } from './routes/app.comunidades'
@@ -50,6 +51,7 @@ import { Route as OrganizacaoInscritosRouteImport } from './routes/organizacao.i
 import { Route as OrganizacaoMetricasRouteImport } from './routes/organizacao.metricas'
 import { Route as OrganizacaoNotificacoesRouteImport } from './routes/organizacao.notificacoes'
 import { Route as OrganizacaoRecompensasRouteImport } from './routes/organizacao.recompensas'
+import { Route as OrganizacaoSuporteRouteImport } from './routes/organizacao.suporte'
 import { Route as ComunidadeEventoIdIndexRouteImport } from './routes/comunidade.$eventoId.index'
 import { Route as ComunidadeEventoIdGerenciarRouteImport } from './routes/comunidade.$eventoId.gerenciar'
 import { Route as ComunidadeEventoIdPPostIdRouteImport } from './routes/comunidade.$eventoId.p.$postId'
@@ -147,6 +149,11 @@ const AdminPrivacidadeRoute = AdminPrivacidadeRouteImport.update({
 const AdminSolicitacoesRoute = AdminSolicitacoesRouteImport.update({
   id: '/solicitacoes',
   path: '/solicitacoes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSuporteRoute = AdminSuporteRouteImport.update({
+  id: '/suporte',
+  path: '/suporte',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminUsuariosRoute = AdminUsuariosRouteImport.update({
@@ -259,6 +266,11 @@ const OrganizacaoRecompensasRoute = OrganizacaoRecompensasRouteImport.update({
   path: '/recompensas',
   getParentRoute: () => OrganizacaoRoute,
 } as any)
+const OrganizacaoSuporteRoute = OrganizacaoSuporteRouteImport.update({
+  id: '/suporte',
+  path: '/suporte',
+  getParentRoute: () => OrganizacaoRoute,
+} as any)
 const ComunidadeEventoIdIndexRoute = ComunidadeEventoIdIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -296,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
+  '/admin/suporte': typeof AdminSuporteRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/app/comunidades': typeof AppComunidadesRoute
   '/app/ingressos': typeof AppIngressosRoute
@@ -316,6 +329,7 @@ export interface FileRoutesByFullPath {
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
   '/organizacao/recompensas': typeof OrganizacaoRecompensasRoute
+  '/organizacao/suporte': typeof OrganizacaoSuporteRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/organizacao/': typeof OrganizacaoIndexRoute
@@ -339,6 +353,7 @@ export interface FileRoutesByTo {
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
+  '/admin/suporte': typeof AdminSuporteRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/app/comunidades': typeof AppComunidadesRoute
   '/app/ingressos': typeof AppIngressosRoute
@@ -358,6 +373,7 @@ export interface FileRoutesByTo {
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
   '/organizacao/recompensas': typeof OrganizacaoRecompensasRoute
+  '/organizacao/suporte': typeof OrganizacaoSuporteRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/organizacao': typeof OrganizacaoIndexRoute
@@ -385,6 +401,7 @@ export interface FileRoutesById {
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
+  '/admin/suporte': typeof AdminSuporteRoute
   '/admin/usuarios': typeof AdminUsuariosRoute
   '/app/comunidades': typeof AppComunidadesRoute
   '/app/ingressos': typeof AppIngressosRoute
@@ -405,6 +422,7 @@ export interface FileRoutesById {
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
   '/organizacao/recompensas': typeof OrganizacaoRecompensasRoute
+  '/organizacao/suporte': typeof OrganizacaoSuporteRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/organizacao/': typeof OrganizacaoIndexRoute
@@ -433,6 +451,7 @@ export interface FileRouteTypes {
     | '/admin/notificacoes'
     | '/admin/privacidade'
     | '/admin/solicitacoes'
+    | '/admin/suporte'
     | '/admin/usuarios'
     | '/app/comunidades'
     | '/app/ingressos'
@@ -453,6 +472,7 @@ export interface FileRouteTypes {
     | '/organizacao/metricas'
     | '/organizacao/notificacoes'
     | '/organizacao/recompensas'
+    | '/organizacao/suporte'
     | '/admin/'
     | '/app/'
     | '/organizacao/'
@@ -476,6 +496,7 @@ export interface FileRouteTypes {
     | '/admin/notificacoes'
     | '/admin/privacidade'
     | '/admin/solicitacoes'
+    | '/admin/suporte'
     | '/admin/usuarios'
     | '/app/comunidades'
     | '/app/ingressos'
@@ -495,6 +516,7 @@ export interface FileRouteTypes {
     | '/organizacao/metricas'
     | '/organizacao/notificacoes'
     | '/organizacao/recompensas'
+    | '/organizacao/suporte'
     | '/admin'
     | '/app'
     | '/organizacao'
@@ -521,6 +543,7 @@ export interface FileRouteTypes {
     | '/admin/notificacoes'
     | '/admin/privacidade'
     | '/admin/solicitacoes'
+    | '/admin/suporte'
     | '/admin/usuarios'
     | '/app/comunidades'
     | '/app/ingressos'
@@ -541,6 +564,7 @@ export interface FileRouteTypes {
     | '/organizacao/metricas'
     | '/organizacao/notificacoes'
     | '/organizacao/recompensas'
+    | '/organizacao/suporte'
     | '/admin/'
     | '/app/'
     | '/organizacao/'
@@ -701,6 +725,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSolicitacoesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/suporte': {
+      id: '/admin/suporte'
+      path: '/suporte'
+      fullPath: '/admin/suporte'
+      preLoaderRoute: typeof AdminSuporteRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/usuarios': {
       id: '/admin/usuarios'
       path: '/usuarios'
@@ -855,6 +886,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizacaoRecompensasRouteImport
       parentRoute: typeof OrganizacaoRoute
     }
+    '/organizacao/suporte': {
+      id: '/organizacao/suporte'
+      path: '/suporte'
+      fullPath: '/organizacao/suporte'
+      preLoaderRoute: typeof OrganizacaoSuporteRouteImport
+      parentRoute: typeof OrganizacaoRoute
+    }
     '/comunidade/$eventoId/': {
       id: '/comunidade/$eventoId/'
       path: '/'
@@ -888,6 +926,7 @@ interface AdminRouteChildren {
   AdminNotificacoesRoute: typeof AdminNotificacoesRoute
   AdminPrivacidadeRoute: typeof AdminPrivacidadeRoute
   AdminSolicitacoesRoute: typeof AdminSolicitacoesRoute
+  AdminSuporteRoute: typeof AdminSuporteRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -901,6 +940,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminNotificacoesRoute: AdminNotificacoesRoute,
   AdminPrivacidadeRoute: AdminPrivacidadeRoute,
   AdminSolicitacoesRoute: AdminSolicitacoesRoute,
+  AdminSuporteRoute: AdminSuporteRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -941,6 +981,7 @@ interface OrganizacaoRouteChildren {
   OrganizacaoMetricasRoute: typeof OrganizacaoMetricasRoute
   OrganizacaoNotificacoesRoute: typeof OrganizacaoNotificacoesRoute
   OrganizacaoRecompensasRoute: typeof OrganizacaoRecompensasRoute
+  OrganizacaoSuporteRoute: typeof OrganizacaoSuporteRoute
   OrganizacaoIndexRoute: typeof OrganizacaoIndexRoute
 }
 
@@ -952,6 +993,7 @@ const OrganizacaoRouteChildren: OrganizacaoRouteChildren = {
   OrganizacaoMetricasRoute: OrganizacaoMetricasRoute,
   OrganizacaoNotificacoesRoute: OrganizacaoNotificacoesRoute,
   OrganizacaoRecompensasRoute: OrganizacaoRecompensasRoute,
+  OrganizacaoSuporteRoute: OrganizacaoSuporteRoute,
   OrganizacaoIndexRoute: OrganizacaoIndexRoute,
 }
 
