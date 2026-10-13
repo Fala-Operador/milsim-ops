@@ -118,6 +118,24 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
   v.parceiros = admin ? base.parceiros : base.parceiros.filter((p) => p.ativo);
   v.secoesInicio = admin ? base.secoesInicio : base.secoesInicio.filter((s) => s.status === "publicada");
 
+  // ----- Perfil do operador e gamificação -----
+  // Perfil social, equipamentos e galeria: só o dono (nem a administração recebe pela interface).
+  // Terceiros veem o perfil apenas pelo DTO filtrado de src/lib/perfilSocial.ts.
+  v.perfisOperador = base.perfisOperador.filter((p) => p.usuarioId === meuId);
+  v.equipamentos = base.equipamentos.filter((e) => e.usuarioId === meuId);
+  v.fotosPerfil = base.fotosPerfil.filter((f) => f.usuarioId === meuId);
+  v.insignias = base.insignias;
+  v.concessoesInsignia = base.concessoesInsignia.filter((c) => admin || c.usuarioId === meuId);
+  const orgCampanha = (organizacaoId: string) => eu?.perfil === "organizador" && eu.organizacaoId === organizacaoId;
+  v.campanhasRecompensa = base.campanhasRecompensa.filter((c) => admin || orgCampanha(c.organizacaoId) || c.ativa);
+  v.vouchers = base.vouchers.flatMap((x) => {
+    if (admin || x.usuarioId === meuId) return [x];
+    // Organização vê só o andamento das próprias campanhas, sem código nem pessoa.
+    if (orgCampanha(x.beneficio.organizacaoId)) return [{ ...x, codigo: "", usuarioId: "", concessaoId: "" }];
+    return [];
+  });
+  v.correcoesParticipacao = admin ? base.correcoesParticipacao : [];
+
   // ----- Usuários: completo para si, admin e gestão dos inscritos; público para autores -----
   const completos = new Set<string>([meuId]);
   for (const i of base.inscricoes) if (geridos.has(i.eventoId)) completos.add(i.usuarioId);
