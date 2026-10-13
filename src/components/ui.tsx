@@ -194,6 +194,37 @@ export function SkeletonPagina() {
   );
 }
 
+// Limite de erro de uma seção: mostra recuperação em vez de tela em branco.
+export function ErroSecao({
+  titulo = "Esta seção não carregou",
+  descricao = "Algo deu errado ao exibir este conteúdo. Tente novamente ou volte ao início.",
+  onTentar,
+}: {
+  titulo?: string;
+  descricao?: string;
+  onTentar?: () => void;
+}) {
+  return (
+    <div role="alert" className="rounded-lg border border-border bg-card p-8 text-center">
+      <h2 className="font-display text-lg font-semibold text-foreground">{titulo}</h2>
+      <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">{descricao}</p>
+      <div className="mt-5 flex flex-wrap justify-center gap-2">
+        {onTentar && (
+          <Botao variante="primario" onClick={onTentar}>
+            Tentar novamente
+          </Botao>
+        )}
+        <a
+          href="/"
+          className="inline-flex items-center justify-center rounded-md border border-border bg-transparent px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary"
+        >
+          Voltar ao início
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export function Spinner({ texto = "Carregando..." }: { texto?: string }) {
   return (
     <div className="flex items-center justify-center gap-2 p-8 text-muted-foreground" role="status">

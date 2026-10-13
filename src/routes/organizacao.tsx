@@ -1,7 +1,17 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { SkeletonPagina } from "@/components/ui";
+import { ErroSecao, SkeletonPagina } from "@/components/ui";
+import { reportLovableError } from "@/lib/lovable-error-reporting";
+import type { ErrorComponentProps } from "@tanstack/react-router";
+
+function ErroOrganizacao({ error, reset }: ErrorComponentProps) {
+  console.error(error);
+  useEffect(() => {
+    reportLovableError(error, { boundary: "organizacao_error_component" });
+  }, [error]);
+  return <ErroSecao onTentar={() => reset()} />;
+}
 import { LayoutDashboard, Users, MessagesSquare, Wallet, Bell, BarChart3, QrCode } from "lucide-react";
 import { useNotifications } from "@/contexts/NotificationContext";
 
@@ -17,6 +27,7 @@ export const Route = createFileRoute("/organizacao")({
     ],
   }),
   component: LayoutOrganizacao,
+  errorComponent: ErroOrganizacao,
 });
 
 const itens = [

@@ -2,10 +2,21 @@ import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tan
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { SkeletonPagina } from "@/components/ui";
+import { ErroSecao, SkeletonPagina } from "@/components/ui";
+import { reportLovableError } from "@/lib/lovable-error-reporting";
+import type { ErrorComponentProps } from "@tanstack/react-router";
+
+function ErroApp({ error, reset }: ErrorComponentProps) {
+  console.error(error);
+  useEffect(() => {
+    reportLovableError(error, { boundary: "app_error_component" });
+  }, [error]);
+  return <ErroSecao onTentar={() => reset()} />;
+}
 
 export const Route = createFileRoute("/app")({
   component: LayoutApp,
+  errorComponent: ErroApp,
 });
 
 const ITENS = [
