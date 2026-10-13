@@ -177,6 +177,7 @@ export interface Inscricao {
   descontoCentavos: number;
   cupomId?: string | undefined;
   cortesiaId?: string | undefined;
+  voucherId?: string | undefined;
   criadoEm: string;
   canceladoEm?: string | undefined;
   motivoCancelamento?: string | undefined;
@@ -359,6 +360,149 @@ export interface BaseDados {
   secoesInicio: SecaoInicial[];
   /** Base de referência do credenciamento (registros já aceitos pelo servidor). */
   checkins: RegistroCheckin[];
+  // ===== Perfil do operador e gamificação =====
+  perfisOperador: PerfilOperador[];
+  equipamentos: Equipamento[];
+  fotosPerfil: FotoGaleria[];
+  insignias: Insignia[];
+  concessoesInsignia: ConcessaoInsignia[];
+  campanhasRecompensa: CampanhaRecompensa[];
+  vouchers: Voucher[];
+  correcoesParticipacao: CorrecaoParticipacao[];
+}
+
+// ===== Perfil do operador =====
+export type VisibilidadeBloco = "eu" | "autenticados";
+export interface PrivacidadePerfil {
+  historico: VisibilidadeBloco;
+  mapa: VisibilidadeBloco;
+  insignias: VisibilidadeBloco;
+  equipamentos: VisibilidadeBloco;
+  fotos: VisibilidadeBloco;
+}
+/** Perfil social: só o que a pessoa decidiu mostrar (separado dos dados da conta). */
+export interface PerfilOperador {
+  usuarioId: string;
+  callsign?: string | undefined;
+  bio?: string | undefined;
+  squad?: string | undefined;
+  instagram?: string | undefined;
+  capaUrl?: string | undefined;
+  insigniaDestaque?: string | undefined;
+  privacidade: PrivacidadePerfil;
+  /** Eventos ocultados do perfil social (continuam valendo para a progressão privada). */
+  operacoesOcultas: string[];
+  introVista: boolean;
+  atualizadoEm: string;
+}
+export type TipoEquipamento = "spring" | "hpa" | "aeg" | "gbbr";
+/** Metadados da nota fiscal; o arquivo fica num armazenamento privado separado. */
+export interface MetaNotaFiscal {
+  nome: string;
+  tipo: string;
+  tamanho: number;
+  enviadaEm: string;
+}
+export interface Equipamento {
+  id: string;
+  usuarioId: string;
+  marca: string;
+  tipo: TipoEquipamento;
+  modelo: string;
+  apelido?: string | undefined;
+  observacoes?: string | undefined;
+  fotos: string[];
+  nota?: MetaNotaFiscal | undefined;
+  visivel: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+export interface FotoGaleria {
+  id: string;
+  usuarioId: string;
+  url: string;
+  legenda?: string | undefined;
+  alt?: string | undefined;
+  visivel: boolean;
+  criadoEm: string;
+}
+
+// ===== Insígnias e recompensas =====
+export type TipoCriterio = "operacoes" | "estados" | "modalidades";
+export interface CriterioInsignia {
+  tipo: TipoCriterio;
+  meta: number;
+}
+export interface Insignia {
+  id: string;
+  nome: string;
+  descricao: string;
+  icone: string; // emoji
+  criterio: CriterioInsignia;
+  /** Desativada = não concede novas (as já concedidas permanecem). */
+  ativa: boolean;
+  versao: number;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+export interface ConcessaoInsignia {
+  id: string; // `${usuarioId}:${insigniaId}`
+  usuarioId: string;
+  insigniaId: string;
+  versaoRegra: number;
+  criterio: CriterioInsignia; // regra vigente no momento da concessão
+  conquistadaEm: string;
+  revogadaEm?: string | undefined;
+  motivoRevogacao?: string | undefined;
+}
+export type TipoBeneficio = "percentual" | "fixo" | "gratuito";
+export interface CampanhaRecompensa {
+  id: string;
+  nome: string;
+  descricao: string;
+  insigniaId: string;
+  organizacaoId: string;
+  tipo: TipoBeneficio;
+  valor: number; // % (1..100) ou centavos; ignorado em "gratuito"
+  eventosElegiveis: string[];
+  tiposElegiveis: string[]; // nomes de tipo de ingresso; vazio = todos
+  maximo: number;
+  limitePorParticipante: number;
+  inicioEm: string;
+  conquistarAte: string;
+  resgatarAte: string;
+  regras: string;
+  aceitaAnteriores: boolean;
+  ativa: boolean;
+  versao: number;
+  autorizacao?: string | undefined; // referência da oferta autorizada (quando criada pela administração)
+  criadoPor: string;
+  criadoEm: string;
+}
+export type StatusVoucher = "disponivel" | "utilizada" | "expirada" | "revogada";
+export interface Voucher {
+  id: string;
+  campanhaId: string;
+  campanhaVersao: number;
+  usuarioId: string;
+  concessaoId: string;
+  codigo: string;
+  status: StatusVoucher;
+  concedidoEm: string;
+  inscricaoId?: string | undefined;
+  usadoEm?: string | undefined;
+  motivo?: string | undefined;
+  /** Uso já feito com participação depois invalidada: análise manual. */
+  ocorrencia?: string | undefined;
+}
+export interface CorrecaoParticipacao {
+  id: string;
+  usuarioId: string;
+  eventoId: string;
+  tipo: "invalidar" | "validar";
+  justificativa: string;
+  autorId: string;
+  criadoEm: string;
 }
 
 // ===== Comunidade: fóruns com feed social =====

@@ -39,6 +39,14 @@ export const TABELAS: Record<ColecaoLista, DefinicaoTabela> = {
   parceiros: { tabela: "parceiros", chave: ["id"] },
   secoesInicio: { tabela: "secoes_inicio", chave: ["id"] },
   checkins: { tabela: "checkins", chave: ["id"] },
+  perfisOperador: { tabela: "perfis_operador", chave: ["usuarioId"] },
+  equipamentos: { tabela: "equipamentos", chave: ["id"] },
+  fotosPerfil: { tabela: "fotos_perfil", chave: ["id"] },
+  insignias: { tabela: "insignias", chave: ["id"] },
+  concessoesInsignia: { tabela: "concessoes_insignia", chave: ["id"] },
+  campanhasRecompensa: { tabela: "campanhas_recompensa", chave: ["id"] },
+  vouchers: { tabela: "vouchers", chave: ["id"] },
+  correcoesParticipacao: { tabela: "correcoes_participacao", chave: ["id"] },
 };
 
 export const COLECOES = Object.keys(TABELAS) as ColecaoLista[];
