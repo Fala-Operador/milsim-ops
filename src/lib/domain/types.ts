@@ -479,6 +479,17 @@ export interface CampanhaRecompensa {
   criadoPor: string;
   criadoEm: string;
 }
+/** Condições do benefício congeladas na concessão (mudanças na campanha não alteram vouchers já emitidos). */
+export interface BeneficioVoucher {
+  nome: string;
+  organizacaoId: string;
+  tipo: TipoBeneficio;
+  valor: number;
+  eventosElegiveis: string[];
+  tiposElegiveis: string[];
+  resgatarAte: string;
+  regras: string;
+}
 export type StatusVoucher = "disponivel" | "utilizada" | "expirada" | "revogada";
 export interface Voucher {
   id: string;
@@ -486,6 +497,7 @@ export interface Voucher {
   campanhaVersao: number;
   usuarioId: string;
   concessaoId: string;
+  beneficio: BeneficioVoucher;
   codigo: string;
   status: StatusVoucher;
   concedidoEm: string;
