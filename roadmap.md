@@ -1,8 +1,9 @@
 # Roadmap
 
 ## Editor de eventos — validação
-- [ ] Testar celular e tema TAN, recortes, publicação e leitura pública; corrigir problemas encontrados.
-- [ ] Ajustar badges, proporções da tabela e filtros em Inscritos; verificar celular, larguras intermediárias e os dois temas.
+- [x] Testar celular e tema TAN, recortes, publicação e leitura pública; corrigir problemas encontrados.
+- [ ] Persistir recorte independente do banner após reabrir — bloqueado pela aplicação da migração de imagem/CEP no banco externo.
+- [x] Ajustar badges, proporções da tabela e filtros em Inscritos; verificar celular, larguras intermediárias e os dois temas (390, 820, 1024 e 1280 px; 154 testes passando).
 
 - [x] Carrosséis compartilhados sem scrollbar, com setas, indicadores, deslize e validação de overflow
 
