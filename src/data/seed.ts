@@ -3,7 +3,7 @@ import type { BaseDados } from "@/lib/domain/types";
 import { aplicarSeedComunidade, type BaseSemComunidade } from "@/data/seedComunidade";
 import { aplicarSeedDivulgacao } from "@/data/seedDivulgacao";
 
-export const VERSAO_BASE = 3;
+export const VERSAO_BASE = 4;
 export const VERSAO_TERMOS = "termos-demo-v1";
 
 // Hash demonstrativo (NÃO é segurança real — documentado no README).
@@ -142,6 +142,7 @@ function criarBaseLegada(): BaseSemComunidade {
     eventos: [
       {
         id: evSerra,
+        modalidade: "milsim",
         organizacaoId: orgId,
         nome: "Operação Serra Verde",
         descricaoResumida:
@@ -253,6 +254,7 @@ function criarBaseLegada(): BaseSemComunidade {
       },
       {
         id: evEscudo,
+        modalidade: "real_action",
         organizacaoId: orgId,
         nome: "Operação Escudo Norte",
         descricaoResumida:
@@ -342,6 +344,7 @@ function criarBaseLegada(): BaseSemComunidade {
       },
       {
         id: evTrovao,
+        modalidade: "milsim",
         organizacaoId: orgId,
         nome: "Operação Trovão 2025",
         descricaoResumida: "Edição anterior, já concluída.",
