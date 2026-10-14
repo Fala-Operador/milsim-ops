@@ -77,7 +77,8 @@ function PaginaOperador() {
         </div>
         {p.proprio && (
           <div className="flex flex-wrap gap-2 pb-1">
-            <Botao onClick={() => setEditar(true)}><Pencil className="h-4 w-4" /> Editar perfil</Botao>
+            <Link to="/app/perfil" search={{ aba: "equipamentos" }}><Botao>Gerenciar meu perfil</Botao></Link>
+            <Botao variante="contorno" onClick={() => setEditar(true)}><Pencil className="h-4 w-4" /> Editar perfil</Botao>
             <Botao variante="contorno" onClick={() => setPrivacidade(true)}><Lock className="h-4 w-4" /> Privacidade</Botao>
           </div>
         )}
