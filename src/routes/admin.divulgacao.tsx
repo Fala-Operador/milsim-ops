@@ -159,7 +159,7 @@ function secaoVazia(tipo: TipoSecao): DadosSecao {
   };
 }
 
-export function EditorAbrangencia({ valor, onMudar, rotulo }: { valor: Abrangencia; onMudar: (a: Abrangencia) => void; rotulo: string }) {
+function EditorAbrangencia({ valor, onMudar, rotulo }: { valor: Abrangencia; onMudar: (a: Abrangencia) => void; rotulo: string }) {
   return (
     <fieldset className="grid gap-2 sm:grid-cols-3">
       <legend className="mb-1 text-sm font-medium">{rotulo}</legend>
