@@ -32,8 +32,8 @@ export const Route = createFileRoute("/admin/divulgacao")({
     ],
   }),
   validateSearch: (s: Record<string, unknown>): { aba?: "secoes" | "parceiros" | "impulsionamentos" | undefined; evento?: string | undefined } => ({
-    aba: s.aba === "parceiros" || s.aba === "impulsionamentos" ? s.aba : undefined,
-    evento: typeof s.evento === "string" ? s.evento : undefined,
+    aba: s["aba"] === "parceiros" || s["aba"] === "impulsionamentos" ? s["aba"] : undefined,
+    evento: typeof s["evento"] === "string" ? s["evento"] : undefined,
   }),
   component: PaginaDivulgacao,
 });

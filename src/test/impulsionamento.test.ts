@@ -78,7 +78,7 @@ describe("impulsionamento", () => {
 
   it("visitante não recebe rascunhos nem nome interno", () => {
     base.impulsionamentos = [campanha({ id: "r", status: "rascunho" }), campanha({ id: "x" })];
-    const v = visaoParaUsuario(base, null).base;
+    const v = visaoParaUsuario(base, null);
     expect(v.impulsionamentos.map((c) => c.id)).toEqual(["x"]);
     expect(v.impulsionamentos[0]!.nome).toBe("");
   });
