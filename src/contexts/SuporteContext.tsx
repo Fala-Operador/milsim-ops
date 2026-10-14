@@ -1,11 +1,12 @@
-// Estado compartilhado do suporte: leitura por chamado (por pessoa, neste aparelho),
-// contagem de pendências e sinais entre abas. As mensagens em si ficam na visão e
-// em hooks por conversa — nunca num contexto global.
+// Estado compartilhado do suporte: leitura por chamado (gravada no servidor, valendo
+// em todos os aparelhos), contagem de pendências e sinais entre abas. As mensagens em
+// si ficam na visão e em hooks por conversa — nunca num contexto global.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { carregarBase } from "@/services/db";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { recarregarVisao } from "@/api/sessao.functions";
-import { naoLidas, pendenteDeResposta, podeAtender, responsavelId } from "@/lib/suporte";
+import { marcarLidoServidor } from "@/api/suporte.functions";
+import { lidoAteSuporte, naoLidas, pendenteDeResposta, podeAtender, responsavelId } from "@/lib/suporte";
 
 const CANAL = "milsim-suporte";
 type Lidos = Record<string, string>;
@@ -24,18 +25,15 @@ interface ValorSuporte {
 }
 
 const Ctx = createContext<ValorSuporte | null>(null);
-const chave = (uid: string) => `suporte-lido:${uid}`;
 
 export function SuporteProvider({ usuarioId, children }: { usuarioId: string | undefined; children: ReactNode }) {
-  const [lidos, setLidos] = useState<Lidos>({});
+  // Marcações otimistas: aparecem na hora e chegam ao servidor em seguida.
+  const [otimistas, setOtimistas] = useState<Lidos>({});
   const canal = useRef<BroadcastChannel | null>(null);
   const [telas, setTelas] = useState(0);
   const versao = useVersaoBase();
 
-  useEffect(() => {
-    if (!usuarioId) { setLidos({}); return; }
-    try { setLidos(JSON.parse(localStorage.getItem(chave(usuarioId)) ?? "{}")); } catch { setLidos({}); }
-  }, [usuarioId]);
+  useEffect(() => { if (!usuarioId) setOtimistas({}); }, [usuarioId]);
 
   // Sinal de outra aba: recarrega a visão autorizada pelo servidor.
   useEffect(() => {
@@ -44,15 +42,11 @@ export function SuporteProvider({ usuarioId, children }: { usuarioId: string | u
     canal.current = bc;
     let t: ReturnType<typeof setTimeout> | undefined;
     bc.onmessage = () => { clearTimeout(t); t = setTimeout(() => void recarregarVisao().catch(() => {}), 300); };
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === chave(usuarioId) && e.newValue) try { setLidos(JSON.parse(e.newValue)); } catch { /* ignora */ }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => { bc.close(); canal.current = null; clearTimeout(t); window.removeEventListener("storage", onStorage); };
+    return () => { bc.close(); canal.current = null; clearTimeout(t); };
   }, [usuarioId]);
 
   // Atualização periódica enquanto uma tela de suporte está aberta e visível
-  // (traz respostas feitas em outros aparelhos).
+  // (traz respostas e marcas de leitura feitas em outros aparelhos).
   useEffect(() => {
     if (!usuarioId || telas === 0) return;
     const id = setInterval(() => { if (document.visibilityState === "visible") void recarregarVisao().catch(() => {}); }, 15000);
@@ -61,16 +55,21 @@ export function SuporteProvider({ usuarioId, children }: { usuarioId: string | u
 
   const marcarLido = useCallback((chamadoId: string, ate: string) => {
     if (!usuarioId) return;
-    setLidos((atual) => {
-      if (atual[chamadoId] && atual[chamadoId]! >= ate) return atual;
-      const novo = { ...atual, [chamadoId]: ate };
-      try { localStorage.setItem(chave(usuarioId), JSON.stringify(novo)); } catch { /* armazenamento cheio */ }
-      return novo;
-    });
+    setOtimistas((atual) => (atual[chamadoId] && atual[chamadoId]! >= ate ? atual : { ...atual, [chamadoId]: ate }));
+    void marcarLidoServidor(chamadoId, ate).catch(() => {});
   }, [usuarioId]);
 
-  const contagens = useMemo(() => {
+  const lidos = useMemo<Lidos>(() => {
     void versao;
+    const base = carregarBase();
+    const eu = usuarioId ? base.usuarios.find((u) => u.id === usuarioId) : undefined;
+    const servidor = eu?.silencioNotificacoes?.leiturasSuporte ?? {};
+    const mesclado: Lidos = { ...servidor };
+    for (const [k, v] of Object.entries(otimistas)) if (!mesclado[k] || mesclado[k]! < v) mesclado[k] = v;
+    return mesclado;
+  }, [versao, usuarioId, otimistas]);
+
+  const contagens = useMemo(() => {
     if (!usuarioId) return { p: 0, e: 0 };
     const base = carregarBase();
     const eu = base.usuarios.find((u) => u.id === usuarioId) ?? null;
@@ -83,7 +82,7 @@ export function SuporteProvider({ usuarioId, children }: { usuarioId: string | u
       if (n > 0 || semDono || (pendenteDeResposta(c) && (!responsavelId(c) || responsavelId(c) === usuarioId))) e++;
     }
     return { p, e };
-  }, [versao, usuarioId, lidos]);
+  }, [usuarioId, lidos]);
 
   const valor = useMemo<ValorSuporte>(() => ({
     lidoAte: (id) => lidos[id],
