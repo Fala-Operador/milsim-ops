@@ -47,10 +47,14 @@ export function SuporteProvider({ usuarioId, children }: { usuarioId: string | u
 
   // Atualização periódica enquanto uma tela de suporte está aberta e visível
   // (traz respostas e marcas de leitura feitas em outros aparelhos).
+  // Fora do suporte, intervalo maior só para manter o contador do menu correto.
   useEffect(() => {
-    if (!usuarioId || telas === 0) return;
-    const id = setInterval(() => { if (document.visibilityState === "visible") void recarregarVisao().catch(() => {}); }, 15000);
-    return () => clearInterval(id);
+    if (!usuarioId) return;
+    const atualizar = () => { if (document.visibilityState === "visible") void recarregarVisao().catch(() => {}); };
+    const id = setInterval(atualizar, telas > 0 ? 15000 : 45000);
+    // Ao voltar para a aba, traz leituras e respostas feitas em outros aparelhos.
+    document.addEventListener("visibilitychange", atualizar);
+    return () => { clearInterval(id); document.removeEventListener("visibilitychange", atualizar); };
   }, [usuarioId, telas]);
 
   const marcarLido = useCallback((chamadoId: string, ate: string) => {

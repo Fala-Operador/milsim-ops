@@ -2,6 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tan
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
+import { useSuporte } from "@/contexts/SuporteContext";
 import { ErroSecao, SkeletonPagina } from "@/components/ui";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
 import type { ErrorComponentProps } from "@tanstack/react-router";
@@ -33,6 +34,7 @@ const ITENS = [
 function LayoutApp() {
   const { usuario, autenticado } = useAuth();
   const { naoLidas } = useNotifications();
+  const { naoLidasParticipante } = useSuporte();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   // O servidor não conhece a sessão guardada no navegador: mantém o esqueleto até
@@ -64,6 +66,11 @@ function LayoutApp() {
               {item.to === "/app/notificacoes" && naoLidas > 0 && (
                 <span className="ml-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
                   {naoLidas}
+                </span>
+              )}
+              {item.to === "/app/suporte" && naoLidasParticipante > 0 && (
+                <span data-testid="contador-suporte" aria-label={`${naoLidasParticipante} chamados com resposta não lida`} className="ml-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                  {naoLidasParticipante}
                 </span>
               )}
             </Link>
