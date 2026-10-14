@@ -49,6 +49,27 @@ describe("participação", () => {
   });
 });
 
+describe("status Participando / Participou", () => {
+  it("inscrição confirmada em evento não finalizado é Participando e não conta", () => {
+    base.eventos.find((e) => e.id === "evt-trovao")!.status = "publicado";
+    const p = participacoesDoUsuario(base, PART).find((x) => x.eventoId === "evt-trovao");
+    expect(p?.estado).toBe("participando");
+    expect(resumir(participacoesDoUsuario(base, PART)).estados).toEqual([]);
+  });
+  it("evento finalizado com check-in válido é Participou", () => {
+    base.checkins.push(entrada("c1", "ins-hist-1", "evt-trovao"));
+    expect(participacoesDoUsuario(base, PART).find((x) => x.eventoId === "evt-trovao")?.estado).toBe("participou");
+  });
+  it("evento finalizado sem presença não aparece", () => {
+    expect(participacoesDoUsuario(base, PART).find((x) => x.eventoId === "evt-trovao")).toBeUndefined();
+  });
+  it("inscrição cancelada não aparece como Participando", () => {
+    base.eventos.find((e) => e.id === "evt-trovao")!.status = "publicado";
+    base.inscricoes.find((i) => i.id === "ins-hist-1")!.status = "cancelada";
+    expect(participacoesDoUsuario(base, PART)).toHaveLength(0);
+  });
+});
+
 describe("insígnias e vouchers", () => {
   beforeEach(() => {
     base.checkins.push(entrada("c1", "ins-hist-1", "evt-trovao"));
