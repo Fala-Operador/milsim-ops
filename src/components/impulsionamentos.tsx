@@ -1,0 +1,309 @@
+// Administração → Página inicial e divulgação → Impulsionamentos.
+import { useState } from "react";
+import type { Abrangencia, BaseDados, Impulsionamento } from "@/lib/domain/types";
+import { POSICAO_LISTAGEM } from "@/lib/domain/types";
+import { NACIONAL, REGIOES, UF_REGIAO, esgotado, rotuloAbrangencia } from "@/lib/divulgacao";
+import {
+  ROTULO_OBJETIVO, ROTULO_STATUS_IMPULSIONAMENTO, pendenciasAtivacao, rotuloPosicao, secoesCompativeis,
+  sobreposicoes, statusExibido, type StatusExibidoImpulsionamento,
+} from "@/lib/impulsionamento";
+import { alterarImpulsionamento, salvarImpulsionamento } from "@/api/impulsionamentos.functions";
+import type { AcaoImpulsionamento, DadosImpulsionamento } from "@/services/impulsionamentos";
+import { CartaoEvento } from "@/components/divulgacao";
+import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, EstadoVazio, Modal, Selecao } from "@/components/ui";
+import { formatarDataBR } from "@/lib/domain/money";
+
+const UFS = Object.keys(UF_REGIAO).sort();
+const FUSO = "America/Sao_Paulo";
+const paraLocal = (iso?: string) => (iso ? new Date(new Date(iso).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "");
+const deLocal = (v: string) => (v ? new Date(v).toISOString() : "");
+
+const TOM: Record<StatusExibidoImpulsionamento, "padrao" | "sucesso" | "aviso" | "perigo" | "destaque"> = {
+  rascunho: "padrao", agendado: "destaque", ativo: "sucesso", pausado: "aviso", pausado_esgotado: "aviso", encerrado: "padrao", suspenso: "perigo",
+};
+
+export function StatusImpulsionamento({ s }: { s: StatusExibidoImpulsionamento }) {
+  return <Badge tom={TOM[s]}>{ROTULO_STATUS_IMPULSIONAMENTO[s]}</Badge>;
+}
+
+function vazio(eventoId = ""): DadosImpulsionamento {
+  const inicio = new Date();
+  const fim = new Date(inicio.getTime() + 7 * 86400000);
+  return {
+    eventoId, nome: "", objetivo: "divulgacao", posicoes: [], abrangencia: NACIONAL,
+    inicioEm: inicio.toISOString(), fimEm: fim.toISOString(), fuso: FUSO, prioridade: "normal", ordem: 0, ativar: false,
+  };
+}
+
+function deCampanha(c: Impulsionamento): DadosImpulsionamento {
+  const { status: _s, criadoPor: _c, criadoEm: _e, atualizadoEm: _a, ...resto } = c;
+  return { ...resto, ativar: false };
+}
+
+export function GestaoImpulsionamentos({ base, eventoInicial, irParaSecoes }: { base: BaseDados; eventoInicial?: string | undefined; irParaSecoes: () => void }) {
+  const [editando, setEditando] = useState<DadosImpulsionamento | null>(() => (eventoInicial ? vazio(eventoInicial) : null));
+  const [erro, setErro] = useState("");
+  const [ocupado, setOcupado] = useState<string | null>(null);
+  const agora = new Date();
+  const lista = base.impulsionamentos.slice().sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+  const nomeEvento = (id: string) => base.eventos.find((e) => e.id === id)?.nome ?? "Operação removida";
+
+  const agir = async (c: Impulsionamento, acao: AcaoImpulsionamento) => {
+    setErro(""); setOcupado(c.id);
+    try { await alterarImpulsionamento(c.id, acao); } catch (e) { setErro((e as Error).message); } finally { setOcupado(null); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          Campanhas concedidas pela administração. Aparecem sozinhas nas seções escolhidas, antes da curadoria editorial,
+          ordenadas por prioridade e ordem; cada operação aparece uma vez por seção.
+        </p>
+        <Botao type="button" onClick={() => setEditando(vazio())}>Impulsionar operação</Botao>
+      </div>
+      {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
+      {lista.length === 0 ? (
+        <EstadoVazio titulo="Nenhum impulsionamento" descricao="Use “Impulsionar operação” para criar a primeira campanha." />
+      ) : (
+        <Cartao className="overflow-x-auto p-0">
+          <table className="w-full min-w-[900px] text-sm">
+            <thead className="text-left text-xs uppercase text-muted-foreground">
+              <tr>{["Operação", "Campanha", "Posições", "Abrangência", "Período", "Prioridade", "Status", "Ações"].map((h) => <th key={h} className="px-3 py-2">{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {lista.map((c) => {
+                const st = statusExibido(base, c, agora);
+                const dup = sobreposicoes(base, c).length > 0;
+                return (
+                  <tr key={c.id} className="border-t border-border align-top">
+                    <td className="px-3 py-2 font-medium">{nomeEvento(c.eventoId)}</td>
+                    <td className="px-3 py-2">{c.nome}<div className="text-xs text-muted-foreground">{ROTULO_OBJETIVO[c.objetivo]}</div></td>
+                    <td className="px-3 py-2">{c.posicoes.map((p) => rotuloPosicao(base, p)).join(", ")}</td>
+                    <td className="px-3 py-2">{rotuloAbrangencia(c.abrangencia)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{formatarDataBR(c.inicioEm)} → {formatarDataBR(c.fimEm)}</td>
+                    <td className="px-3 py-2">{c.prioridade === "alta" ? "Alta" : "Normal"}{c.ordem ? ` · ordem ${c.ordem}` : ""}</td>
+                    <td className="px-3 py-2"><StatusImpulsionamento s={st} />{dup && <div className="mt-1 text-xs text-warning">Sobrepõe outra campanha da mesma operação</div>}</td>
+                    <td className="px-3 py-2">
+                      <div className="flex flex-wrap gap-1">
+                        {c.status !== "encerrado" && <Botao type="button" variante="contorno" onClick={() => setEditando(deCampanha(c))}>Editar</Botao>}
+                        {(st === "ativo" || st === "agendado" || st === "pausado_esgotado") && <Botao type="button" variante="contorno" disabled={ocupado === c.id} onClick={() => void agir(c, "pausar")}>Pausar</Botao>}
+                        {(st === "pausado" || st === "suspenso") && <Botao type="button" variante="contorno" disabled={ocupado === c.id} onClick={() => void agir(c, "retomar")}>Retomar</Botao>}
+                        {st !== "encerrado" && st !== "rascunho" && <Botao type="button" variante="fantasma" disabled={ocupado === c.id} onClick={() => void agir(c, "encerrar")}>Encerrar</Botao>}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </Cartao>
+      )}
+      {editando && <EditorImpulsionamento base={base} inicial={editando} onFechar={() => setEditando(null)} irParaSecoes={() => { irParaSecoes(); }} />}
+    </div>
+  );
+}
+
+const ETAPAS = ["Operação e objetivo", "Onde divulgar", "Abrangência", "Período e prioridade", "Apresentação", "Revisão"] as const;
+
+function EditorImpulsionamento({ base, inicial, onFechar, irParaSecoes }: { base: BaseDados; inicial: DadosImpulsionamento; onFechar: () => void; irParaSecoes: () => void }) {
+  const [d, setD] = useState(inicial);
+  const [etapa, setEtapa] = useState(0);
+  const [erro, setErro] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const set = (p: Partial<DadosImpulsionamento>) => setD((x) => ({ ...x, ...p }));
+  const agora = new Date();
+  const evento = base.eventos.find((e) => e.id === d.eventoId);
+  const elegiveis = base.eventos.filter((e) => e.status === "publicado" && new Date(e.fimEm) > agora);
+  const secoes = secoesCompativeis(base);
+  const pendencias = pendenciasAtivacao(base, d, agora);
+  const sobrepostas = d.inicioEm && d.fimEm ? sobreposicoes(base, { id: d.id ?? "", ...d }) : [];
+  const agendar = new Date(d.inicioEm) > agora;
+
+  const salvar = async (ativar: boolean) => {
+    setErro(""); setSalvando(true);
+    try {
+      const { imagemPromocional, chamada, ...resto } = d;
+      await salvarImpulsionamento({
+        ...resto, ativar,
+        ...(imagemPromocional?.trim() ? { imagemPromocional: imagemPromocional.trim() } : {}),
+        ...(chamada?.trim() ? { chamada: chamada.trim() } : {}),
+      });
+      onFechar();
+    } catch (e) { setErro((e as Error).message); } finally { setSalvando(false); }
+  };
+  const alternar = (p: string) => set({ posicoes: d.posicoes.includes(p) ? d.posicoes.filter((x) => x !== p) : [...d.posicoes, p] });
+
+  return (
+    <Modal aberto largo titulo={d.id ? "Editar impulsionamento" : "Impulsionar operação"} onFechar={onFechar}>
+      <ol className="mb-4 flex flex-wrap gap-1" aria-label="Etapas">
+        {ETAPAS.map((t, i) => (
+          <li key={t}><Botao type="button" variante={i === etapa ? "primario" : "contorno"} aria-current={i === etapa ? "step" : undefined} onClick={() => setEtapa(i)}>{i + 1}. {t}</Botao></li>
+        ))}
+      </ol>
+
+      <div className="space-y-4">
+        {etapa === 0 && (
+          <>
+            <Campo rotulo="Operação" htmlFor="imp-evento">
+              <Selecao id="imp-evento" value={d.eventoId} onChange={(e) => set({ eventoId: e.target.value })}>
+                <option value="">Selecione…</option>
+                {elegiveis.map((e) => <option key={e.id} value={e.id}>{e.nome} — {e.cidade}/{e.uf}</option>)}
+                {evento && !elegiveis.includes(evento) && <option value={evento.id}>{evento.nome} (indisponível)</option>}
+              </Selecao>
+            </Campo>
+            <Campo rotulo="Nome interno da campanha" htmlFor="imp-nome">
+              <Entrada id="imp-nome" value={d.nome} maxLength={120} onChange={(e) => set({ nome: e.target.value })} placeholder="Ex.: Lançamento Serra Verde — Sudeste" />
+            </Campo>
+            <fieldset>
+              <legend className="mb-1 text-sm font-medium">Objetivo</legend>
+              {(["divulgacao", "inscricoes"] as const).map((o) => (
+                <label key={o} className="mr-4 inline-flex items-center gap-2 text-sm">
+                  <input type="radio" name="imp-objetivo" checked={d.objetivo === o} onChange={() => set({ objetivo: o })} /> {ROTULO_OBJETIVO[o]}
+                </label>
+              ))}
+              <p className="mt-1 text-xs text-muted-foreground">Promover inscrições pausa sozinho quando a operação esgota; divulgação continua exibindo “Esgotado”.</p>
+            </fieldset>
+          </>
+        )}
+
+        {etapa === 1 && (
+          <fieldset className="space-y-2">
+            <legend className="mb-1 text-sm font-medium">Locais de divulgação</legend>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={d.posicoes.includes(POSICAO_LISTAGEM)} onChange={() => alternar(POSICAO_LISTAGEM)} />
+              Listagem de eventos — bloco “Operações em destaque”
+            </label>
+            {secoes.map((s) => (
+              <label key={s.id} className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={d.posicoes.includes(s.id)} onChange={() => alternar(s.id)} />
+                Página inicial — {s.titulo} <span className="text-xs text-muted-foreground">({rotuloAbrangencia(s.abrangencia)}{s.status === "rascunho" ? ", rascunho" : ""})</span>
+              </label>
+            ))}
+            {secoes.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Não há seção de eventos disponível na página inicial.{" "}
+                <button type="button" className="underline" onClick={() => { onFechar(); irParaSecoes(); }}>Criar seção</button>{" "}
+                (salve este impulsionamento como rascunho antes, para não perdê-lo).
+              </p>
+            )}
+          </fieldset>
+        )}
+
+        {etapa === 2 && (
+          <>
+            <EditorAbrangencia valor={d.abrangencia} onMudar={(a) => set({ abrangencia: a })} />
+            <p className="text-xs text-muted-foreground">Define onde a campanha é exibida. A localização real da operação não muda e continua visível no card.</p>
+          </>
+        )}
+
+        {etapa === 3 && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Campo rotulo="Início" htmlFor="imp-ini"><Entrada id="imp-ini" type="datetime-local" value={paraLocal(d.inicioEm)} onChange={(e) => set({ inicioEm: deLocal(e.target.value) })} /></Campo>
+            <Campo rotulo="Término" htmlFor="imp-fim"><Entrada id="imp-fim" type="datetime-local" value={paraLocal(d.fimEm)} onChange={(e) => set({ fimEm: deLocal(e.target.value) })} /></Campo>
+            <p className="text-xs text-muted-foreground sm:col-span-2">Horários no fuso de Brasília (America/Sao_Paulo).{evento && ` A operação termina em ${formatarDataBR(evento.fimEm)}.`}</p>
+            <Campo rotulo="Prioridade" htmlFor="imp-pri">
+              <Selecao id="imp-pri" value={d.prioridade} onChange={(e) => set({ prioridade: e.target.value as DadosImpulsionamento["prioridade"] })}>
+                <option value="normal">Normal</option><option value="alta">Alta</option>
+              </Selecao>
+            </Campo>
+            <Campo rotulo="Ordem na seção (0 = sem preferência)" htmlFor="imp-ordem">
+              <Entrada id="imp-ordem" type="number" min={0} max={999} value={d.ordem} onChange={(e) => set({ ordem: Math.max(0, Math.min(999, Number(e.target.value) || 0)) })} />
+            </Campo>
+          </div>
+        )}
+
+        {etapa === 4 && (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-3">
+              <Campo rotulo="Imagem promocional (opcional, endereço https)" htmlFor="imp-img">
+                <Entrada id="imp-img" value={d.imagemPromocional ?? ""} onChange={(e) => set({ imagemPromocional: e.target.value })} placeholder="Vazio = imagem da operação" />
+              </Campo>
+              <Campo rotulo="Chamada curta (opcional)" htmlFor="imp-cham">
+                <AreaTexto id="imp-cham" maxLength={120} value={d.chamada ?? ""} onChange={(e) => set({ chamada: e.target.value })} />
+              </Campo>
+            </div>
+            <Previa base={base} d={d} />
+          </div>
+        )}
+
+        {etapa === 5 && (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <dl className="space-y-2 text-sm">
+              <div><dt className="text-muted-foreground">Operação</dt><dd>{evento?.nome ?? "—"}</dd></div>
+              <div><dt className="text-muted-foreground">Locais</dt><dd>{d.posicoes.map((p) => rotuloPosicao(base, p)).join(", ") || "—"}</dd></div>
+              <div><dt className="text-muted-foreground">Abrangência</dt><dd>{rotuloAbrangencia(d.abrangencia)}</dd></div>
+              <div><dt className="text-muted-foreground">Período</dt><dd>{formatarDataBR(d.inicioEm)} → {formatarDataBR(d.fimEm)} (Brasília)</dd></div>
+              <div><dt className="text-muted-foreground">Prioridade</dt><dd>{d.prioridade === "alta" ? "Alta" : "Normal"}</dd></div>
+              {pendencias.length > 0 && (
+                <div role="alert" className="rounded border border-destructive/50 p-2">
+                  <dt className="font-medium">Antes de ativar</dt>
+                  {pendencias.map((p) => <dd key={p}>• {p}</dd>)}
+                </div>
+              )}
+              {sobrepostas.length > 0 && <p className="text-warning">Há {sobrepostas.length} campanha(s) da mesma operação no mesmo período e local. O card aparece uma vez só.</p>}
+            </dl>
+            <Previa base={base} d={d} />
+          </div>
+        )}
+      </div>
+
+      {erro && <p role="alert" className="mt-3 text-sm text-destructive">{erro}</p>}
+      <div className="mt-6 flex flex-wrap justify-between gap-2">
+        <div className="flex gap-2">
+          <Botao type="button" variante="contorno" disabled={etapa === 0} onClick={() => setEtapa((x) => x - 1)}>Voltar</Botao>
+          {etapa < ETAPAS.length - 1 && <Botao type="button" variante="contorno" onClick={() => setEtapa((x) => x + 1)}>Avançar</Botao>}
+        </div>
+        <div className="flex gap-2">
+          <Botao type="button" variante="secundario" disabled={salvando || !d.eventoId} onClick={() => void salvar(false)}>Salvar rascunho</Botao>
+          {etapa === ETAPAS.length - 1 && (
+            <Botao type="button" disabled={salvando || pendencias.length > 0} onClick={() => void salvar(true)}>
+              {agendar ? "Agendar impulsionamento" : "Ativar impulsionamento"}
+            </Botao>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function Previa({ base, d }: { base: BaseDados; d: DadosImpulsionamento }) {
+  const e = base.eventos.find((x) => x.id === d.eventoId);
+  if (!e) return <p className="text-sm text-muted-foreground">Selecione a operação para ver a prévia.</p>;
+  return (
+    <div>
+      <p className="mb-2 text-xs uppercase text-muted-foreground">Prévia do card</p>
+      <div className="w-72 max-w-full">
+        <CartaoEvento c={{ evento: e, esgotado: esgotado(base, e), chamada: d.chamada, imagem: d.imagemPromocional?.trim() || e.imagemUrl, campanhaId: "previa" }} />
+      </div>
+    </div>
+  );
+}
+
+function EditorAbrangencia({ valor, onMudar }: { valor: Abrangencia; onMudar: (a: Abrangencia) => void }) {
+  return (
+    <fieldset className="grid gap-2 sm:grid-cols-3">
+      <legend className="mb-1 text-sm font-medium">Onde exibir</legend>
+      <Selecao aria-label="Escopo" value={valor.escopo} onChange={(e) => {
+        const escopo = e.target.value as Abrangencia["escopo"];
+        onMudar(escopo === "nacional" ? NACIONAL : escopo === "regiao" ? { escopo, regiao: "Sudeste" } : { escopo, uf: "SP", cidade: escopo === "cidade" ? "São Paulo" : undefined });
+      }}>
+        <option value="nacional">Todo o Brasil</option><option value="regiao">Região</option>
+        <option value="estado">Estado</option><option value="cidade">Cidade</option>
+      </Selecao>
+      {valor.escopo === "regiao" && (
+        <Selecao aria-label="Região" value={valor.regiao} onChange={(e) => onMudar({ escopo: "regiao", regiao: e.target.value as Abrangencia["regiao"] })}>
+          {REGIOES.map((r) => <option key={r}>{r}</option>)}
+        </Selecao>
+      )}
+      {(valor.escopo === "estado" || valor.escopo === "cidade") && (
+        <Selecao aria-label="Estado" value={valor.uf} onChange={(e) => onMudar({ ...valor, uf: e.target.value })}>
+          {UFS.map((u) => <option key={u}>{u}</option>)}
+        </Selecao>
+      )}
+      {valor.escopo === "cidade" && (
+        <Entrada aria-label="Cidade" value={valor.cidade ?? ""} onChange={(e) => onMudar({ ...valor, cidade: e.target.value })} placeholder="Cidade" />
+      )}
+    </fieldset>
+  );
+}

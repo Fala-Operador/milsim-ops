@@ -71,9 +71,16 @@ function Dashboard() {
                       <td className="py-2 pr-3">{inscritas}/{ev.capacidadeTotal}</td>
                       <td className="py-2 pr-3">{formatarBRL(receita)}</td>
                       <td className="py-2">
-                        <Link to="/eventos/$eventoId" params={{ eventoId: ev.id }}>
-                          <Botao variante="contorno">Ver</Botao>
-                        </Link>
+                        <div className="flex flex-wrap gap-2">
+                          <Link to="/eventos/$eventoId" params={{ eventoId: ev.id }}>
+                            <Botao variante="contorno">Ver</Botao>
+                          </Link>
+                          {ev.status === "publicado" && (
+                            <Link to="/admin/divulgacao" search={{ aba: "impulsionamentos", evento: ev.id }}>
+                              <Botao variante="contorno">Impulsionar operação</Botao>
+                            </Link>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

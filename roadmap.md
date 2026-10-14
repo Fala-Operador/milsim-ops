@@ -31,3 +31,8 @@
 ## Perfil do Operador
 - [x] Perfil, histórico, mapa, insígnias, privacidade, equipamentos, notas fiscais privadas, galeria, recompensas, admin e organização
 - [ ] Conferir no navegador (computador/celular, dois temas) — bloqueado: chaves do banco precisam ser salvas nos segredos
+
+## Impulsionamento de operações
+- [x] Parte 1: cadastro, elegibilidade, estados, exibição automática nas seções e na listagem, botão na lista de eventos
+- [ ] Executar SQL docs/migracoes/20261014140000_impulsionamentos.sql no banco (bloqueado: sem acesso SQL; banco fora do ar)
+- [ ] Parte 2: métricas por campanha, bloco "Divulgação da operação" do organizador, prévia com diagnóstico
