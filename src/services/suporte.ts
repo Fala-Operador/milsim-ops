@@ -3,7 +3,7 @@
 import { mutarBase, ErroDominio, gerarId } from "./db";
 import { silenciado } from "./notificacoes";
 import {
-  podeAtender, podeVer, protocolo, statusAposMensagem, transicao, responsavelId, LIMITE_MENSAGEM, CATEGORIAS_SUPORTE,
+  podeAtender, podeVer, protocolo, statusAposMensagem, transicao, responsavelId, registrarLeitura, LIMITE_MENSAGEM, CATEGORIAS_SUPORTE,
   type AcaoStatus,
 } from "@/lib/suporte";
 import type { AnexoChamado, BaseDados, Chamado, MensagemChamado, StatusChamado, Usuario } from "@/lib/domain/types";
@@ -130,6 +130,15 @@ export function enviarMensagem(u: Usuario, chamadoId: string, clienteId: string,
       notificar(b, [c.solicitanteId], u.id, "Resposta do suporte", `Protocolo ${protocolo(c)}.`, c.id);
     }
     return m;
+  });
+}
+
+/** Marca até onde a pessoa leu um chamado (persistido no servidor: vale em todos os aparelhos). */
+export function marcarChamadoLido(u: Usuario, chamadoId: string, ate: string): void {
+  mutarBase((b) => {
+    obterChamado(b, u, chamadoId);
+    const eu = b.usuarios.find((x) => x.id === u.id);
+    if (eu) registrarLeitura(eu, chamadoId, ate);
   });
 }
 

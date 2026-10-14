@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { podeVer, podeAtender, statusAposMensagem, transicao, responsavelId, protocolo } from "@/lib/suporte";
+import { podeVer, podeAtender, statusAposMensagem, transicao, responsavelId, protocolo, registrarLeitura, lidoAteSuporte } from "@/lib/suporte";
 import type { BaseDados, Chamado, Usuario } from "@/lib/domain/types";
 
 const u = (id: string, perfil: Usuario["perfil"], organizacaoId?: string) => ({ id, perfil, organizacaoId, ativo: true }) as Usuario;
@@ -49,5 +49,28 @@ describe("status do chamado", () => {
     ] });
     expect(responsavelId(c)).toBe("b");
     expect(protocolo(c)).toBe("SUP-20261013-123DEF");
+  });
+});
+
+describe("leitura persistida no servidor", () => {
+  it("marca avança, nunca retrocede, e fica no cadastro do usuário", () => {
+    const usuario = u("p1", "participante");
+    registrarLeitura(usuario, "cha-1", "2026-10-13T10:00:00Z");
+    registrarLeitura(usuario, "cha-1", "2026-10-13T09:00:00Z"); // mais antiga: ignora
+    registrarLeitura(usuario, "cha-1", "2026-10-13T11:00:00Z");
+    expect(lidoAteSuporte(usuario, "cha-1")).toBe("2026-10-13T11:00:00Z");
+    expect(lidoAteSuporte(usuario, "cha-2")).toBeUndefined();
+  });
+  it("preserva as preferências de silêncio ao gravar leituras", () => {
+    const usuario = u("p1", "participante");
+    usuario.silencioNotificacoes = { todas: true };
+    registrarLeitura(usuario, "cha-1", "2026-10-13T10:00:00Z");
+    expect(usuario.silencioNotificacoes?.todas).toBe(true);
+    expect(lidoAteSuporte(usuario, "cha-1")).toBe("2026-10-13T10:00:00Z");
+  });
+  it("limita o histórico de leituras", () => {
+    const usuario = u("p1", "participante");
+    for (let i = 0; i < 250; i++) registrarLeitura(usuario, `cha-${i}`, `2026-10-13T10:${String(i % 60).padStart(2, "0")}:00Z`);
+    expect(Object.keys(usuario.silencioNotificacoes?.leiturasSuporte ?? {}).length).toBe(200);
   });
 });

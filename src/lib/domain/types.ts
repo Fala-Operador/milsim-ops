@@ -25,7 +25,7 @@ export interface Usuario {
   squad?: string | undefined;
   fotoUrl?: string | undefined;
   nomeExibicao?: string | undefined; // usado na comunidade
-  silencioNotificacoes?: { todas?: boolean; comunidade?: boolean } | undefined;
+  silencioNotificacoes?: { todas?: boolean; comunidade?: boolean; leiturasSuporte?: Record<string, string> | undefined } | undefined;
   /** Aparência escolhida pela conta; ausente = escuro. */
   tema?: "dark" | "light" | undefined;
   /** Modalidades favoritas declaradas pela conta (nunca expostas nominalmente). */
