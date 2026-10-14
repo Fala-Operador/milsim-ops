@@ -6,9 +6,11 @@ import { carregarBase } from "@/services/db";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { useSuporte } from "@/contexts/SuporteContext";
 import { alterarStatusChamado, assumirChamado } from "@/api/suporte.functions";
+import { PainelEncaminhamento } from "./PainelEncaminhamento";
 import {
   ROTULO_STATUS, CATEGORIAS_SUPORTE, ativo, naoLidas, ordenarParaAtendimento, pendenteDeResposta, podeAtender, protocolo,
   responsavelId, solucao, tipoDoChamado, ultimaAtividade, ultimaMensagem, vinculadoA, type AcaoStatus,
+  ROTULO_STATUS_EXIBIDO, statusExibido, retornoRecebido, encaminhamentos, canalDe, type StatusExibido,
 } from "@/lib/suporte";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import type { BaseDados, Chamado, StatusChamado, Usuario } from "@/lib/domain/types";
@@ -16,13 +18,23 @@ import { AreaTexto, Badge, Botao, EstadoVazio, Selecao } from "@/components/ui";
 import { Conversa } from "./Conversa";
 import { NovoChamado } from "./NovoChamado";
 
-const TOM: Record<StatusChamado, "padrao" | "sucesso" | "aviso" | "destaque"> = {
-  aberto: "destaque", em_atendimento: "aviso", aguardando_participante: "padrao", resolvido: "sucesso", fechado: "padrao",
+const TOM: Record<StatusExibido, "padrao" | "sucesso" | "aviso" | "destaque"> = {
+  aberto: "destaque", em_atendimento: "aviso", aguardando_participante: "padrao", aguardando_organizador: "padrao", resolvido: "sucesso", fechado: "padrao",
 };
 const nome = (u: Usuario | undefined) => (u ? u.nomeExibicao || u.nomeCompleto : "—");
 
-export function StatusChamadoBadge({ s }: { s: StatusChamado }) {
-  return <Badge tom={TOM[s]}>{ROTULO_STATUS[s]}</Badge>;
+export function StatusChamadoBadge({ s }: { s: StatusExibido }) {
+  return <Badge tom={TOM[s]}>{ROTULO_STATUS_EXIBIDO[s]}</Badge>;
+}
+
+/** Mesma mensagem para inexistente e sem acesso: não revela nada restrito. */
+export function Indisponivel({ onVoltar }: { onVoltar: () => void }) {
+  return (
+    <div className="space-y-3">
+      <EstadoVazio titulo="Esta solicitação não está disponível para sua conta." descricao="Ela pode ter sido removida ou pertencer a outra pessoa." />
+      <Botao type="button" variante="contorno" onClick={onVoltar}>Voltar para meus atendimentos</Botao>
+    </div>
+  );
 }
 
 interface Props {
@@ -47,14 +59,14 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
   useEffect(() => { setDetalhes(window.matchMedia("(min-width: 1024px)").matches); }, []);
 
   const meus = useMemo(() => base.chamados.filter((c) =>
-    modo === "participante" ? c.solicitanteId === usuario.id : c.solicitanteId !== usuario.id && podeAtender(base, usuario, c)), [base, modo, usuario]);
+    modo === "participante" ? c.solicitanteId === usuario.id : podeAtender(base, usuario, c)), [base, modo, usuario]);
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     return meus.filter((c) => {
       if (filtro.evento && (filtro.evento === "plataforma" ? !!c.eventoId : c.eventoId !== filtro.evento)) return false;
       if (filtro.categoria && c.categoria !== filtro.categoria) return false;
-      if (filtro.status && c.status !== filtro.status) return false;
+      if (filtro.status && statusExibido(base, c) !== filtro.status) return false;
       if (filtro.responsavel) {
         const r = responsavelId(c);
         if (filtro.responsavel === "nenhum" ? !!r : filtro.responsavel === "eu" ? r !== usuario.id : r !== filtro.responsavel) return false;
@@ -84,12 +96,10 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
   const atual = selecionado ? meus.find((c) => c.id === selecionado) : undefined;
   const naoEncontrado = !!selecionado && !atual && !novo;
 
-  const indicadores = useMemo(() => ({
-    aberto: meus.filter((c) => c.status === "aberto").length,
-    em_atendimento: meus.filter((c) => c.status === "em_atendimento").length,
-    aguardando_participante: meus.filter((c) => c.status === "aguardando_participante").length,
-    resolvido: meus.filter((c) => c.status === "resolvido").length,
-  }), [meus]);
+  const indicadores = useMemo(() => {
+    const conta = (s: StatusExibido) => meus.filter((c) => statusExibido(base, c) === s).length;
+    return { aberto: conta("aberto"), em_atendimento: conta("em_atendimento"), aguardando_participante: conta("aguardando_participante"), aguardando_organizador: conta("aguardando_organizador"), resolvido: conta("resolvido") };
+  }, [meus, base]);
 
   const eventosDaLista = [...new Set(meus.map((c) => c.eventoId).filter(Boolean))].map((id) => base.eventos.find((e) => e.id === id)).filter(Boolean);
   const equipe = base.usuarios.filter((u) => u.ativo && (u.perfil === "admin" || u.perfil === "organizador"));
@@ -100,11 +110,11 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
   return (
     <div className="space-y-4">
       {modo === "equipe" && (
-        <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {(Object.keys(indicadores) as (keyof typeof indicadores)[]).map((k) => (
             <button key={k} type="button" onClick={() => setFiltro((f) => ({ ...f, status: f.status === k ? "" : k }))}
               className={`rounded-lg border p-3 text-left ${filtro.status === k ? "border-primary bg-primary/10" : "border-border bg-card"}`} aria-pressed={filtro.status === k}>
-              <dt className="text-xs text-muted-foreground">{ROTULO_STATUS[k]}</dt>
+              <dt className="text-xs text-muted-foreground">{ROTULO_STATUS_EXIBIDO[k]}</dt>
               <dd className="font-display text-2xl font-semibold">{indicadores[k]}</dd>
             </button>
           ))}
@@ -137,7 +147,7 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                 </Selecao>
                 <Selecao aria-label="Filtrar por status" value={filtro.status} onChange={(e) => setFiltro({ ...filtro, status: e.target.value })}>
                   <option value="">Todos os status</option>
-                  {(Object.keys(ROTULO_STATUS) as StatusChamado[]).map((s) => <option key={s} value={s}>{ROTULO_STATUS[s]}</option>)}
+                  {(["aberto", "em_atendimento", "aguardando_participante", "aguardando_organizador", "resolvido", "fechado"] as StatusExibido[]).map((s) => <option key={s} value={s}>{ROTULO_STATUS_EXIBIDO[s]}</option>)}
                 </Selecao>
                 <Selecao aria-label="Filtrar por responsável" value={filtro.responsavel} onChange={(e) => setFiltro({ ...filtro, responsavel: e.target.value })}>
                   <option value="">Qualquer responsável</option>
@@ -154,7 +164,7 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
             )}
             {ordenados.map((c) => {
               const n = naoLidas(c, usuario.id, lidoAte(c.id));
-              const ult = ultimaMensagem(c);
+              const ult = modo === "equipe" ? c.mensagens.filter((m) => m.tipo !== "sistema" && canalDe(m) === "participante").at(-1) : ultimaMensagem(c);
               const ev = c.eventoId ? base.eventos.find((e) => e.id === c.eventoId) : undefined;
               const resp = responsavelId(c);
               const sel = c.id === selecionado;
@@ -169,8 +179,9 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                     <p className="mt-0.5 truncate text-xs text-muted-foreground">{protocolo(c)} · {ev ? ev.nome : "Plataforma"}{modo === "equipe" ? ` · ${nome(base.usuarios.find((u) => u.id === c.solicitanteId))}` : ""}</p>
                     {ult && <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{ult.corpo || (ult.anexo ? "📎 Anexo" : "")}</p>}
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                      <StatusChamadoBadge s={c.status} />
+                      <StatusChamadoBadge s={statusExibido(base, c)} />
                       {modo === "equipe" && pendenteDeResposta(c) && <Badge tom="aviso">Aguardando resposta</Badge>}
+                      {modo === "equipe" && retornoRecebido(base, c) && <Badge tom="destaque">Retorno do organizador recebido</Badge>}
                       {modo === "equipe" && <span className="text-[11px] text-muted-foreground">{resp ? `Resp.: ${resp === usuario.id ? "você" : nome(base.usuarios.find((u) => u.id === resp))}` : "Sem responsável"}</span>}
                       <span className="ml-auto text-[11px] text-muted-foreground">{formatarDataHoraBR(ultimaAtividade(c))}</span>
                     </div>
@@ -194,19 +205,44 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
             <>
               <CabecalhoConversa base={base} c={atual} detalhes={detalhes} onDetalhes={() => setDetalhes((d) => !d)} onVoltar={() => onSelecionar(undefined)} />
               <div className="relative flex min-h-0 flex-1">
-                <Conversa key={atual.id} base={base} chamado={atual} usuarioId={usuario.id} somenteLeitura={atual.status === "fechado"} />
+                {modo === "equipe"
+                  ? <AreasAtendimento base={base} c={atual} usuario={usuario} />
+                  : <Conversa key={atual.id} base={base} chamado={atual} usuarioId={usuario.id} somenteLeitura={atual.status === "fechado"} />}
                 {detalhes && <PainelDetalhes base={base} c={atual} usuario={usuario} modo={modo} onNovoVinculado={() => abrirNovo(atual)} onFechar={() => setDetalhes(false)} />}
               </div>
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center p-6 text-center">
               {naoEncontrado
-                ? <EstadoVazio titulo="Chamado não encontrado" descricao="Ele não existe ou você não tem acesso a ele." />
+                ? <Indisponivel onVoltar={() => onSelecionar(undefined)} />
                 : <EstadoVazio titulo="Selecione um chamado" descricao={modo === "participante" ? "Ou abra uma nova solicitação." : "Escolha um chamado na lista para atender."} />}
             </div>
           )}
         </section>
       </div>
+    </div>
+  );
+}
+
+/** Duas áreas distintas: conversa com o participante e encaminhamento interno ao organizador. */
+function AreasAtendimento({ base, c, usuario }: { base: BaseDados; c: Chamado; usuario: Usuario }) {
+  const [aba, setAba] = useState<"participante" | "interno">("participante");
+  useEffect(() => setAba("participante"), [c.id]);
+  const encs = encaminhamentos(base, c);
+  const retorno = retornoRecebido(base, c);
+  const abaCls = (ativa: boolean) => `flex-1 border-b-2 px-3 py-2 text-sm font-medium ${ativa ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`;
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div role="tablist" aria-label="Área do atendimento" className="flex border-b border-border">
+        <button type="button" role="tab" aria-selected={aba === "participante"} className={abaCls(aba === "participante")} onClick={() => setAba("participante")}>Conversa com o participante</button>
+        <button type="button" role="tab" aria-selected={aba === "interno"} className={abaCls(aba === "interno")} onClick={() => setAba("interno")}>
+          Encaminhamento ao organizador{encs.length > 0 && ` (${encs.length})`}
+          {retorno && <span className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">Retorno</span>}
+        </button>
+      </div>
+      {aba === "participante"
+        ? <Conversa key={c.id} base={base} chamado={c} usuarioId={usuario.id} somenteLeitura={c.status === "fechado"} rotuloEnviar="Responder ao participante" aviso="Visível para o participante." />
+        : <PainelEncaminhamento key={c.id} base={base} c={c} usuario={usuario} />}
     </div>
   );
 }
@@ -231,7 +267,7 @@ function CabecalhoConversa({ base, c, detalhes, onDetalhes, onVoltar }: { base: 
           {protocolo(c)} · {nome(base.usuarios.find((u) => u.id === c.solicitanteId))} · {ev ? ev.nome : "Plataforma"} · Responsável: {resp ? nome(base.usuarios.find((u) => u.id === resp)) : "nenhum"}
         </p>
       </div>
-      <StatusChamadoBadge s={c.status} />
+      <StatusChamadoBadge s={statusExibido(base, c)} />
       <Botao type="button" variante="fantasma" className="!px-2 !py-1" onClick={onDetalhes} aria-expanded={detalhes} aria-label={detalhes ? "Recolher detalhes" : "Mostrar detalhes"}>
         {detalhes ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
       </Botao>
