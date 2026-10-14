@@ -45,7 +45,7 @@ describe("participação", () => {
   it("invalidação administrativa remove a participação", () => {
     base.checkins.push(entrada("c1", "ins-hist-1", "evt-trovao"));
     base.correcoesParticipacao.push({ id: "x", usuarioId: PART, eventoId: "evt-trovao", tipo: "invalidar", justificativa: "fraude", autorId: "usr-admin", criadoEm: "2026-09-01T00:00:00Z" });
-    expect(participacoesDoUsuario(base, PART).find((p) => p.eventoId === "evt-trovao")?.estado).toBe("invalidada");
+    expect(participacoesDoUsuario(base, PART).find((p) => p.eventoId === "evt-trovao")?.estado).toBeUndefined();
   });
 });
 

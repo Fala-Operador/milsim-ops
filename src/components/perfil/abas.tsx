@@ -20,6 +20,11 @@ import { IconeInsignia } from "./IconeInsignia";
 const msg = (e: unknown) => (e instanceof Error ? e.message : "Algo deu errado.");
 
 // ---------- Operações ----------
+/** Únicos badges de participação: Participando (âmbar) e Participou (verde). */
+export function BadgeParticipacao({ estado }: { estado: OperacaoDTO["estado"] }) {
+  return estado === "participou" ? <Badge tom="sucesso">Participou</Badge> : <Badge tom="aviso">Participando</Badge>;
+}
+
 export function CartaoOperacao({ o, proprio, onMudou }: { o: OperacaoDTO; proprio: boolean; onMudou?: () => void }) {
   const [ocupado, setOcupado] = useState(false);
   return (
@@ -27,16 +32,13 @@ export function CartaoOperacao({ o, proprio, onMudou }: { o: OperacaoDTO; propri
       <div className="topo-bg h-24 bg-secondary">{o.imagemUrl && <img src={o.imagemUrl} alt="" className="h-full w-full object-cover" />}</div>
       <div className="space-y-1 p-3 text-sm">
         <div className="flex flex-wrap gap-1">
-          {o.estado === "confirmada" && <Badge tom="sucesso">Participação confirmada</Badge>}
-          {o.estado === "aguardando" && <Badge tom="aviso">Aguardando validação</Badge>}
-          {o.estado === "invalidada" && <Badge tom="perigo">Participação invalidada</Badge>}
-          {o.estado === "futura" && <Badge>Inscrição futura</Badge>}
+          <BadgeParticipacao estado={o.estado} />
           {proprio && o.oculta && <Badge>Oculta no perfil</Badge>}
         </div>
         <Link to="/eventos/$eventoId" params={{ eventoId: o.eventoId }} className="block font-display text-base font-semibold uppercase hover:underline">{o.nome}</Link>
         <p className="text-muted-foreground">{formatarDataBR(o.inicioEm)} · {o.cidade}{o.uf ? `/${o.uf}` : ""}</p>
         <p className="text-muted-foreground">{nomeModalidade(o.modalidade)} · {o.organizacao}</p>
-        {proprio && onMudou && o.estado !== "futura" && (
+        {proprio && onMudou && o.estado === "participou" && (
           <Botao variante="fantasma" className="-ml-2 px-2 py-1 text-xs" disabled={ocupado} onClick={async () => {
             setOcupado(true);
             try { await ocultarOperacao(o.eventoId, !o.oculta); onMudou(); } finally { setOcupado(false); }
@@ -55,7 +57,7 @@ export function AbaOperacoes({ operacoes, futuras, proprio, onMudou }: { operaco
     <div className="space-y-6">
       {proprio && !!futuras?.length && (
         <section>
-          <h3 className="font-display text-lg font-semibold uppercase">Próximas (só você vê)</h3>
+          <h3 className="font-display text-lg font-semibold uppercase">Participando (só você vê)</h3>
           <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{futuras.map((o) => <CartaoOperacao key={o.eventoId} o={o} proprio />)}</div>
         </section>
       )}
@@ -63,7 +65,7 @@ export function AbaOperacoes({ operacoes, futuras, proprio, onMudou }: { operaco
         <h3 className="font-display text-lg font-semibold uppercase">Histórico</h3>
         {proprio && <p className="text-xs text-muted-foreground">Ocultar uma operação a tira do perfil público (contadores, mapa e insígnias), mas ela continua valendo para a sua progressão.</p>}
         {operacoes.length === 0 ? (
-          <div className="mt-2"><EstadoVazio titulo="Nenhuma operação concluída" descricao="Uma operação conta quando o evento termina e o check-in foi confirmado na portaria." /></div>
+          <div className="mt-2"><EstadoVazio titulo="Nenhuma participação ainda" descricao="Uma operação vira “Participou” quando o evento é finalizado e sua presença foi confirmada no check-in." /></div>
         ) : (
           <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{operacoes.map((o) => <CartaoOperacao key={o.eventoId} o={o} proprio={proprio} onMudou={onMudou} />)}</div>
         )}
