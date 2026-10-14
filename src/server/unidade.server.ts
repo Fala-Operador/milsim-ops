@@ -14,6 +14,7 @@ import { registrarProvedorContexto, ErroDominio, type ContextoBase } from "@/ser
 import { baseDasTabelas, calcularMudancas, objetosAlterados, type TabelasExportadas } from "@/lib/persistencia";
 import { visaoParaUsuario, type Visao } from "@/lib/visao";
 import { enviarMidia } from "@/server/midia";
+import { recalcularProgressao } from "@/services/progressao";
 import { supabaseAdmin, supabaseSessao } from "@/server/supabase.server";
 import type { BaseDados, Usuario } from "@/lib/domain/types";
 
@@ -152,6 +153,8 @@ export async function consultar<T>(fn: (visao: BaseDados, usuario: Usuario | nul
  * Escrita: executa `fn` (que pode lançar ErroDominio) e grava o que mudou.
  * `fn` pode rodar mais de uma vez em caso de conflito — não faça efeitos fora da base nela.
  */
+const AFETAM_PARTICIPACAO = ["inscricoes", "eventos", "checkins", "correcoesParticipacao"] as const;
+
 export async function mutar<T>(
   fn: (ctx: Contexto) => T | Promise<T>,
   opcoes: { exigirLogin?: boolean } = { exigirLogin: true },
@@ -167,6 +170,11 @@ export async function mutar<T>(
       const antes = structuredClone(base);
       const resultado = await armazenamento.run({ base }, () => fn({ base, usuario }));
 
+      // Inscrições, eventos, check-ins (inclusive sincronização offline) e correções
+      // mudam a participação: recalcula insígnias/recompensas (idempotente).
+      if (AFETAM_PARTICIPACAO.some((c) => antes[c] !== base[c] && JSON.stringify(antes[c]) !== JSON.stringify(base[c]))) {
+        recalcularProgressao(base);
+      }
       await enviarMidia(supabaseAdmin(), objetosAlterados(antes, base));
       const lote = calcularMudancas(antes, base);
       if (Object.keys(lote).length > 0) {

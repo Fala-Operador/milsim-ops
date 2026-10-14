@@ -136,7 +136,7 @@ export function montarPerfil(base: BaseDados, alvoId: string, quem: Usuario | nu
       estado: p.estado, oculta: ocultas.has(e.id),
     };
   };
-  const historico = visiveis.filter((p) => p.estado !== "futura");
+  const historico = visiveis.filter((p) => p.estado === "participou");
   const resumoPublico: ResumoProgressao = resumir(historico.filter((p) => proprio || !ocultas.has(p.eventoId)));
   const resumoReal = resumir(todas);
 
@@ -158,7 +158,8 @@ export function montarPerfil(base: BaseDados, alvoId: string, quem: Usuario | nu
   const verIns = pode(priv.insignias, proprio, autenticado);
   if (verHist) { dto.operacoes = historico.map(paraDTO); dto.resumo.operacoes = proprio ? resumoReal.operacoes : resumoPublico.operacoes; }
   if (verMapa) {
-    dto.mapa = historico.filter((p) => p.estado === "confirmada" && p.uf).map(paraDTO);
+    // Dono vê "Participando" e "Participou"; terceiros só "Participou".
+    dto.mapa = (proprio ? visiveis : historico).filter((p) => p.uf).map(paraDTO);
     dto.resumo.estados = proprio ? resumoReal.estados.length : resumoPublico.estados.length;
   }
   if (verIns) {
@@ -182,7 +183,7 @@ export function montarPerfil(base: BaseDados, alvoId: string, quem: Usuario | nu
   if (proprio) {
     dto.privacidade = priv;
     dto.introVista = perfil.introVista;
-    dto.futuras = todas.filter((p) => p.estado === "futura").map(paraDTO);
+    dto.futuras = todas.filter((p) => p.estado === "participando").map(paraDTO);
     dto.completude = completudePerfil(alvo, perfil);
     dto.recompensas = base.vouchers
       .filter((v) => v.usuarioId === alvo.id)

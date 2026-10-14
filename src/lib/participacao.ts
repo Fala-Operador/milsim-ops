@@ -1,18 +1,23 @@
 // Regras puras de participação, progressão e insígnias (sem rede, sem React).
-// Participação real = evento concluído + check-in vigente (não revertido, sem conflito)
-// + nenhuma invalidação administrativa. Inscrição sem comparecimento não conta.
+// Só dois status visíveis: "participando" (inscrição confirmada, evento ainda não
+// finalizado — inclusive em andamento) e "participou" (evento finalizado + presença
+// válida). Finalizar o evento sozinho nunca vira "participou". O detalhe técnico da
+// validação fica em `validacao`, só para uso interno.
 import { entradaAtiva } from "@/lib/checkin";
 import { CONTORNOS_UF } from "@/data/mapaBrasil";
 import type {
   BaseDados, CampanhaRecompensa, ConcessaoInsignia, CriterioInsignia, Evento, Insignia, Voucher,
 } from "@/lib/domain/types";
 
-export type EstadoParticipacao = "confirmada" | "aguardando" | "invalidada" | "futura";
+export type EstadoParticipacao = "participando" | "participou";
+/** Como a presença foi decidida (interno; nunca vira badge). */
+export type ValidacaoParticipacao = "pendente" | "checkin" | "correcao_admin";
 
 export interface Participacao {
   eventoId: string;
   inscricaoId: string;
   estado: EstadoParticipacao;
+  validacao: ValidacaoParticipacao;
   /** UF válida do evento; ausente quando a localização do evento é inválida. */
   uf?: string | undefined;
   modalidade?: string | undefined;
@@ -45,7 +50,7 @@ function ultimaCorrecao(base: BaseDados, usuarioId: string, eventoId: string) {
 }
 
 /** Participações da pessoa, uma por evento. */
-export function participacoesDoUsuario(base: BaseDados, usuarioId: string, agora = new Date()): Participacao[] {
+export function participacoesDoUsuario(base: BaseDados, usuarioId: string, _agora = new Date()): Participacao[] {
   const porEvento = new Map<string, Participacao>();
   for (const ins of base.inscricoes) {
     if (ins.usuarioId !== usuarioId || ins.status !== "confirmada" || porEvento.has(ins.eventoId)) continue;
@@ -55,15 +60,18 @@ export function participacoesDoUsuario(base: BaseDados, usuarioId: string, agora
     const presente = !!entradaAtiva(base.checkins.filter((c) => c.inscricaoId === ins.id), ins.id);
     const concluido = evento.status === "concluido";
     let estado: EstadoParticipacao | null = null;
-    if (correcao?.tipo === "invalidar") estado = presente || concluido ? "invalidada" : null;
-    else if (correcao?.tipo === "validar" && concluido) estado = "confirmada";
-    else if (presente) estado = concluido ? "confirmada" : "aguardando";
-    else if (!concluido && new Date(evento.fimEm) > agora) estado = "futura";
-    if (!estado) continue; // inscrição sem comparecimento: não gera participação
+    let validacao: ValidacaoParticipacao = "pendente";
+    if (!concluido) estado = "participando";
+    else if (correcao?.tipo === "invalidar") estado = null;
+    else if (correcao?.tipo === "validar") { estado = "participou"; validacao = "correcao_admin"; }
+    else if (presente) { estado = "participou"; validacao = "checkin"; }
+    // Finalizado sem presença válida: fica só no histórico privado de inscrições.
+    if (!estado) continue;
     porEvento.set(evento.id, {
       eventoId: evento.id,
       inscricaoId: ins.id,
       estado,
+      validacao,
       uf: ufDoEvento(evento),
       modalidade: evento.modalidade,
       em: evento.fimEm,
@@ -72,7 +80,7 @@ export function participacoesDoUsuario(base: BaseDados, usuarioId: string, agora
   return [...porEvento.values()].sort((a, b) => b.em.localeCompare(a.em));
 }
 
-export const confirmadas = (ps: Participacao[]) => ps.filter((p) => p.estado === "confirmada");
+export const confirmadas = (ps: Participacao[]) => ps.filter((p) => p.estado === "participou");
 
 export interface ResumoProgressao {
   operacoes: number;

@@ -13,6 +13,9 @@ import { alterarStatusChamado, assumirChamado } from "@/api/suporte.functions";
 import { PainelEncaminhamento } from "./PainelEncaminhamento";
 import {
   ROTULO_STATUS,
+  ROTULO_STATUS_EXIBIDO,
+  statusExibido,
+  type StatusExibido,
   CATEGORIAS_SUPORTE,
   acoesPermitidas,
   ativo,
@@ -194,7 +197,7 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
               className={`min-w-0 rounded-lg border p-3 text-left ${filtro.status === k ? "border-primary bg-primary/10" : "border-border bg-card"}`}
               aria-pressed={filtro.status === k}
             >
-              <dt className="truncate text-xs text-muted-foreground">{ROTULO_STATUS[k]}</dt>
+              <dt className="truncate text-xs text-muted-foreground">{ROTULO_STATUS_EXIBIDO[k]}</dt>
               <dd className="font-display text-2xl font-semibold">{indicadores[k]}</dd>
             </button>
           ))}
