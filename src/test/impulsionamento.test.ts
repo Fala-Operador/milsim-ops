@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { restaurarBase } from "./baseTeste";
 import type { BaseDados, Impulsionamento } from "@/lib/domain/types";
 import { POSICAO_LISTAGEM } from "@/lib/domain/types";
-import { campanhasNaPosicao, pendenciasAtivacao, statusExibido } from "@/lib/impulsionamento";
+import { campanhasNaPosicao, diagnosticarPosicao, metricasCampanha, pendenciasAtivacao, statusExibido } from "@/lib/impulsionamento";
 import { eventosDaSecao, NACIONAL } from "@/lib/divulgacao";
 import { visaoParaUsuario } from "@/lib/visao";
 
@@ -85,8 +85,26 @@ describe("impulsionamento", () => {
 });
 
 describe("impulsionamento — métricas e prévia", () => {
-  it("conta só os registros da campanha", () => {
-    const m = (await_ => await_)(null);
-    void m;
+  it("conta só os registros da campanha e calcula CTR", () => {
+    const regs = [
+      { tipo: "exibicao", campanhaId: "imp-a" }, { tipo: "exibicao", campanhaId: "imp-a" },
+      { tipo: "exibicao", campanhaId: "imp-a" }, { tipo: "exibicao", campanhaId: "imp-a" },
+      { tipo: "clique", campanhaId: "imp-a" }, { tipo: "visita", campanhaId: "imp-a" },
+      { tipo: "inscricao_confirmada", campanhaId: "imp-a" }, { tipo: "clique", campanhaId: "imp-b" },
+    ];
+    const m = metricasCampanha(regs, "imp-a");
+    expect(m).toMatchObject({ exibicoes: 4, cliques: 1, visitas: 1, inscricoes: 1, ctr: 25, conversao: 100 });
+    expect(metricasCampanha(regs, "imp-x").ctr).toBeNull();
+  });
+  it("explica posição não escolhida, área e precedência", () => {
+    const a = campanha({ id: "a", prioridade: "alta" });
+    const b = campanha({ id: "b" });
+    const fora = campanha({ id: "c", abrangencia: { escopo: "regiao", regiao: "Norte" } });
+    base.impulsionamentos = [a, b, fora];
+    const d = diagnosticarPosicao(base, POSICAO_LISTAGEM, { escopo: "estado", uf: "SP" }, agora);
+    expect(d.find((x) => x.campanha.id === "a")).toMatchObject({ aparece: true, ordem: 1 });
+    expect(d.find((x) => x.campanha.id === "b")!.motivos[0]).toContain("precedência");
+    expect(d.find((x) => x.campanha.id === "c")!.motivos[0]).toContain("abrangência");
+    expect(diagnosticarPosicao(base, "sec-outra", NACIONAL, agora).every((x) => !x.aparece)).toBe(true);
   });
 });

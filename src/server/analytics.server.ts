@@ -29,7 +29,8 @@ export async function registrar(registros: RegistroAnalytics[]): Promise<number>
     const evento = eventos.get(r.eventoId);
     // Admin e a própria organização não entram na coleta.
     if (!evento || gereEvento(usuario, evento)) return [];
-    const campanhaOk = r.campanhaId && campanhas.get(r.campanhaId)?.eventoId === r.eventoId;
+    const campanhaOk = !!r.campanhaId && (campanhas.get(r.campanhaId)?.eventoId === r.eventoId ||
+      base.impulsionamentos.some((c) => c.id === r.campanhaId && c.eventoId === r.eventoId));
     const reg: RegistroAnalytics = {
       ...r,
       campanhaId: campanhaOk ? r.campanhaId : undefined,
