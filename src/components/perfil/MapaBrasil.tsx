@@ -7,6 +7,18 @@ import { nomeModalidade } from "@/lib/modalidades";
 import { formatarDataBR } from "@/lib/domain/money";
 import type { OperacaoDTO } from "@/lib/perfilSocial";
 import { Botao, EstadoVazio } from "@/components/ui";
+import { BadgeParticipacao } from "./abas";
+
+type Situacao = "participou" | "participando" | "ambos";
+function situacao(ops: OperacaoDTO[] | undefined): Situacao | null {
+  if (!ops?.length) return null;
+  const sim = ops.some((o) => o.estado === "participou");
+  const nao = ops.some((o) => o.estado === "participando");
+  return sim && nao ? "ambos" : sim ? "participou" : "participando";
+}
+const PREENCHIMENTO: Record<Situacao, string> = {
+  participou: "fill-success", participando: "fill-warning", ambos: "fill-[url(#padrao-ambos)]",
+};
 
 export function MapaBrasil({ operacoes }: { operacoes: OperacaoDTO[] }) {
   const porUf = useMemo(() => {
@@ -14,6 +26,8 @@ export function MapaBrasil({ operacoes }: { operacoes: OperacaoDTO[] }) {
     for (const o of operacoes) if (o.uf) m.set(o.uf, [...(m.get(o.uf) ?? []), o]);
     return m;
   }, [operacoes]);
+  const temParticipando = operacoes.some((o) => o.estado === "participando");
+  const temAmbos = [...porUf.values()].some((ops) => situacao(ops) === "ambos");
   const [foco, setFoco] = useState<string | null>(null);
   const [aberto, setAberto] = useState<string | null>(null);
   const ufs = Object.keys(CONTORNOS_UF).sort((a, b) => NOMES_UF[a]!.localeCompare(NOMES_UF[b]!));
@@ -24,8 +38,15 @@ export function MapaBrasil({ operacoes }: { operacoes: OperacaoDTO[] }) {
       <div>
         <p aria-live="polite" className="mb-2 min-h-5 text-sm text-muted-foreground">{dica}</p>
         <svg viewBox={`0 0 ${MAPA_LARGURA} ${MAPA_ALTURA}`} role="group" aria-label="Mapa do Brasil com estados visitados" className="h-auto w-full max-w-xl">
+          <defs>
+            <pattern id="padrao-ambos" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <rect width="4" height="8" className="fill-success" />
+              <rect x="4" width="4" height="8" className="fill-warning" />
+            </pattern>
+          </defs>
           {ufs.map((uf) => {
             const n = porUf.get(uf)?.length ?? 0;
+            const sit = situacao(porUf.get(uf));
             const ativo = aberto === uf || foco === uf;
             return (
               <path
@@ -42,14 +63,20 @@ export function MapaBrasil({ operacoes }: { operacoes: OperacaoDTO[] }) {
                 onClick={() => setAberto(uf)}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setAberto(uf); } }}
                 className={`cursor-pointer stroke-background outline-none transition-colors [stroke-width:1.5] focus-visible:[stroke-width:4] focus-visible:stroke-ring ${
-                  n > 0 ? (ativo ? "fill-accent" : "fill-warning") : ativo ? "fill-primary/40" : "fill-secondary"
+                  sit ? (ativo ? "fill-accent" : PREENCHIMENTO[sit]) : ativo ? "fill-primary/40" : "fill-secondary"
                 }`}
               />
             );
           })}
         </svg>
         <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1"><span className="h-3 w-3 rounded-sm bg-warning" aria-hidden="true" /> Com participação</span>
+          <span className="flex items-center gap-1"><span className="h-3 w-3 rounded-sm bg-success" aria-hidden="true" /> Participou</span>
+          {temParticipando && <span className="flex items-center gap-1"><span className="h-3 w-3 rounded-sm bg-warning" aria-hidden="true" /> Participando</span>}
+          {temAmbos && (
+            <span className="flex items-center gap-1">
+              <svg className="h-3 w-3 rounded-sm" aria-hidden="true"><rect width="12" height="12" fill="url(#padrao-ambos)" /></svg> Participou e participando
+            </span>
+          )}
           <span className="flex items-center gap-1"><span className="h-3 w-3 rounded-sm bg-secondary" aria-hidden="true" /> Sem participação</span>
           <span>{CREDITO_MAPA}</span>
         </div>
@@ -63,12 +90,15 @@ export function MapaBrasil({ operacoes }: { operacoes: OperacaoDTO[] }) {
               <Botao variante="fantasma" onClick={() => setAberto(null)} aria-label="Fechar detalhes do estado">✕</Botao>
             </div>
             {(porUf.get(aberto) ?? []).length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">Nenhuma operação confirmada neste estado.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Nenhuma operação neste estado.</p>
             ) : (
               <ul className="mt-2 space-y-2">
-                {porUf.get(aberto)!.map((o) => (
+                {[...porUf.get(aberto)!].sort((a, b) => (a.estado === b.estado ? b.inicioEm.localeCompare(a.inicioEm) : a.estado === "participando" ? -1 : 1)).map((o) => (
                   <li key={o.eventoId} className="rounded-md border border-border p-3 text-sm">
-                    <Link to="/eventos/$eventoId" params={{ eventoId: o.eventoId }} className="font-medium hover:underline">{o.nome}</Link>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <Link to="/eventos/$eventoId" params={{ eventoId: o.eventoId }} className="font-medium hover:underline">{o.nome}</Link>
+                      <BadgeParticipacao estado={o.estado} />
+                    </div>
                     <p className="text-muted-foreground">{formatarDataBR(o.inicioEm)} · {o.cidade}/{o.uf} · {nomeModalidade(o.modalidade)}</p>
                   </li>
                 ))}
@@ -78,7 +108,7 @@ export function MapaBrasil({ operacoes }: { operacoes: OperacaoDTO[] }) {
         ) : null}
         <h3 className="mt-4 text-sm font-semibold">Lista de estados</h3>
         {porUf.size === 0 ? (
-          <div className="mt-2"><EstadoVazio titulo="Nenhum estado ainda" descricao="Estados aparecem após operações concluídas com presença confirmada." /></div>
+          <div className="mt-2"><EstadoVazio titulo="Nenhum estado ainda" descricao="Estados aparecem ao confirmar uma inscrição (Participando) e contam como visitados após o evento com presença confirmada (Participou)." /></div>
         ) : (
           <ul className="mt-2 grid gap-1 sm:grid-cols-2">
             {[...porUf.entries()].sort((a, b) => b[1].length - a[1].length).map(([uf, ops]) => (
