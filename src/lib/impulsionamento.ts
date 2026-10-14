@@ -92,3 +92,61 @@ export function sobreposicoes(base: BaseDados, c: Pick<Impulsionamento, "id" | "
     x.posicoes.some((p) => c.posicoes.includes(p)) &&
     ms(x.inicioEm) < ms(c.fimEm) && ms(c.inicioEm) < ms(x.fimEm));
 }
+
+// ===== Métricas por campanha =====
+// Exibições e cliques vêm dos cards marcados com o id da campanha; visitas e inscrições
+// herdam essa atribuição dentro da sessão (mesma regra dos links de campanha).
+export interface MetricasCampanha {
+  exibicoes: number; cliques: number; visitas: number; inscricoes: number;
+  /** cliques ÷ exibições × 100; null sem exibições. */
+  ctr: number | null;
+  /** inscrições ÷ visitas × 100; null sem visitas. */
+  conversao: number | null;
+}
+
+export function metricasCampanha(regs: { tipo: string; campanhaId?: string | undefined }[], campanhaId: string): MetricasCampanha {
+  const meus = regs.filter((r) => r.campanhaId === campanhaId);
+  const n = (t: string) => meus.filter((r) => r.tipo === t).length;
+  const exibicoes = n("exibicao"), cliques = n("clique"), visitas = n("visita"), inscricoes = n("inscricao_confirmada");
+  return {
+    exibicoes, cliques, visitas, inscricoes,
+    ctr: exibicoes ? (cliques / exibicoes) * 100 : null,
+    conversao: visitas ? (inscricoes / visitas) * 100 : null,
+  };
+}
+
+// ===== Prévia com diagnóstico =====
+export interface DiagnosticoCampanha {
+  campanha: Impulsionamento;
+  aparece: boolean;
+  /** Posição (1, 2, …) dentro do bloco impulsionado quando aparece. */
+  ordem?: number | undefined;
+  motivos: string[];
+}
+
+/** Para uma posição e um local, explica por que cada campanha aparece ou não. */
+export function diagnosticarPosicao(base: BaseDados, posicao: string, local: Abrangencia, agora: Date): DiagnosticoCampanha[] {
+  const exibidas = campanhasNaPosicao(base, posicao, local, agora);
+  const ordem = new Map(exibidas.map((c, i) => [c.id, i + 1]));
+  return base.impulsionamentos
+    .filter((c) => c.status !== "encerrado" || ms(c.fimEm) > agora.getTime() - 30 * 86400000)
+    .map((c): DiagnosticoCampanha => {
+      if (ordem.has(c.id)) {
+        const motivos = ["Ativa no período, nesta posição e nesta área."];
+        motivos.push(c.prioridade === "alta" ? "Prioridade alta." : "Prioridade normal.");
+        return { campanha: c, aparece: true, ordem: ordem.get(c.id), motivos };
+      }
+      const motivos: string[] = [];
+      const st = statusExibido(base, c, agora);
+      if (st !== "ativo") motivos.push(`Status: ${ROTULO_STATUS_IMPULSIONAMENTO[st]}.`);
+      if (st === "agendado") motivos.push(`Começa em ${new Date(c.inicioEm).toLocaleString("pt-BR")}.`);
+      if (!c.posicoes.includes(posicao)) motivos.push("Esta posição não foi escolhida na campanha.");
+      if (!areasSobrepostas(c.abrangencia, local)) motivos.push("A área escolhida fica fora da abrangência da campanha.");
+      if (!motivos.length) {
+        const vencedora = exibidas.find((x) => x.eventoId === c.eventoId);
+        motivos.push(vencedora ? "Outra campanha da mesma operação tem precedência (a operação aparece uma vez só)." : "Não atende às regras de exibição.");
+      }
+      return { campanha: c, aparece: false, motivos };
+    })
+    .sort((a, b) => (a.aparece === b.aparece ? (a.ordem ?? 0) - (b.ordem ?? 0) : a.aparece ? -1 : 1));
+}

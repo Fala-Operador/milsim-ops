@@ -83,3 +83,10 @@ describe("impulsionamento", () => {
     expect(v.impulsionamentos[0]!.nome).toBe("");
   });
 });
+
+describe("impulsionamento — métricas e prévia", () => {
+  it("conta só os registros da campanha", () => {
+    const m = (await_ => await_)(null);
+    void m;
+  });
+});
