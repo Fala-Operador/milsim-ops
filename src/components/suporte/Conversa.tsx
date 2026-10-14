@@ -507,7 +507,7 @@ export function Conversa({
               className="h-10 shrink-0 !px-3"
               onClick={submeter}
               disabled={!rascunho.trim() && !anexo}
-              aria-label="Enviar mensagem"
+              aria-label={rotuloEnviar === "Enviar" ? "Enviar mensagem" : rotuloEnviar}
             >
               <SendHorizontal className="h-4 w-4" />
               <span className="hidden @min-[480px]:inline">{rotuloEnviar}</span>

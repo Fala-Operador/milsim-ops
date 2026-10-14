@@ -15,6 +15,9 @@ import {
   ROTULO_STATUS,
   ROTULO_STATUS_EXIBIDO,
   statusExibido,
+  retornoRecebido,
+  encaminhamentos,
+  canalDe,
   type StatusExibido,
   CATEGORIAS_SUPORTE,
   acoesPermitidas,
@@ -275,9 +278,9 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                     onChange={(e) => setFiltro({ ...filtro, status: e.target.value })}
                   >
                     <option value="">Todos os status</option>
-                    {(Object.keys(ROTULO_STATUS) as StatusChamado[]).map((s) => (
+                    {(Object.keys(ROTULO_STATUS_EXIBIDO) as StatusExibido[]).map((s) => (
                       <option key={s} value={s}>
-                        {ROTULO_STATUS[s]}
+                        {ROTULO_STATUS_EXIBIDO[s]}
                       </option>
                     ))}
                   </Selecao>
@@ -316,7 +319,8 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
               )}
               {ordenados.map((c) => {
                 const n = naoLidas(c, usuario.id, lidoAte(c.id));
-                const ult = ultimaMensagem(c);
+                // Equipe: prévia só da conversa com o participante (nunca do canal interno).
+                const ult = modo === "equipe" ? c.mensagens.filter((m) => m.tipo !== "sistema" && canalDe(m) === "participante").at(-1) : ultimaMensagem(c);
                 const ev = c.eventoId ? base.eventos.find((e) => e.id === c.eventoId) : undefined;
                 const resp = responsavelId(c);
                 const sel = c.id === selecionado;
@@ -358,7 +362,8 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                         </p>
                       )}
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                        <StatusChamadoBadge s={c.status} />
+                        <StatusChamadoBadge s={statusExibido(base, c)} />
+                        {modo === "equipe" && retornoRecebido(base, c) && <Badge tom="destaque">Retorno do organizador recebido</Badge>}
                         {modo === "equipe" && pendenteDeResposta(c) && (
                           <Badge tom="aviso">Aguardando resposta</Badge>
                         )}
@@ -421,23 +426,17 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                   detalhes={detalhes}
                   onDetalhes={() => setDetalhes((d) => !d)}
                 />
-                <Conversa
-                  key={atual.id}
-                  base={base}
-                  chamado={atual}
-                  usuarioId={usuario.id}
-                  rodape={
-                    estadoCompositor(atual, atual.solicitanteId === usuario.id) ===
-                    "livre" ? null : (
-                      <RodapeStatus
-                        c={atual}
-                        usuario={usuario}
-                        modo={modo}
-                        onNovoVinculado={() => abrirNovo(atual)}
-                      />
-                    )
-                  }
-                />
+                {(() => {
+                  const rodape =
+                    estadoCompositor(atual, atual.solicitanteId === usuario.id) === "livre" ? null : (
+                      <RodapeStatus c={atual} usuario={usuario} modo={modo} onNovoVinculado={() => abrirNovo(atual)} />
+                    );
+                  return modo === "equipe" ? (
+                    <AreasAtendimento base={base} c={atual} usuario={usuario} rodape={rodape} />
+                  ) : (
+                    <Conversa key={atual.id} base={base} chamado={atual} usuarioId={usuario.id} rodape={rodape} />
+                  );
+                })()}
                 {detalhes && (
                   <PainelDetalhes
                     base={base}
@@ -452,10 +451,7 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
             ) : (
               <div className="flex flex-1 items-center justify-center p-6 text-center">
                 {naoEncontrado ? (
-                  <EstadoVazio
-                    titulo="Chamado não encontrado"
-                    descricao="Ele não existe ou você não tem acesso a ele."
-                  />
+                  <Indisponivel onVoltar={() => onSelecionar(undefined)} />
                 ) : (
                   <EstadoVazio
                     titulo="Selecione um chamado"
@@ -476,6 +472,38 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
 }
 
 /** Só aparece quando lista e conversa não cabem lado a lado. */
+/**
+ * Admin: duas áreas distintas — conversa com o participante e encaminhamento interno ao
+ * organizador (o participante nunca vê o canal interno; a visão do servidor já o remove).
+ */
+function AreasAtendimento({ base, c, usuario, rodape }: { base: BaseDados; c: Chamado; usuario: Usuario; rodape: React.ReactNode }) {
+  const [aba, setAba] = useState<"participante" | "interno">("participante");
+  useEffect(() => setAba("participante"), [c.id]);
+  const encs = encaminhamentos(base, c);
+  const retorno = retornoRecebido(base, c);
+  const abaCls = (ativa: boolean) =>
+    `min-w-0 flex-1 border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${ativa ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`;
+  return (
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div role="tablist" aria-label="Área do atendimento" className="flex min-w-0 border-b border-border">
+        <button type="button" role="tab" aria-selected={aba === "participante"} className={abaCls(aba === "participante")} onClick={() => setAba("participante")}>
+          Conversa com o participante
+        </button>
+        <button type="button" role="tab" aria-selected={aba === "interno"} className={abaCls(aba === "interno")} onClick={() => setAba("interno")}>
+          Encaminhamento ao organizador{encs.length > 0 && ` (${encs.length})`}
+          {retorno && <span className="ml-1.5 whitespace-nowrap rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">Retorno</span>}
+        </button>
+      </div>
+      {aba === "participante" ? (
+        <Conversa key={c.id} base={base} chamado={c} usuarioId={usuario.id} rodape={rodape}
+          rotuloEnviar="Responder ao participante" aviso="Visível para o participante." />
+      ) : (
+        <PainelEncaminhamento key={c.id} base={base} c={c} usuario={usuario} />
+      )}
+    </div>
+  );
+}
+
 function BotaoVoltar({ onClick }: { onClick: () => void }) {
   return (
     <div className="border-b border-border px-2 py-1.5 @min-[760px]:hidden">
@@ -515,7 +543,7 @@ function CabecalhoConversa({
             {protocolo(c)}
             {solicitante ? ` · ${solicitante}` : ""}
           </span>
-          <StatusChamadoBadge s={c.status} />
+          <StatusChamadoBadge s={statusExibido(base, c)} />
         </div>
       </div>
       <Botao
@@ -704,7 +732,7 @@ function PainelDetalhes({
         <dl className="space-y-3">
           {campo("Assunto", c.assunto)}
           {campo("Protocolo", protocolo(c), true)}
-          {campo("Status", <StatusChamadoBadge s={c.status} />)}
+          {campo("Status", <StatusChamadoBadge s={statusExibido(base, c)} />)}
           {campo(
             "Tipo",
             tipoDoChamado(c) === "evento" ? "Suporte do evento" : "Suporte da plataforma",
