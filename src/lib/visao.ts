@@ -119,6 +119,13 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
   // ----- Divulgação -----
   v.parceiros = admin ? base.parceiros : base.parceiros.filter((p) => p.ativo);
   v.secoesInicio = admin ? base.secoesInicio : base.secoesInicio.filter((s) => s.status === "publicada");
+  // Impulsionamentos: admin vê tudo; organizador vê as campanhas dos próprios eventos;
+  // o público recebe só campanhas ativas, sem nome interno nem autor.
+  v.impulsionamentos = base.impulsionamentos.flatMap((c) => {
+    if (admin || geridos.has(c.eventoId)) return [c];
+    if (c.status !== "ativo") return [];
+    return [{ ...c, nome: "", criadoPor: "" }];
+  });
 
   // ----- Perfil do operador e gamificação -----
   // Perfil social, equipamentos e galeria: só o dono (nem a administração recebe pela interface).
