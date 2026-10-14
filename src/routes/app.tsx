@@ -27,7 +27,7 @@ const ITENS = [
   { to: "/app/missoes", rotulo: "Missões" },
   { to: "/app/notificacoes", rotulo: "Notificações" },
   { to: "/app/suporte", rotulo: "Suporte" },
-  { to: "/app/perfil", rotulo: "Perfil" },
+  { to: "/app/perfil", rotulo: "Meu perfil" },
   { to: "/app/privacidade", rotulo: "Privacidade" },
 ] as const;
 
