@@ -7,7 +7,10 @@ import {
   ROTULO_ORIGEM, ROTULO_ORIGEM_CAMPANHA, agrupar, chaveOrigem, filtrar, indicadores, serieDiaria, variacao,
   type Campanha, type Filtro, type Indicadores, type OrigemAcesso, type OrigemCampanha, type RegistroAnalytics,
 } from "@/lib/analytics";
-import { regiaoDaUf } from "@/lib/divulgacao";
+import { regiaoDaUf, rotuloAbrangencia } from "@/lib/divulgacao";
+import { ROTULO_OBJETIVO, metricasCampanha, rotuloPosicao, statusExibido } from "@/lib/impulsionamento";
+import { StatusImpulsionamento } from "@/components/impulsionamentos";
+import { formatarDataBR } from "@/lib/domain/money";
 import { linkCampanha } from "@/services/analytics";
 import { criarCampanha, listarMetricas } from "@/api/analytics.functions";
 import { inscricoesAtivasDoEvento } from "@/services/inscricoes";
@@ -110,7 +113,15 @@ export function PainelMetricas({ base, eventos, modo }: { base: BaseDados; event
   const ativasAgora = [...eventoIds].reduce((t, id) => t + inscricoesAtivasDoEvento(base, id).length, 0);
   const campanhasVisiveis = dados.campanhas.filter((c) => eventoIds.has(c.eventoId));
   const nomeEvento = (id: string) => base.eventos.find((e) => e.id === id)?.nome ?? id;
-  const nomeOrigem = (k: string) => k.startsWith("cmp:")
+  const nomeImp = (id: string) => {
+    const c = base.impulsionamentos.find((x) => x.id === id);
+    return c ? `Impulsionamento: ${modo === "admin" && c.nome ? c.nome : ROTULO_OBJETIVO[c.objetivo]}` : null;
+  };
+  const impulsos = base.impulsionamentos.filter((c) => eventoIds.has(c.eventoId) && c.status !== "rascunho")
+    .sort((a, b) => b.inicioEm.localeCompare(a.inicioEm));
+  const nomeOrigem = (k: string) => k.startsWith("cmp:") && nomeImp(k.slice(4))
+    ? nomeImp(k.slice(4))!
+    : k.startsWith("cmp:")
     ? `Campanha: ${dados.campanhas.find((c) => c.id === k.slice(4))?.nome ?? "removida"}`
     : ROTULO_ORIGEM[k as OrigemAcesso] ?? k;
   const nomeSecao = (id: string) => base.secoesInicio.find((s) => s.id === id)?.titulo ?? "Seção removida";
@@ -215,6 +226,20 @@ export function PainelMetricas({ base, eventos, modo }: { base: BaseDados; event
             </div>
           ))}
         </div>
+      </Bloco>
+
+      <Bloco titulo="Divulgação da operação" nota={modo === "organizador"
+        ? "Destaques concedidos pela administração da plataforma. Somente leitura; números do período escolhido."
+        : "Campanhas de impulsionamento; números do período escolhido."}>
+        <Tabela vazio="Nenhum impulsionamento para este evento."
+          cab={["Operação", "Objetivo", "Onde aparece", "Área", "Período", "Status", "Exibições", "Cliques", "CTR", "Visitas", "Inscrições"]}
+          linhas={impulsos.map((c) => {
+            const m = metricasCampanha(regs, c.id);
+            return [nomeEvento(c.eventoId), ROTULO_OBJETIVO[c.objetivo], c.posicoes.map((p) => rotuloPosicao(base, p)).join(", "),
+              rotuloAbrangencia(c.abrangencia), `${formatarDataBR(c.inicioEm)} → ${formatarDataBR(c.fimEm)}`,
+              <StatusImpulsionamento key="s" s={statusExibido(base, c, new Date())} />,
+              fmtN(m.exibicoes), fmtN(m.cliques), fmtP(m.ctr), fmtN(m.visitas), fmtN(m.inscricoes)];
+          })} />
       </Bloco>
 
       <Bloco titulo="Origens e campanhas" nota="“Origem desconhecida” é mantida quando não há como identificar a procedência.">
