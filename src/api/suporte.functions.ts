@@ -61,6 +61,10 @@ export const alterarStatusChamadoFn = createServerFn({ method: "POST" })
   .validator(z.object({ chamadoId: id, acao: z.enum(["aguardar", "resolver", "reabrir", "fechar"]), descricao: z.string().max(500).optional() }).parse)
   .handler(({ data }) => mutar(({ usuario }) => sup.alterarStatus(exigirUsuario(usuario), data.chamadoId, data.acao, data.descricao)));
 
+export const marcarChamadoLidoFn = createServerFn({ method: "POST" })
+  .validator(z.object({ chamadoId: id, ate: z.string().max(40) }).parse)
+  .handler(({ data }) => mutar(({ usuario }) => sup.marcarChamadoLido(exigirUsuario(usuario), data.chamadoId, data.ate)));
+
 export const linkAnexoFn = createServerFn({ method: "POST" })
   .validator(z.object({ chamadoId: id, mensagemId: id, baixar: z.boolean() }).parse)
   .handler(async ({ data }) => {
@@ -85,4 +89,5 @@ export const assumirChamado = (chamadoId: string, responsavelId?: string) => cha
 export const alterarStatusChamado = (chamadoId: string, acao: AcaoStatus, descricao?: string) =>
   chamar(alterarStatusChamadoFn({ data: { chamadoId, acao, descricao } }));
 export const linkAnexo = (chamadoId: string, mensagemId: string, baixar = false) => linkAnexoFn({ data: { chamadoId, mensagemId, baixar } });
+export const marcarLidoServidor = (chamadoId: string, ate: string) => chamar(marcarChamadoLidoFn({ data: { chamadoId, ate } }));
 export const atualizarSuporte = () => recarregarVisao();
