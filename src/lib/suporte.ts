@@ -1,11 +1,11 @@
 // Regras puras da Central de Suporte: acesso, status, responsável e derivados da conversa.
 // Responsável, solução e vínculo são derivados dos eventos de histórico (mensagens do
 // tipo "sistema"), que nunca são editados nem apagados.
-import type { BaseDados, Chamado, MensagemChamado, StatusChamado, Usuario } from "@/lib/domain/types";
+import type { AnexoCompartilhado, BaseDados, Chamado, MensagemChamado, StatusChamado, Usuario } from "@/lib/domain/types";
 
 export const ROTULO_STATUS: Record<StatusChamado, string> = {
   aberto: "Aberto",
-  em_atendimento: "Em atendimento",
+  em_atendimento: "Em análise",
   aguardando_participante: "Aguardando participante",
   resolvido: "Resolvido",
   fechado: "Fechado",
@@ -29,28 +29,131 @@ export function protocolo(c: Pick<Chamado, "id" | "criadoEm">): string {
 
 export const tipoDoChamado = (c: Pick<Chamado, "eventoId">) => (c.eventoId ? "evento" : "plataforma");
 
-function geraEventoDoChamado(base: BaseDados, u: Usuario, c: Chamado): boolean {
-  if (!c.eventoId || u.perfil !== "organizador") return false;
-  const ev = base.eventos.find((e) => e.id === c.eventoId);
-  return !!ev && ev.organizacaoId === u.organizacaoId;
+// ---------- Encaminhamentos (administração ↔ organização) ----------
+export const canalDe = (m: Pick<MensagemChamado, "canal">) => m.canal ?? "participante";
+
+export interface Encaminhamento {
+  id: string;
+  chamadoId: string;
+  organizacaoId: string;
+  orientacao: string;
+  anexos: AnexoCompartilhado[];
+  autorId: string;
+  criadoEm: string;
+  /** Mensagens internas (sem o evento de criação). */
+  mensagens: MensagemChamado[];
+  /** Aguardando o organizador ou retorno já enviado à administração. */
+  situacao: "aguardando_organizador" | "retorno_enviado";
+  ultimoRetorno: string | null;
 }
 
-/** Quem pode atender: admin sempre; organizador só chamados de eventos da própria organização. */
-export function podeAtender(base: BaseDados, u: Usuario | null, c: Chamado): boolean {
-  if (!u?.ativo) return false;
-  return u.perfil === "admin" || geraEventoDoChamado(base, u, c);
+/** Encaminhamentos derivados do histórico interno, em ordem de criação. */
+export function encaminhamentos(base: Pick<BaseDados, "usuarios">, c: Chamado): Encaminhamento[] {
+  const lista: Encaminhamento[] = [];
+  for (const m of c.mensagens) {
+    if (m.acao?.tipo !== "encaminhamento" || !m.encaminhamento) continue;
+    const id = m.acao.valor;
+    const doEnc = c.mensagens.filter((x) => x.encaminhamentoId === id && x !== m);
+    let situacao: Encaminhamento["situacao"] = "aguardando_organizador";
+    let ultimoRetorno: string | null = null;
+    for (const x of doEnc) {
+      const autor = base.usuarios.find((u) => u.id === x.autorId);
+      const doOrganizador = x.acao?.tipo === "retorno" || (x.tipo !== "sistema" && autor?.perfil === "organizador");
+      if (doOrganizador) { situacao = "retorno_enviado"; ultimoRetorno = x.criadoEm; }
+      else if (x.tipo !== "sistema") situacao = "aguardando_organizador";
+    }
+    lista.push({ id, chamadoId: c.id, organizacaoId: m.encaminhamento.organizacaoId, orientacao: m.encaminhamento.orientacao, anexos: m.encaminhamento.anexos,
+      autorId: m.autorId, criadoEm: m.criadoEm, mensagens: doEnc, situacao, ultimoRetorno });
+  }
+  return lista;
+}
+
+/** Retorno do organizador ainda não tratado: nada da administração depois dele. */
+export function retornoRecebido(base: Pick<BaseDados, "usuarios">, c: Chamado): boolean {
+  if (!ativo(c)) return false;
+  return encaminhamentos(base, c).some((e) => {
+    if (e.situacao !== "retorno_enviado" || !e.ultimoRetorno) return false;
+    return !c.mensagens.some((m) => m.criadoEm > e.ultimoRetorno! && base.usuarios.find((u) => u.id === m.autorId)?.perfil === "admin");
+  });
+}
+
+export type StatusExibido = StatusChamado | "aguardando_organizador";
+export const ROTULO_STATUS_EXIBIDO: Record<StatusExibido, string> = { ...ROTULO_STATUS, aguardando_organizador: "Aguardando organizador" };
+
+/** Status mostrado: "aguardando organizador" é derivado do encaminhamento em aberto (sem nova coluna). */
+export function statusExibido(base: Pick<BaseDados, "usuarios">, c: Chamado): StatusExibido {
+  if ((c.status === "aberto" || c.status === "em_atendimento") && encaminhamentos(base, c).some((e) => e.situacao === "aguardando_organizador")) return "aguardando_organizador";
+  return c.status;
+}
+
+/** Quem atende: somente a administração. */
+export function podeAtender(_base: BaseDados, u: Usuario | null, _c: Chamado): boolean {
+  return !!u?.ativo && u.perfil === "admin";
+}
+
+/** Organizador da organização destinatária de algum encaminhamento. */
+export function recebeuEncaminhamento(base: BaseDados, u: Usuario | null, c: Chamado): boolean {
+  if (!u?.ativo || u.perfil !== "organizador" || !u.organizacaoId) return false;
+  return encaminhamentos(base, c).some((e) => e.organizacaoId === u.organizacaoId);
 }
 
 export function podeVer(base: BaseDados, u: Usuario | null, c: Chamado): boolean {
   if (!u?.ativo) return false;
-  return c.solicitanteId === u.id || podeAtender(base, u, c);
+  return c.solicitanteId === u.id || podeAtender(base, u, c) || recebeuEncaminhamento(base, u, c);
 }
 
-export function papelNoChamado(base: BaseDados, autorId: string, c: Chamado): PapelSuporte {
-  const u = base.usuarios.find((x) => x.id === autorId);
-  if (u?.perfil === "admin") return "admin";
-  if (autorId !== c.solicitanteId && u?.perfil === "organizador") return "organizador";
-  return "participante";
+/**
+ * O que cada pessoa recebe de um chamado. Participante: só a conversa pública.
+ * Organizador: só os encaminhamentos da própria organização (sem descrição, conversa ou anexos não compartilhados).
+ */
+export function vistaDoChamado(base: BaseDados, u: Usuario | null, c: Chamado): Chamado | null {
+  if (!u?.ativo) return null;
+  if (podeAtender(base, u, c)) return c;
+  if (c.solicitanteId === u.id) return { ...c, mensagens: c.mensagens.filter((m) => canalDe(m) === "participante") };
+  if (!recebeuEncaminhamento(base, u, c)) return null;
+  const meus = new Set(encaminhamentos(base, c).filter((e) => e.organizacaoId === u.organizacaoId).map((e) => e.id));
+  return {
+    ...c, descricao: "",
+    mensagens: c.mensagens.filter((m) => canalDe(m) === "interno" && (meus.has(m.encaminhamentoId ?? "") || (m.acao?.tipo === "encaminhamento" && meus.has(m.acao.valor)))),
+  };
+}
+
+/** Anexos que a pessoa pode abrir (id da mensagem que contém o arquivo). */
+export function podeAbrirAnexo(base: BaseDados, u: Usuario | null, c: Chamado, mensagemId: string): boolean {
+  const v = vistaDoChamado(base, u, c);
+  if (!v) return false;
+  if (v.mensagens.some((m) => m.id === mensagemId && m.anexo)) return true;
+  return encaminhamentos(base, c).some((e) => e.organizacaoId === u?.organizacaoId && u?.perfil === "organizador" && e.anexos.some((a) => a.mensagemId === mensagemId));
+}
+
+// ---------- Destinos dos links (um único lugar monta as URLs do suporte) ----------
+export const ROTAS_SUPORTE = ["/app/suporte", "/admin/suporte", "/organizacao/suporte"] as const;
+
+/** Destino do chamado para a pessoa: participante → Meus chamados; admin → gestão; organizador → encaminhamento. */
+export function linkSuporte(base: BaseDados, u: Pick<Usuario, "id" | "perfil" | "organizacaoId"> | undefined, c: Chamado, encaminhamentoId?: string): string {
+  if (!u) return `/app/suporte?c=${encodeURIComponent(c.id)}`;
+  if (c.solicitanteId === u.id) return `/app/suporte?c=${encodeURIComponent(c.id)}`;
+  if (u.perfil === "admin") return `/admin/suporte?c=${encodeURIComponent(c.id)}`;
+  const enc = encaminhamentoId ?? [...encaminhamentos(base, c)].reverse().find((e) => e.organizacaoId === u.organizacaoId)?.id;
+  return enc ? `/organizacao/suporte?e=${encodeURIComponent(enc)}` : "/organizacao/suporte";
+}
+
+/**
+ * Reescreve links de suporte (inclusive de notificações antigas) para a área certa de quem abre.
+ * Sem acesso, mantém um destino na área da pessoa, onde aparece a tela de indisponível.
+ */
+export function resolverLinkSuporte(base: BaseDados, u: Usuario | null, link: string): string {
+  const [caminho, q] = link.split("?");
+  if (!(ROTAS_SUPORTE as readonly string[]).includes(caminho ?? "")) return link;
+  const ps = new URLSearchParams(q ?? "");
+  const cId = ps.get("c");
+  const eId = ps.get("e");
+  const c = cId ? base.chamados.find((x) => x.id === cId) : eId ? base.chamados.find((x) => x.mensagens.some((m) => m.acao?.tipo === "encaminhamento" && m.acao.valor === eId)) : undefined;
+  if (!u) return link;
+  if (c && podeVer(base, u, c)) return linkSuporte(base, u, c, eId ?? undefined);
+  const area = u.perfil === "admin" ? "/admin/suporte" : u.perfil === "organizador" && caminho === "/organizacao/suporte" ? "/organizacao/suporte" : "/app/suporte";
+  const id = cId ?? eId ?? "indisponivel";
+  return `${area}?${area === "/organizacao/suporte" ? "e" : "c"}=${encodeURIComponent(id)}`;
 }
 
 const sistemas = (c: Chamado) => c.mensagens.filter((m) => m.tipo === "sistema");
