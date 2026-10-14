@@ -6,7 +6,7 @@ import { carregarBase } from "@/services/db";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { recarregarVisao } from "@/api/sessao.functions";
 import { marcarLidoServidor } from "@/api/suporte.functions";
-import { lidoAteSuporte, naoLidas, pendenteDeResposta, podeAtender, responsavelId } from "@/lib/suporte";
+import { encaminhamentos, naoLidas, pendenteDeResposta, podeAtender, responsavelId, retornoRecebido } from "@/lib/suporte";
 
 const CANAL = "milsim-suporte";
 type Lidos = Record<string, string>;
@@ -81,9 +81,15 @@ export function SuporteProvider({ usuarioId, children }: { usuarioId: string | u
     for (const c of base.chamados) {
       const n = naoLidas(c, usuarioId, lidos[c.id]);
       if (c.solicitanteId === usuarioId) { if (n > 0) p++; continue; }
+      if (eu?.perfil === "organizador") {
+        // Organização: demandas encaminhadas aguardando retorno ou com mensagem nova.
+        if (encaminhamentos(base, c).some((x) => x.organizacaoId === eu.organizacaoId && x.situacao === "aguardando_organizador") || n > 0) e++;
+        continue;
+      }
       if (!podeAtender(base, eu, c)) continue;
       const semDono = c.status === "aberto" && !responsavelId(c);
-      if (n > 0 || semDono || (pendenteDeResposta(c) && (!responsavelId(c) || responsavelId(c) === usuarioId))) e++;
+      const meu = !responsavelId(c) || responsavelId(c) === usuarioId;
+      if (n > 0 || semDono || (meu && (pendenteDeResposta(c) || retornoRecebido(base, c)))) e++;
     }
     return { p, e };
   }, [usuarioId, lidos]);

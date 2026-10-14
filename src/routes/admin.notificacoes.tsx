@@ -1,3 +1,5 @@
+import { useAuth } from "@/contexts/AuthContext";
+import { resolverLinkSuporte } from "@/lib/suporte";
 import { destinoDoLink } from "@/lib/links";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -22,6 +24,8 @@ export const Route = createFileRoute("/admin/notificacoes")({
 const PADRAO_EVENTOS = /inscri|solicit|evento|cortesia|denúnc|denunc|comunidad|cancelamento|estorno/i;
 
 function NotificacoesAdmin() {
+  // Links de outras pessoas abrem a tela equivalente da administração.
+  const usuarioLink = useAuth().usuario ?? null;
   const versao = useVersaoBase();
   const [soNaoLidas, setSoNaoLidas] = useState(false);
 
@@ -89,7 +93,7 @@ function NotificacoesAdmin() {
                     </p>
                     {n.link && (
                       <Link
-                        {...(destinoDoLink(n.link) as { to: string })}
+                        {...(destinoDoLink(resolverLinkSuporte(carregarBase(), usuarioLink, n.link)) as { to: string })}
                         className="mt-1 inline-block text-sm text-accent hover:underline"
                         onClick={() => marcarLida(n.id)}
                       >

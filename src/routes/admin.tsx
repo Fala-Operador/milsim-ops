@@ -52,6 +52,11 @@ function LayoutAdmin() {
   const abaAtual = [...abas].reverse().find((a) => ("exato" in a ? caminho === a.to : caminho.startsWith(a.to))) ?? abas[0];
 
   useEffect(() => setMontado(true), []);
+  const endereco = useRouterState({ select: (s) => s.location.href });
+  // Sem sessão: pede login e volta ao mesmo endereço (permissão revalidada depois).
+  useEffect(() => {
+    if (montado && !usuario) navigate({ to: "/login", search: { redirect: endereco } });
+  }, [montado, usuario, navigate, endereco]);
   useEffect(() => {
     if (usuario && usuario.perfil !== "admin") navigate({ to: "/app" });
   }, [usuario, navigate]);

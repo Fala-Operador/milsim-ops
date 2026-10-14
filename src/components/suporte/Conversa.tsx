@@ -5,7 +5,7 @@ import { AlertCircle, ArrowDown, FileText, Loader2, Paperclip, RotateCw, X } fro
 import { linkAnexo } from "@/api/suporte.functions";
 import { useSuporte } from "@/contexts/SuporteContext";
 import { useConversa } from "./useConversa";
-import { diaDe, papelNoChamado, ROTULO_PAPEL, TAMANHO_MAX_ANEXO, TIPOS_ANEXO } from "@/lib/suporte";
+import { canalDe, diaDe, papelNoChamado, ROTULO_PAPEL, TAMANHO_MAX_ANEXO, TIPOS_ANEXO } from "@/lib/suporte";
 import type { BaseDados, Chamado, MensagemChamado } from "@/lib/domain/types";
 import { Botao } from "@/components/ui";
 
@@ -62,9 +62,16 @@ function BotaoAnexo({ chamadoId, m }: { chamadoId: string; m: MensagemChamado })
   );
 }
 
-export function Conversa({ base, chamado, usuarioId, somenteLeitura }: { base: BaseDados; chamado: Chamado; usuarioId: string; somenteLeitura: boolean }) {
+interface PropsConversa {
+  base: BaseDados; chamado: Chamado; usuarioId: string; somenteLeitura: boolean;
+  /** Comunicação interna: mensagens desse encaminhamento e envio só para ele. */
+  encaminhamentoId?: string | undefined;
+  rotuloEnviar?: string; aviso?: string; textoVazio?: string;
+}
+
+export function Conversa({ base, chamado, usuarioId, somenteLeitura, encaminhamentoId, rotuloEnviar = "Enviar", aviso, textoVazio }: PropsConversa) {
   const { lidoAte, marcarLido } = useSuporte();
-  const { rascunho, setRascunho, anexo, setAnexo, enviar, pendentes, tentarNovamente, descartar } = useConversa(chamado.id, usuarioId);
+  const { rascunho, setRascunho, anexo, setAnexo, enviar, pendentes, tentarNovamente, descartar } = useConversa(chamado.id, usuarioId, encaminhamentoId);
   const [visiveis, setVisiveis] = useState(PAGINA);
   const [novas, setNovas] = useState(false);
   const [erroArquivo, setErroArquivo] = useState("");
@@ -82,7 +89,9 @@ export function Conversa({ base, chamado, usuarioId, somenteLeitura }: { base: B
 
   const enviadas = new Set(chamado.mensagens.map((m) => m.clienteId).filter(Boolean));
   const meusPendentes = pendentes.filter((p) => !enviadas.has(p.clienteId));
-  const todas = chamado.mensagens;
+  const todas = useMemo(() => chamado.mensagens.filter((m) => encaminhamentoId
+    ? m.encaminhamentoId === encaminhamentoId
+    : canalDe(m) === "participante"), [chamado.mensagens, encaminhamentoId]);
   const inicio = Math.max(0, todas.length - visiveis);
   const lista = todas.slice(inicio);
   const ultima = todas.at(-1);
@@ -110,7 +119,7 @@ export function Conversa({ base, chamado, usuarioId, somenteLeitura }: { base: B
     if (pertoDoFim.current) { el.scrollTop = el.scrollHeight; verificarFim(); }
     else setNovas(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [todas.length, meusPendentes.length, chamado.id]);
+  }, [todas.length, meusPendentes.length, chamado.id, encaminhamentoId]);
 
   useEffect(() => {
     const f = () => document.visibilityState === "visible" && verificarFim();
@@ -157,6 +166,7 @@ export function Conversa({ base, chamado, usuarioId, somenteLeitura }: { base: B
             <Botao type="button" variante="contorno" className="!py-1 text-xs" onClick={carregarAnteriores}>Carregar mensagens anteriores</Botao>
           </div>
         )}
+        {todas.length === 0 && textoVazio && <p className="py-6 text-center text-sm text-muted-foreground">{textoVazio}</p>}
         <ol className="space-y-2">
           {lista.map((m) => {
             const dia = diaDe(m.criadoEm);
@@ -172,7 +182,7 @@ export function Conversa({ base, chamado, usuarioId, somenteLeitura }: { base: B
                 {naoLida && <p className="my-2 flex items-center gap-2 text-xs font-semibold text-accent"><span className="h-px flex-1 bg-accent/50" />Não lidas<span className="h-px flex-1 bg-accent/50" /></p>}
                 {m.tipo === "sistema" ? (
                   <p className="mx-auto max-w-md rounded-md border border-dashed border-border px-3 py-1.5 text-center text-xs text-muted-foreground">
-                    {m.acao?.tipo === "status" && m.acao.valor === "resolvido" ? <>Resolvido por {nomeDe(m.autorId)}: <span className="text-foreground">{m.corpo}</span></> : m.corpo}
+                    {m.acao?.tipo === "retorno" ? <>{nomeDe(m.autorId)}: {m.corpo}</> : m.acao?.tipo === "status" && m.acao.valor === "resolvido" ? <>Resolvido por {nomeDe(m.autorId)}: <span className="text-foreground">{m.corpo}</span></> : m.corpo}
                     <span className="ml-1">· {hora(m.criadoEm)}</span>
                   </p>
                 ) : (
@@ -226,6 +236,7 @@ export function Conversa({ base, chamado, usuarioId, somenteLeitura }: { base: B
         <p className="border-t border-border px-4 py-3 text-sm text-muted-foreground">Chamado fechado — somente leitura.</p>
       ) : (
         <div className="border-t border-border bg-card px-3 py-3 sm:px-4">
+          {aviso && <p className="mb-2 text-[11px] font-medium text-muted-foreground">{aviso}</p>}
           {anexo && (
             <p className="mb-2 inline-flex max-w-full items-center gap-2 rounded-md border border-border px-2 py-1 text-xs">
               <Paperclip className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{anexo.nome}</span>
@@ -239,13 +250,13 @@ export function Conversa({ base, chamado, usuarioId, somenteLeitura }: { base: B
             <Botao type="button" variante="contorno" className="!px-2.5" aria-label="Anexar imagem ou PDF (até 5 MB)" title="Anexar imagem ou PDF (até 5 MB)" onClick={() => arquivo.current?.click()}>
               <Paperclip className="h-4 w-4" />
             </Botao>
-            <label htmlFor={`msg-${chamado.id}`} className="sr-only">Mensagem</label>
-            <textarea id={`msg-${chamado.id}`} ref={campo} rows={1} value={rascunho} maxLength={4000}
+            <label htmlFor={`msg-${chamado.id}${encaminhamentoId ?? ""}`} className="sr-only">Mensagem</label>
+            <textarea id={`msg-${chamado.id}${encaminhamentoId ?? ""}`} ref={campo} rows={1} value={rascunho} maxLength={4000}
               placeholder="Escreva sua mensagem"
               onChange={(e) => setRascunho(e.target.value)}
               onKeyDown={(e) => { if (desktop && e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); submeter(); } }}
               className="min-h-10 flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40" />
-            <Botao type="button" onClick={submeter} disabled={!rascunho.trim() && !anexo}>Enviar</Botao>
+            <Botao type="button" onClick={submeter} disabled={!rascunho.trim() && !anexo}>{rotuloEnviar}</Botao>
           </div>
           <p className="mt-1 hidden text-[11px] text-muted-foreground sm:block">Enter envia · Shift+Enter quebra linha · Anexos: imagem ou PDF até 5 MB</p>
         </div>

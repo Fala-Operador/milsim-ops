@@ -301,8 +301,17 @@ export interface MensagemChamado {
   /** Id gerado pelo navegador: reenvios não duplicam a mensagem. */
   clienteId?: string | undefined;
   anexo?: AnexoChamado | undefined;
-  acao?: { tipo: "status" | "responsavel" | "vinculo"; valor: string } | undefined;
+  acao?: { tipo: "status" | "responsavel" | "vinculo" | "encaminhamento" | "retorno"; valor: string } | undefined;
+  /** Audiência: "participante" (padrão, inclusive mensagens antigas) ou "interno" (administração ↔ organização). */
+  canal?: "participante" | "interno" | undefined;
+  /** Mensagens internas pertencem a um encaminhamento (id próprio, diferente do chamado). */
+  encaminhamentoId?: string | undefined;
+  /** Só no evento de sistema que cria o encaminhamento. */
+  encaminhamento?: { organizacaoId: string; orientacao: string; anexos: AnexoCompartilhado[] } | undefined;
 }
+
+/** Anexo do participante que a administração escolheu compartilhar (sem caminho do arquivo). */
+export interface AnexoCompartilhado { mensagemId: string; nome: string; tipo: string; tamanho: number }
 
 export interface Chamado {
   id: string;
