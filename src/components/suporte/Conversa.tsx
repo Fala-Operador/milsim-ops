@@ -1,7 +1,7 @@
 // Conversa de um chamado: histórico paginado com rolagem própria, separadores por dia,
 // eventos do atendimento discretos, estados de envio e área inferior (compositor ou,
 // quando o status não aceita mensagens, o `rodape` recebido de quem chama).
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   AlertCircle,
   ArrowDown,
@@ -137,12 +137,25 @@ export function Conversa({
   chamado,
   usuarioId,
   rodape,
+  somenteLeitura = false,
+  encaminhamentoId,
+  rotuloEnviar = "Enviar",
+  aviso,
+  textoVazio,
 }: {
   base: BaseDados;
   chamado: Chamado;
   usuarioId: string;
   /** Substitui o compositor quando o status não aceita mensagens (resolvido/fechado). */
   rodape?: ReactNode;
+  /** Sem compositor (ex.: chamado fechado). */
+  somenteLeitura?: boolean;
+  /** Mostra só as mensagens desse encaminhamento; sem ele, a conversa com o participante. */
+  encaminhamentoId?: string | undefined;
+  rotuloEnviar?: string;
+  /** Aviso discreto acima do compositor. */
+  aviso?: string;
+  textoVazio?: string;
 }) {
   const { lidoAte, marcarLido } = useSuporte();
   const { rascunho, setRascunho, anexo, setAnexo, enviar, pendentes, tentarNovamente, descartar } =
@@ -174,10 +187,10 @@ export function Conversa({
 
   const enviadas = new Set(chamado.mensagens.map((m) => m.clienteId).filter(Boolean));
   const meusPendentes = pendentes.filter((p) => !enviadas.has(p.clienteId));
-  const todas = useMemo(
+  const todas = useMemo<MensagemChamado[]>(
     () =>
-      chamado.mensagens.filter((m) =>
-        encaminhamentoId ? m.encaminhamentoId === encaminhamentoId : canalDe(m) === "participante",
+      chamado.mensagens.filter((m: MensagemChamado) =>
+        encaminhamentoId ? (m as MensagemChamado & { encaminhamentoId?: string }).encaminhamentoId === encaminhamentoId : canalDe(m) === "participante",
       ),
     [chamado.mensagens, encaminhamentoId],
   );
@@ -301,7 +314,7 @@ export function Conversa({
               !naoLida &&
               anterior?.tipo !== "sistema" &&
               anterior?.autorId === m.autorId &&
-              Date.parse(m.criadoEm) - Date.parse(anterior.criadoEm) < AGRUPAR_MS;
+              Date.parse(m.criadoEm) - Date.parse(anterior!.criadoEm) < AGRUPAR_MS;
             anterior = m;
             const papel = papelNoChamado(base, m.autorId, chamado);
             return (
@@ -425,7 +438,9 @@ export function Conversa({
         )}
       </div>
 
-      {rodape ?? (
+      {todas.length === 0 && textoVazio && <p className="px-4 py-2 text-center text-sm text-muted-foreground">{textoVazio}</p>}
+      {!somenteLeitura && aviso && <p className="px-4 pt-2 text-xs text-muted-foreground">{aviso}</p>}
+      {somenteLeitura ? rodape ?? null : rodape ?? (
         <div className="border-t border-border bg-card px-3 py-2.5 sm:px-4">
           {anexo && (
             <p className="mb-2 inline-flex max-w-full items-center gap-2 rounded-md border border-border px-2 py-1 text-xs">
@@ -495,7 +510,7 @@ export function Conversa({
               aria-label="Enviar mensagem"
             >
               <SendHorizontal className="h-4 w-4" />
-              <span className="hidden @min-[480px]:inline">Enviar</span>
+              <span className="hidden @min-[480px]:inline">{rotuloEnviar}</span>
             </Botao>
           </div>
           <p className="mt-1 hidden text-[11px] text-muted-foreground @min-[560px]:block">

@@ -14,6 +14,7 @@ import {
   podeAbrirAnexo,
   statusExibido,
   resolverLinkSuporte,
+  retornoRecebido,
 } from "@/lib/suporte";
 import type { BaseDados, Chamado, Usuario } from "@/lib/domain/types";
 
