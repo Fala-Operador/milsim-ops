@@ -79,6 +79,23 @@ export function naoLidas(c: Chamado, usuarioId: string, lidoAte: string | undefi
   return mensagensDeTexto(c).filter((m) => m.autorId !== usuarioId && (!lidoAte || m.criadoEm > lidoAte)).length;
 }
 
+// ---------- Leitura por pessoa (persistida no servidor, no cadastro do usuário) ----------
+const LIMITE_LEITURAS = 200;
+
+/** Até quando a pessoa leu um chamado (ISO), gravado no servidor. */
+export function lidoAteSuporte(u: Pick<Usuario, "silencioNotificacoes">, chamadoId: string): string | undefined {
+  return u.silencioNotificacoes?.leiturasSuporte?.[chamadoId];
+}
+
+/** Registra a leitura no objeto do usuário: só avança a marca e limita o histórico. */
+export function registrarLeitura(u: Usuario, chamadoId: string, ate: string): void {
+  const atual = u.silencioNotificacoes?.leiturasSuporte ?? {};
+  if (atual[chamadoId] && atual[chamadoId]! >= ate) return;
+  const entradas = Object.entries({ ...atual, [chamadoId]: ate });
+  entradas.sort((a, b) => b[1].localeCompare(a[1]));
+  u.silencioNotificacoes = { ...u.silencioNotificacoes, leiturasSuporte: Object.fromEntries(entradas.slice(0, LIMITE_LEITURAS)) };
+}
+
 /** Aguardando resposta da equipe: última mensagem é do solicitante e o chamado está ativo. */
 export function pendenteDeResposta(c: Chamado): boolean {
   if (c.status === "resolvido" || c.status === "fechado") return false;
