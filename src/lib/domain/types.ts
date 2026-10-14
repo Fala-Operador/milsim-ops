@@ -301,8 +301,17 @@ export interface MensagemChamado {
   /** Id gerado pelo navegador: reenvios não duplicam a mensagem. */
   clienteId?: string | undefined;
   anexo?: AnexoChamado | undefined;
-  acao?: { tipo: "status" | "responsavel" | "vinculo"; valor: string } | undefined;
+  acao?: { tipo: "status" | "responsavel" | "vinculo" | "encaminhamento" | "retorno"; valor: string } | undefined;
+  /** Audiência: "participante" (padrão, inclusive mensagens antigas) ou "interno" (administração ↔ organização). */
+  canal?: "participante" | "interno" | undefined;
+  /** Mensagens internas pertencem a um encaminhamento (id próprio, diferente do chamado). */
+  encaminhamentoId?: string | undefined;
+  /** Só no evento de sistema que cria o encaminhamento. */
+  encaminhamento?: { organizacaoId: string; orientacao: string; anexos: AnexoCompartilhado[] } | undefined;
 }
+
+/** Anexo do participante que a administração escolheu compartilhar (sem caminho do arquivo). */
+export interface AnexoCompartilhado { mensagemId: string; nome: string; tipo: string; tamanho: number }
 
 export interface Chamado {
   id: string;
@@ -392,6 +401,8 @@ export interface BaseDados {
   visitasComunidade: Record<string, string>; // `${usuarioId}:${eventoId}` -> ISO
   parceiros: Parceiro[];
   secoesInicio: SecaoInicial[];
+  /** Campanhas de impulsionamento concedidas pela administração. */
+  impulsionamentos: Impulsionamento[];
   /** Base de referência do credenciamento (registros já aceitos pelo servidor). */
   checkins: RegistroCheckin[];
   // ===== Perfil do operador e gamificação =====
@@ -742,6 +753,33 @@ export interface SecaoInicial {
   mostrarDescricoes: boolean;
   superficieLogo: "nenhuma" | "clara" | "escura";
   banner?: ConfigBanner | undefined;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+// ===== Impulsionamento de operações =====
+export type ObjetivoImpulsionamento = "divulgacao" | "inscricoes";
+export type PrioridadeImpulsionamento = "normal" | "alta";
+/** Estado gravado; "agendado", "encerrado" e "suspenso" também são derivados na leitura. */
+export type StatusImpulsionamento = "rascunho" | "ativo" | "pausado" | "encerrado";
+/** Posição de divulgação: id de uma seção de eventos da página inicial ou o bloco da listagem. */
+export const POSICAO_LISTAGEM = "listagem";
+export interface Impulsionamento {
+  id: string;
+  eventoId: string;
+  nome: string;
+  objetivo: ObjetivoImpulsionamento;
+  posicoes: string[];
+  abrangencia: Abrangencia;
+  inicioEm: string;
+  fimEm: string;
+  fuso: string;
+  prioridade: PrioridadeImpulsionamento;
+  ordem: number;
+  imagemPromocional?: string | undefined;
+  chamada?: string | undefined;
+  status: StatusImpulsionamento;
+  criadoPor: string;
   criadoEm: string;
   atualizadoEm: string;
 }

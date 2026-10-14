@@ -7,6 +7,7 @@ import { useSuporte } from "@/contexts/SuporteContext";
 export interface Pendente {
   clienteId: string;
   chamadoId: string;
+  encaminhamentoId?: string | undefined;
   corpo: string;
   anexo?: AnexoEnvio | undefined;
   estado: "enviando" | "falha";
@@ -23,7 +24,9 @@ const ouvintes = new Set<() => void>();
 const avisar = () => ouvintes.forEach((f) => f());
 function atualizarPendentes(fn: (l: Pendente[]) => Pendente[]) { pendentesGlobais = fn(pendentesGlobais); avisar(); }
 
-export function useConversa(chamadoId: string, usuarioId: string) {
+export function useConversa(chamadoId: string, usuarioId: string, encaminhamentoId?: string) {
+  // Rascunhos e pendências separados por destino (participante ou encaminhamento).
+  const chave = encaminhamentoId ? `${chamadoId}#${encaminhamentoId}` : chamadoId;
   const { sinalizar } = useSuporte();
   const [rascunho, setRascunhoEstado] = useState("");
   const [anexo, setAnexo] = useState<AnexoEnvio | null>(null);
@@ -39,22 +42,22 @@ export function useConversa(chamadoId: string, usuarioId: string) {
 
   // Rascunho separado por pessoa e chamado.
   useEffect(() => {
-    try { setRascunhoEstado(localStorage.getItem(chaveRascunho(usuarioId, chamadoId)) ?? ""); } catch { setRascunhoEstado(""); }
+    try { setRascunhoEstado(localStorage.getItem(chaveRascunho(usuarioId, chave)) ?? ""); } catch { setRascunhoEstado(""); }
     setAnexo(null);
-  }, [usuarioId, chamadoId]);
+  }, [usuarioId, chave]);
 
   const setRascunho = useCallback((v: string) => {
     setRascunhoEstado(v);
     try {
-      if (v) localStorage.setItem(chaveRascunho(usuarioId, chamadoId), v);
-      else localStorage.removeItem(chaveRascunho(usuarioId, chamadoId));
+      if (v) localStorage.setItem(chaveRascunho(usuarioId, chave), v);
+      else localStorage.removeItem(chaveRascunho(usuarioId, chave));
     } catch { /* ignora */ }
-  }, [usuarioId, chamadoId]);
+  }, [usuarioId, chave]);
 
   const despachar = useCallback(async (p: Pendente) => {
     atualizarPendentes((l) => l.map((x) => (x.clienteId === p.clienteId ? { ...x, estado: "enviando", erro: undefined }  : x)));
     try {
-      await enviarMensagemSuporte(p.chamadoId, p.clienteId, p.corpo, p.anexo);
+      await enviarMensagemSuporte(p.chamadoId, p.clienteId, p.corpo, p.anexo, p.encaminhamentoId);
       atualizarPendentes((l) => l.filter((x) => x.clienteId !== p.clienteId));
       sinalizar(p.chamadoId);
     } catch (e) {
@@ -65,13 +68,13 @@ export function useConversa(chamadoId: string, usuarioId: string) {
   const enviar = useCallback(() => {
     const corpo = rascunho.trim();
     if (!corpo && !anexo) return false;
-    const p: Pendente = { clienteId: novoId(), chamadoId, corpo, anexo: anexo ?? undefined, estado: "enviando", criadoEm: new Date().toISOString() };
+    const p: Pendente = { clienteId: novoId(), chamadoId, encaminhamentoId, corpo, anexo: anexo ?? undefined, estado: "enviando", criadoEm: new Date().toISOString() };
     atualizarPendentes((l) => [...l, p]);
     setRascunho("");
     setAnexo(null);
     void despachar(p);
     return true;
-  }, [rascunho, anexo, chamadoId, despachar, setRascunho]);
+  }, [rascunho, anexo, chamadoId, encaminhamentoId, despachar, setRascunho]);
 
   /** Mesmo clienteId: o servidor não duplica se a primeira tentativa tiver chegado. */
   const tentarNovamente = useCallback((clienteId: string) => {
@@ -82,9 +85,9 @@ export function useConversa(chamadoId: string, usuarioId: string) {
   const descartar = useCallback((clienteId: string) => {
     const p = pendentesGlobais.find((x) => x.clienteId === clienteId);
     atualizarPendentes((l) => l.filter((x) => x.clienteId !== clienteId));
-    if (p && p.chamadoId === atual.current && !rascunho) setRascunho(p.corpo); // devolve o texto ao campo
-  }, [rascunho, setRascunho]);
+    if (p && p.chamadoId === atual.current && p.encaminhamentoId === encaminhamentoId && !rascunho) setRascunho(p.corpo); // devolve o texto ao campo
+  }, [rascunho, setRascunho, encaminhamentoId]);
 
-  const pendentes = pendentesGlobais.filter((p) => p.chamadoId === chamadoId);
+  const pendentes = pendentesGlobais.filter((p) => p.chamadoId === chamadoId && p.encaminhamentoId === encaminhamentoId);
   return { rascunho, setRascunho, anexo, setAnexo, enviar, pendentes, tentarNovamente, descartar };
 }

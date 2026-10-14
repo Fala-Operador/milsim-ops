@@ -5,7 +5,7 @@ import * as sup from "@/services/suporte";
 import { ErroDominio } from "@/services/db";
 import { contextoSomenteLeitura, exigirUsuario, mutar } from "@/server/unidade.server";
 import { gravarAnexo, urlDoAnexo } from "@/server/anexosSuporte.server";
-import { podeVer, LIMITE_MENSAGEM, type AcaoStatus } from "@/lib/suporte";
+import { podeVer, podeAbrirAnexo, LIMITE_MENSAGEM, type AcaoStatus } from "@/lib/suporte";
 import { chamar } from "@/api/cliente";
 import { recarregarVisao } from "@/api/sessao.functions";
 
@@ -47,11 +47,19 @@ export const abrirChamadoSuporteFn = createServerFn({ method: "POST" })
   });
 
 export const enviarMensagemSuporteFn = createServerFn({ method: "POST" })
-  .validator(z.object({ chamadoId: id, clienteId, corpo: z.string().max(LIMITE_MENSAGEM), anexo }).parse)
+  .validator(z.object({ chamadoId: id, clienteId, corpo: z.string().max(LIMITE_MENSAGEM), anexo, encaminhamentoId: id.optional() }).parse)
   .handler(async ({ data }) => {
     const meta = await enviarAnexo(data.chamadoId, data.clienteId, data.anexo, false);
-    return mutar(({ usuario }) => sup.enviarMensagem(exigirUsuario(usuario), data.chamadoId, data.clienteId, data.corpo, meta));
+    return mutar(({ usuario }) => sup.enviarMensagem(exigirUsuario(usuario), data.chamadoId, data.clienteId, data.corpo, meta, data.encaminhamentoId));
   });
+
+export const encaminharChamadoFn = createServerFn({ method: "POST" })
+  .validator(z.object({ chamadoId: id, clienteId, orientacao: z.string().max(LIMITE_MENSAGEM), anexos: z.array(id).max(20) }).parse)
+  .handler(({ data }) => mutar(({ usuario }) => sup.encaminhar(exigirUsuario(usuario), data.chamadoId, data.clienteId, data.orientacao, data.anexos)));
+
+export const marcarRetornoFn = createServerFn({ method: "POST" })
+  .validator(z.object({ chamadoId: id, encaminhamentoId: id }).parse)
+  .handler(({ data }) => mutar(({ usuario }) => sup.marcarRetorno(exigirUsuario(usuario), data.chamadoId, data.encaminhamentoId)));
 
 export const definirResponsavelFn = createServerFn({ method: "POST" })
   .validator(z.object({ chamadoId: id, responsavelId: id.optional() }).parse)
@@ -72,7 +80,7 @@ export const linkAnexoFn = createServerFn({ method: "POST" })
       const { base, usuario } = await contextoSomenteLeitura();
       const u = exigirUsuario(usuario);
       const c = base.chamados.find((x) => x.id === data.chamadoId);
-      if (!c || !podeVer(base, u, c)) throw new ErroDominio("chamado", "Chamado não encontrado.");
+      if (!c || !podeVer(base, u, c) || !podeAbrirAnexo(base, u, c, data.mensagemId)) throw new ErroDominio("chamado", "Chamado não encontrado.");
       const m = c.mensagens.find((x) => x.id === data.mensagemId);
       if (!m?.anexo) throw new ErroDominio("anexo", "Anexo não encontrado.");
       return await urlDoAnexo(m.anexo, data.baixar);
@@ -83,8 +91,11 @@ export const linkAnexoFn = createServerFn({ method: "POST" })
 export type AnexoEnvio = { nome: string; dataUrl: string };
 export interface DadosNovoChamado { clienteId: string; tipo: "evento" | "plataforma"; eventoId?: string | undefined; assunto: string; categoria: string; descricao: string; vinculadoA?: string | undefined; anexo?: AnexoEnvio | undefined }
 export const abrirChamadoSuporte = (d: DadosNovoChamado) => chamar(abrirChamadoSuporteFn({ data: d }));
-export const enviarMensagemSuporte = (chamadoId: string, clienteIdMsg: string, corpo: string, a?: AnexoEnvio) =>
-  chamar(enviarMensagemSuporteFn({ data: { chamadoId, clienteId: clienteIdMsg, corpo, anexo: a } }));
+export const enviarMensagemSuporte = (chamadoId: string, clienteIdMsg: string, corpo: string, a?: AnexoEnvio, encaminhamentoId?: string) =>
+  chamar(enviarMensagemSuporteFn({ data: { chamadoId, clienteId: clienteIdMsg, corpo, anexo: a, encaminhamentoId } }));
+export const encaminharChamado = (chamadoId: string, clienteIdEnc: string, orientacao: string, anexos: string[]) =>
+  chamar(encaminharChamadoFn({ data: { chamadoId, clienteId: clienteIdEnc, orientacao, anexos } }));
+export const marcarRetornoEnviado = (chamadoId: string, encaminhamentoId: string) => chamar(marcarRetornoFn({ data: { chamadoId, encaminhamentoId } }));
 export const assumirChamado = (chamadoId: string, responsavelId?: string) => chamar(definirResponsavelFn({ data: { chamadoId, responsavelId } }));
 export const alterarStatusChamado = (chamadoId: string, acao: AcaoStatus, descricao?: string) =>
   chamar(alterarStatusChamadoFn({ data: { chamadoId, acao, descricao } }));

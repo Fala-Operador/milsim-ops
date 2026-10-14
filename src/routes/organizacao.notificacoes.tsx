@@ -1,3 +1,5 @@
+import { carregarBase } from "@/services/db";
+import { resolverLinkSuporte } from "@/lib/suporte";
 import { destinoDoLink } from "@/lib/links";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
@@ -20,10 +22,11 @@ export const Route = createFileRoute("/organizacao/notificacoes")({
   component: NotificacoesOrganizacao,
 });
 
-const PADRAO_ORGANIZACAO = /inscri|solicit|evento|cortesia|denúnc|denunc|comunidad|cancelamento|estorno/i;
+const PADRAO_ORGANIZACAO = /inscri|solicit|evento|cortesia|denúnc|denunc|comunidad|cancelamento|estorno|suporte|chamado|demanda|encaminh|protocolo/i;
 
 function NotificacoesOrganizacao() {
   const { usuario } = useAuth();
+  const usuarioLink = usuario ?? null;
   const { notificacoes, naoLidas, marcarLida, marcarTodasLidas } = useNotifications();
   const [soNaoLidas, setSoNaoLidas] = useState(false);
 
@@ -71,7 +74,7 @@ function NotificacoesOrganizacao() {
                     <p className="mt-1 text-xs text-muted-foreground">{formatarDataHoraBR(n.criadoEm)}</p>
                     {n.link && (
                       <Link
-                        {...(destinoDoLink(n.link) as { to: string })}
+                        {...(destinoDoLink(resolverLinkSuporte(carregarBase(), usuarioLink, n.link)) as { to: string })}
                         className="mt-1 inline-block text-sm text-accent hover:underline"
                         onClick={() => marcarLida(n.id)}
                       >

@@ -2,6 +2,7 @@
 // conforme quem está logado. É a fronteira de autorização das LEITURAS — o
 // navegador nunca recebe dados que a pessoa não poderia ver.
 // Regras puras (sem rede): testadas em src/test/visao.test.ts.
+import { vistaDoChamado } from "@/lib/suporte";
 import { baseVazia } from "@/lib/persistencia";
 import { forunsVisiveis, nomeExibicao, papelNoEvento, publicacaoVisivel } from "@/services/comunidade";
 import type { BaseDados, Evento, Inscricao, Usuario } from "@/lib/domain/types";
@@ -93,7 +94,8 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
 
   // ----- Contas, suporte e governança -----
   v.solicitacoes = base.solicitacoes.filter((s) => admin || s.usuarioId === meuId);
-  v.chamados = base.chamados.filter((c) => admin || c.solicitanteId === meuId || (!!c.eventoId && geridos.has(c.eventoId)));
+  // Participante só recebe a conversa pública; organização só os encaminhamentos dela.
+  v.chamados = base.chamados.flatMap((c) => { const x = vistaDoChamado(base, eu, c); return x ? [x] : []; });
   v.notificacoes = base.notificacoes.filter((n) => admin || n.usuarioId === meuId);
   v.privacidade = base.privacidade.filter((p) => admin || p.usuarioId === meuId);
   v.auditoria = admin ? base.auditoria : [];
@@ -117,6 +119,13 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
   // ----- Divulgação -----
   v.parceiros = admin ? base.parceiros : base.parceiros.filter((p) => p.ativo);
   v.secoesInicio = admin ? base.secoesInicio : base.secoesInicio.filter((s) => s.status === "publicada");
+  // Impulsionamentos: admin vê tudo; organizador vê as campanhas dos próprios eventos;
+  // o público recebe só campanhas ativas, sem nome interno nem autor.
+  v.impulsionamentos = base.impulsionamentos.flatMap((c) => {
+    if (admin || geridos.has(c.eventoId)) return [c];
+    if (c.status !== "ativo") return [];
+    return [{ ...c, nome: "", criadoPor: "" }];
+  });
 
   // ----- Perfil do operador e gamificação -----
   // Perfil social, equipamentos e galeria: só o dono (nem a administração recebe pela interface).

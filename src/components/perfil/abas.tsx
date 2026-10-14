@@ -232,11 +232,20 @@ export function AbaEquipamentos({ equipamentos, proprio, onMudou }: { equipament
   }
   return (
     <div>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">Cadastro privado. Só aparecem no perfil os equipamentos marcados como visíveis (e se o bloco Equipamentos estiver compartilhado).</p>
-        <Botao onClick={() => setEditando("novo")}>Adicionar equipamento</Botao>
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="font-display text-lg font-semibold uppercase">Meus equipamentos</h2>
+          <p className="text-xs text-muted-foreground">Cadastro privado. Só aparecem no perfil os equipamentos marcados como visíveis (e se o bloco Equipamentos estiver compartilhado). A nota fiscal é sempre só sua.</p>
+        </div>
+        <Botao className="w-full shrink-0 sm:w-auto" onClick={() => setEditando("novo")}>Adicionar equipamento</Botao>
       </div>
-      {meus.length === 0 ? <EstadoVazio titulo="Nenhum equipamento cadastrado" /> : (
+      {meus.length === 0 ? (
+        <div className="rounded-md border border-dashed border-border p-6 text-center">
+          <p className="font-medium">Você ainda não cadastrou equipamentos.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Adicione marca, tipo, modelo e fotos. Se desejar, guarde a nota fiscal de forma privada.</p>
+          <Botao className="mt-3" onClick={() => setEditando("novo")}>Cadastrar primeiro equipamento</Botao>
+        </div>
+      ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {meus.map((e) => (
             <CartaoEquip key={e.id} e={e} extra={

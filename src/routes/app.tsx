@@ -27,7 +27,7 @@ const ITENS = [
   { to: "/app/missoes", rotulo: "Missões" },
   { to: "/app/notificacoes", rotulo: "Notificações" },
   { to: "/app/suporte", rotulo: "Suporte" },
-  { to: "/app/perfil", rotulo: "Perfil" },
+  { to: "/app/perfil", rotulo: "Meu perfil" },
   { to: "/app/privacidade", rotulo: "Privacidade" },
 ] as const;
 
@@ -36,7 +36,7 @@ function LayoutApp() {
   const { naoLidas } = useNotifications();
   const { naoLidasParticipante } = useSuporte();
   const navigate = useNavigate();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pathname = useRouterState({ select: (s) => s.location.href });
   // O servidor não conhece a sessão guardada no navegador: mantém o esqueleto até
   // montar, para que o primeiro desenho do navegador coincida com o HTML recebido.
   const [montado, setMontado] = useState(false);

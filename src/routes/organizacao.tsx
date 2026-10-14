@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSuporte } from "@/contexts/SuporteContext";
@@ -51,6 +51,11 @@ function LayoutOrganizacao() {
   const [montado, setMontado] = useState(false);
 
   useEffect(() => setMontado(true), []);
+  const endereco = useRouterState({ select: (s) => s.location.href });
+  // Sem sessão: pede login e volta ao mesmo endereço (permissão revalidada depois).
+  useEffect(() => {
+    if (montado && !usuario) navigate({ to: "/login", search: { redirect: endereco } });
+  }, [montado, usuario, navigate, endereco]);
   useEffect(() => {
     if (usuario && usuario.perfil !== "organizador" && usuario.perfil !== "admin") {
       navigate({ to: "/app" });

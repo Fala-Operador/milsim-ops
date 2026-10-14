@@ -1,3 +1,4 @@
+import { destinoDoLink, redirectSeguro } from "@/lib/links";
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,7 +34,7 @@ function PaginaLogin() {
     setCarregando(true);
     try {
       await login(email, senha);
-      navigate({ to: redirect ?? "/app" });
+      navigate({ ...destinoDoLink(redirectSeguro(redirect)) } as { to: string });
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha ao entrar.");
     } finally {

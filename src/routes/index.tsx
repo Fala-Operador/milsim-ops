@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Crosshair, MapPin, Search } from "lucide-react";
 import { carregarBase } from "@/services/db";
-import type { BaseDados, Evento } from "@/lib/domain/types";
+import { POSICAO_LISTAGEM, type BaseDados, type Evento } from "@/lib/domain/types";
+import { campanhasNaPosicao } from "@/lib/impulsionamento";
 import { vagasRestantes } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { Badge, Botao, SkeletonGrade } from "@/components/ui";
@@ -96,6 +97,13 @@ function PaginaInicial() {
   const resultados = ordenarEventos(filtrarPorModalidades(regionais, modsSel), ordem, pref.preferencia);
   // "Para você": respeita local e filtros explícitos; nunca amplia a região sozinho.
   const paraVoce = separarPorPreferencia(filtrarPorModalidades(regionais, modsSel), pref.preferencia);
+  // Bloco da listagem: só campanhas cujo evento já atende a todos os filtros explícitos.
+  const idsResultados = new Set(resultados.map((e) => e.id));
+  const impulsionados = base
+    ? campanhasNaPosicao(base, POSICAO_LISTAGEM, local, agora)
+        .filter((c) => idsResultados.has(c.eventoId))
+        .map((c) => ({ ...resultados.find((e) => e.id === c.eventoId)!, campanhaId: c.id }))
+    : [];
   const nacional = local.escopo === "nacional";
   const tituloSecao = nacional
     ? "Explore operações pelo Brasil"
@@ -268,6 +276,23 @@ function PaginaInicial() {
             </div>
           </div>
         ) : (
+          <>
+          {impulsionados.length > 0 && (
+            <div className="mt-4 rounded-lg border border-accent/40 p-4" aria-labelledby="t-impulsionados">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 id="t-impulsionados" className="font-display text-lg font-semibold uppercase">Operações em destaque</h3>
+                <Badge tom="aviso">Em destaque</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">Divulgação da plataforma, de acordo com a sua busca. Os resultados comuns vêm abaixo.</p>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {impulsionados.map((e, i) => (
+                  <CardRastreado key={e.id} ativo eventoId={e.id} origem="destaques" secaoId="listagem" posicao={i + 1} visualizacaoId={visualizacaoId} campanhaId={e.campanhaId}>
+                    <CartaoEvento evento={e} base={base} organizacao={organizacaoDe(e.organizacaoId)} />
+                  </CardRastreado>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {resultados.map((e, i) => (
               <CardRastreado key={e.id} ativo eventoId={e.id} origem="busca" posicao={i + 1} visualizacaoId={visualizacaoId}>
@@ -275,6 +300,7 @@ function PaginaInicial() {
               </CardRastreado>
             ))}
           </div>
+          </>
         )}
       </section>
 
