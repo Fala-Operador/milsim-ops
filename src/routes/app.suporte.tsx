@@ -8,7 +8,7 @@ export const Route = createFileRoute("/app/suporte")({
   head: () => ({
     meta: [
       { title: "Meus chamados — MilSim Ops" },
-      { name: "description", content: "Abra chamados de suporte do evento ou da plataforma e converse com a equipe." },
+      { name: "description", content: "Acompanhe suas solicitações e converse com a administração." },
       { property: "og:title", content: "Meus chamados — MilSim Ops" },
       { property: "og:description", content: "Central de suporte do participante." },
       { property: "og:type", content: "website" },
@@ -26,7 +26,7 @@ function PaginaSuporte() {
   return (
     <div>
       <h1 className="font-display text-2xl font-semibold uppercase">Meus chamados</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Suporte do evento é atendido pela organização e pela administração; suporte da plataforma, só pela administração.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Acompanhe suas solicitações e converse com a administração. Quando necessário, a equipe consultará a organização do evento.</p>
       <div className="mt-4">
         <CentralSuporte modo="participante" usuario={usuario} selecionado={c} eventoInicial={evento}
           onSelecionar={(id) => navigate({ search: id ? { c: id } : {}, replace: true })} />

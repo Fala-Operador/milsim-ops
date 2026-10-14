@@ -52,13 +52,13 @@ export function NovoChamado({ base, usuarioId, eventoInicial, anterior, onCriado
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-4">
+    <div className="rolagem-discreta min-h-0 min-w-0 flex-1 p-4">
       <h2 className="font-display text-lg font-semibold">Nova solicitação de suporte</h2>
       {anterior && <p className="mt-1 text-sm text-muted-foreground">Vinculada ao protocolo {protocolo(anterior)}.</p>}
       <div className="mt-4 space-y-3">
         <fieldset>
           <legend className="text-sm font-medium">Tipo de atendimento</legend>
-          <div className="mt-1 grid gap-2 sm:grid-cols-2">
+          <div className="mt-1 grid gap-2 @min-[560px]:grid-cols-2">
             {([["evento", "Suporte do evento", "Sobre uma operação: a organização do evento e a administração atendem."], ["plataforma", "Suporte da plataforma", "Conta, funcionamento ou outras questões: só a administração atende."]] as const).map(([v, t, d]) => (
               <label key={v} className={`cursor-pointer rounded-md border p-3 text-sm ${f.tipo === v ? "border-primary bg-primary/10" : "border-border"}`}>
                 <input type="radio" name="nc-tipo" className="mr-2" checked={f.tipo === v} disabled={!!anterior} onChange={() => setF({ ...f, tipo: v })} />
@@ -76,7 +76,7 @@ export function NovoChamado({ base, usuarioId, eventoInicial, anterior, onCriado
             </Selecao>
           </Campo>
         )}
-        <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
+        <div className="grid gap-3 @min-[560px]:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <Campo rotulo="Assunto" htmlFor="nc-assunto" erro={erros.assunto}>
             <Entrada id="nc-assunto" maxLength={140} value={f.assunto} onChange={(e) => setF({ ...f, assunto: e.target.value })} />
           </Campo>
@@ -99,9 +99,9 @@ export function NovoChamado({ base, usuarioId, eventoInicial, anterior, onCriado
               setErro(""); setAnexo({ nome: file.name, dataUrl: await lerArquivo(file) });
             }} />
           {anexo ? (
-            <p className="inline-flex items-center gap-2 rounded-md border border-border px-2 py-1 text-xs">
-              <Paperclip className="h-3.5 w-3.5" />{anexo.nome}
-              <button type="button" aria-label="Remover anexo" onClick={() => setAnexo(null)}><X className="h-3.5 w-3.5" /></button>
+            <p className="inline-flex max-w-full items-center gap-2 rounded-md border border-border px-2 py-1 text-xs">
+              <Paperclip className="h-3.5 w-3.5 shrink-0" /><span className="min-w-0 truncate">{anexo.nome}</span>
+              <button type="button" className="shrink-0" aria-label="Remover anexo" onClick={() => setAnexo(null)}><X className="h-3.5 w-3.5" /></button>
             </p>
           ) : (
             <Botao type="button" variante="contorno" className="!py-1 text-xs" onClick={() => arquivo.current?.click()}><Paperclip className="h-3.5 w-3.5" />Anexar (opcional)</Botao>

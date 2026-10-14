@@ -558,6 +558,8 @@ begin
     where id = 1 and versao = p_versao
     returning versao into v_nova;
   if v_nova is null then
+    -- Substituído por MS409 em docs/migracoes/20261014193000_conflito_sem_retentativa.sql
+    -- (o PostgREST repete 40001 sem limite).
     raise exception 'conflito_versao' using errcode = '40001';
   end if;
 

@@ -85,7 +85,11 @@ LimiteErroRaiz
       (`src/server/midia.ts`) e os troca pela URL pública;
    6. calcula o lote mínimo de mudanças (`calcularMudancas`, em `src/lib/persistencia.ts`) e grava
       com a RPC `aplicar_mudancas(lote, versão)`, numa **única transação**;
-   7. se outra escrita entrou no meio, a RPC falha com `40001` e o ciclo recomeça (até 4 vezes);
+   7. se outra escrita entrou no meio, a RPC falha com o código próprio `MS409` e o ciclo
+      recomeça (até 4 vezes, com espera crescente e aleatória). **Nunca use `40001`** em
+      funções chamadas pela API: o PostgREST repete transações com esse código sem limite,
+      o que prende conexões do pool e derruba a API (ver
+      `docs/migracoes/20261014193000_conflito_sem_retentativa.sql`);
    8. devolve `{ resultado, visão }`.
 4. O wrapper (`chamar` em `src/api/cliente.ts`) aplica a visão nova ao snapshot do navegador, e as
    telas re-renderizam via `useVersaoBase()`.

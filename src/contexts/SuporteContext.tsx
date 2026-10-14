@@ -9,6 +9,7 @@ import { marcarLidoServidor } from "@/api/suporte.functions";
 import { lidoAteSuporte, naoLidas, pendenteDeResposta, podeAtender, responsavelId } from "@/lib/suporte";
 
 const CANAL = "milsim-suporte";
+const ESPERA_LEITURA_MS = 800;
 type Lidos = Record<string, string>;
 
 interface ValorSuporte {
@@ -22,6 +23,8 @@ interface ValorSuporte {
   sinalizar: (chamadoId: string) => void;
   /** Registra uma tela de suporte aberta: ativa atualização periódica. */
   acompanhar: () => () => void;
+  /** A última atualização automática falhou (sem conexão ou servidor indisponível). */
+  semConexao: boolean;
 }
 
 const Ctx = createContext<ValorSuporte | null>(null);
@@ -31,6 +34,7 @@ export function SuporteProvider({ usuarioId, children }: { usuarioId: string | u
   const [otimistas, setOtimistas] = useState<Lidos>({});
   const canal = useRef<BroadcastChannel | null>(null);
   const [telas, setTelas] = useState(0);
+  const [semConexao, setSemConexao] = useState(false);
   const versao = useVersaoBase();
 
   useEffect(() => { if (!usuarioId) setOtimistas({}); }, [usuarioId]);
@@ -50,17 +54,40 @@ export function SuporteProvider({ usuarioId, children }: { usuarioId: string | u
   // Fora do suporte, intervalo maior só para manter o contador do menu correto.
   useEffect(() => {
     if (!usuarioId) return;
-    const atualizar = () => { if (document.visibilityState === "visible") void recarregarVisao().catch(() => {}); };
+    const atualizar = () => {
+      if (document.visibilityState !== "visible") return;
+      recarregarVisao().then(() => setSemConexao(false), () => setSemConexao(true));
+    };
     const id = setInterval(atualizar, telas > 0 ? 15000 : 45000);
     // Ao voltar para a aba, traz leituras e respostas feitas em outros aparelhos.
     document.addEventListener("visibilitychange", atualizar);
     return () => { clearInterval(id); document.removeEventListener("visibilitychange", atualizar); };
   }, [usuarioId, telas]);
 
+  // Envio ao servidor: só quando a leitura avança, agrupado por chamado. Chamado a cada
+  // evento de rolagem, isto não pode virar uma escrita por evento (esgota o banco).
+  const enviados = useRef<Record<string, string>>({});
+  const agendados = useRef<Record<string, { ate: string; timer: ReturnType<typeof setTimeout> }>>({});
+  useEffect(() => () => { for (const a of Object.values(agendados.current)) clearTimeout(a.timer); }, []);
+  useEffect(() => { enviados.current = {}; }, [usuarioId]);
+
   const marcarLido = useCallback((chamadoId: string, ate: string) => {
     if (!usuarioId) return;
+    const servidor = carregarBase().usuarios.find((u) => u.id === usuarioId)?.silencioNotificacoes?.leiturasSuporte?.[chamadoId];
+    const jaSabido = [servidor, enviados.current[chamadoId], agendados.current[chamadoId]?.ate].filter(Boolean).sort().at(-1);
+    if (jaSabido && jaSabido >= ate) return; // nada novo: não grava de novo
     setOtimistas((atual) => (atual[chamadoId] && atual[chamadoId]! >= ate ? atual : { ...atual, [chamadoId]: ate }));
-    void marcarLidoServidor(chamadoId, ate).catch(() => {});
+    clearTimeout(agendados.current[chamadoId]?.timer);
+    agendados.current[chamadoId] = {
+      ate,
+      timer: setTimeout(() => {
+        delete agendados.current[chamadoId];
+        enviados.current[chamadoId] = ate;
+        void marcarLidoServidor(chamadoId, ate).catch(() => {
+          if (enviados.current[chamadoId] === ate) delete enviados.current[chamadoId]; // tenta de novo na próxima leitura
+        });
+      }, ESPERA_LEITURA_MS),
+    };
   }, [usuarioId]);
 
   const lidos = useMemo<Lidos>(() => {
@@ -95,7 +122,8 @@ export function SuporteProvider({ usuarioId, children }: { usuarioId: string | u
     atencaoEquipe: contagens.e,
     sinalizar: (id) => canal.current?.postMessage({ chamadoId: id }),
     acompanhar: () => { setTelas((n) => n + 1); return () => setTelas((n) => n - 1); },
-  }), [lidos, marcarLido, contagens]);
+    semConexao,
+  }), [lidos, marcarLido, contagens, semConexao]);
 
   return <Ctx.Provider value={valor}>{children}</Ctx.Provider>;
 }

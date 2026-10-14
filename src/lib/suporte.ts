@@ -138,11 +138,28 @@ export function transicao(c: Chamado, acao: AcaoStatus, atende: boolean, solicit
 export function statusAposMensagem(c: Chamado, doSolicitante: boolean): StatusChamado {
   if (c.status === "fechado") throw new Error("Chamado fechado: somente leitura.");
   if (doSolicitante) {
+    // Resolvido: o participante reabre o chamado antes de escrever de novo.
+    if (c.status === "resolvido") throw new Error("Este chamado foi resolvido. Reabra o chamado para enviar uma nova mensagem.");
     if (c.status === "aguardando_participante") return "em_atendimento";
     return c.status;
   }
   if (c.status === "aberto") return "em_atendimento";
   return c.status;
+}
+
+/** Ações de status permitidas a uma pessoa (derivadas de `transicao`, sem regras próprias). */
+export function acoesPermitidas(c: Chamado, atende: boolean, solicitante: boolean): AcaoStatus[] {
+  return (["aguardar", "resolver", "reabrir", "fechar"] as const).filter((a) => {
+    try { transicao(c, a, atende, solicitante); return true; } catch { return false; }
+  });
+}
+
+/** O que a área inferior da conversa mostra para o solicitante, conforme o status. */
+export type EstadoCompositor = "livre" | "resolvido" | "fechado";
+export function estadoCompositor(c: Pick<Chamado, "status">, solicitante: boolean): EstadoCompositor {
+  if (c.status === "fechado") return "fechado";
+  if (c.status === "resolvido" && solicitante) return "resolvido";
+  return "livre";
 }
 
 /** Chave do dia (aaaa-mm-dd local) para separadores. */

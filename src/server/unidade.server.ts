@@ -21,6 +21,9 @@ const armazenamento = new AsyncLocalStorage<ContextoBase>();
 registrarProvedorContexto({ obter: () => armazenamento.getStore() });
 
 const TENTATIVAS = 4;
+/** Espera antes de refazer após conflito: cresce e é aleatória, para escritas simultâneas não colidirem de novo. */
+const esperarConflito = (tentativa: number) =>
+  new Promise((r) => setTimeout(r, (60 * 2 ** tentativa) * (0.5 + Math.random())));
 
 export interface Contexto {
   base: BaseDados;
@@ -40,11 +43,54 @@ export async function idDaSessao(): Promise<string | null> {
   return data.claims.sub;
 }
 
+// ---------- Cache da base por versão ----------
+// Ler a base inteira (exportar_base) custa ~135 ms de CPU no banco; a versão global
+// (controle_base) muda a cada gravação feita por aplicar_mudancas. Cada instância do
+// servidor guarda a última base lida e, por requisição, só confere a versão (consulta
+// mínima); relê tudo apenas quando algo mudou. A validade curta cobre alterações feitas
+// fora da aplicação (SQL manual), que não incrementam a versão.
+const VALIDADE_CACHE_MS = 60_000;
+let cache: { versao: number; base: BaseDados; lidoEm: number } | null = null;
+let exportando: Promise<{ base: BaseDados; versao: number }> | null = null;
+
+async function versaoAtual(): Promise<number> {
+  const { data, error } = await supabaseAdmin().from("controle_base").select("versao").eq("id", 1).single();
+  if (error) throw new Error(`Falha ao ler a versão da base: ${error.message}`);
+  return Number(data.versao);
+}
+
+async function exportarBase(): Promise<{ base: BaseDados; versao: number }> {
+  // Requisições simultâneas na mesma instância compartilham uma única exportação.
+  exportando ??= (async () => {
+    try {
+      const { data, error } = await supabaseAdmin().rpc("exportar_base");
+      if (error) throw new Error(`Falha ao ler a base: ${error.message}`);
+      const r = data as { versao: number; tabelas: TabelasExportadas };
+      const base = baseDasTabelas(r.tabelas);
+      cache = { versao: r.versao, base, lidoEm: Date.now() };
+      return { base, versao: r.versao };
+    } finally {
+      exportando = null;
+    }
+  })();
+  const r = await exportando;
+  return { base: structuredClone(r.base), versao: r.versao };
+}
+
+/** Cópia da base atual (cada requisição pode mutar a sua à vontade). */
 async function lerBase(): Promise<{ base: BaseDados; versao: number }> {
-  const { data, error } = await supabaseAdmin().rpc("exportar_base");
-  if (error) throw new Error(`Falha ao ler a base: ${error.message}`);
-  const r = data as { versao: number; tabelas: TabelasExportadas };
-  return { base: baseDasTabelas(r.tabelas), versao: r.versao };
+  // Referência local: uma gravação concorrente pode invalidar `cache` durante o await.
+  const emMemoria = cache;
+  if (emMemoria && Date.now() - emMemoria.lidoEm < VALIDADE_CACHE_MS) {
+    const versao = await versaoAtual();
+    if (versao === emMemoria.versao) return { base: structuredClone(emMemoria.base), versao };
+  }
+  return exportarBase();
+}
+
+/** Depois de gravar, a próxima leitura busca a base nova no banco. */
+function invalidarCache(): void {
+  cache = null;
 }
 
 const usuarioAtivo = (base: BaseDados, id: string | null) =>
@@ -125,7 +171,13 @@ export async function mutar<T>(
       const lote = calcularMudancas(antes, base);
       if (Object.keys(lote).length > 0) {
         const { error } = await supabaseAdmin().rpc("aplicar_mudancas", { p_mudancas: lote, p_versao: versao });
-        if (error?.code === "40001") continue; // outra escrita entrou antes: refaz com a base nova
+        invalidarCache(); // gravou (ou outra escrita entrou antes): a base em memória ficou velha
+        // MS409 = conflito de versão (docs/migracoes/20261014193000_conflito_sem_retentativa.sql).
+        // 40001 só em bancos sem essa migração — e lá o PostgREST repete sozinho, sem limite.
+        if (error?.code === "MS409" || error?.code === "40001") {
+          await esperarConflito(tentativa); // outra escrita entrou antes: refaz com a base nova
+          continue;
+        }
         if (error) throw new Error(`Falha ao gravar: ${error.message}`);
       }
       const depois = usuarioAtivo(base, id);

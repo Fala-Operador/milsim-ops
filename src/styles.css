@@ -15,6 +15,24 @@
   display: none;
 }
 
+/* Rolagem vertical discreta e utilizável (lista e histórico do suporte). */
+.rolagem-discreta {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.rolagem-discreta::-webkit-scrollbar {
+  width: 8px;
+}
+.rolagem-discreta::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+.rolagem-discreta::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 /*
  * Sistema de design — identidade militar.
  * Dark: verde-oliva militar. Light: TAN militar.

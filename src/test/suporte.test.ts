@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { podeVer, podeAtender, statusAposMensagem, transicao, responsavelId, protocolo, registrarLeitura, lidoAteSuporte } from "@/lib/suporte";
+import { acoesPermitidas, estadoCompositor, podeVer, podeAtender, statusAposMensagem, transicao, responsavelId, protocolo, registrarLeitura, lidoAteSuporte } from "@/lib/suporte";
 import type { BaseDados, Chamado, Usuario } from "@/lib/domain/types";
 
 const u = (id: string, perfil: Usuario["perfil"], organizacaoId?: string) => ({ id, perfil, organizacaoId, ativo: true }) as Usuario;
@@ -41,6 +41,22 @@ describe("status do chamado", () => {
   });
   it("participante não resolve", () => {
     expect(() => transicao(chamado(), "resolver", false, true)).toThrow();
+  });
+  it("resolvido: o participante reabre antes de escrever; a equipe continua podendo responder", () => {
+    expect(() => statusAposMensagem(chamado({ status: "resolvido" }), true)).toThrow(/Reabra o chamado/);
+    expect(statusAposMensagem(chamado({ status: "resolvido" }), false)).toBe("resolvido");
+  });
+  it("ações do participante vêm das transições existentes", () => {
+    expect(acoesPermitidas(chamado({ status: "em_atendimento" }), false, true)).toEqual(["fechar"]);
+    expect(acoesPermitidas(chamado({ status: "resolvido" }), false, true)).toEqual(["reabrir", "fechar"]);
+    expect(acoesPermitidas(chamado({ status: "fechado" }), false, true)).toEqual([]);
+  });
+  it("área inferior da conversa por status", () => {
+    expect(estadoCompositor({ status: "aberto" }, true)).toBe("livre");
+    expect(estadoCompositor({ status: "aguardando_participante" }, true)).toBe("livre");
+    expect(estadoCompositor({ status: "resolvido" }, true)).toBe("resolvido");
+    expect(estadoCompositor({ status: "resolvido" }, false)).toBe("livre");
+    expect(estadoCompositor({ status: "fechado" }, true)).toBe("fechado");
   });
   it("responsável é o último evento de atribuição", () => {
     const c = chamado({ mensagens: [
