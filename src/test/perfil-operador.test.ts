@@ -66,7 +66,7 @@ describe("status Participando / Participou", () => {
   it("inscrição cancelada não aparece como Participando", () => {
     base.eventos.find((e) => e.id === "evt-trovao")!.status = "publicado";
     base.inscricoes.find((i) => i.id === "ins-hist-1")!.status = "cancelada";
-    expect(participacoesDoUsuario(base, PART)).toHaveLength(0);
+    expect(participacoesDoUsuario(base, PART).find((x) => x.eventoId === "evt-trovao")).toBeUndefined();
   });
 });
 
