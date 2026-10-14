@@ -11,6 +11,7 @@ import type {
   RegiaoBR,
   SecaoInicial,
 } from "@/lib/domain/types";
+import { campanhasNaPosicao } from "@/lib/impulsionamento";
 
 export const REGIOES: RegiaoBR[] = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
 
@@ -87,6 +88,8 @@ export interface CartaoEventoResolvido {
   selo?: string | undefined;
   chamada?: string | undefined;
   imagem?: string | undefined;
+  /** Campanha responsável pela exibição (cards "Em destaque"). */
+  campanhaId?: string | undefined;
 }
 
 export interface SecaoResolvida {
@@ -95,7 +98,28 @@ export interface SecaoResolvida {
   parceiros: Parceiro[];
 }
 
+/**
+ * Cards de uma seção de eventos: primeiro as campanhas de impulsionamento ativas
+ * (prioridade, ordem administrativa, desempate estável), depois a curadoria
+ * editorial ou a seleção automática. Cada evento aparece uma vez só.
+ */
 export function eventosDaSecao(
+  base: BaseDados,
+  secao: SecaoInicial,
+  local: Abrangencia,
+  agora: Date,
+): CartaoEventoResolvido[] {
+  const vistos = new Set<string>();
+  const impulsionados = campanhasNaPosicao(base, secao.id, local, agora).flatMap((c): CartaoEventoResolvido[] => {
+    const e = base.eventos.find((x) => x.id === c.eventoId)!;
+    vistos.add(e.id);
+    return [{ evento: e, esgotado: esgotado(base, e), chamada: c.chamada, imagem: c.imagemPromocional || e.imagemUrl, campanhaId: c.id }];
+  });
+  const organicos = curadoriaDaSecao(base, secao, local, agora).filter((c) => !vistos.has(c.evento.id));
+  return [...impulsionados, ...organicos];
+}
+
+function curadoriaDaSecao(
   base: BaseDados,
   secao: SecaoInicial,
   local: Abrangencia,
