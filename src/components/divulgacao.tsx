@@ -121,7 +121,7 @@ function precoInicial(e: CartaoEventoResolvido["evento"]): number {
   return precos.length ? Math.min(...precos) : Math.min(...e.tipos.map((t) => t.precoBaseCentavos));
 }
 
-function CartaoEvento({ c }: { c: CartaoEventoResolvido }) {
+export function CartaoEvento({ c }: { c: CartaoEventoResolvido }) {
   const e = c.evento;
   return (
     <Link to="/eventos/$eventoId" params={{ eventoId: e.id }}
@@ -134,7 +134,12 @@ function CartaoEvento({ c }: { c: CartaoEventoResolvido }) {
             <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{e.cidade} · {e.uf}</span>
           </div>
         )}
-        {c.selo && <span className="absolute left-2 top-2"><Badge tom="aviso">{c.selo}</Badge></span>}
+        {(c.selo || c.campanhaId) && (
+          <span className="absolute left-2 top-2 flex gap-1">
+            {c.campanhaId && <Badge tom="aviso">Em destaque</Badge>}
+            {c.selo && <Badge tom="aviso">{c.selo}</Badge>}
+          </span>
+        )}
       </div>
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
