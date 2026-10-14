@@ -1,3 +1,5 @@
+import { carregarBase } from "@/services/db";
+import { resolverLinkSuporte } from "@/lib/suporte";
 import { destinoDoLink } from "@/lib/links";
 import { useAuth } from "@/contexts/AuthContext";
 import { notificacaoAcessivel } from "@/services/comunidade";
@@ -62,7 +64,7 @@ function CentralNotificacoes() {
                     <p className="mt-1 text-xs text-muted-foreground">{formatarDataHoraBR(n.criadoEm)}</p>
                     {n.link && (
                       <Link
-                        {...(destinoDoLink(n.link) as { to: string })}
+                        {...(destinoDoLink(resolverLinkSuporte(carregarBase(), usuarioLink, n.link)) as { to: string })}
                         className="mt-1 inline-block text-sm text-accent hover:underline"
                         onClick={() => marcarLida(n.id)}
                       >
