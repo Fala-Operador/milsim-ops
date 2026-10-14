@@ -102,7 +102,7 @@ function PaginaInicial() {
   const impulsionados = base
     ? campanhasNaPosicao(base, POSICAO_LISTAGEM, local, agora)
         .filter((c) => idsResultados.has(c.eventoId))
-        .map((c) => resultados.find((e) => e.id === c.eventoId)!)
+        .map((c) => ({ ...resultados.find((e) => e.id === c.eventoId)!, campanhaId: c.id }))
     : [];
   const nacional = local.escopo === "nacional";
   const tituloSecao = nacional
@@ -286,7 +286,7 @@ function PaginaInicial() {
               <p className="text-sm text-muted-foreground">Divulgação da plataforma, de acordo com a sua busca. Os resultados comuns vêm abaixo.</p>
               <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {impulsionados.map((e, i) => (
-                  <CardRastreado key={e.id} ativo eventoId={e.id} origem="destaques" secaoId="listagem" posicao={i + 1} visualizacaoId={visualizacaoId}>
+                  <CardRastreado key={e.id} ativo eventoId={e.id} origem="destaques" secaoId="listagem" posicao={i + 1} visualizacaoId={visualizacaoId} campanhaId={e.campanhaId}>
                     <CartaoEvento evento={e} base={base} organizacao={organizacaoDe(e.organizacaoId)} />
                   </CardRastreado>
                 ))}

@@ -1,11 +1,13 @@
 // Administração → Página inicial e divulgação → Impulsionamentos.
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { listarMetricas } from "@/api/analytics.functions";
+import type { RegistroAnalytics } from "@/lib/analytics";
 import type { Abrangencia, BaseDados, Impulsionamento } from "@/lib/domain/types";
 import { POSICAO_LISTAGEM } from "@/lib/domain/types";
 import { NACIONAL, REGIOES, UF_REGIAO, esgotado, rotuloAbrangencia } from "@/lib/divulgacao";
 import {
   ROTULO_OBJETIVO, ROTULO_STATUS_IMPULSIONAMENTO, pendenciasAtivacao, rotuloPosicao, secoesCompativeis,
-  sobreposicoes, statusExibido, type StatusExibidoImpulsionamento,
+  sobreposicoes, statusExibido, diagnosticarPosicao, metricasCampanha, type StatusExibidoImpulsionamento,
 } from "@/lib/impulsionamento";
 import { alterarImpulsionamento, salvarImpulsionamento } from "@/api/impulsionamentos.functions";
 import type { AcaoImpulsionamento, DadosImpulsionamento } from "@/services/impulsionamentos";
@@ -47,6 +49,8 @@ export function GestaoImpulsionamentos({ base, eventoInicial, irParaSecoes }: { 
   const agora = new Date();
   const lista = base.impulsionamentos.slice().sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
   const nomeEvento = (id: string) => base.eventos.find((e) => e.id === id)?.nome ?? "Operação removida";
+  const [regs, setRegs] = useState<RegistroAnalytics[] | null>(null);
+  useEffect(() => { listarMetricas().then((r) => setRegs(r.registros)).catch(() => setRegs([])); }, []);
 
   const agir = async (c: Impulsionamento, acao: AcaoImpulsionamento) => {
     setErro(""); setOcupado(c.id);
@@ -69,7 +73,7 @@ export function GestaoImpulsionamentos({ base, eventoInicial, irParaSecoes }: { 
         <Cartao className="overflow-x-auto p-0">
           <table className="w-full min-w-[900px] text-sm">
             <thead className="text-left text-xs uppercase text-muted-foreground">
-              <tr>{["Operação", "Campanha", "Posições", "Abrangência", "Período", "Prioridade", "Status", "Ações"].map((h) => <th key={h} className="px-3 py-2">{h}</th>)}</tr>
+              <tr>{["Operação", "Campanha", "Posições", "Abrangência", "Período", "Prioridade", "Status", "Desempenho", "Ações"].map((h) => <th key={h} className="px-3 py-2">{h}</th>)}</tr>
             </thead>
             <tbody>
               {lista.map((c) => {
@@ -84,6 +88,10 @@ export function GestaoImpulsionamentos({ base, eventoInicial, irParaSecoes }: { 
                     <td className="px-3 py-2 whitespace-nowrap">{formatarDataBR(c.inicioEm)} → {formatarDataBR(c.fimEm)}</td>
                     <td className="px-3 py-2">{c.prioridade === "alta" ? "Alta" : "Normal"}{c.ordem ? ` · ordem ${c.ordem}` : ""}</td>
                     <td className="px-3 py-2"><StatusImpulsionamento s={st} />{dup && <div className="mt-1 text-xs text-warning">Sobrepõe outra campanha da mesma operação</div>}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs">{regs === null ? "Carregando…" : (() => {
+                      const m = metricasCampanha(regs, c.id);
+                      return <>{m.exibicoes} exibições · {m.cliques} cliques<br />CTR {m.ctr === null ? "—" : `${m.ctr.toFixed(1)}%`} · {m.visitas} visitas · {m.inscricoes} inscrições</>;
+                    })()}</td>
                     <td className="px-3 py-2">
                       <div className="flex flex-wrap gap-1">
                         {c.status !== "encerrado" && <Botao type="button" variante="contorno" onClick={() => setEditando(deCampanha(c))}>Editar</Botao>}
@@ -99,6 +107,7 @@ export function GestaoImpulsionamentos({ base, eventoInicial, irParaSecoes }: { 
           </table>
         </Cartao>
       )}
+      {lista.length > 0 && <PreviaDiagnostico base={base} nomeEvento={nomeEvento} />}
       {editando && <EditorImpulsionamento base={base} inicial={editando} onFechar={() => setEditando(null)} irParaSecoes={() => { irParaSecoes(); }} />}
     </div>
   );
@@ -305,5 +314,65 @@ function EditorAbrangencia({ valor, onMudar }: { valor: Abrangencia; onMudar: (a
         <Entrada aria-label="Cidade" value={valor.cidade ?? ""} onChange={(e) => onMudar({ ...valor, cidade: e.target.value })} placeholder="Cidade" />
       )}
     </fieldset>
+  );
+}
+
+/** Simula um local e uma posição e explica por que cada campanha aparece ou não. */
+function PreviaDiagnostico({ base, nomeEvento }: { base: BaseDados; nomeEvento: (id: string) => string }) {
+  const [posicao, setPosicao] = useState(POSICAO_LISTAGEM);
+  const [escopo, setEscopo] = useState<Abrangencia["escopo"]>("nacional");
+  const [regiao, setRegiao] = useState<string>(REGIOES[0] ?? "Sudeste");
+  const [uf, setUf] = useState("SP");
+  const [cidade, setCidade] = useState("");
+  const local: Abrangencia = escopo === "nacional" ? NACIONAL
+    : escopo === "regiao" ? { escopo, regiao: regiao as NonNullable<Abrangencia["regiao"]> }
+    : escopo === "estado" ? { escopo, uf } : { escopo, uf, cidade: cidade.trim() };
+  const linhas = diagnosticarPosicao(base, posicao, local, new Date());
+  return (
+    <Cartao>
+      <h3 className="font-display text-lg font-semibold uppercase">Prévia e diagnóstico</h3>
+      <p className="text-sm text-muted-foreground">Escolha onde e para quem simular. Mostra a ordem do bloco em destaque e o motivo de cada campanha ficar de fora.</p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Campo rotulo="Local de divulgação" htmlFor="pv-pos">
+          <Selecao id="pv-pos" value={posicao} onChange={(e) => setPosicao(e.target.value)}>
+            <option value={POSICAO_LISTAGEM}>Listagem de eventos</option>
+            {secoesCompativeis(base).map((s) => <option key={s.id} value={s.id}>{s.titulo}</option>)}
+          </Selecao>
+        </Campo>
+        <Campo rotulo="Área do visitante" htmlFor="pv-esc">
+          <Selecao id="pv-esc" value={escopo} onChange={(e) => setEscopo(e.target.value as Abrangencia["escopo"])}>
+            <option value="nacional">Todo o Brasil</option><option value="regiao">Região</option>
+            <option value="estado">Estado</option><option value="cidade">Cidade</option>
+          </Selecao>
+        </Campo>
+        {escopo === "regiao" && (
+          <Campo rotulo="Região" htmlFor="pv-reg">
+            <Selecao id="pv-reg" value={regiao} onChange={(e) => setRegiao(e.target.value)}>{REGIOES.map((r) => <option key={r}>{r}</option>)}</Selecao>
+          </Campo>
+        )}
+        {(escopo === "estado" || escopo === "cidade") && (
+          <Campo rotulo="Estado" htmlFor="pv-uf">
+            <Selecao id="pv-uf" value={uf} onChange={(e) => setUf(e.target.value)}>{UFS.map((u) => <option key={u}>{u}</option>)}</Selecao>
+          </Campo>
+        )}
+        {escopo === "cidade" && (
+          <Campo rotulo="Cidade" htmlFor="pv-cid"><Entrada id="pv-cid" value={cidade} onChange={(e) => setCidade(e.target.value)} placeholder="Ex.: Campinas" /></Campo>
+        )}
+      </div>
+      {posicao === POSICAO_LISTAGEM && <p className="mt-2 text-xs text-muted-foreground">Na listagem, a operação também precisa atender à busca e aos filtros do visitante.</p>}
+      <ul className="mt-4 space-y-2">
+        {linhas.length === 0 && <li className="text-sm text-muted-foreground">Nenhuma campanha para simular.</li>}
+        {linhas.map((l) => (
+          <li key={l.campanha.id} className="rounded-md border border-border p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tom={l.aparece ? "sucesso" : "padrao"}>{l.aparece ? `Aparece em ${l.ordem}º` : "Não aparece"}</Badge>
+              <span className="font-medium">{nomeEvento(l.campanha.eventoId)}</span>
+              <span className="text-sm text-muted-foreground">{l.campanha.nome}</span>
+            </div>
+            <ul className="mt-1 list-disc pl-5 text-sm text-muted-foreground">{l.motivos.map((m) => <li key={m}>{m}</li>)}</ul>
+          </li>
+        ))}
+      </ul>
+    </Cartao>
   );
 }

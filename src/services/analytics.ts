@@ -96,14 +96,15 @@ function gravar(r: Omit<RegistroAnalytics, "id" | "visitanteId" | "sessaoId" | "
 // ===== Coleta =====
 const exibicoesVistas = new Set<string>();
 /** Chamado após 50% do card visível por 1s; uma vez por card, posição e visualização da página. */
-export function registrarExibicao(p: { eventoId: string; origem: OrigemAcesso; secaoId?: string | undefined; posicao: number; visualizacaoId: string }) {
+export function registrarExibicao(p: { eventoId: string; origem: OrigemAcesso; secaoId?: string | undefined; posicao: number; visualizacaoId: string; campanhaId?: string | undefined }) {
   const chave = `${p.visualizacaoId}:${p.secaoId ?? ""}:${p.eventoId}:${p.posicao}`;
   if (exibicoesVistas.has(chave) || excluido(p.eventoId)) return;
   exibicoesVistas.add(chave);
-  gravar({ tipo: "exibicao", eventoId: p.eventoId, origem: p.origem, secaoId: p.secaoId, posicao: p.posicao });
+  gravar({ tipo: "exibicao", eventoId: p.eventoId, origem: p.origem, secaoId: p.secaoId, posicao: p.posicao, campanhaId: p.campanhaId });
 }
 
-export function registrarClique(p: { eventoId: string; origem: OrigemAcesso; secaoId?: string | undefined; posicao?: number | undefined }) {
+/** `campanhaId` = impulsionamento do card clicado; a visita seguinte herda a atribuição. */
+export function registrarClique(p: { eventoId: string; origem: OrigemAcesso; secaoId?: string | undefined; posicao?: number | undefined; campanhaId?: string | undefined }) {
   if (excluido(p.eventoId)) return;
   gravar({ tipo: "clique", ...p });
   storage.gravar(K.pendente, { ...p, em: Date.now() });
@@ -122,10 +123,10 @@ export function registrarVisita(eventoId: string, campanhaParam?: string | null)
   if (excluido(eventoId)) return;
   const ses = sessaoId();
   const campanhaId = campanhaParam && /^[\w-]{1,40}$/.test(campanhaParam) ? campanhaParam : undefined;
-  const pend = storage.ler<{ eventoId: string; origem: OrigemAcesso; secaoId?: string; posicao?: number; em: number }>(K.pendente);
+  const pend = storage.ler<{ eventoId: string; origem: OrigemAcesso; secaoId?: string; posicao?: number; campanhaId?: string; em: number }>(K.pendente);
   let at: Atribuicao;
   if (campanhaId) at = { origem: "campanha", campanhaId, sessaoId: ses };
-  else if (pend && pend.eventoId === eventoId && Date.now() - pend.em < 60000) at = { origem: pend.origem, secaoId: pend.secaoId, posicao: pend.posicao, sessaoId: ses };
+  else if (pend && pend.eventoId === eventoId && Date.now() - pend.em < 60000) at = { origem: pend.origem, secaoId: pend.secaoId, posicao: pend.posicao, campanhaId: pend.campanhaId, sessaoId: ses };
   else at = { origem: "direto", sessaoId: ses };
   storage.remover(K.pendente);
   gravar({ tipo: "visita", eventoId, origem: at.origem, secaoId: at.secaoId, posicao: at.posicao, campanhaId: at.campanhaId });
