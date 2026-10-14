@@ -156,6 +156,13 @@ export function resolverLinkSuporte(base: BaseDados, u: Usuario | null, link: st
   return `${area}?${area === "/organizacao/suporte" ? "e" : "c"}=${encodeURIComponent(id)}`;
 }
 
+export function papelNoChamado(base: BaseDados, autorId: string, c: Chamado): PapelSuporte {
+  const u = base.usuarios.find((x) => x.id === autorId);
+  if (u?.perfil === "admin") return "admin";
+  if (autorId !== c.solicitanteId && u?.perfil === "organizador") return "organizador";
+  return "participante";
+}
+
 const sistemas = (c: Chamado) => c.mensagens.filter((m) => m.tipo === "sistema");
 
 export function responsavelId(c: Chamado): string | null {
