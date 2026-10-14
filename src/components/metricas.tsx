@@ -10,11 +10,10 @@ import {
 import { regiaoDaUf, rotuloAbrangencia } from "@/lib/divulgacao";
 import { ROTULO_OBJETIVO, metricasCampanha, rotuloPosicao, statusExibido } from "@/lib/impulsionamento";
 import { StatusImpulsionamento } from "@/components/impulsionamentos";
-import { formatarDataBR } from "@/lib/domain/money";
 import { linkCampanha } from "@/services/analytics";
 import { criarCampanha, listarMetricas } from "@/api/analytics.functions";
 import { inscricoesAtivasDoEvento } from "@/services/inscricoes";
-import { formatarDataHoraBR } from "@/lib/domain/money";
+import { formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
 import { Badge, Botao, Cartao, Entrada, EstadoVazio, Selecao, Skeleton } from "@/components/ui";
 import { baixarCsv, baixarPdf, montarRelatorio, nomeArquivo } from "@/lib/relatorioMetricas";
 
