@@ -38,6 +38,7 @@ export const TABELAS: Record<ColecaoLista, DefinicaoTabela> = {
   moderacao: { tabela: "moderacao", chave: ["id"] },
   parceiros: { tabela: "parceiros", chave: ["id"] },
   secoesInicio: { tabela: "secoes_inicio", chave: ["id"] },
+  impulsionamentos: { tabela: "impulsionamentos", chave: ["id"] },
   checkins: { tabela: "checkins", chave: ["id"] },
   perfisOperador: { tabela: "perfis_operador", chave: ["usuarioId"] },
   equipamentos: { tabela: "equipamentos", chave: ["id"] },
