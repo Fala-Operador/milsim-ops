@@ -26,6 +26,7 @@ const PADRAO_ORGANIZACAO = /inscri|solicit|evento|cortesia|denúnc|denunc|comuni
 
 function NotificacoesOrganizacao() {
   const { usuario } = useAuth();
+  const usuarioLink = usuario ?? null;
   const { notificacoes, naoLidas, marcarLida, marcarTodasLidas } = useNotifications();
   const [soNaoLidas, setSoNaoLidas] = useState(false);
 

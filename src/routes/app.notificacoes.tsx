@@ -24,6 +24,7 @@ export const Route = createFileRoute("/app/notificacoes")({
 
 function CentralNotificacoes() {
   const { usuario: usuarioAtual } = useAuth();
+  const usuarioLink = usuarioAtual ?? null;
   const { notificacoes, naoLidas, marcarLida, marcarTodasLidas } = useNotifications();
   const [soNaoLidas, setSoNaoLidas] = useState(false);
 
