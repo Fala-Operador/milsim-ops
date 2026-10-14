@@ -13,6 +13,9 @@ import { alterarStatusChamado, assumirChamado } from "@/api/suporte.functions";
 import { PainelEncaminhamento } from "./PainelEncaminhamento";
 import {
   ROTULO_STATUS,
+  ROTULO_STATUS_EXIBIDO,
+  statusExibido,
+  type StatusExibido,
   CATEGORIAS_SUPORTE,
   acoesPermitidas,
   ativo,

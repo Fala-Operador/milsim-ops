@@ -10,6 +10,10 @@ import {
   protocolo,
   registrarLeitura,
   lidoAteSuporte,
+  vistaDoChamado,
+  podeAbrirAnexo,
+  statusExibido,
+  resolverLinkSuporte,
 } from "@/lib/suporte";
 import type { BaseDados, Chamado, Usuario } from "@/lib/domain/types";
 
