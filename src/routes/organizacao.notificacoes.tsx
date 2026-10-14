@@ -22,7 +22,7 @@ export const Route = createFileRoute("/organizacao/notificacoes")({
   component: NotificacoesOrganizacao,
 });
 
-const PADRAO_ORGANIZACAO = /inscri|solicit|evento|cortesia|denúnc|denunc|comunidad|cancelamento|estorno/i;
+const PADRAO_ORGANIZACAO = /inscri|solicit|evento|cortesia|denúnc|denunc|comunidad|cancelamento|estorno|suporte|chamado|demanda|encaminh|protocolo/i;
 
 function NotificacoesOrganizacao() {
   const { usuario } = useAuth();
