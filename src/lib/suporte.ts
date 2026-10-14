@@ -202,7 +202,7 @@ export function registrarLeitura(u: Usuario, chamadoId: string, ate: string): vo
 /** Aguardando resposta da equipe: última mensagem é do solicitante e o chamado está ativo. */
 export function pendenteDeResposta(c: Chamado): boolean {
   if (c.status === "resolvido" || c.status === "fechado") return false;
-  return ultimaMensagem(c)?.autorId === c.solicitanteId;
+  return mensagensDeTexto(c).filter((m) => canalDe(m) === "participante").at(-1)?.autorId === c.solicitanteId;
 }
 
 export const ativo = (c: Chamado) => c.status !== "resolvido" && c.status !== "fechado";
