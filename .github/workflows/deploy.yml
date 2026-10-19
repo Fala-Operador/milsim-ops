@@ -10,7 +10,7 @@
 # variables → Actions → Variables); sem ela, o `milsim-ops` do README. O
 # `project_id` do config.toml é só o nome do ambiente local da CLI.
 #
-# Os segredos das Edge Functions (STRIPE_WEBHOOK_SECRET, MILSIM_WEBHOOK_URL...)
+# Os segredos das Edge Functions (STRIPE_PAYMENTS_WEBHOOK_SIGNING_SECRET, STRIPE_WEBHOOK_FORWARD_URL...)
 # ficam no painel da Supabase e não passam por aqui.
 name: Deploy Supabase
 

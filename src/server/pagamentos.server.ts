@@ -33,6 +33,7 @@ import {
 import { contextoSomenteLeitura, ler, mutar, type RespostaApi } from "@/server/unidade.server";
 import {
   chavePublicavel,
+  problemaChavesStripe,
   criarContaConectada,
   criarReembolso,
   criarSessaoCheckout,
@@ -353,6 +354,8 @@ export async function sessaoComponentesStripe(organizacaoId: string): Promise<{ 
   const org = await organizacaoGerida(organizacaoId);
   const chave = chavePublicavel();
   if (!chave || !stripeConfigurado()) throw new Error("Os painéis do Stripe ainda não foram ativados na plataforma.");
+  const problema = problemaChavesStripe();
+  if (problema) throw new Error(`Os painéis do Stripe estão mal configurados: ${problema}`);
   const contaId = org.contaId ?? (await comStripe(async () => {
     const conta = await criarContaConectada({ organizacaoId, nome: org.nome, email: org.email });
     await gravarConta(organizacaoId, conta);
@@ -362,5 +365,15 @@ export async function sessaoComponentesStripe(organizacaoId: string): Promise<{ 
   return { chavePublicavel: chave, clientSecret: sessao.client_secret };
 }
 
-/** Os componentes embutidos só aparecem com a chave publicável configurada. */
-export const componentesStripeAtivos = () => stripeConfigurado() && !!chavePublicavel();
+/**
+ * Os componentes embutidos só aparecem com a chave publicável configurada e compatível com a
+ * secreta; com chaves trocadas, o site volta ao cadastro e ao painel hospedados pelo Stripe.
+ */
+export function componentesStripeAtivos(): boolean {
+  if (!stripeConfigurado() || !chavePublicavel()) return false;
+  const problema = problemaChavesStripe();
+  if (problema) console.error("Stripe:", problema);
+  return !problema;
+}
+
+export { problemaChavesStripe };

@@ -9,6 +9,7 @@ import {
   componentesStripeAtivos,
   consultarSaldoRecebimento,
   iniciarCadastroRecebimento,
+  problemaChavesStripe,
   sessaoComponentesStripe,
   sincronizarRecebimento,
   stripeConfigurado,
@@ -23,6 +24,8 @@ const entrada = z.object({ organizacaoId: z.string().min(1).max(100) });
 export const configuracaoRepasseFn = createServerFn({ method: "GET" }).handler(() => ({
   pagamentoOnline: stripeConfigurado(),
   componentesStripe: componentesStripeAtivos(),
+  // Chaves do Stripe que não combinam (mostrado na página de pagamentos da administração).
+  avisoChaves: problemaChavesStripe() || undefined,
 }));
 
 export const definirTaxaPlataformaFn = createServerFn({ method: "POST" })

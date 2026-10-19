@@ -281,12 +281,12 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   vigente, o que ocupa vaga, o que a visão mostra) e `lib/stripe.ts` (assinatura do webhook,
   eventos → ações); estados na base em `services/inscricoes.ts`; chamadas ao Stripe por `fetch`
   em `server/stripe.server.ts` e a orquestração em `server/pagamentos.server.ts`, **sempre fora
-  de `mutar`** (que pode repetir a função). Com `STRIPE_SECRET_KEY` configurada, inscrição com
+  de `mutar`** (que pode repetir a função). Com `STRIPE_SERVER_API_KEY` configurada, inscrição com
   valor a pagar nasce `pendente` com `pagamento.status = "aguardando"` e reserva a vaga (e o uso
   do cupom/benefício) por 32 min, o mesmo prazo da Checkout Session. Confirmam a inscrição o
   webhook (Stripe → Edge Function `supabase/functions/stripe-webhook`, que confere a assinatura
   do Stripe com os `whsec_` guardados no Supabase e repassa o evento assinado com
-  `MILSIM_WEBHOOK_SECRET` → `POST /api/stripe/webhook`, `routes/api.stripe.webhook.ts`) e o retorno do checkout
+  `STRIPE_WEBHOOK_FORWARD_SECRET` → `POST /api/stripe/webhook`, `routes/api.stripe.webhook.ts`) e o retorno do checkout
   (`sincronizarPagamentoFn`), ambos idempotentes. Reserva expirada, pagamento recusado ou
   cancelado liberam a vaga; pagamento que chega sem vaga possível é reembolsado. Cancelar uma
   inscrição paga (ou o evento) marca `estorno_pendente`; depois de gravar, a API cria o
@@ -305,7 +305,7 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   repassada usa `reverse_transfer` e `refund_application_fee`. Com a conta ativa, Financeiro lê
   do Stripe (cabeçalho `Stripe-Account`, cache de 60 s no servidor, nada vai para a base nem
   para a visão) saldo, saques, cronograma e banco (`consultarSaldoRecebimento`, resumo puro em
-  `resumoSaldo`). Com `STRIPE_PUBLISHABLE_KEY`, o recebimento todo fica no site com os
+  `resumoSaldo`). Com `STRIPE_BROWSER_PUBLIC_KEY`, o recebimento todo fica no site com os
   componentes embutidos do Stripe (`components/PaineisStripe.tsx`, `connect.js` carregado do
   Stripe): `account-onboarding` no cadastro (a conta Express é criada na primeira sessão),
   `notification-banner` para pendências e, no painel, `payouts`, `payments` e
