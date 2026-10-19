@@ -4,6 +4,7 @@
 // Regras puras (sem rede): testadas em src/test/visao.test.ts.
 import { vistaDoChamado } from "@/lib/suporte";
 import { baseVazia } from "@/lib/persistencia";
+import { pagamentoAnonimo, pagamentoSemIds } from "@/lib/pagamentos";
 import { forunsVisiveis, nomeExibicao, papelNoEvento, publicacaoVisivel } from "@/services/comunidade";
 import type { BaseDados, Evento, Inscricao, Usuario } from "@/lib/domain/types";
 
@@ -39,6 +40,11 @@ export function perfilPublico(u: Usuario): Usuario {
 }
 
 /** Inscrição de terceiros: mantém só o que as contagens de vagas e ocupação precisam. */
+/** Titular e organização veem a situação do pagamento; os ids do Stripe só a administração. */
+function comPagamentoVisivel(i: Inscricao, admin: boolean): Inscricao {
+  return admin || !i.pagamento ? i : { ...i, pagamento: pagamentoSemIds(i.pagamento) };
+}
+
 function inscricaoAnonima(i: Inscricao): Inscricao {
   return {
     id: i.id,
@@ -49,6 +55,8 @@ function inscricaoAnonima(i: Inscricao): Inscricao {
     exercitoId: i.exercitoId,
     codigo: "",
     status: i.status,
+    // Só o necessário para contar a vaga reservada (situação e prazo); nada do Stripe.
+    pagamento: pagamentoAnonimo(i.pagamento),
     origem: i.origem,
     valorCentavos: 0,
     descontoCentavos: 0,
@@ -77,7 +85,7 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
   v.organizacoes = base.organizacoes;
   v.inscricoes = base.inscricoes
     .filter((i) => visiveis.has(i.eventoId))
-    .map((i) => (i.usuarioId === meuId || geridos.has(i.eventoId) ? i : inscricaoAnonima(i)));
+    .map((i) => (i.usuarioId === meuId || geridos.has(i.eventoId) ? comPagamentoVisivel(i, admin) : inscricaoAnonima(i)));
   v.cupons = base.cupons.filter((c) => geridos.has(c.eventoId));
   v.cortesias = base.cortesias.filter((c) => geridos.has(c.eventoId) || (!!eu && c.emailConvidado === eu.email));
   v.movimentacoes = base.movimentacoes.filter((m) => geridos.has(m.eventoId));

@@ -6,6 +6,7 @@ import { useEventoAtual } from "@/hooks/useEventoAtual";
 import { registrarInicioInscricao } from "@/services/analytics";
 import { disponibilidadeNaBase, ocupacaoExercito } from "@/services/inscricoes";
 import { descontoCupom, TEXTO_MOTIVO } from "@/lib/vendas";
+import { reservaVigente } from "@/lib/pagamentos";
 import { confirmarInscricao, previsualizarCupom } from "@/api/inscricoes.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
@@ -13,14 +14,16 @@ import { descontoDoBeneficio, descreverBeneficio, statusVoucher } from "@/lib/pa
 import { Botao, Campo, Cartao, Entrada, Selecao, SkeletonPagina } from "@/components/ui";
 
 export const Route = createFileRoute("/inscricao/$eventoId")({
-  validateSearch: (s: Record<string, unknown>) => ({
+  validateSearch: (s: Record<string, unknown>): { cortesia: string | undefined; voucher: string | undefined; pagamento?: string | undefined } => ({
     cortesia: typeof s["cortesia"] === "string" ? s["cortesia"] : undefined,
     voucher: typeof s["voucher"] === "string" ? s["voucher"] : undefined,
+    // Volta do checkout do Stripe sem pagar.
+    pagamento: typeof s["pagamento"] === "string" ? s["pagamento"] : undefined,
   }),
   loader: async ({ params }) => {
-    const { evento } = await obterEventoFn({ data: { eventoId: params.eventoId } });
+    const { evento, pagamentoOnline } = await obterEventoFn({ data: { eventoId: params.eventoId } });
     if (!evento || evento.status !== "publicado") throw notFound();
-    return { evento };
+    return { evento, pagamentoOnline };
   },
   head: ({ loaderData }) => ({
     meta: loaderData
@@ -43,9 +46,9 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
 });
 
 function PaginaInscricao() {
-  const { evento: eventoCarregado } = Route.useLoaderData();
+  const { evento: eventoCarregado, pagamentoOnline } = Route.useLoaderData();
   const evento = useEventoAtual(eventoCarregado);
-  const { cortesia: codigoCortesia, voucher: voucherInicial } = Route.useSearch();
+  const { cortesia: codigoCortesia, voucher: voucherInicial, pagamento: retornoPagamento } = Route.useSearch();
   const { usuario } = useAuth();
   const navigate = useNavigate();
   const base = carregarBase();
@@ -99,6 +102,12 @@ function PaginaInscricao() {
   const voucher = vouchers.find((v) => v.id === voucherId);
   const voucherServe = !!voucher && !!tipo && (!voucher.beneficio.tiposElegiveis.length || voucher.beneficio.tiposElegiveis.includes(tipo.id));
   const descontoVoucher = voucher && voucherServe ? descontoDoBeneficio(voucher.beneficio, preco) : 0;
+  const valorFinal = Math.max(0, preco - (voucherId ? descontoVoucher : desconto));
+  // Com o Stripe ativo, valor a pagar passa pelo checkout; cortesia e valor zerado confirmam direto.
+  const vaiPagar = pagamentoOnline && !cortesia && !!tipo && valorFinal > 0;
+  const reservaAberta = base.inscricoes.find(
+    (i) => i.eventoId === evento.id && i.usuarioId === usuario?.id && i.pagamento?.status === "aguardando" && reservaVigente(i),
+  );
 
   // Cadastro iniciado a partir do evento: preserva o destino e retorna após autenticação
   if (!usuario || !montado) {
@@ -176,7 +185,7 @@ function PaginaInscricao() {
     emAndamento.current = true;
     setConfirmando(true);
     try {
-      await confirmarInscricao({
+      const r = await confirmarInscricao({
         eventoId: evento.id,
         tipoId,
         exercitoId,
@@ -184,7 +193,9 @@ function PaginaInscricao() {
         cortesiaId: cortesia?.id,
         voucherId: voucherId || undefined,
       });
-      navigate({ to: "/app/ingressos" });
+      // Reserva criada: segue para a página de pagamento do Stripe.
+      if (r.urlPagamento) window.location.assign(r.urlPagamento);
+      else navigate({ to: "/app/ingressos" });
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha ao confirmar inscrição.");
       emAndamento.current = false;
@@ -209,6 +220,15 @@ function PaginaInscricao() {
         )}
 
         <div className="mt-5 space-y-4">
+          {reservaAberta && (
+            <div role="status" className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">
+              <p className="font-medium">{retornoPagamento === "cancelado" ? "Pagamento não concluído" : "Você tem uma reserva aguardando pagamento"}</p>
+              <p className="text-xs">
+                Sua vaga fica reservada até {new Date(reservaAberta.pagamento!.expiraEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}.
+                Conclua o pagamento em <Link to="/app/ingressos" className="underline">Meus ingressos</Link> ou faça uma nova inscrição abaixo (a reserva anterior é substituída).
+              </p>
+            </div>
+          )}
           {!cortesia && !algumDisponivel && (
             <div role="status" className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">
               <p className="font-medium">Inscrições indisponíveis no momento</p>
@@ -300,7 +320,7 @@ function PaginaInscricao() {
                 {descontoVoucher > 0 && <><dt>Benefício de recompensa</dt><dd className="text-right font-mono">−{formatarBRL(descontoVoucher)}</dd></>}
                 <dt className="font-medium text-foreground">Valor final</dt>
                 <dd className="text-right font-mono font-medium text-foreground">
-                  {impedimento ? "—" : formatarBRL(Math.max(0, preco - (voucherId ? descontoVoucher : desconto)))}
+                  {impedimento ? "—" : formatarBRL(valorFinal)}
                   {cortesia && " (cortesia)"}
                 </dd>
               </dl>
@@ -314,10 +334,12 @@ function PaginaInscricao() {
           {erro && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
 
           <Botao onClick={aoConfirmar} disabled={confirmando || !!impedimento} className="w-full">
-            {confirmando ? "Confirmando..." : "Confirmar inscrição"}
+            {confirmando ? (vaiPagar ? "Abrindo pagamento..." : "Confirmando...") : vaiPagar ? "Ir para o pagamento" : "Confirmar inscrição"}
           </Botao>
           <p className="text-center text-xs text-muted-foreground">
-            A plataforma não processa pagamentos: não pedimos cartão, PIX ou dados de pagamento.
+            {pagamentoOnline
+              ? "O pagamento é feito no ambiente seguro do Stripe; a plataforma não recebe nem guarda dados do seu cartão. A vaga fica reservada por cerca de 30 minutos enquanto você paga."
+              : "A plataforma não processa pagamentos: não pedimos cartão, PIX ou dados de pagamento."}
           </p>
         </div>
       </Cartao>

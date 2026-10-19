@@ -9,6 +9,7 @@ export const ROTULO_ORIGEM: Record<Inscricao["origem"], string> = {
 };
 
 export const ROTULO_STATUS_INSCRICAO: Record<Inscricao["status"], string> = {
+  pendente: "Aguardando pagamento",
   confirmada: "Confirmada",
   cancelada: "Cancelada",
   estornada: "Estornada",

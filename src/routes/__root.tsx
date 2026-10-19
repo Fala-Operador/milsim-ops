@@ -164,7 +164,7 @@ function Providers({ children }: { children: ReactNode }) {
       <Header />
       <main>{conteudo}</main>
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        <p>MilSim Ops — eventos de simulação militar. Pagamentos não são processados pela plataforma.</p>
+        <p>MilSim Ops — eventos de simulação militar. Pagamentos de ingressos processados pelo Stripe.</p>
         <nav className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1" aria-label="Links do rodapé">
           <Link to="/modalidades" className="underline-offset-4 hover:underline">Modalidades</Link>
           <Link to="/termos" className="underline-offset-4 hover:underline">Termos de uso</Link>

@@ -7,8 +7,9 @@ evento, painel do organizador e administração da plataforma.
 **Monólito TanStack Start + Supabase.** As páginas e as APIs (server functions) vivem no mesmo
 app. O Supabase fornece Postgres, Auth e Storage, e o navegador **nunca** acessa o banco
 diretamente: toda leitura e escrita passa pelas server functions, que autenticam a pessoa e
-aplicam as regras de negócio. Pagamentos, estornos e mensagens externas (e-mail, WhatsApp) continuam
-simulados.
+aplicam as regras de negócio. A venda de ingressos usa o **Stripe Checkout** quando
+`STRIPE_SECRET_KEY` está configurada (sem ela, a inscrição é confirmada sem cobrança). Mensagens
+externas (e-mail, WhatsApp) continuam simuladas.
 
 > Projeto conectado ao [Lovable](https://lovable.dev): commits na branch `main` sincronizam com o
 > editor. Não reescreva histórico já publicado (force push, rebase, amend). Veja `AGENTS.md`.
@@ -91,6 +92,9 @@ bun run db:seed -- --limpar-contas              # idem, removendo também as con
 - **Cadastro**: a conta é criada já com o e-mail confirmado. Em produção, exija confirmação.
 - **E-mails do Auth**: o SMTP embutido do Supabase só entrega para membros da organização e tem
   limite baixo. Configure um SMTP próprio para a recuperação de senha funcionar para todos.
-- **Pagamentos e mensagens externas**: simulados (sem gateway, PIX, e-mail transacional ou WhatsApp).
+- **Pagamentos**: Stripe Checkout em BRL (cartão e os meios ativados no painel do Stripe), com
+  reembolso integral automático no cancelamento. O dinheiro cai na conta Stripe da plataforma; o
+  repasse aos organizadores (Stripe Connect) ainda não existe.
+- **Mensagens externas**: simuladas (sem e-mail transacional ou WhatsApp).
 - **Storage**: arquivos substituídos ou removidos não são apagados do bucket (sem limpeza de órfãos).
 - **LGPD**: retenção, exclusão e validação jurídica (incl. adolescentes de 15–17 anos) ainda pendentes.

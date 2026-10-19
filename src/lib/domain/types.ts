@@ -178,9 +178,36 @@ export interface Evento {
 }
 
 export type StatusInscricao =
+  | "pendente" // vaga reservada aguardando o pagamento (Stripe)
   | "confirmada"
   | "cancelada"
   | "estornada";
+
+/**
+ * Pagamento online de uma inscrição (Stripe Checkout). Só existe em inscrições pagas
+ * criadas com o Stripe configurado; cortesias e valores zerados não passam por aqui.
+ *  - aguardando: sessão de checkout aberta, vaga reservada até `expiraEm`;
+ *  - processando: pagamento assíncrono (ex.: boleto) enviado, aguardando compensação;
+ *  - pago: confirmado pelo Stripe;
+ *  - expirado / falhou / cancelado: reserva liberada sem cobrança (prazo, recusa ou desistência);
+ *  - estorno_pendente: inscrição cancelada, reembolso ainda não confirmado pelo Stripe;
+ *  - estornado: reembolso criado no Stripe.
+ */
+export type StatusPagamento = "aguardando" | "processando" | "pago" | "expirado" | "falhou" | "cancelado" | "estorno_pendente" | "estornado";
+
+export interface PagamentoInscricao {
+  provedor: "stripe";
+  status: StatusPagamento;
+  /** Valor cobrado (valor do ingresso menos descontos), em centavos. */
+  valorCentavos: number;
+  /** Fim da reserva da vaga enquanto o pagamento não é concluído. */
+  expiraEm: string;
+  sessaoId?: string | undefined; // Checkout Session (cs_...)
+  intencaoId?: string | undefined; // PaymentIntent (pi_...)
+  pagoEm?: string | undefined;
+  reembolsoId?: string | undefined; // Refund (re_...)
+  erro?: string | undefined; // última falha ao falar com o Stripe (ex.: estorno recusado)
+}
 
 export interface Inscricao {
   id: string;
@@ -198,6 +225,7 @@ export interface Inscricao {
   cupomId?: string | undefined;
   cortesiaId?: string | undefined;
   voucherId?: string | undefined;
+  pagamento?: PagamentoInscricao | undefined;
   criadoEm: string;
   canceladoEm?: string | undefined;
   motivoCancelamento?: string | undefined;

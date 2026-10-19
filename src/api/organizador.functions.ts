@@ -6,6 +6,7 @@ import * as org from "@/services/organizador";
 import { garantirForuns } from "@/services/comunidade";
 import { gereEvento } from "@/lib/visao";
 import { exigirUsuario, mutar, type Contexto } from "@/server/unidade.server";
+import { expirarSessoes, processarEstornos } from "@/server/pagamentos.server";
 import { chamar } from "@/api/cliente";
 import type { Evento } from "@/lib/domain/types";
 
@@ -82,12 +83,16 @@ export const publicarEventoFn = createServerFn({ method: "POST" })
 
 export const cancelarEventoFn = createServerFn({ method: "POST" })
   .validator(z.object({ eventoId: id, justificativa: texto(1000) }).parse)
-  .handler(({ data }) =>
-    mutar((ctx) => {
+  .handler(async ({ data }) => {
+    const r = await mutar((ctx) => {
       const u = exigirGestor(ctx, data.eventoId);
       return org.cancelarEvento(data.eventoId, data.justificativa, u.id, u.perfil);
-    }),
-  );
+    });
+    // Depois de gravar: fecha checkouts abertos e reembolsa no Stripe o que foi pago.
+    await expirarSessoes(r.resultado.sessoesAExpirar);
+    const estornos = await processarEstornos();
+    return { resultado: { canceladas: r.resultado.canceladas }, visao: (estornos ?? r).visao };
+  });
 
 export const excluirEventoFn = createServerFn({ method: "POST" })
   .validator(z.object({ eventoId: id }).parse)

@@ -232,8 +232,23 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   exército, tipo, lote), cortesia **ou** lote + cupom. Gera o **token do QR** e grava as
   movimentações e a notificação. O cancelamento estorna, notifica e audita. O evento de métrica da
   confirmação é registrado pelo navegador depois do sucesso, porque depende da atribuição local.
+- **Pagamento de ingressos (Stripe Checkout)**: regras puras em `lib/pagamentos.ts` (reserva
+  vigente, o que ocupa vaga, o que a visão mostra) e `lib/stripe.ts` (assinatura do webhook,
+  eventos → ações); estados na base em `services/inscricoes.ts`; chamadas ao Stripe por `fetch`
+  em `server/stripe.server.ts` e a orquestração em `server/pagamentos.server.ts`, **sempre fora
+  de `mutar`** (que pode repetir a função). Com `STRIPE_SECRET_KEY` configurada, inscrição com
+  valor a pagar nasce `pendente` com `pagamento.status = "aguardando"` e reserva a vaga (e o uso
+  do cupom/benefício) por 32 min, o mesmo prazo da Checkout Session. Confirmam a inscrição o
+  webhook `POST /api/stripe/webhook` (`routes/api.stripe.webhook.ts`) e o retorno do checkout
+  (`sincronizarPagamentoFn`), ambos idempotentes. Reserva expirada, pagamento recusado ou
+  cancelado liberam a vaga; pagamento que chega sem vaga possível é reembolsado. Cancelar uma
+  inscrição paga (ou o evento) marca `estorno_pendente`; depois de gravar, a API cria o
+  reembolso no Stripe (chave de idempotência por inscrição) e registra `estornado` ou o erro,
+  que é tentado de novo a cada webhook. Sem a chave, tudo continua como antes (confirmação
+  direta, sem cobrança).
 - **Organizador** (`services/organizador.ts`): validação de publicação, capacidade nunca abaixo
-  da ocupação, auditoria de modalidade, cancelamento com estorno em massa.
+  da ocupação (confirmadas + reservas vigentes), auditoria de modalidade, cancelamento com
+  estorno em massa (e reembolso no Stripe do que foi pago online).
 - **Check-in**: regras puras em `lib/checkin.ts`. A portaria valida e registra **no aparelho**
   (IndexedDB, funciona offline) e envia a fila por `sincronizarCheckins`. O servidor
   (`aplicarSincronizacao`) é idempotente por id, marca como conflito a segunda entrada ou
