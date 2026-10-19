@@ -1,10 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { carregarBase } from "@/services/db";
+import { useVersaoBase } from "@/hooks/useVersaoBase";
+import { StatusInscricao } from "@/components/StatusInscricao";
+import { EnvioComprovante, InstrucoesPix, VerComprovante } from "@/components/PagamentoPix";
+import { pendente, podeEnviarComprovante, statusEfetivo } from "@/lib/reservas";
 import { cancelarInscricao } from "@/api/inscricoes.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
-import { Badge, Botao, Cartao, EstadoVazio, Modal, AreaTexto } from "@/components/ui";
+import { Botao, Cartao, EstadoVazio, Modal, AreaTexto } from "@/components/ui";
 import type { Inscricao } from "@/lib/domain/types";
 import { IngressoQr } from "@/components/IngressoQr";
 import { QrCode } from "lucide-react";
@@ -21,12 +25,6 @@ export const Route = createFileRoute("/app/ingressos")({
   component: MeusIngressos,
 });
 
-const tomStatus: Record<Inscricao["status"], "sucesso" | "perigo" | "aviso"> = {
-  confirmada: "sucesso",
-  cancelada: "perigo",
-  estornada: "aviso",
-};
-
 function MeusIngressos() {
   const { usuario } = useAuth();
   const [, setVersao] = useState(0);
@@ -34,6 +32,7 @@ function MeusIngressos() {
   const [motivo, setMotivo] = useState("");
   const [erro, setErro] = useState("");
   const [qrDe, setQrDe] = useState<Inscricao | null>(null);
+  useVersaoBase();
   const base = carregarBase();
   if (!usuario) return null;
 
@@ -88,13 +87,36 @@ function MeusIngressos() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <Badge tom={tomStatus[ins.status]}>
-                      {ins.status === "confirmada" ? "Confirmada" : ins.status === "estornada" ? "Estornada" : "Cancelada"}
-                    </Badge>
+                    <div className="flex justify-end"><StatusInscricao status={ins.status} reservaAte={ins.reservaAte} /></div>
                     <p className="mt-2 font-mono text-sm text-accent">{ins.codigo}</p>
                     <p className="text-[11px] text-muted-foreground">Código do ingresso — sem dados pessoais</p>
                   </div>
                 </div>
+                {pendente(ins) && statusEfetivo(ins) !== "expirada" && evento && (
+                  <div className="@container mt-3 space-y-3">
+                    {ins.status === "em_analise" ? (
+                      <p className="text-sm text-muted-foreground">
+                        Comprovante enviado{ins.comprovante ? ` em ${formatarDataBR(ins.comprovante.enviadoEm)}` : ""}. A vaga fica garantida
+                        enquanto a organização analisa; você será avisado da decisão.
+                      </p>
+                    ) : (
+                      <InstrucoesPix evento={evento} inscricao={ins} />
+                    )}
+                    <div className="flex flex-wrap items-start gap-2">
+                      {podeEnviarComprovante(ins) && <EnvioComprovante inscricao={ins} />}
+                      <VerComprovante inscricao={ins} />
+                      <Botao variante="contorno" onClick={() => setCancelando(ins)}>Cancelar reserva</Botao>
+                    </div>
+                  </div>
+                )}
+                {(ins.status === "recusada" || statusEfetivo(ins) === "expirada") && (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {ins.status === "recusada"
+                      ? `Motivo da recusa: ${ins.motivoCancelamento ?? "não informado"}.`
+                      : "O prazo para enviar o comprovante terminou e a vaga foi liberada."}{" "}
+                    Se ainda houver vagas, você pode se inscrever de novo.
+                  </p>
+                )}
                 {ins.status === "confirmada" && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Botao onClick={() => setQrDe(ins)}><QrCode className="h-4 w-4" />Abrir QR Code de entrada</Botao>
@@ -110,10 +132,11 @@ function MeusIngressos() {
       )}
 
       {qrDe && <IngressoQr inscricao={qrDe} evento={base.eventos.find((e) => e.id === qrDe.eventoId)} usuarioId={usuario.id} onFechar={() => setQrDe(null)} />}
-      <Modal aberto={!!cancelando} titulo="Cancelar inscrição" onFechar={() => setCancelando(null)}>
+      <Modal aberto={!!cancelando} titulo={cancelando && pendente(cancelando) ? "Cancelar reserva" : "Cancelar inscrição"} onFechar={() => setCancelando(null)}>
         <p className="text-sm text-muted-foreground">
-          O cancelamento invalida o ingresso, libera a vaga e registra o estorno integral.
-          O histórico é preservado.
+          {cancelando && pendente(cancelando)
+            ? "A reserva é cancelada e a vaga, o cupom e o benefício usados são liberados. Se você já fez o PIX, combine a devolução com a organização."
+            : "O cancelamento invalida o ingresso, libera a vaga e registra o estorno integral. O histórico é preservado."}
         </p>
         <div className="mt-3">
           <AreaTexto

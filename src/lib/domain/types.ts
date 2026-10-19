@@ -173,6 +173,8 @@ export interface Evento {
   /** Modalidade principal; ausente em eventos antigos ("Modalidade não informada"). */
   modalidade?: ModalidadeId | undefined;
   whatsappGrupoUrl?: string | undefined;
+  /** Presente: inscrições pagas viram reserva até a organização aprovar o comprovante. */
+  pagamento?: PagamentoEvento | undefined;
   status: StatusEvento;
   criadoEm: string;
 }
@@ -180,7 +182,33 @@ export interface Evento {
 export type StatusInscricao =
   | "confirmada"
   | "cancelada"
-  | "estornada";
+  | "estornada"
+  /** Vaga reservada aguardando o pagamento por PIX (expira em `reservaAte`). */
+  | "aguardando_pagamento"
+  /** Comprovante enviado: vaga mantida até a organização decidir. */
+  | "em_analise"
+  /** Pagamento recusado pela organização (vaga e cupom liberados). */
+  | "recusada"
+  /** Reserva não paga dentro do prazo (vaga e cupom liberados). */
+  | "expirada";
+
+/** Comprovante de pagamento: arquivo no bucket PRIVADO "documentos" (só metadados aqui). */
+export interface ComprovantePagamento {
+  caminho: string;
+  nome: string;
+  tipo: string;
+  tamanho: number;
+  enviadoEm: string;
+}
+
+/** Pagamento manual por PIX configurado pela organização no evento. */
+export interface PagamentoEvento {
+  chavePix: string;
+  titular: string;
+  /** Horas para pagar e enviar o comprovante depois de reservar. */
+  prazoHoras: number;
+  instrucoes?: string | undefined;
+}
 
 export interface Inscricao {
   id: string;
@@ -201,6 +229,12 @@ export interface Inscricao {
   criadoEm: string;
   canceladoEm?: string | undefined;
   motivoCancelamento?: string | undefined;
+  /** Reserva com pagamento pendente: vale até este instante (sem comprovante). */
+  reservaAte?: string | undefined;
+  comprovante?: ComprovantePagamento | undefined;
+  /** Quem aprovou ou recusou o pagamento, e quando. */
+  decididoPor?: string | undefined;
+  decididoEm?: string | undefined;
 }
 
 export interface Cupom {

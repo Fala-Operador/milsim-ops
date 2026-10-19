@@ -207,7 +207,7 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
                     <td className="px-4 py-3">{nomeTipo(i.tipoId)}</td>
                     <td className="px-4 py-3">{nomeEx(i.exercitoId)}</td>
                     <td className="px-4 py-3">{ROTULO_ORIGEM[i.origem]}</td>
-                    <td className="min-w-[168px] px-4 py-3"><div className="flex flex-col items-start gap-1.5"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div></td>
+                    <td className="min-w-[168px] px-4 py-3"><div className="flex flex-col items-start gap-1.5"><StatusInscricao status={i.status} reservaAte={i.reservaAte} /><StatusCheckin presenca={presencaDe(i.id)} /></div></td>
                     <td className="px-4 py-3 text-right">
                       <Botao variante="fantasma" className="whitespace-nowrap px-2 py-1" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={`Ver detalhes de ${nomeDe(i)}`}>
                         <Eye className="h-4 w-4" /> Detalhes
@@ -223,7 +223,7 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
                 <li key={i.id} className="space-y-2 p-4">
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
                     <Participante nome={nomeDe(i)} codigo={i.codigo} />
-                    <div className="flex flex-col items-start gap-1.5"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div>
+                    <div className="flex flex-col items-start gap-1.5"><StatusInscricao status={i.status} reservaAte={i.reservaAte} /><StatusCheckin presenca={presencaDe(i.id)} /></div>
                   </div>
                   <p className="text-xs text-muted-foreground">{nomeTipo(i.tipoId)} · {nomeEx(i.exercitoId)} · {ROTULO_ORIGEM[i.origem]}</p>
                   <Botao variante="contorno" className="w-full py-1.5" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={`Ver detalhes de ${nomeDe(i)}`}><Eye className="h-4 w-4" /> Detalhes</Botao>
@@ -300,7 +300,7 @@ function PainelDetalhes({ inscricao, evento, nome, cpf, presenca, onFechar }: {
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-sm">
           <div className="flex items-center justify-between gap-3">
             <Participante nome={nome} codigo={inscricao.codigo} />
-            <StatusInscricao status={inscricao.status} />
+            <StatusInscricao status={inscricao.status} reservaAte={inscricao.reservaAte} />
           </div>
           <section>
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Inscrição</h3>

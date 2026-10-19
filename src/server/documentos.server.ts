@@ -66,3 +66,26 @@ export async function removerNota(usuarioId: string, equipamentoId: string): Pro
   await supabaseAdmin().storage.from(BUCKET).remove([doc.caminho]);
   await supabaseAdmin().from("documentos_privados").delete().eq("id", doc.id);
 }
+
+// ---------- Comprovantes de pagamento (PIX manual) ----------
+// Mesmo bucket privado, em comprovantes/{usuario}/{inscricao}/…; o caminho fica na própria
+// inscrição. Quem pode ver (titular, organização do evento, admin) é decidido na API.
+
+export async function gravarComprovante(usuarioId: string, inscricaoId: string, arq: ArquivoNota): Promise<string> {
+  const caminho = `comprovantes/${usuarioId}/${inscricaoId}/${crypto.randomUUID()}.${arq.ext}`;
+  const { error } = await supabaseAdmin().storage.from(BUCKET).upload(caminho, arq.bytes, { contentType: arq.tipo, upsert: false });
+  if (error) throw new Error(`Falha ao enviar comprovante: ${error.message}`);
+  return caminho;
+}
+
+export async function urlDoComprovante(caminho: string, nome: string, baixar: boolean): Promise<string> {
+  const { data, error } = await supabaseAdmin().storage.from(BUCKET)
+    .createSignedUrl(caminho, 60, baixar ? { download: nome } : undefined);
+  if (error || !data) throw new Error(error?.message ?? "Falha ao gerar link.");
+  return data.signedUrl;
+}
+
+/** Apaga arquivos do bucket privado (ex.: comprovante substituído ou gravação que falhou). */
+export async function removerDocumentos(caminhos: string[]): Promise<void> {
+  if (caminhos.length) await supabaseAdmin().storage.from(BUCKET).remove(caminhos);
+}

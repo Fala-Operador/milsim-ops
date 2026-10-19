@@ -1,12 +1,24 @@
-import { Check, Circle, UserCheck, X } from "lucide-react";
+import { Check, Circle, Clock, FileSearch, UserCheck, X, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui";
-import { ROTULO_STATUS_INSCRICAO } from "@/lib/inscritos";
-import type { Inscricao } from "@/lib/domain/types";
+import { ROTULO_STATUS_INSCRICAO, statusEfetivo } from "@/lib/reservas";
+import type { Inscricao, StatusInscricao as Status } from "@/lib/domain/types";
 import type { RegistroCheckin } from "@/lib/checkin";
 
-export function StatusInscricao({ status }: { status: Inscricao["status"] }) {
-  const Icone = status === "confirmada" ? Check : X;
-  return <Badge tom={status === "confirmada" ? "sucesso" : "perigo"} aria-label={`Inscrição: ${ROTULO_STATUS_INSCRICAO[status]}`}><Icone aria-hidden="true" />{ROTULO_STATUS_INSCRICAO[status]}</Badge>;
+const VISUAL: Record<Status, { tom: "sucesso" | "aviso" | "perigo" | "padrao"; Icone: LucideIcon }> = {
+  confirmada: { tom: "sucesso", Icone: Check },
+  aguardando_pagamento: { tom: "aviso", Icone: Clock },
+  em_analise: { tom: "aviso", Icone: FileSearch },
+  cancelada: { tom: "perigo", Icone: X },
+  estornada: { tom: "perigo", Icone: X },
+  recusada: { tom: "perigo", Icone: X },
+  expirada: { tom: "padrao", Icone: X },
+};
+
+/** Status da inscrição; com `reservaAte`, reserva vencida aparece como expirada antes da varredura. */
+export function StatusInscricao({ status, reservaAte }: { status: Inscricao["status"]; reservaAte?: string | undefined }) {
+  const efetivo = statusEfetivo({ status, reservaAte });
+  const { tom, Icone } = VISUAL[efetivo];
+  return <Badge tom={tom} aria-label={`Inscrição: ${ROTULO_STATUS_INSCRICAO[efetivo]}`}><Icone aria-hidden="true" />{ROTULO_STATUS_INSCRICAO[efetivo]}</Badge>;
 }
 
 export function StatusCheckin({ presenca }: { presenca: RegistroCheckin | undefined }) {

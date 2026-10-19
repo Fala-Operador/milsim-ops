@@ -49,6 +49,7 @@ function inscricaoAnonima(i: Inscricao): Inscricao {
     exercitoId: i.exercitoId,
     codigo: "",
     status: i.status,
+    reservaAte: i.reservaAte, // sem ela, a contagem de vagas no navegador contaria reservas vencidas
     origem: i.origem,
     valorCentavos: 0,
     descontoCentavos: 0,

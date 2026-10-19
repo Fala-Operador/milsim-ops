@@ -215,7 +215,7 @@ function NotaFiscal({ eq, onMudou }: { eq: Equipamento; onMudou: () => void }) {
         </label>
         {eq.nota && <Botao variante="fantasma" className="px-2 py-1 text-xs" disabled={ocupado} onClick={() => window.confirm("Excluir a nota fiscal?") && run(() => excluirNota(eq.id))}>Excluir</Botao>}
       </div>
-      <p className="mt-2 text-muted-foreground">PDF, JPEG, PNG ou WebP, até 5 MB. Só você acessa este arquivo — ele não aparece no perfil, para organizadores nem para a administração. Anexar não torna o equipamento "verificado". Use arquivos fictícios nesta demonstração.</p>
+      <p className="mt-2 text-muted-foreground">PDF, JPEG, PNG ou WebP, até 5 MB. Só você acessa este arquivo — ele não aparece no perfil, para organizadores nem para a administração. Anexar não torna o equipamento "verificado".</p>
       {erro && <p role="alert" className="mt-1 text-destructive">{erro}</p>}
     </div>
   );
