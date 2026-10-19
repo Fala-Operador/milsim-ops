@@ -12,4 +12,8 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Fora do Lovable (ex.: Dokploy/Railpack), gera um servidor Node em .output/
+  // em vez do bundle Cloudflare. Dentro do Lovable o preset continua forçado
+  // para cloudflare-module.
+  nitro: { preset: "node-server" },
 });
