@@ -1,0 +1,78 @@
+# Confere as migrations de um PR antes do merge, para o deploy do main não
+# quebrar depois:
+#   - dois arquivos com o mesmo carimbo de data (threads em paralelo) são
+#     rejeitados pelo `db push`;
+#   - `db push --dry-run` contra o projeto mostra o que o merge vai aplicar e
+#     falha se uma migration nova ficou com data anterior à última já aplicada;
+#   - os testes pgTAP de `supabase/tests/` rodam num Postgres local com todas
+#     as migrations aplicadas do zero.
+#
+# Usa os mesmos segredos do deploy (veja deploy.yml); sem eles (PR de fork),
+# a simulação contra o projeto é pulada.
+name: Conferir migrations
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
+      - "supabase/config.toml"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Migrations
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_CLI_VERSION: 2.119.0
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'fezrmoyjsffufdjptamp' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Carimbos de data únicos
+        run: |
+          dup=$(ls supabase/migrations | cut -d_ -f1 | sort | uniq -d)
+          if [ -n "$dup" ]; then
+            echo "::error::Migrations com o mesmo carimbo de data: $dup"
+            exit 1
+          fi
+
+      # Baixa a CLI direto do release, sem ação de terceiros.
+      - name: Instalar a Supabase CLI
+        if: env.SUPABASE_ACCESS_TOKEN != ''
+        run: |
+          curl -fsSL "https://github.com/supabase/cli/releases/download/v${SUPABASE_CLI_VERSION}/supabase_linux_amd64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin supabase supabase-go
+          supabase --version
+
+      - name: Simular o deploy
+        if: env.SUPABASE_ACCESS_TOKEN != ''
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          supabase db push --linked --dry-run
+
+  tests:
+    name: Testes pgTAP
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_CLI_VERSION: 2.119.0
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar a Supabase CLI
+        run: |
+          curl -fsSL "https://github.com/supabase/cli/releases/download/v${SUPABASE_CLI_VERSION}/supabase_linux_amd64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin supabase supabase-go
+          supabase --version
+
+      # Só o banco: as migrations sobem do zero, como num projeto novo.
+      - name: Subir o banco local
+        run: supabase db start
+
+      - name: Rodar os testes
+        run: supabase test db

@@ -3,7 +3,7 @@
 ## Editor de eventos — validação
 - [x] Testar celular e tema TAN, recortes, publicação e leitura pública; corrigir problemas encontrados.
 - [x] Validar recorte imediato de banner/card e restauração ao voltar à etapa com testes de regressão.
-- [ ] Persistir recorte independente do banner e CEP após reabrir do servidor — bloqueado: coluna imagem ausente (API 42703); sem conexão SQL nem acesso de migração ao banco externo atual. Aplicar docs/migracoes/20261013220000_evento_imagem_cep.sql no editor SQL do projeto existente e confirmar leitura após salvar.
+- [ ] Persistir recorte independente do banner e CEP após reabrir do servidor — bloqueado: coluna imagem ausente (API 42703); sem conexão SQL nem acesso de migração ao banco externo atual. Aplicar supabase/migrations/20261013220000_evento_imagem_cep.sql no editor SQL do projeto existente e confirmar leitura após salvar.
 - [x] Ajustar badges, proporções da tabela e filtros em Inscritos; verificar celular, larguras intermediárias e os dois temas (390, 820, 1024 e 1280 px; 154 testes passando).
 
 - [x] Carrosséis compartilhados sem scrollbar, com setas, indicadores, deslize e validação de overflow
@@ -34,6 +34,6 @@
 
 ## Impulsionamento de operações
 - [x] Parte 1: cadastro, elegibilidade, estados, exibição automática nas seções e na listagem, botão na lista de eventos
-- [ ] Executar SQL docs/migracoes/20261014140000_impulsionamentos.sql no banco (bloqueado: sem acesso SQL; banco fora do ar)
+- [ ] Executar SQL supabase/migrations/20261014140000_impulsionamentos.sql no banco (bloqueado: sem acesso SQL; banco fora do ar)
 - [x] Parte 2: métricas por campanha, bloco "Divulgação da operação" do organizador, prévia com diagnóstico
 - [ ] Conferir no navegador (bloqueado: tabela impulsionamentos ainda não criada no banco)

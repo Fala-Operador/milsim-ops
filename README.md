@@ -56,6 +56,24 @@ bun run db:seed                                 # grava a base demonstrativa (su
 bun run db:seed -- --limpar-contas              # idem, removendo também as contas criadas fora da seed
 ```
 
+#### Deploy automático (GitHub Actions)
+
+- `.github/workflows/check.yml` roda em todo PR que mexe em `supabase/`: rejeita carimbos de data
+  repetidos, simula o `db push` contra o projeto (mostra o que o merge vai aplicar) e roda os
+  testes pgTAP de `supabase/tests/` num banco local criado do zero.
+- `.github/workflows/deploy.yml` roda a cada push no `main` que mexe em `supabase/` (ou pela aba
+  Actions): aplica as migrations novas e publica as Edge Functions.
+- Segredos do repositório (Settings → Secrets and variables → Actions): `SUPABASE_ACCESS_TOKEN`
+  (supabase.com/dashboard/account/tokens) e `SUPABASE_DB_PASSWORD`. Variável opcional
+  `SUPABASE_PROJECT_REF` (padrão: `fezrmoyjsffufdjptamp`).
+- Toda mudança de esquema é uma migration nova em `supabase/migrations/`, que precisa aplicar
+  num banco vazio. Não altere o banco à mão: o histórico da CLI deixaria de bater.
+- **Uma vez só**, antes do primeiro deploy: as migrations que já foram aplicadas à mão (psql)
+  precisam ser marcadas no histórico, senão o deploy tenta recriar as tabelas. As que usam
+  `if not exists` podem rodar de novo; as duas abaixo não:
+  `npx supabase migration repair --status applied 20261013150728 20261013200000 --linked`
+  (`npx supabase migration list --linked` mostra o que já está registrado).
+
 ## Contas criadas pela seed
 
 | Perfil | Login | Senha |
@@ -95,7 +113,9 @@ bun run db:seed -- --limpar-contas              # idem, removendo também as con
 - **Pagamentos**: Stripe Checkout em BRL (cartão e os meios ativados no painel do Stripe), com
   reembolso integral automático no cancelamento. Com a conta Stripe Connect da organização ativa
   (Financeiro → Recebimentos), cada venda é repassada automaticamente a ela, descontada a taxa da
-  plataforma (`STRIPE_TAXA_PLATAFORMA_PERCENTUAL`); antes disso, o valor fica na plataforma.
+  plataforma (definida em Administração → Pagamentos); antes disso, o valor fica na plataforma.
+  Os webhooks do Stripe chegam pela Edge Function `supabase/functions/stripe-webhook`, que confere
+  a assinatura e repassa o evento à API do site.
 - **Mensagens externas**: simuladas (sem e-mail transacional ou WhatsApp).
 - **Storage**: arquivos substituídos ou removidos não são apagados do bucket (sem limpeza de órfãos).
 - **LGPD**: retenção, exclusão e validação jurídica (incl. adolescentes de 15–17 anos) ainda pendentes.
