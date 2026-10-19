@@ -12,17 +12,38 @@ import type {
   SecaoInicial,
 } from "@/lib/domain/types";
 import { campanhasNaPosicao } from "@/lib/impulsionamento";
-import { ocupaVaga } from "@/lib/reservas";
+import { ocupaVaga } from "@/lib/pagamentos";
 
 export const REGIOES: RegiaoBR[] = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
 
 export const UF_REGIAO: Record<string, RegiaoBR> = {
-  AC: "Norte", AP: "Norte", AM: "Norte", PA: "Norte", RO: "Norte", RR: "Norte", TO: "Norte",
-  AL: "Nordeste", BA: "Nordeste", CE: "Nordeste", MA: "Nordeste", PB: "Nordeste", PE: "Nordeste",
-  PI: "Nordeste", RN: "Nordeste", SE: "Nordeste",
-  DF: "Centro-Oeste", GO: "Centro-Oeste", MT: "Centro-Oeste", MS: "Centro-Oeste",
-  ES: "Sudeste", MG: "Sudeste", RJ: "Sudeste", SP: "Sudeste",
-  PR: "Sul", RS: "Sul", SC: "Sul",
+  AC: "Norte",
+  AP: "Norte",
+  AM: "Norte",
+  PA: "Norte",
+  RO: "Norte",
+  RR: "Norte",
+  TO: "Norte",
+  AL: "Nordeste",
+  BA: "Nordeste",
+  CE: "Nordeste",
+  MA: "Nordeste",
+  PB: "Nordeste",
+  PE: "Nordeste",
+  PI: "Nordeste",
+  RN: "Nordeste",
+  SE: "Nordeste",
+  DF: "Centro-Oeste",
+  GO: "Centro-Oeste",
+  MT: "Centro-Oeste",
+  MS: "Centro-Oeste",
+  ES: "Sudeste",
+  MG: "Sudeste",
+  RJ: "Sudeste",
+  SP: "Sudeste",
+  PR: "Sul",
+  RS: "Sul",
+  SC: "Sul",
 };
 
 export const NACIONAL: Abrangencia = { escopo: "nacional" };
@@ -111,12 +132,24 @@ export function eventosDaSecao(
   agora: Date,
 ): CartaoEventoResolvido[] {
   const vistos = new Set<string>();
-  const impulsionados = campanhasNaPosicao(base, secao.id, local, agora).flatMap((c): CartaoEventoResolvido[] => {
-    const e = base.eventos.find((x) => x.id === c.eventoId)!;
-    vistos.add(e.id);
-    return [{ evento: e, esgotado: esgotado(base, e), chamada: c.chamada, imagem: c.imagemPromocional || e.imagemUrl, campanhaId: c.id }];
-  });
-  const organicos = curadoriaDaSecao(base, secao, local, agora).filter((c) => !vistos.has(c.evento.id));
+  const impulsionados = campanhasNaPosicao(base, secao.id, local, agora).flatMap(
+    (c): CartaoEventoResolvido[] => {
+      const e = base.eventos.find((x) => x.id === c.eventoId)!;
+      vistos.add(e.id);
+      return [
+        {
+          evento: e,
+          esgotado: esgotado(base, e),
+          chamada: c.chamada,
+          imagem: c.imagemPromocional || e.imagemUrl,
+          campanhaId: c.id,
+        },
+      ];
+    },
+  );
+  const organicos = curadoriaDaSecao(base, secao, local, agora).filter(
+    (c) => !vistos.has(c.evento.id),
+  );
   return [...impulsionados, ...organicos];
 }
 
@@ -136,7 +169,15 @@ function curadoriaDaSecao(
         if (!areasSobrepostas(abrangenciaDoEvento(e), local)) return [];
         const esg = esgotado(base, e);
         if (esg && !secao.mostrarEsgotados) return [];
-        return [{ evento: e, esgotado: esg, selo: d.selo, chamada: d.chamada, imagem: d.imagemPromocional || e.imagemUrl }];
+        return [
+          {
+            evento: e,
+            esgotado: esg,
+            selo: d.selo,
+            chamada: d.chamada,
+            imagem: d.imagemPromocional || e.imagemUrl,
+          },
+        ];
       });
   }
   const cfg = secao.automatica;
@@ -228,22 +269,39 @@ export function validarUrlExterna(entrada: string | undefined): string | null {
 // garante que a conta exista.
 
 export type ResultadoInstagram =
-  | { ok: true; usuario: string; url: string }
-  | { ok: false; erro: string };
+  { ok: true; usuario: string; url: string } | { ok: false; erro: string };
 
 const HOSTS_INSTAGRAM = new Set(["instagram.com", "www.instagram.com", "m.instagram.com"]);
 /** Primeiros segmentos que não são perfis (publicações, reels, stories, páginas do sistema). */
-const CAMINHOS_RESERVADOS = new Set(["p", "reel", "reels", "stories", "tv", "explore", "accounts", "direct", "about", "legal", "developer", "web"]);
+const CAMINHOS_RESERVADOS = new Set([
+  "p",
+  "reel",
+  "reels",
+  "stories",
+  "tv",
+  "explore",
+  "accounts",
+  "direct",
+  "about",
+  "legal",
+  "developer",
+  "web",
+]);
 const TEM_ESQUEMA = /^[a-z][a-z0-9+.-]*:\/\//i;
 const PARECE_SITE = /\.(com|net|org|io|app|gov|edu)(\.[a-z]{2})?$|\.br$/i;
 
 function validarUsuarioInstagram(bruto: string): ResultadoInstagram {
   const usuario = bruto.toLowerCase();
   if (!usuario) return { ok: false, erro: "Informe o nome do perfil depois do @." };
-  if (usuario.length > 30) return { ok: false, erro: "O nome do perfil tem no máximo 30 caracteres." };
-  if (!/^[a-z0-9._]+$/.test(usuario)) return { ok: false, erro: "Use apenas letras, números, ponto e sublinhado no nome do perfil." };
+  if (usuario.length > 30)
+    return { ok: false, erro: "O nome do perfil tem no máximo 30 caracteres." };
+  if (!/^[a-z0-9._]+$/.test(usuario))
+    return { ok: false, erro: "Use apenas letras, números, ponto e sublinhado no nome do perfil." };
   if (usuario.startsWith(".") || usuario.endsWith(".") || usuario.includes("..")) {
-    return { ok: false, erro: "O nome do perfil não pode começar ou terminar com ponto, nem ter dois pontos seguidos." };
+    return {
+      ok: false,
+      erro: "O nome do perfil não pode começar ou terminar com ponto, nem ter dois pontos seguidos.",
+    };
   }
   return { ok: true, usuario, url: `https://www.instagram.com/${usuario}/` };
 }
@@ -256,7 +314,11 @@ export function analisarInstagram(entrada: string | undefined): ResultadoInstagr
 
   const pareceLink = TEM_ESQUEMA.test(v) || v.includes("/") || /instagram\.com/i.test(v);
   if (!pareceLink) {
-    if (PARECE_SITE.test(v)) return { ok: false, erro: "Isso parece um site. Informe o @ do perfil ou um link do Instagram." };
+    if (PARECE_SITE.test(v))
+      return {
+        ok: false,
+        erro: "Isso parece um site. Informe o @ do perfil ou um link do Instagram.",
+      };
     return validarUsuarioInstagram(v);
   }
   let url: URL;
@@ -265,8 +327,10 @@ export function analisarInstagram(entrada: string | undefined): ResultadoInstagr
   } catch {
     return { ok: false, erro: "Link inválido." };
   }
-  if (url.protocol !== "https:" && url.protocol !== "http:") return { ok: false, erro: "Link inválido." };
-  if (!HOSTS_INSTAGRAM.has(url.hostname.toLowerCase())) return { ok: false, erro: "Use um link do Instagram (instagram.com)." };
+  if (url.protocol !== "https:" && url.protocol !== "http:")
+    return { ok: false, erro: "Link inválido." };
+  if (!HOSTS_INSTAGRAM.has(url.hostname.toLowerCase()))
+    return { ok: false, erro: "Use um link do Instagram (instagram.com)." };
   // Parâmetros de compartilhamento (?igsh=…, ?hl=…) e âncoras são descartados.
   const partes = url.pathname.split("/").filter(Boolean);
   if (partes.length === 0) return { ok: false, erro: "Falta o nome do perfil no link." };

@@ -1,7 +1,8 @@
 import { normalizarCodigoCupom, validarDadosCupom, type DadosCupom } from "@/lib/vendas";
 // Serviços do organizador: solicitação, eventos, cupons, cortesias.
 import { ehModalidade, erroModalidadeParaPublicar, nomeModalidade } from "@/lib/modalidades";
-import { restaurarVoucherDaInscricao } from "@/services/progressao";
+import { estornarEventoNaBase } from "@/services/inscricoes";
+import { ocupaVaga } from "@/lib/pagamentos";
 import { carregarBase, mutarBase, latencia, ErroDominio, gerarId, gerarCodigo } from "./db";
 import { silenciado } from "./notificacoes";
 import { cnpjValido, normalizarEmail, somenteDigitos, telefoneValido } from "@/lib/domain/validators";
@@ -92,9 +93,7 @@ export async function salvarEvento(
     if (idx >= 0) {
       assertDono(base.eventos[idx]!, usuarioId, perfil);
       // Não permitir redução de capacidade abaixo da ocupação atual
-      const ativas = base.inscricoes.filter(
-        (i) => i.eventoId === evento.id && i.status === "confirmada",
-      );
+      const ativas = base.inscricoes.filter((i) => i.eventoId === evento.id && ocupaVaga(i));
       if (evento.capacidadeTotal < ativas.length) {
         throw new ErroDominio("capacidade", "Capacidade total abaixo da ocupação atual.");
       }
@@ -166,7 +165,7 @@ export async function cancelarEvento(
   justificativa: string,
   usuarioId: string,
   perfil: string,
-): Promise<{ canceladas: number }> {
+): Promise<{ canceladas: number; sessoesAExpirar: string[] }> {
   await latencia();
   if (!justificativa.trim()) throw new ErroDominio("justificativa", "Informe a justificativa.");
   return mutarBase((base) => {
@@ -174,37 +173,22 @@ export async function cancelarEvento(
     if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
     assertDono(evento, usuarioId, perfil);
     evento.status = "cancelado";
-    const ativas = base.inscricoes.filter(
-      (i) => i.eventoId === eventoId && i.status === "confirmada",
-    );
-    for (const ins of ativas) {
-      ins.status = "estornada";
-      ins.canceladoEm = new Date().toISOString();
-      ins.motivoCancelamento = `Evento cancelado: ${justificativa}`;
-      restaurarVoucherDaInscricao(base, ins.id, "evento cancelado pelo organizador");
-      const valorFinal = ins.valorCentavos - ins.descontoCentavos;
-      if (valorFinal > 0) {
-        base.movimentacoes.push({
-          id: gerarId("mov"),
-          eventoId,
-          inscricaoId: ins.id,
-          tipo: "estorno",
-          valorCentavos: -valorFinal,
-          descricao: "Estorno integral — evento cancelado",
-          criadoEm: new Date().toISOString(),
-        });
-      }
-      if (silenciado(base, ins.usuarioId, "geral")) continue;
+    let canceladas = 0;
+    const sessoesAExpirar = estornarEventoNaBase(base, eventoId, `Evento cancelado: ${justificativa}`, (ins) => {
+      canceladas += 1;
+      if (silenciado(base, ins.usuarioId, "geral")) return;
       base.notificacoes.push({
         id: gerarId("not"),
         usuarioId: ins.usuarioId,
         titulo: "Evento cancelado",
-        corpo: `${evento.nome} foi cancelado. O estorno integral foi registrado.`,
+        corpo: ins.pagamento
+          ? `${evento.nome} foi cancelado. O reembolso integral foi solicitado ao meio de pagamento.`
+          : `${evento.nome} foi cancelado. O estorno integral foi registrado.`,
         link: "/app/ingressos",
         lida: false,
         criadoEm: new Date().toISOString(),
       });
-    }
+    });
     base.auditoria.push({
       id: gerarId("aud"),
       autorId: usuarioId,
@@ -214,7 +198,7 @@ export async function cancelarEvento(
       justificativa,
       criadoEm: new Date().toISOString(),
     });
-    return { canceladas: ativas.length };
+    return { canceladas, sessoesAExpirar };
   });
 }
 
@@ -281,9 +265,9 @@ export async function excluirEvento(eventoId: string, usuarioId: string, perfil:
     const evento = base.eventos.find((e) => e.id === eventoId);
     if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
     assertDono(evento, usuarioId, perfil);
-    const ativas = base.inscricoes.filter((i) => i.eventoId === eventoId && i.status === "confirmada");
+    const ativas = base.inscricoes.filter((i) => i.eventoId === eventoId && (i.status === "confirmada" || i.status === "pendente"));
     if (ativas.length > 0) {
-      throw new ErroDominio("inscricoes_ativas", "Há inscrições confirmadas. Cancele o evento em vez de excluí-lo.");
+      throw new ErroDominio("inscricoes_ativas", "Há inscrições confirmadas ou aguardando pagamento. Cancele o evento em vez de excluí-lo.");
     }
     base.eventos = base.eventos.filter((e) => e.id !== eventoId);
     base.cupons = base.cupons.filter((c) => c.eventoId !== eventoId);

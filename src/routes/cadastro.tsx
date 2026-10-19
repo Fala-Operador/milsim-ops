@@ -130,7 +130,7 @@ function PaginaCadastro() {
               className="h-20 w-20 rounded-full border border-border object-cover"
             />
             <Campo rotulo="Foto de perfil (opcional — você ajusta o recorte)" htmlFor="foto">
-              <Entrada id="foto" type="file" accept={TIPOS_FOTO.join(",")} onChange={aoSelecionarFoto} />
+              <input id="foto" type="file" accept={TIPOS_FOTO.join(",")} onChange={aoSelecionarFoto} className="w-full" />
             </Campo>
           </div>
           {arquivoFoto && (

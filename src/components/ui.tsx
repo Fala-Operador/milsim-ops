@@ -74,32 +74,21 @@ export function Campo({
   );
 }
 
-export function Entrada(props: InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
-      {...props}
-    />
-  );
+// Campos com 16px no celular (abaixo disso o Safari do iOS amplia a página ao focar) e
+// 14px a partir de sm. `className` complementa o estilo base em vez de substituí-lo.
+const CAMPO =
+  "w-full rounded-md border border-input bg-background px-3 py-2 text-base text-foreground focus:border-ring focus:outline-none sm:text-sm";
+
+export function Entrada({ className = "", ...props }: InputHTMLAttributes<HTMLInputElement>) {
+  return <input className={`${CAMPO} placeholder:text-muted-foreground ${className}`} {...props} />;
 }
 
-export function AreaTexto(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return (
-    <textarea
-      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
-      rows={4}
-      {...props}
-    />
-  );
+export function AreaTexto({ className = "", ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea className={`${CAMPO} placeholder:text-muted-foreground ${className}`} rows={4} {...props} />;
 }
 
-export function Selecao(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none"
-      {...props}
-    />
-  );
+export function Selecao({ className = "", ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
+  return <select className={`${CAMPO} ${className}`} {...props} />;
 }
 
 export function EstadoVazio({ titulo, descricao }: { titulo: string; descricao?: string }) {
@@ -127,19 +116,19 @@ export function Modal({
   if (!aberto) return null;
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={titulo}
       onClick={onFechar}
     >
       <div
-        className={`max-h-[90vh] w-full ${largo ? "max-w-6xl" : "max-w-2xl"} overflow-y-auto rounded-lg border border-border bg-popover p-6 text-popover-foreground shadow-xl`}
+        className={`max-h-[92dvh] w-full ${largo ? "max-w-6xl" : "max-w-2xl"} overflow-y-auto rounded-t-xl border border-border bg-popover p-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-popover-foreground shadow-xl sm:max-h-[90vh] sm:rounded-lg sm:p-6`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-lg font-semibold">{titulo}</h2>
-          <Botao variante="fantasma" onClick={onFechar} aria-label="Fechar">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="min-w-0 font-display text-lg font-semibold">{titulo}</h2>
+          <Botao variante="fantasma" className="shrink-0" onClick={onFechar} aria-label="Fechar">
             ✕
           </Botao>
         </div>

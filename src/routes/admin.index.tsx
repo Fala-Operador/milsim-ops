@@ -42,7 +42,7 @@ function Dashboard() {
           <p className="mt-2 text-sm text-muted-foreground">Nenhum evento cadastrado.</p>
         ) : (
           <div className="mt-3 overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="tabela-cards w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
                   <th className="py-2 pr-3">Evento</th>
@@ -66,11 +66,11 @@ function Dashboard() {
                         <p className="font-medium">{ev.nome}</p>
                         <p className="text-xs text-muted-foreground">{org?.nome ?? "—"} · {ev.cidade}/{ev.uf} · {nomeModalidade(ev.modalidade)}</p>
                       </td>
-                      <td className="py-2 pr-3">{formatarDataBR(ev.inicioEm)}</td>
-                      <td className="py-2 pr-3"><Badge tom={tom}>{ev.status.replace("_", " ")}</Badge></td>
-                      <td className="py-2 pr-3">{inscritas}/{ev.capacidadeTotal}</td>
-                      <td className="py-2 pr-3">{formatarBRL(receita)}</td>
-                      <td className="py-2">
+                      <td data-rotulo="Data" className="py-2 pr-3">{formatarDataBR(ev.inicioEm)}</td>
+                      <td data-rotulo="Status" className="py-2 pr-3"><Badge tom={tom}>{ev.status.replace("_", " ")}</Badge></td>
+                      <td data-rotulo="Ocupação" className="py-2 pr-3">{inscritas}/{ev.capacidadeTotal}</td>
+                      <td data-rotulo="Receita" className="py-2 pr-3">{formatarBRL(receita)}</td>
+                      <td className="celula-acoes py-2">
                         <div className="flex flex-wrap gap-2">
                           <Link to="/eventos/$eventoId" params={{ eventoId: ev.id }}>
                             <Botao variante="contorno">Ver</Botao>

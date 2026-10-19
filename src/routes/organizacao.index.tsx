@@ -174,7 +174,7 @@ function PainelEventos() {
           </div>
         </div>
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="tabela-cards w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
                 <th className="py-2 pr-3">Evento</th>
@@ -199,18 +199,18 @@ function PainelEventos() {
                         <AvisoLotes evento={e} compacto onConfigurar={() => configurarLotes(e)} />
                       )}
                     </td>
-                    <td className="py-2 pr-3 whitespace-nowrap">{formatarDataBR(e.inicioEm)}</td>
-                    <td className="py-2 pr-3"><Badge tom={tomStatusEvento[e.status]}>{e.status.replace("_", " ")}</Badge></td>
-                    <td className="py-2 pr-3">
+                    <td data-rotulo="Data" className="py-2 pr-3 whitespace-nowrap">{formatarDataBR(e.inicioEm)}</td>
+                    <td data-rotulo="Status" className="py-2 pr-3"><Badge tom={tomStatusEvento[e.status]}>{e.status.replace("_", " ")}</Badge></td>
+                    <td data-rotulo="Manual" className="py-2 pr-3">
                       {e.regras ? <Badge tom="sucesso">v{e.regras.versao}</Badge> : <span className="text-xs text-muted-foreground">sem manual</span>}
                     </td>
-                    <td className="py-2 pr-3 min-w-32">
+                    <td data-rotulo="Ocupação" className="py-2 pr-3 min-w-32">
                       <p className="text-xs">{ativas}/{e.capacidadeTotal}</p>
-                      <div className="mt-1 h-1.5 rounded bg-muted"><div className="h-1.5 rounded bg-primary" style={{ width: `${pct}%` }} /></div>
+                      <div className="mt-1 h-1.5 w-24 rounded bg-muted md:w-auto"><div className="h-1.5 rounded bg-primary" style={{ width: `${pct}%` }} /></div>
                     </td>
-                    <td className="py-2 pr-3 font-mono whitespace-nowrap">{formatarBRL(receitaEvento(e.id))}</td>
-                    <td className="py-2">
-                      <div className="flex flex-wrap justify-end gap-1">
+                    <td data-rotulo="Receita" className="py-2 pr-3 font-mono whitespace-nowrap">{formatarBRL(receitaEvento(e.id))}</td>
+                    <td className="celula-acoes py-2">
+                      <div className="flex flex-wrap gap-1 md:justify-end">
                         {e.status === "rascunho" && <Botao variante="fantasma" onClick={() => aoPublicar(e)}>Publicar</Botao>}
                         {e.status === "publicado" && <Botao variante="fantasma" onClick={() => setCancelarEvt(e)}>Cancelar</Botao>}
                         {["publicado", "inscricoes_encerradas"].includes(e.status) && (
@@ -227,7 +227,7 @@ function PainelEventos() {
                 );
               })}
               {filtrados.length === 0 && (
-                <tr><td colSpan={7} className="py-6 text-center text-muted-foreground">Nenhum evento encontrado.</td></tr>
+                <tr className="!border-0"><td colSpan={7} className="py-6 text-center text-muted-foreground">Nenhum evento encontrado.</td></tr>
               )}
             </tbody>
           </table>

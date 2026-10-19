@@ -4,7 +4,14 @@
 // Regras puras (sem rede): testadas em src/test/visao.test.ts.
 import { vistaDoChamado } from "@/lib/suporte";
 import { baseVazia } from "@/lib/persistencia";
-import { forunsVisiveis, nomeExibicao, papelNoEvento, publicacaoVisivel } from "@/services/comunidade";
+import { pagamentoAnonimo, pagamentoSemIds } from "@/lib/pagamentos";
+import { organizacaoVisivel } from "@/lib/repasses";
+import {
+  forunsVisiveis,
+  nomeExibicao,
+  papelNoEvento,
+  publicacaoVisivel,
+} from "@/services/comunidade";
 import type { BaseDados, Evento, Inscricao, Usuario } from "@/lib/domain/types";
 
 /** O que a API devolve ao navegador: a base recortada e quem está logado. */
@@ -14,7 +21,12 @@ export interface Visao {
 }
 
 /** Status de evento visíveis para qualquer visitante. */
-const STATUS_PUBLICOS = new Set<Evento["status"]>(["publicado", "inscricoes_encerradas", "concluido", "cancelado"]);
+const STATUS_PUBLICOS = new Set<Evento["status"]>([
+  "publicado",
+  "inscricoes_encerradas",
+  "concluido",
+  "cancelado",
+]);
 
 /** Perfil público: só o necessário para exibir autor e selo na comunidade. */
 export function perfilPublico(u: Usuario): Usuario {
@@ -39,6 +51,11 @@ export function perfilPublico(u: Usuario): Usuario {
 }
 
 /** Inscrição de terceiros: mantém só o que as contagens de vagas e ocupação precisam. */
+/** Titular e organização veem a situação do pagamento; os ids do Stripe só a administração. */
+function comPagamentoVisivel(i: Inscricao, admin: boolean, gestor: boolean): Inscricao {
+  return admin || !i.pagamento ? i : { ...i, pagamento: pagamentoSemIds(i.pagamento, gestor) };
+}
+
 function inscricaoAnonima(i: Inscricao): Inscricao {
   return {
     id: i.id,
@@ -49,7 +66,8 @@ function inscricaoAnonima(i: Inscricao): Inscricao {
     exercitoId: i.exercitoId,
     codigo: "",
     status: i.status,
-    reservaAte: i.reservaAte, // sem ela, a contagem de vagas no navegador contaria reservas vencidas
+    // Só o necessário para contar a vaga reservada (situação e prazo); nada do Stripe.
+    pagamento: pagamentoAnonimo(i.pagamento),
     origem: i.origem,
     valorCentavos: 0,
     descontoCentavos: 0,
@@ -59,7 +77,10 @@ function inscricaoAnonima(i: Inscricao): Inscricao {
 
 export function gereEvento(usuario: Usuario | null, evento: Evento): boolean {
   if (!usuario?.ativo) return false;
-  return usuario.perfil === "admin" || (usuario.perfil === "organizador" && usuario.organizacaoId === evento.organizacaoId);
+  return (
+    usuario.perfil === "admin" ||
+    (usuario.perfil === "organizador" && usuario.organizacaoId === evento.organizacaoId)
+  );
 }
 
 export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): BaseDados {
@@ -69,25 +90,40 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
   const meuId = eu?.id ?? "\u0000";
 
   const geridos = new Set(base.eventos.filter((e) => gereEvento(eu, e)).map((e) => e.id));
-  const participo = new Set(base.inscricoes.filter((i) => i.usuarioId === meuId).map((i) => i.eventoId));
-  const comPapel = new Set(base.eventos.filter((e) => papelNoEvento(base, eu, e.id)).map((e) => e.id));
+  const participo = new Set(
+    base.inscricoes.filter((i) => i.usuarioId === meuId).map((i) => i.eventoId),
+  );
+  const comPapel = new Set(
+    base.eventos.filter((e) => papelNoEvento(base, eu, e.id)).map((e) => e.id),
+  );
 
   // ----- Eventos e vendas -----
-  v.eventos = base.eventos.filter((e) => STATUS_PUBLICOS.has(e.status) || geridos.has(e.id) || participo.has(e.id));
+  v.eventos = base.eventos.filter(
+    (e) => STATUS_PUBLICOS.has(e.status) || geridos.has(e.id) || participo.has(e.id),
+  );
   const visiveis = new Set(v.eventos.map((e) => e.id));
-  v.organizacoes = base.organizacoes;
+  // Conta de recebimento (Stripe Connect) só para quem gere a organização.
+  v.organizacoes = base.organizacoes.map((o) => organizacaoVisivel(o, eu));
   v.inscricoes = base.inscricoes
     .filter((i) => visiveis.has(i.eventoId))
-    .map((i) => (i.usuarioId === meuId || geridos.has(i.eventoId) ? i : inscricaoAnonima(i)));
+    .map((i) =>
+      i.usuarioId === meuId || geridos.has(i.eventoId)
+        ? comPagamentoVisivel(i, admin, geridos.has(i.eventoId))
+        : inscricaoAnonima(i),
+    );
   v.cupons = base.cupons.filter((c) => geridos.has(c.eventoId));
-  v.cortesias = base.cortesias.filter((c) => geridos.has(c.eventoId) || (!!eu && c.emailConvidado === eu.email));
+  v.cortesias = base.cortesias.filter(
+    (c) => geridos.has(c.eventoId) || (!!eu && c.emailConvidado === eu.email),
+  );
   v.movimentacoes = base.movimentacoes.filter((m) => geridos.has(m.eventoId));
   v.checkins = base.checkins.filter((c) => geridos.has(c.eventoId));
 
   // ----- Engajamento -----
   const doEvento = (eventoId: string) => geridos.has(eventoId) || participo.has(eventoId);
   v.missoes = base.missoes.filter((m) => doEvento(m.eventoId));
-  const missoesGeridas = new Set(base.missoes.filter((m) => geridos.has(m.eventoId)).map((m) => m.id));
+  const missoesGeridas = new Set(
+    base.missoes.filter((m) => geridos.has(m.eventoId)).map((m) => m.id),
+  );
   v.entregas = base.entregas.filter((e) => e.usuarioId === meuId || missoesGeridas.has(e.missaoId));
   v.comunicados = base.comunicados.filter((c) => doEvento(c.eventoId));
   const comunicados = new Set(v.comunicados.map((c) => c.id));
@@ -96,30 +132,44 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
   // ----- Contas, suporte e governança -----
   v.solicitacoes = base.solicitacoes.filter((s) => admin || s.usuarioId === meuId);
   // Participante só recebe a conversa pública; organização só os encaminhamentos dela.
-  v.chamados = base.chamados.flatMap((c) => { const x = vistaDoChamado(base, eu, c); return x ? [x] : []; });
+  v.chamados = base.chamados.flatMap((c) => {
+    const x = vistaDoChamado(base, eu, c);
+    return x ? [x] : [];
+  });
   v.notificacoes = base.notificacoes.filter((n) => admin || n.usuarioId === meuId);
   v.privacidade = base.privacidade.filter((p) => admin || p.usuarioId === meuId);
   v.auditoria = admin ? base.auditoria : [];
 
   // ----- Comunidade (mesmas regras usadas nas escritas) -----
   for (const eventoId of comPapel) v.foruns.push(...forunsVisiveis(base, eu, eventoId));
-  v.publicacoes = base.publicacoes.filter((p) => comPapel.has(p.eventoId) && publicacaoVisivel(base, eu, p));
+  v.publicacoes = base.publicacoes.filter(
+    (p) => comPapel.has(p.eventoId) && publicacaoVisivel(base, eu, p),
+  );
   const pubs = new Set(v.publicacoes.map((p) => p.id));
   const gestaoDe = (eventoId: string) => papelNoEvento(base, eu, eventoId) === "gestao";
   const eventoDaPub = new Map(v.publicacoes.map((p) => [p.id, p.eventoId]));
-  v.respostas = base.respostas.filter((r) => pubs.has(r.publicacaoId) && (!r.oculta || gestaoDe(eventoDaPub.get(r.publicacaoId)!)));
+  v.respostas = base.respostas.filter(
+    (r) => pubs.has(r.publicacaoId) && (!r.oculta || gestaoDe(eventoDaPub.get(r.publicacaoId)!)),
+  );
   v.curtidas = base.curtidas.filter((c) => pubs.has(c.publicacaoId));
   v.denuncias = base.denuncias.filter((d) => gestaoDe(d.eventoId) || d.denuncianteId === meuId);
   v.preferenciasForum = base.preferenciasForum.filter((p) => p.usuarioId === meuId);
-  v.restricoesComunidade = base.restricoesComunidade.filter((r) => gestaoDe(r.eventoId) || r.usuarioId === meuId);
+  v.restricoesComunidade = base.restricoesComunidade.filter(
+    (r) => gestaoDe(r.eventoId) || r.usuarioId === meuId,
+  );
   v.moderacao = base.moderacao.filter((m) => gestaoDe(m.eventoId));
   for (const [chave, em] of Object.entries(base.visitasComunidade)) {
     if (chave.startsWith(`${meuId}:`)) v.visitasComunidade[chave] = em;
   }
 
+  // ----- Configurações da plataforma (taxa do repasse): administração e organizadores -----
+  v.configuracoes = admin || eu?.perfil === "organizador" ? base.configuracoes : [];
+
   // ----- Divulgação -----
   v.parceiros = admin ? base.parceiros : base.parceiros.filter((p) => p.ativo);
-  v.secoesInicio = admin ? base.secoesInicio : base.secoesInicio.filter((s) => s.status === "publicada");
+  v.secoesInicio = admin
+    ? base.secoesInicio
+    : base.secoesInicio.filter((s) => s.status === "publicada");
   // Impulsionamentos: admin vê tudo; organizador vê as campanhas dos próprios eventos;
   // o público recebe só campanhas ativas, sem nome interno nem autor.
   v.impulsionamentos = base.impulsionamentos.flatMap((c) => {
@@ -136,12 +186,16 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
   v.fotosPerfil = base.fotosPerfil.filter((f) => f.usuarioId === meuId);
   v.insignias = base.insignias;
   v.concessoesInsignia = base.concessoesInsignia.filter((c) => admin || c.usuarioId === meuId);
-  const orgCampanha = (organizacaoId: string) => eu?.perfil === "organizador" && eu.organizacaoId === organizacaoId;
-  v.campanhasRecompensa = base.campanhasRecompensa.filter((c) => admin || orgCampanha(c.organizacaoId) || c.ativa);
+  const orgCampanha = (organizacaoId: string) =>
+    eu?.perfil === "organizador" && eu.organizacaoId === organizacaoId;
+  v.campanhasRecompensa = base.campanhasRecompensa.filter(
+    (c) => admin || orgCampanha(c.organizacaoId) || c.ativa,
+  );
   v.vouchers = base.vouchers.flatMap((x) => {
     if (admin || x.usuarioId === meuId) return [x];
     // Organização vê só o andamento das próprias campanhas, sem código nem pessoa.
-    if (orgCampanha(x.beneficio.organizacaoId)) return [{ ...x, codigo: "", usuarioId: "", concessaoId: "" }];
+    if (orgCampanha(x.beneficio.organizacaoId))
+      return [{ ...x, codigo: "", usuarioId: "", concessaoId: "" }];
     return [];
   });
   v.correcoesParticipacao = admin ? base.correcoesParticipacao : [];

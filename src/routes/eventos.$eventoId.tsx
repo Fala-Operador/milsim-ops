@@ -69,9 +69,19 @@ function PaginaEvento() {
     };
   }, [regrasAbertas, evento.regras?.pdfDataUrl]);
   const inscricoesAbertas = evento.status === "publicado" && restantes > 0;
+  const precos = evento.tipos.flatMap((t) => {
+    const item = !t.arquivado ? loteVigente(evento, t.id)?.itens.find((i) => i.tipoId === t.id) : undefined;
+    return item ? [item.precoCentavos] : [];
+  });
+  const aPartirDe = precos.length ? Math.min(...precos) : null;
+  const linkInscricao = (
+    <Link to="/inscricao/$eventoId" params={{ eventoId: evento.id }} search={{ cortesia: undefined, voucher: undefined }} onClick={() => registrarCliqueInscrever(evento.id)} className="block">
+      <Botao className="w-full">Inscrever-se</Botao>
+    </Link>
+  );
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <div className={`mx-auto max-w-4xl px-4 py-8 ${inscricoesAbertas ? "pb-28 md:pb-8" : ""}`}>
       <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground">
         <Link to="/" className="hover:underline">Eventos</Link> / <span>{evento.nome}</span>
       </nav>
@@ -85,27 +95,23 @@ function PaginaEvento() {
         </span>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
-        <div>
+      <div className="mt-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
           <span className="inline-block rounded border border-border px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">{nomeModalidade(evento.modalidade)}</span>
-          <h1 className="font-display text-3xl font-bold uppercase tracking-wide">{evento.nome}</h1>
+          <h1 className="font-display text-2xl font-bold uppercase tracking-wide sm:text-3xl">{evento.nome}</h1>
           <p className="mt-1 text-muted-foreground">
             {organizacao?.nome} · {formatarDataHoraBR(evento.inicioEm)} a {formatarDataHoraBR(evento.fimEm)}
           </p>
           <p className="text-muted-foreground">{evento.local} — {evento.endereco}, {evento.cidade}/{evento.uf}</p>
         </div>
-        <div className="text-right">
+        <div className="md:shrink-0 md:text-right">
           {inscricoesAbertas ? (
             <>
               <Badge tom={restantes <= evento.capacidadeTotal * 0.15 ? "aviso" : "sucesso"}>
                 {restantes} vagas restantes
               </Badge>
-              <div className="mt-2">
-                <Link to="/inscricao/$eventoId" params={{ eventoId: evento.id }} search={{ cortesia: undefined, voucher: undefined }} onClick={() => registrarCliqueInscrever(evento.id)}>
-                  <Botao>Inscrever-se</Botao>
-                </Link>
-              </div>
-              <Link to="/app/suporte" search={{ evento: evento.id }} className="mt-2 inline-block text-sm text-accent hover:underline">Dúvidas? Falar com o suporte do evento</Link>
+              <div className="mt-2 hidden md:block">{linkInscricao}</div>
+              <Link to="/app/suporte" search={{ evento: evento.id }} className="mt-2 block text-sm text-accent hover:underline">Dúvidas? Falar com o suporte do evento</Link>
             </>
           ) : (
             <Badge tom="perigo">
@@ -166,9 +172,9 @@ function PaginaEvento() {
                 const preco = lote?.itens.find((i) => i.tipoId === t.id)?.precoCentavos ?? t.precoBaseCentavos;
                 return (
                   <li key={t.id} className="rounded-md border border-border bg-elevated p-3">
-                    <div className="flex justify-between">
-                      <span className="font-medium">{t.nome}</span>
-                      <span className="text-accent">{formatarBRL(preco)}</span>
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="min-w-0 font-medium">{t.nome}</span>
+                      <span className="shrink-0 text-accent">{formatarBRL(preco)}</span>
                     </div>
                     {t.descricao && <p className="text-muted-foreground">{t.descricao}</p>}
                     {t.beneficios && <p className="text-xs text-muted-foreground">Inclui: {t.beneficios}</p>}
@@ -216,6 +222,18 @@ function PaginaEvento() {
           </p>
         )}
       </Modal>
+
+      {inscricoesAbertas && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden">
+          <div className="mx-auto flex max-w-4xl items-center gap-3">
+            <div className="min-w-0 flex-1 text-sm">
+              {aPartirDe !== null && <p className="text-xs text-muted-foreground">A partir de</p>}
+              <p className="truncate font-mono font-semibold text-accent">{aPartirDe !== null ? formatarBRL(aPartirDe) : `${restantes} vagas`}</p>
+            </div>
+            <div className="w-40 shrink-0">{linkInscricao}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,7 +9,12 @@ export const ROTULO_ORIGEM: Record<Inscricao["origem"], string> = {
   admin: "Inclusão pela administração",
 };
 
-export { ROTULO_STATUS_INSCRICAO } from "@/lib/reservas";
+export const ROTULO_STATUS_INSCRICAO: Record<Inscricao["status"], string> = {
+  pendente: "Aguardando pagamento",
+  confirmada: "Confirmada",
+  cancelada: "Cancelada",
+  estornada: "Estornada",
+};
 
 export function indicadoresInscritos(evento: Evento, inscricoes: Inscricao[]) {
   const ativas = inscricoes.filter((i) => i.eventoId === evento.id && ocupaVaga(i)).length;

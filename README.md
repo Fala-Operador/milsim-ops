@@ -7,8 +7,9 @@ evento, painel do organizador e administração da plataforma.
 **Monólito TanStack Start + Supabase.** As páginas e as APIs (server functions) vivem no mesmo
 app. O Supabase fornece Postgres, Auth e Storage, e o navegador **nunca** acessa o banco
 diretamente: toda leitura e escrita passa pelas server functions, que autenticam a pessoa e
-aplicam as regras de negócio. Pagamentos, estornos e mensagens externas (e-mail, WhatsApp) continuam
-simulados.
+aplicam as regras de negócio. A venda de ingressos usa o **Stripe Checkout** quando
+`STRIPE_SECRET_KEY` está configurada (sem ela, a inscrição é confirmada sem cobrança). Mensagens
+externas (e-mail, WhatsApp) continuam simuladas.
 
 > Projeto conectado ao [Lovable](https://lovable.dev): commits na branch `main` sincronizam com o
 > editor. Não reescreva histórico já publicado (force push, rebase, amend). Veja `AGENTS.md`.
@@ -55,6 +56,21 @@ bun run db:seed                                 # grava a base demonstrativa (su
 bun run db:seed -- --limpar-contas              # idem, removendo também as contas criadas fora da seed
 ```
 
+#### Deploy automático (GitHub Actions)
+
+- `.github/workflows/check.yml` roda em todo PR que mexe em `supabase/`: rejeita carimbos de data
+  repetidos, simula o `db push` contra o projeto (mostra o que o merge vai aplicar) e roda os
+  testes pgTAP de `supabase/tests/` num banco local criado do zero.
+- `.github/workflows/deploy.yml` roda a cada push no `main` que mexe em `supabase/` (ou pela aba
+  Actions): aplica as migrations novas e publica as Edge Functions.
+- Segredos do repositório (Settings → Secrets and variables → Actions): `SUPABASE_ACCESS_TOKEN`
+  (supabase.com/dashboard/account/tokens) e `SUPABASE_DB_PASSWORD`. Variável opcional
+  `SUPABASE_PROJECT_REF` (padrão: `fezrmoyjsffufdjptamp`).
+- Toda mudança de esquema é uma migration nova em `supabase/migrations/`, que precisa aplicar
+  num banco vazio. Não altere o banco à mão: o histórico da CLI deixaria de bater.
+- As migrations anteriores ao deploy automático foram aplicadas à mão (psql) e são idempotentes:
+  o primeiro deploy as reaplica sem efeito. Migrations novas não precisam ser idempotentes.
+
 ## Contas criadas pela seed
 
 | Perfil | Login | Senha |
@@ -91,6 +107,12 @@ bun run db:seed -- --limpar-contas              # idem, removendo também as con
 - **Cadastro**: a conta é criada já com o e-mail confirmado. Em produção, exija confirmação.
 - **E-mails do Auth**: o SMTP embutido do Supabase só entrega para membros da organização e tem
   limite baixo. Configure um SMTP próprio para a recuperação de senha funcionar para todos.
-- **Pagamentos e mensagens externas**: simulados (sem gateway, PIX, e-mail transacional ou WhatsApp).
+- **Pagamentos**: Stripe Checkout em BRL (cartão e os meios ativados no painel do Stripe), com
+  reembolso integral automático no cancelamento. Com a conta Stripe Connect da organização ativa
+  (Financeiro → Recebimentos), cada venda é repassada automaticamente a ela, descontada a taxa da
+  plataforma (definida em Administração → Pagamentos); antes disso, o valor fica na plataforma.
+  Os webhooks do Stripe chegam pela Edge Function `supabase/functions/stripe-webhook`, que confere
+  a assinatura e repassa o evento à API do site.
+- **Mensagens externas**: simuladas (sem e-mail transacional ou WhatsApp).
 - **Storage**: arquivos substituídos ou removidos não são apagados do bucket (sem limpeza de órfãos).
 - **LGPD**: retenção, exclusão e validação jurídica (incl. adolescentes de 15–17 anos) ainda pendentes.

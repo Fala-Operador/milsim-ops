@@ -6,9 +6,14 @@ import { useNavigate } from "@tanstack/react-router";
 import { CuponsEvento } from "@/components/CuponsEvento";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge, Botao, Campo, Cartao, Entrada, Selecao } from "@/components/ui";
+import { RecebimentosOrganizacao } from "@/components/RecebimentosOrganizacao";
 import { AvisoLotes, Financeiro, useEventoSelecionado, useEventosOrg } from "@/components/organizacao";
 
 export const Route = createFileRoute("/organizacao/financeiro")({
+  // Volta do cadastro de recebimentos no Stripe: ?recebimento=retorno|renovar
+  validateSearch: (s: Record<string, unknown>): { recebimento?: string | undefined } => ({
+    recebimento: typeof s["recebimento"] === "string" ? s["recebimento"] : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Financeiro — Minha organização — MilSim Ops" },
@@ -22,6 +27,7 @@ function PaginaFinanceiro() {
   const { usuario } = useAuth();
   const navigate = useNavigate();
   const { base, eventos } = useEventosOrg();
+  const { recebimento: retornoRecebimento } = Route.useSearch();
   const [eventoId, setEventoId, invalido] = useEventoSelecionado(eventos);
   const [, setVersao] = useState(0);
   const [erro, setErro] = useState("");
@@ -54,12 +60,19 @@ function PaginaFinanceiro() {
   };
 
   if (!usuario) return null;
+  // A conta de recebimento é da organização: a do organizador ou, para o admin, a do evento aberto.
+  const organizacao = base.organizacoes.find((o) => o.id === (usuario.organizacaoId ?? evento?.organizacaoId));
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold uppercase">Financeiro</h2>
       </div>
+      {organizacao && (
+        <Cartao>
+          <RecebimentosOrganizacao organizacao={organizacao} retorno={retornoRecebimento} />
+        </Cartao>
+      )}
       <OperacaoSelecionada eventos={eventos} evento={eventos.find((e) => e.id === eventoId)} invalido={invalido} onSelecionar={setEventoId} />
 
       {erro && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
