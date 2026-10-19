@@ -59,6 +59,11 @@ bun run db:seed                                 # grava a base demonstrativa (su
 bun run db:seed -- --limpar-contas              # idem, removendo também as contas criadas fora da seed
 ```
 
+Para zerar os dados de teste mantendo contas, organizações, configurações e as vendas pagas
+pelo Stripe, rode a ação manual **Reset do banco** (digite `RESETAR`). Ela guarda antes um
+backup completo como artefato da execução (30 dias). Detalhes em
+`supabase/scripts/reset_mantendo_contas_e_vendas_stripe.sql`.
+
 #### Deploy automático (GitHub Actions)
 
 - `.github/workflows/check.yml` roda em todo PR que mexe em `supabase/`: rejeita carimbos de data
