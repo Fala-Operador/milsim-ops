@@ -5,8 +5,14 @@ import { abrirChamadoSuporte, type AnexoEnvio } from "@/api/suporte.functions";
 import { useSuporte } from "@/contexts/SuporteContext";
 import { CATEGORIAS_SUPORTE, TIPOS_ANEXO, protocolo } from "@/lib/suporte";
 import type { BaseDados, Chamado } from "@/lib/domain/types";
-import { AreaTexto, Botao, Campo, Entrada, Selecao } from "@/components/ui";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
+import { Campo } from "@/components/ui";
 import { lerArquivo, validarArquivo } from "./Conversa";
+import { Label } from "@/components/ui/label";
 
 const novoId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
 
@@ -58,36 +64,36 @@ export function NovoChamado({ base, usuarioId, eventoInicial, anterior, onCriado
       <div className="mt-4 space-y-3">
         <fieldset>
           <legend className="text-sm font-medium">Tipo de atendimento</legend>
-          <div className="mt-1 grid gap-2 @min-[560px]:grid-cols-2">
+          <RadioGroup className="mt-1 grid gap-2 @min-[560px]:grid-cols-2" value={f.tipo} disabled={!!anterior} onValueChange={(v) => setF({ ...f, tipo: v as typeof f.tipo })}>
             {([["evento", "Suporte do evento", "Sobre uma operação: a organização do evento e a administração atendem."], ["plataforma", "Suporte da plataforma", "Conta, funcionamento ou outras questões: só a administração atende."]] as const).map(([v, t, d]) => (
-              <label key={v} className={`cursor-pointer rounded-md border p-3 text-sm ${f.tipo === v ? "border-primary bg-primary/10" : "border-border"}`}>
-                <input type="radio" name="nc-tipo" className="mr-2" checked={f.tipo === v} disabled={!!anterior} onChange={() => setF({ ...f, tipo: v })} />
+              <Label key={v} className={`cursor-pointer rounded-md border p-3 text-sm ${f.tipo === v ? "border-primary bg-primary/10" : "border-border"} font-normal text-inherit`}>
+                <RadioGroupItem value={v} className="mr-2 align-[-2px]" />
                 <span className="font-medium">{t}</span>
                 <span className="mt-1 block text-xs text-muted-foreground">{d}</span>
-              </label>
+              </Label>
             ))}
-          </div>
+          </RadioGroup>
         </fieldset>
         {f.tipo === "evento" && (
           <Campo rotulo="Evento" htmlFor="nc-eventoId" erro={erros.eventoId}>
-            <Selecao id="nc-eventoId" value={f.eventoId} disabled={!!anterior} onChange={(e) => setF({ ...f, eventoId: e.target.value })}>
+            <NativeSelect id="nc-eventoId" value={f.eventoId} disabled={!!anterior} onChange={(e) => setF({ ...f, eventoId: e.target.value })}>
               <option value="">Selecione…</option>
               {eventos.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-            </Selecao>
+            </NativeSelect>
           </Campo>
         )}
         <div className="grid gap-3 @min-[560px]:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <Campo rotulo="Assunto" htmlFor="nc-assunto" erro={erros.assunto}>
-            <Entrada id="nc-assunto" maxLength={140} value={f.assunto} onChange={(e) => setF({ ...f, assunto: e.target.value })} />
+            <Input id="nc-assunto" maxLength={140} value={f.assunto} onChange={(e) => setF({ ...f, assunto: e.target.value })} />
           </Campo>
           <Campo rotulo="Categoria" htmlFor="nc-categoria">
-            <Selecao id="nc-categoria" value={f.categoria} onChange={(e) => setF({ ...f, categoria: e.target.value })}>
+            <NativeSelect id="nc-categoria" value={f.categoria} onChange={(e) => setF({ ...f, categoria: e.target.value })}>
               {CATEGORIAS_SUPORTE.map((c) => <option key={c}>{c}</option>)}
-            </Selecao>
+            </NativeSelect>
           </Campo>
         </div>
         <Campo rotulo="Descrição" htmlFor="nc-descricao" erro={erros.descricao}>
-          <AreaTexto id="nc-descricao" rows={5} maxLength={4000} value={f.descricao} onChange={(e) => setF({ ...f, descricao: e.target.value })} />
+          <Textarea id="nc-descricao" rows={5} maxLength={4000} value={f.descricao} onChange={(e) => setF({ ...f, descricao: e.target.value })} />
         </Campo>
         <div>
           <input ref={arquivo} type="file" accept={TIPOS_ANEXO.join(",")} className="sr-only" tabIndex={-1}
@@ -101,17 +107,17 @@ export function NovoChamado({ base, usuarioId, eventoInicial, anterior, onCriado
           {anexo ? (
             <p className="inline-flex max-w-full items-center gap-2 rounded-md border border-border px-2 py-1 text-xs">
               <Paperclip className="h-3.5 w-3.5 shrink-0" /><span className="min-w-0 truncate">{anexo.nome}</span>
-              <button type="button" className="shrink-0" aria-label="Remover anexo" onClick={() => setAnexo(null)}><X className="h-3.5 w-3.5" /></button>
+              <Button variant="plain" size="none" type="button" className="shrink-0" aria-label="Remover anexo" onClick={() => setAnexo(null)}><X className="h-3.5 w-3.5" /></Button>
             </p>
           ) : (
-            <Botao type="button" variante="contorno" className="!py-1 text-xs" onClick={() => arquivo.current?.click()}><Paperclip className="h-3.5 w-3.5" />Anexar (opcional)</Botao>
+            <Button type="button" variant="outline" className="!py-1 text-xs" onClick={() => arquivo.current?.click()}><Paperclip className="h-3.5 w-3.5" />Anexar (opcional)</Button>
           )}
           <p className="mt-1 text-xs text-muted-foreground">Imagem (JPEG, PNG, WebP) ou PDF, até 5 MB. Não anexe documentos pessoais além do necessário.</p>
         </div>
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex flex-wrap justify-end gap-2">
-          <Botao type="button" variante="contorno" onClick={onCancelar} disabled={enviando}>Cancelar</Botao>
-          <Botao type="button" onClick={enviar} disabled={enviando}>{enviando ? "Enviando…" : "Abrir chamado"}</Botao>
+          <Button type="button" variant="outline" onClick={onCancelar} disabled={enviando}>Cancelar</Button>
+          <Button type="button" onClick={enviar} disabled={enviando}>{enviando ? "Enviando…" : "Abrir chamado"}</Button>
         </div>
       </div>
     </div>

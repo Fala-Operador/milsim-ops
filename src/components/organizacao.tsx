@@ -7,13 +7,17 @@ import { resumoRepasse } from "@/lib/repasses";
 import { disputaEmAberto, ROTULO_DISPUTA } from "@/lib/stripe";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { mascararCpf } from "@/lib/domain/validators";
-import { Badge, Botao, Selecao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 import { StatusInscricao } from "@/components/StatusInscricao";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import type { Evento } from "@/lib/domain/types";
 import { Movimentacoes } from "@/components/financeiro/Movimentacoes";
 import { linhasDeMovimentacao } from "@/lib/movimentacoes";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
 
 /** Eventos visíveis para o organizador logado (admin vê todos). */
 export function useEventosOrg() {
@@ -39,16 +43,16 @@ export function SeletorEvento({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <label htmlFor="sel-evento" className="text-sm text-muted-foreground">
+      <Label htmlFor="sel-evento" className="text-sm text-muted-foreground font-normal">
         Evento:
-      </label>
-      <Selecao id="sel-evento" value={valor} onChange={(e) => onChange(e.target.value)} className="min-w-56">
+      </Label>
+      <NativeSelect id="sel-evento" value={valor} onChange={(e) => onChange(e.target.value)} className="min-w-56">
         {eventos.map((e) => (
           <option key={e.id} value={e.id}>
             {e.nome || "Sem nome"} — {formatarDataBR(e.inicioEm)}
           </option>
         ))}
-      </Selecao>
+      </NativeSelect>
     </div>
   );
 }
@@ -64,45 +68,45 @@ export function TabelaInscritos({ eventoId }: { eventoId: string }) {
         {confirmadas} confirmadas de {inscricoes.length} inscrições · capacidade {evento.capacidadeTotal}
       </p>
       <div className="mt-3 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-              <th className="py-2 pr-3">Participante</th>
-              <th className="py-2 pr-3">CPF</th>
-              <th className="py-2 pr-3">Tipo</th>
-              <th className="py-2 pr-3">Exército</th>
-              <th className="py-2 pr-3">Origem</th>
-              <th className="py-2">Status</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="w-full text-sm">
+          <TableHeader>
+            <TableRow className="border-b border-border text-left text-xs uppercase text-muted-foreground">
+              <TableHead className="py-2 pr-3">Participante</TableHead>
+              <TableHead className="py-2 pr-3">CPF</TableHead>
+              <TableHead className="py-2 pr-3">Tipo</TableHead>
+              <TableHead className="py-2 pr-3">Exército</TableHead>
+              <TableHead className="py-2 pr-3">Origem</TableHead>
+              <TableHead className="py-2">Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {inscricoes.map((i) => {
               const u = base.usuarios.find((x) => x.id === i.usuarioId);
               return (
-                <tr key={i.id} className="border-b border-border/50">
-                  <td className="py-2 pr-3">{u?.nomeCompleto ?? "Participante"}</td>
-                  <td className="py-2 pr-3 font-mono text-xs">{u ? mascararCpf(u.cpf) : "***"}</td>
-                  <td className="py-2 pr-3">{evento.tipos.find((t) => t.id === i.tipoId)?.nome}</td>
-                  <td className="py-2 pr-3">{evento.exercitos.find((e) => e.id === i.exercitoId)?.nome}</td>
-                  <td className="py-2 pr-3">{i.origem}</td>
-                  <td className="py-2">
+                <TableRow key={i.id} className="border-b border-border/50">
+                  <TableCell className="py-2 pr-3">{u?.nomeCompleto ?? "Participante"}</TableCell>
+                  <TableCell className="py-2 pr-3 font-mono text-xs">{u ? mascararCpf(u.cpf) : "***"}</TableCell>
+                  <TableCell className="py-2 pr-3">{evento.tipos.find((t) => t.id === i.tipoId)?.nome}</TableCell>
+                  <TableCell className="py-2 pr-3">{evento.exercitos.find((e) => e.id === i.exercitoId)?.nome}</TableCell>
+                  <TableCell className="py-2 pr-3">{i.origem}</TableCell>
+                  <TableCell className="py-2">
                     <StatusInscricao status={i.status} />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
             {inscricoes.length === 0 && (
-              <tr>
-                <td colSpan={6} className="py-6 text-center text-muted-foreground">
+              <TableRow>
+                <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
                   Nenhuma inscrição neste evento.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
-      <Botao
-        variante="contorno"
+      <Button
+        variant="outline"
         className="mt-3"
         onClick={() => {
           const linhas = inscricoes.map((i) => {
@@ -119,7 +123,7 @@ export function TabelaInscritos({ eventoId }: { eventoId: string }) {
         }}
       >
         Exportar relatório (CSV)
-      </Botao>
+      </Button>
     </div>
   );
 }
@@ -214,7 +218,7 @@ export function AvisoLotes({ evento, compacto = false, onConfigurar }: { evento:
     return (
       <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-warning">
         {bloqueados.length === tipos.length ? "Inscrições indisponíveis" : `${bloqueados.length} ingresso(s) sem venda aberta`}
-        <button type="button" onClick={onConfigurar} className="underline underline-offset-2 hover:text-foreground">Configurar lotes</button>
+        <Button variant="plain" size="none" type="button" onClick={onConfigurar} className="underline underline-offset-2 hover:text-foreground">Configurar lotes</Button>
       </p>
     );
   }
@@ -222,7 +226,7 @@ export function AvisoLotes({ evento, compacto = false, onConfigurar }: { evento:
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-display text-base font-semibold uppercase">Disponibilidade dos ingressos</h3>
-        <Botao variante="contorno" onClick={onConfigurar}>Configurar lotes</Botao>
+        <Button variant="outline" onClick={onConfigurar}>Configurar lotes</Button>
       </div>
       <ul className="space-y-1 text-sm">
         {tipos.map(({ t, d }) => (
@@ -231,13 +235,13 @@ export function AvisoLotes({ evento, compacto = false, onConfigurar }: { evento:
             {d.disponivel ? (
               <span className="flex items-center gap-2 text-muted-foreground">
                 {d.lote.nome} · {formatarBRL(d.precoCentavos)} · {d.restantes} vagas
-                <Badge tom="sucesso">disponível</Badge>
+                <Badge variant="success">disponível</Badge>
               </span>
             ) : (
               <span className="flex items-center gap-2 text-muted-foreground">
                 {TEXTO_MOTIVO[d.motivo]}
                 {d.motivo === "agendado" && d.inicioVendas ? ` (a partir de ${formatarDataBR(d.inicioVendas)})` : ""}
-                <Badge tom="aviso">indisponível</Badge>
+                <Badge variant="warning">indisponível</Badge>
               </span>
             )}
           </li>

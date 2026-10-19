@@ -4,7 +4,14 @@ import { salvarCampanha } from "@/api/gamificacao.functions";
 import { descreverBeneficio, statusVoucher } from "@/lib/participacao";
 import { formatarDataBR } from "@/lib/domain/money";
 import type { BaseDados, CampanhaRecompensa, TipoBeneficio, Usuario } from "@/lib/domain/types";
-import { AreaTexto, Badge, Botao, Campo, Entrada, EstadoVazio, Modal, Selecao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
+import { Campo, EstadoVazio, Modal } from "@/components/ui";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 const paraLocal = (iso: string) => iso.slice(0, 16);
 const deLocal = (v: string) => (v ? new Date(v).toISOString() : "");
@@ -42,27 +49,27 @@ export function FormCampanha({ base, usuario, inicial, organizacaoFixa, onFechar
   return (
     <Modal aberto largo titulo={inicial ? `Editar campanha (versão ${inicial.versao})` : "Nova campanha de recompensa"} onFechar={onFechar}>
       <div className="grid gap-3 md:grid-cols-2">
-        <Campo rotulo="Nome" htmlFor="cp-nome"><Entrada id="cp-nome" value={c.nome} onChange={(e) => setC({ ...c, nome: e.target.value })} /></Campo>
+        <Campo rotulo="Nome" htmlFor="cp-nome"><Input id="cp-nome" value={c.nome} onChange={(e) => setC({ ...c, nome: e.target.value })} /></Campo>
         <Campo rotulo="Conquista necessária" htmlFor="cp-ins">
-          <Selecao id="cp-ins" value={c.insigniaId} onChange={(e) => setC({ ...c, insigniaId: e.target.value })}>
+          <NativeSelect id="cp-ins" value={c.insigniaId} onChange={(e) => setC({ ...c, insigniaId: e.target.value })}>
             {base.insignias.map((i) => <option key={i.id} value={i.id}>{i.icone} {i.nome}</option>)}
-          </Selecao>
+          </NativeSelect>
         </Campo>
-        <div className="md:col-span-2"><Campo rotulo="Descrição" htmlFor="cp-desc"><AreaTexto id="cp-desc" rows={2} value={c.descricao} onChange={(e) => setC({ ...c, descricao: e.target.value })} /></Campo></div>
+        <div className="md:col-span-2"><Campo rotulo="Descrição" htmlFor="cp-desc"><Textarea id="cp-desc" rows={2} value={c.descricao} onChange={(e) => setC({ ...c, descricao: e.target.value })} /></Campo></div>
         <Campo rotulo="Organização responsável pelo benefício" htmlFor="cp-org">
-          <Selecao id="cp-org" value={c.organizacaoId} disabled={!!organizacaoFixa} onChange={(e) => setC({ ...c, organizacaoId: e.target.value, eventosElegiveis: [], tiposElegiveis: [] })}>
+          <NativeSelect id="cp-org" value={c.organizacaoId} disabled={!!organizacaoFixa} onChange={(e) => setC({ ...c, organizacaoId: e.target.value, eventosElegiveis: [], tiposElegiveis: [] })}>
             {base.organizacoes.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
-          </Selecao>
+          </NativeSelect>
         </Campo>
         <div className="grid grid-cols-2 gap-2">
           <Campo rotulo="Benefício" htmlFor="cp-tipo">
-            <Selecao id="cp-tipo" value={c.tipo} onChange={(e) => setC({ ...c, tipo: e.target.value as TipoBeneficio })}>
+            <NativeSelect id="cp-tipo" value={c.tipo} onChange={(e) => setC({ ...c, tipo: e.target.value as TipoBeneficio })}>
               <option value="percentual">Desconto %</option><option value="fixo">Desconto fixo</option><option value="gratuito">Ingresso gratuito</option>
-            </Selecao>
+            </NativeSelect>
           </Campo>
           {c.tipo !== "gratuito" && (
             <Campo rotulo={c.tipo === "percentual" ? "Percentual" : "Valor (R$)"} htmlFor="cp-valor">
-              <Entrada id="cp-valor" type="number" min={1} value={c.tipo === "fixo" ? c.valor / 100 : c.valor}
+              <Input id="cp-valor" type="number" min={1} value={c.tipo === "fixo" ? c.valor / 100 : c.valor}
                 onChange={(e) => setC({ ...c, valor: c.tipo === "fixo" ? Math.round(Number(e.target.value) * 100) : Number(e.target.value) })} />
             </Campo>
           )}
@@ -70,7 +77,7 @@ export function FormCampanha({ base, usuario, inicial, organizacaoFixa, onFechar
         {precisaAutorizacao && (
           <div className="md:col-span-2">
             <Campo rotulo="Referência da oferta autorizada pela organização (obrigatória)" htmlFor="cp-aut">
-              <Entrada id="cp-aut" value={c.autorizacao} onChange={(e) => setC({ ...c, autorizacao: e.target.value })} placeholder="Ex.: e-mail de 10/10 de Ana (Bravo) autorizando 50 vouchers" />
+              <Input id="cp-aut" value={c.autorizacao} onChange={(e) => setC({ ...c, autorizacao: e.target.value })} placeholder="Ex.: e-mail de 10/10 de Ana (Bravo) autorizando 50 vouchers" />
             </Campo>
             <p className="mt-1 text-xs text-muted-foreground">A administração não pode criar obrigação para uma organização sem oferta autorizada. A referência fica na auditoria.</p>
           </div>
@@ -80,9 +87,9 @@ export function FormCampanha({ base, usuario, inicial, organizacaoFixa, onFechar
           {eventos.length === 0 ? <p className="text-xs text-muted-foreground">Nenhum evento aberto desta organização.</p> : (
             <div className="mt-1 grid gap-1 sm:grid-cols-2">
               {eventos.map((e) => (
-                <label key={e.id} className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={c.eventosElegiveis.includes(e.id)} onChange={() => setC({ ...c, eventosElegiveis: alternar(c.eventosElegiveis, e.id) })} /> {e.nome}
-                </label>
+                <Label key={e.id} className="flex items-center gap-2 text-sm font-normal text-inherit">
+                  <Checkbox checked={c.eventosElegiveis.includes(e.id)} onCheckedChange={() => setC({ ...c, eventosElegiveis: alternar(c.eventosElegiveis, e.id) })} /> {e.nome}
+                </Label>
               ))}
             </div>
           )}
@@ -92,29 +99,29 @@ export function FormCampanha({ base, usuario, inicial, organizacaoFixa, onFechar
             <legend className="text-sm font-medium">Tipos de ingresso elegíveis <span className="font-normal text-muted-foreground">(nenhum marcado = todos)</span></legend>
             <div className="mt-1 grid gap-1 sm:grid-cols-2">
               {tipos.map((t) => (
-                <label key={t.id} className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={c.tiposElegiveis.includes(t.id)} onChange={() => setC({ ...c, tiposElegiveis: alternar(c.tiposElegiveis, t.id) })} /> {t.nome} <span className="text-xs text-muted-foreground">({t.evento})</span>
-                </label>
+                <Label key={t.id} className="flex items-center gap-2 text-sm font-normal text-inherit">
+                  <Checkbox checked={c.tiposElegiveis.includes(t.id)} onCheckedChange={() => setC({ ...c, tiposElegiveis: alternar(c.tiposElegiveis, t.id) })} /> {t.nome} <span className="text-xs text-muted-foreground">({t.evento})</span>
+                </Label>
               ))}
             </div>
           </fieldset>
         )}
-        <Campo rotulo="Quantidade máxima de benefícios" htmlFor="cp-max"><Entrada id="cp-max" type="number" min={1} value={c.maximo} onChange={(e) => setC({ ...c, maximo: Number(e.target.value) })} /></Campo>
-        <Campo rotulo="Limite por participante" htmlFor="cp-lim"><Entrada id="cp-lim" type="number" min={1} max={10} value={c.limitePorParticipante} onChange={(e) => setC({ ...c, limitePorParticipante: Number(e.target.value) })} /></Campo>
-        <Campo rotulo="Início da campanha" htmlFor="cp-ini"><Entrada id="cp-ini" type="datetime-local" value={paraLocal(c.inicioEm)} onChange={(e) => setC({ ...c, inicioEm: deLocal(e.target.value) })} /></Campo>
-        <Campo rotulo="Prazo para conquistar" htmlFor="cp-conq"><Entrada id="cp-conq" type="datetime-local" value={paraLocal(c.conquistarAte)} onChange={(e) => setC({ ...c, conquistarAte: deLocal(e.target.value) })} /></Campo>
-        <Campo rotulo="Prazo para resgatar" htmlFor="cp-resg"><Entrada id="cp-resg" type="datetime-local" value={paraLocal(c.resgatarAte)} onChange={(e) => setC({ ...c, resgatarAte: deLocal(e.target.value) })} /></Campo>
+        <Campo rotulo="Quantidade máxima de benefícios" htmlFor="cp-max"><Input id="cp-max" type="number" min={1} value={c.maximo} onChange={(e) => setC({ ...c, maximo: Number(e.target.value) })} /></Campo>
+        <Campo rotulo="Limite por participante" htmlFor="cp-lim"><Input id="cp-lim" type="number" min={1} max={10} value={c.limitePorParticipante} onChange={(e) => setC({ ...c, limitePorParticipante: Number(e.target.value) })} /></Campo>
+        <Campo rotulo="Início da campanha" htmlFor="cp-ini"><Input id="cp-ini" type="datetime-local" value={paraLocal(c.inicioEm)} onChange={(e) => setC({ ...c, inicioEm: deLocal(e.target.value) })} /></Campo>
+        <Campo rotulo="Prazo para conquistar" htmlFor="cp-conq"><Input id="cp-conq" type="datetime-local" value={paraLocal(c.conquistarAte)} onChange={(e) => setC({ ...c, conquistarAte: deLocal(e.target.value) })} /></Campo>
+        <Campo rotulo="Prazo para resgatar" htmlFor="cp-resg"><Input id="cp-resg" type="datetime-local" value={paraLocal(c.resgatarAte)} onChange={(e) => setC({ ...c, resgatarAte: deLocal(e.target.value) })} /></Campo>
         <div className="space-y-2 pt-6 text-sm">
-          <label className="flex items-center gap-2"><input type="checkbox" checked={c.aceitaAnteriores} onChange={(e) => setC({ ...c, aceitaAnteriores: e.target.checked })} /> Aceita conquistas anteriores ao início</label>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={c.ativa} onChange={(e) => setC({ ...c, ativa: e.target.checked })} /> Campanha ativa</label>
+          <Label className="flex items-center gap-2 text-[length:inherit] font-normal text-inherit"><Checkbox checked={c.aceitaAnteriores} onCheckedChange={(marcado) => setC({ ...c, aceitaAnteriores: marcado === true })} /> Aceita conquistas anteriores ao início</Label>
+          <Label className="flex items-center gap-2 text-[length:inherit] font-normal text-inherit"><Checkbox checked={c.ativa} onCheckedChange={(marcado) => setC({ ...c, ativa: marcado === true })} /> Campanha ativa</Label>
         </div>
-        <div className="md:col-span-2"><Campo rotulo="Regras de uso" htmlFor="cp-regras"><AreaTexto id="cp-regras" rows={2} value={c.regras} onChange={(e) => setC({ ...c, regras: e.target.value })} /></Campo></div>
+        <div className="md:col-span-2"><Campo rotulo="Regras de uso" htmlFor="cp-regras"><Textarea id="cp-regras" rows={2} value={c.regras} onChange={(e) => setC({ ...c, regras: e.target.value })} /></Campo></div>
       </div>
       {inicial && <p className="mt-2 text-xs text-muted-foreground">Benefícios já emitidos mantêm as condições da época; a edição vale para os próximos.</p>}
       {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
       <div className="mt-4 flex justify-end gap-2">
-        <Botao variante="contorno" onClick={onFechar}>Cancelar</Botao>
-        <Botao onClick={salvar} disabled={salvando}>{salvando ? "Salvando…" : "Salvar campanha"}</Botao>
+        <Button variant="outline" onClick={onFechar}>Cancelar</Button>
+        <Button onClick={salvar} disabled={salvando}>{salvando ? "Salvando…" : "Salvar campanha"}</Button>
       </div>
     </Modal>
   );
@@ -132,13 +139,13 @@ export function ListaCampanhas({ base, campanhas, onEditar }: { base: BaseDados;
         return (
           <li key={c.id} className="flex flex-wrap items-start justify-between gap-2 rounded-md border border-border bg-card p-3 text-sm">
             <div className="min-w-0">
-              <p className="font-medium">{c.nome} <Badge tom={c.ativa ? "sucesso" : "padrao"}>{c.ativa ? "Ativa" : "Inativa"}</Badge> <span className="text-xs text-muted-foreground">v{c.versao}</span></p>
+              <p className="font-medium">{c.nome} <Badge variant={c.ativa ? "success" : "secondary"}>{c.ativa ? "Ativa" : "Inativa"}</Badge> <span className="text-xs text-muted-foreground">v{c.versao}</span></p>
               <p className="text-xs text-muted-foreground">
                 {descreverBeneficio(c)} · conquista: {ins ? `${ins.icone} ${ins.nome}` : "—"} · {base.organizacoes.find((o) => o.id === c.organizacaoId)?.nome}
               </p>
               <p className="text-xs text-muted-foreground">Emitidos {vs.length}/{c.maximo} · disponíveis {disp} · utilizados {usados} · resgate até {formatarDataBR(c.resgatarAte)}{c.aceitaAnteriores ? " · aceita conquistas anteriores" : ""}</p>
             </div>
-            <Botao variante="contorno" className="px-3 py-1 text-xs" onClick={() => onEditar(c)}>Editar</Botao>
+            <Button variant="outline" className="text-xs" onClick={() => onEditar(c)}>Editar</Button>
           </li>
         );
       })}

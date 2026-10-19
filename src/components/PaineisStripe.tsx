@@ -4,9 +4,10 @@
 import { useEffect, useRef, useState } from "react";
 import { LayoutDashboard } from "lucide-react";
 import { sessaoComponentesStripeOrg } from "@/api/repasses.functions";
-import { Botao } from "@/components/ui";
+import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import type { Tema } from "@/lib/localizacao";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const SCRIPT_CONNECT = "https://connect-js.stripe.com/v1.0/connect.js";
 
@@ -139,26 +140,23 @@ export function PaineisStripe({ organizacaoId }: { organizacaoId: string }) {
           </p>
         </div>
         {!aberto && (
-          <Botao type="button" variante="contorno" className="w-full shrink-0 sm:w-auto" onClick={() => setAberto(true)}>Abrir painéis</Botao>
+          <Button type="button" variant="outline" className="w-full shrink-0 sm:w-auto" onClick={() => setAberto(true)}>Abrir painéis</Button>
         )}
       </div>
       {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
       {aberto && !erro && (
         <>
-          <div role="tablist" aria-label="Painéis do Stripe" className="mt-3 flex gap-1 overflow-x-auto">
-            {ABAS.map((a) => (
-              <Botao
-                key={a.id}
-                type="button"
-                role="tab"
-                aria-selected={aba === a.id}
-                variante={aba === a.id ? "primario" : "fantasma"}
-                onClick={() => setAba(a.id)}
-              >
-                {a.rotulo}
-              </Botao>
-            ))}
-          </div>
+          <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)}>
+            <TabsList aria-label="Painéis do Stripe" className="mt-3 gap-1 overflow-x-auto">
+              {ABAS.map((a) => (
+                <TabsTrigger key={a.id} value={a.id} asChild>
+                  <Button type="button" variant={aba === a.id ? "default" : "ghost"}>
+                    {a.rotulo}
+                  </Button>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
           {carregando && <p className="mt-2 text-sm text-muted-foreground">Carregando o Stripe...</p>}
           <div ref={area} role="tabpanel" className="mt-3 min-h-24 w-full min-w-0 overflow-x-auto" />
         </>

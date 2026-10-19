@@ -4,7 +4,11 @@ import { Download, Search, SlidersHorizontal, Ticket, Users, UserCheck, X, Eye }
 import { OperacaoSelecionada } from "@/components/OperacaoSelecionada";
 import { entradaAtiva, ROTULO_ORIGEM_ENTRADA, type RegistroCheckin } from "@/lib/checkin";
 import { registrosReferencia } from "@/services/checkin";
-import { Botao, Cartao, EstadoVazio, Selecao, Skeleton } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EstadoVazio } from "@/components/ui";
 import { StatusInscricao, StatusCheckin } from "@/components/StatusInscricao";
 import { useEventoSelecionado, useEventosOrg } from "@/components/organizacao";
 import { formatarDataBR } from "@/lib/domain/money";
@@ -14,6 +18,10 @@ import {
   indicadoresInscritos, ordenarEventos, type FiltrosInscritos,
 } from "@/lib/inscritos";
 import type { Evento, Inscricao } from "@/lib/domain/types";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { Progress } from "@/components/ui/progress";
 
 export const Route = createFileRoute("/organizacao/inscritos")({
   head: () => ({
@@ -121,18 +129,18 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
 
   const filtrosSelect = (
     <>
-      <Selecao aria-label="Filtrar por status" value={filtros.status} onChange={(e) => mudar({ status: e.target.value })}>
+      <NativeSelect aria-label="Filtrar por status" value={filtros.status} onChange={(e) => mudar({ status: e.target.value })}>
         <option value="">Todos os status</option>
         {Object.entries(ROTULO_STATUS_INSCRICAO).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
-      </Selecao>
-      <Selecao aria-label="Filtrar por exército" value={filtros.exercito} onChange={(e) => mudar({ exercito: e.target.value })}>
+      </NativeSelect>
+      <NativeSelect aria-label="Filtrar por exército" value={filtros.exercito} onChange={(e) => mudar({ exercito: e.target.value })}>
         <option value="">Todos os exércitos</option>
         {evento.exercitos.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
-      </Selecao>
-      <Selecao aria-label="Filtrar por tipo de ingresso" value={filtros.tipo} onChange={(e) => mudar({ tipo: e.target.value })}>
+      </NativeSelect>
+      <NativeSelect aria-label="Filtrar por tipo de ingresso" value={filtros.tipo} onChange={(e) => mudar({ tipo: e.target.value })}>
         <option value="">Todos os ingressos</option>
         {evento.tipos.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
-      </Selecao>
+      </NativeSelect>
     </>
   );
 
@@ -146,18 +154,16 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
         </div>
         <div>
           <p className="text-sm text-muted-foreground">{ind.ativas} de {ind.capacidade} vagas ocupadas</p>
-          <div className="mt-1 h-2 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuenow={ind.ocupacao} aria-valuemin={0} aria-valuemax={100} aria-label="Ocupação">
-            <div className="h-full rounded-full bg-primary" style={{ width: `${ind.ocupacao}%` }} />
-          </div>
+          <Progress className="mt-1" value={Math.min(ind.ocupacao, 100)} aria-label="Ocupação" indicatorClassName="rounded-full" />
         </div>
       </section>
 
-      <Cartao className="bg-elevated p-0">
+      <Card className="bg-elevated">
         <div className="space-y-3 border-b border-border p-4">
           <div className="grid min-w-0 grid-cols-2 items-center gap-2 lg:grid-cols-[minmax(240px,1fr)_auto]">
               <div className="relative col-span-2 min-w-0 lg:col-span-1">
                 <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <input
+                <Input
                   aria-label="Buscar por nome ou código"
                   placeholder="Buscar por nome ou código"
                   value={filtros.busca}
@@ -165,19 +171,19 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
                   className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm focus:border-ring focus:outline-none"
                 />
               </div>
-              <Botao variante="contorno" className="shrink-0 whitespace-nowrap lg:hidden" onClick={() => setFiltrosMobile((v) => !v)} aria-expanded={filtrosMobile}>
+              <Button variant="outline" className="shrink-0 whitespace-nowrap lg:hidden" onClick={() => setFiltrosMobile((v) => !v)} aria-expanded={filtrosMobile}>
                 <SlidersHorizontal className="h-4 w-4" /> Filtros{extras > 0 && ` (${extras})`}
-              </Botao>
-            <Botao variante="contorno" className="shrink-0 whitespace-nowrap lg:col-start-2 lg:row-start-1" onClick={exportar}><Download className="h-4 w-4 shrink-0" /> Exportar CSV</Botao>
+              </Button>
+            <Button variant="outline" className="shrink-0 whitespace-nowrap lg:col-start-2 lg:row-start-1" onClick={exportar}><Download className="h-4 w-4 shrink-0" /> Exportar CSV</Button>
             <div className="col-span-2 hidden min-w-0 grid-cols-3 gap-2 lg:grid">{filtrosSelect}</div>
           </div>
           {filtrosMobile && <div className="grid gap-2 sm:grid-cols-3 lg:hidden">{filtrosSelect}</div>}
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
             <span>{filtradas.length} {filtradas.length === 1 ? "participante encontrado" : "participantes encontrados"} · a exportação usa este evento e os filtros aplicados</span>
             {ativos > 0 && (
-              <Botao variante="fantasma" className="px-2 py-1" onClick={() => { setFiltros(FILTROS_VAZIOS); setPagina(1); }}>
+              <Button variant="ghost" className="" onClick={() => { setFiltros(FILTROS_VAZIOS); setPagina(1); }}>
                 <X className="h-4 w-4" /> Limpar filtros
-              </Botao>
+              </Button>
             )}
           </div>
         </div>
@@ -189,34 +195,34 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
         ) : (
           <>
             <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[760px] text-[13px]">
-              <thead className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3">Participante</th>
-                  <th className="px-4 py-3">Tipo de ingresso</th>
-                  <th className="px-4 py-3">Exército</th>
-                  <th className="px-4 py-3">Origem</th>
-                  <th className="min-w-[168px] px-4 py-3">Situação</th>
-                  <th className="px-4 py-3 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="w-full min-w-[760px] text-[13px]">
+              <TableHeader className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <TableRow>
+                  <TableHead className="px-4 py-3">Participante</TableHead>
+                  <TableHead className="px-4 py-3">Tipo de ingresso</TableHead>
+                  <TableHead className="px-4 py-3">Exército</TableHead>
+                  <TableHead className="px-4 py-3">Origem</TableHead>
+                  <TableHead className="min-w-[168px] px-4 py-3">Situação</TableHead>
+                  <TableHead className="px-4 py-3 text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {visiveis.map((i) => (
-                  <tr key={i.id} className="border-t border-border/60 hover:bg-secondary/40">
-                    <td className="px-4 py-3"><Participante nome={nomeDe(i)} codigo={i.codigo} /></td>
-                    <td className="px-4 py-3">{nomeTipo(i.tipoId)}</td>
-                    <td className="px-4 py-3">{nomeEx(i.exercitoId)}</td>
-                    <td className="px-4 py-3">{ROTULO_ORIGEM[i.origem]}</td>
-                    <td className="min-w-[168px] px-4 py-3"><div className="flex flex-col items-start gap-1.5"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div></td>
-                    <td className="px-4 py-3 text-right">
-                      <Botao variante="fantasma" className="whitespace-nowrap px-2 py-1" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={`Ver detalhes de ${nomeDe(i)}`}>
+                  <TableRow key={i.id} className="border-t border-border/60 hover:bg-secondary/40">
+                    <TableCell className="px-4 py-3"><Participante nome={nomeDe(i)} codigo={i.codigo} /></TableCell>
+                    <TableCell className="px-4 py-3">{nomeTipo(i.tipoId)}</TableCell>
+                    <TableCell className="px-4 py-3">{nomeEx(i.exercitoId)}</TableCell>
+                    <TableCell className="px-4 py-3">{ROTULO_ORIGEM[i.origem]}</TableCell>
+                    <TableCell className="min-w-[168px] px-4 py-3"><div className="flex flex-col items-start gap-1.5"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div></TableCell>
+                    <TableCell className="px-4 py-3 text-right">
+                      <Button variant="ghost" className="whitespace-nowrap" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={`Ver detalhes de ${nomeDe(i)}`}>
                         <Eye className="h-4 w-4" /> Detalhes
-                      </Botao>
-                    </td>
-                  </tr>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
             </div>
             <ul className="divide-y divide-border md:hidden">
               {visiveis.map((i) => (
@@ -226,20 +232,20 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
                     <div className="flex flex-col items-start gap-1.5"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div>
                   </div>
                   <p className="text-xs text-muted-foreground">{nomeTipo(i.tipoId)} · {nomeEx(i.exercitoId)} · {ROTULO_ORIGEM[i.origem]}</p>
-                  <Botao variante="contorno" className="w-full py-1.5" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={`Ver detalhes de ${nomeDe(i)}`}><Eye className="h-4 w-4" /> Detalhes</Botao>
+                  <Button variant="outline" className="w-full" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={`Ver detalhes de ${nomeDe(i)}`}><Eye className="h-4 w-4" /> Detalhes</Button>
                 </li>
               ))}
             </ul>
             {totalPaginas > 1 && (
               <div className="flex items-center justify-between border-t border-border p-3 text-sm">
-                <Botao variante="contorno" disabled={paginaAtual === 1} onClick={() => setPagina(paginaAtual - 1)}>Anterior</Botao>
+                <Button variant="outline" disabled={paginaAtual === 1} onClick={() => setPagina(paginaAtual - 1)}>Anterior</Button>
                 <span className="text-muted-foreground">Página {paginaAtual} de {totalPaginas}</span>
-                <Botao variante="contorno" disabled={paginaAtual === totalPaginas} onClick={() => setPagina(paginaAtual + 1)}>Próxima</Botao>
+                <Button variant="outline" disabled={paginaAtual === totalPaginas} onClick={() => setPagina(paginaAtual + 1)}>Próxima</Button>
               </div>
             )}
           </>
         )}
-      </Cartao>
+      </Card>
 
       {detalhe && (
         <PainelDetalhes
@@ -271,13 +277,6 @@ function Participante({ nome, codigo }: { nome: string; codigo: string }) {
 function PainelDetalhes({ inscricao, evento, nome, cpf, presenca, onFechar }: {
   inscricao: Inscricao; evento: Evento; nome: string; cpf: string; presenca: RegistroCheckin | undefined; onFechar: () => void;
 }) {
-  const fechar = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    fechar.current?.focus();
-    const tecla = (e: KeyboardEvent) => e.key === "Escape" && onFechar();
-    window.addEventListener("keydown", tecla);
-    return () => window.removeEventListener("keydown", tecla);
-  }, [onFechar]);
   const tipo = evento.tipos.find((t) => t.id === inscricao.tipoId)?.nome ?? "—";
   const lote = inscricao.loteId ? evento.lotes.find((l) => l.id === inscricao.loteId)?.nome ?? "—" : "Sem lote (cortesia)";
   const exercito = evento.exercitos.find((x) => x.id === inscricao.exercitoId)?.nome ?? "—";
@@ -285,17 +284,17 @@ function PainelDetalhes({ inscricao, evento, nome, cpf, presenca, onFechar }: {
     <div className="grid grid-cols-[8rem_minmax(0,1fr)] gap-3 py-2"><dt className="text-muted-foreground">{r}</dt><dd className="min-w-0 break-words">{children}</dd></div>
   );
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/50" onClick={onFechar}>
-      <aside
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="titulo-detalhe"
-        onClick={(e) => e.stopPropagation()}
-        className="flex h-[100dvh] w-full flex-col border-l border-border bg-popover text-popover-foreground shadow-2xl md:max-w-md"
+    <Sheet open onOpenChange={(aberto) => !aberto && onFechar()}>
+      <SheetContent
+        side="right"
+        showCloseButton={false}
+        aria-describedby={undefined}
+        overlayClassName="bg-black/50"
+        className="flex h-[100dvh] w-full flex-col gap-0 p-0 shadow-2xl sm:max-w-none md:max-w-md"
       >
         <div className="flex items-center justify-between gap-2 border-b border-border px-5 py-4">
-          <h2 id="titulo-detalhe" className="font-display text-lg font-semibold uppercase">Detalhes da inscrição</h2>
-          <Botao ref={fechar} variante="fantasma" onClick={onFechar} aria-label="Fechar detalhes"><X className="h-5 w-5" /></Botao>
+          <SheetTitle className="uppercase">Detalhes da inscrição</SheetTitle>
+          <Button variant="ghost" onClick={onFechar} aria-label="Fechar detalhes"><X className="h-5 w-5" /></Button>
         </div>
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-sm">
           <div className="flex items-center justify-between gap-3">
@@ -334,7 +333,7 @@ function PainelDetalhes({ inscricao, evento, nome, cpf, presenca, onFechar }: {
             <p className="mt-2 text-muted-foreground">Para registrar ou desfazer a presença, use a página Check-in.</p>
           </section>
         </div>
-      </aside>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }

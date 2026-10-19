@@ -8,11 +8,18 @@ import { validarParaPublicacao } from "@/services/organizador";
 import { cancelarEvento, excluirEvento, publicarEvento } from "@/api/organizador.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
-import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, Modal, Selecao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
+import { Campo, Modal } from "@/components/ui";
 import { eventoVazio } from "@/components/editorEvento/eventoVazio";
 import { EventEditorDrawer } from "@/components/editorEvento/EventEditorDrawer";
 import { AvisoLotes, useEventosOrg } from "@/components/organizacao";
 import type { Evento } from "@/lib/domain/types";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/organizacao/")({
   // ?lotes=<eventoId> abre a edição do evento direto na seção de lotes de venda.
@@ -31,13 +38,13 @@ export const Route = createFileRoute("/organizacao/")({
   component: PainelEventos,
 });
 
-const tomStatusEvento: Record<Evento["status"], "padrao" | "sucesso" | "aviso" | "perigo"> = {
-  rascunho: "padrao",
-  publicado: "sucesso",
-  inscricoes_encerradas: "aviso",
-  concluido: "padrao",
-  cancelado: "perigo",
-  arquivado: "padrao",
+const tomStatusEvento: Record<Evento["status"], "secondary" | "success" | "warning" | "destructive"> = {
+  rascunho: "secondary",
+  publicado: "success",
+  inscricoes_encerradas: "warning",
+  concluido: "secondary",
+  cancelado: "destructive",
+  arquivado: "secondary",
 };
 
 function PainelEventos() {
@@ -141,7 +148,7 @@ function PainelEventos() {
             </p>
           ) : null;
         })()}
-        <Botao onClick={() => { setFocarLotes(false); const idOrg = orgId ?? base.organizacoes[0]?.id ?? ""; setFormEstado({ evento: eventoVazio(idOrg, base.organizacoes.find((o) => o.id === idOrg)?.telefone), existente: false }); }}>+ Criar evento</Botao>
+        <Button onClick={() => { setFocarLotes(false); const idOrg = orgId ?? base.organizacoes[0]?.id ?? ""; setFormEstado({ evento: eventoVazio(idOrg, base.organizacoes.find((o) => o.id === idOrg)?.telefone), existente: false }); }}>+ Criar evento</Button>
       </div>
 
       {aviso && <p role="status" className="mt-3 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm">{aviso}</p>}
@@ -154,85 +161,85 @@ function PainelEventos() {
           ["Inscrições ativas", String(totalInscritos), totalCapacidade ? `${Math.round((totalInscritos / totalCapacidade) * 100)}% da capacidade total` : "—"],
           ["Receita registrada", formatarBRL(totalReceita), "Soma das movimentações"],
         ] as const).map(([rotulo, valor, sub]) => (
-          <Cartao key={rotulo}>
+          <Card key={rotulo}>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">{rotulo}</p>
             <p className="mt-1 font-mono text-2xl font-semibold">{valor}</p>
             <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
-          </Cartao>
+          </Card>
         ))}
       </section>
 
-      <Cartao className="mt-6">
+      <Card className="mt-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-display text-lg font-semibold uppercase">Meus eventos</h3>
           <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
-            <Entrada aria-label="Buscar evento" placeholder="Buscar por nome…" value={busca} onChange={(e) => setBusca(e.target.value)} />
-            <Selecao aria-label="Filtrar por status" value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value as typeof filtroStatus)}>
+            <Input aria-label="Buscar evento" placeholder="Buscar por nome…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+            <NativeSelect aria-label="Filtrar por status" value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value as typeof filtroStatus)}>
               <option value="todos">Todos os status</option>
               {Object.keys(tomStatusEvento).map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
-            </Selecao>
+            </NativeSelect>
           </div>
         </div>
         <div className="mt-4 overflow-x-auto">
-          <table className="tabela-cards w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-                <th className="py-2 pr-3">Evento</th>
-                <th className="py-2 pr-3">Data</th>
-                <th className="py-2 pr-3">Status</th>
-                <th className="py-2 pr-3">Manual</th>
-                <th className="py-2 pr-3">Ocupação</th>
-                <th className="py-2 pr-3">Receita</th>
-                <th className="py-2 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="tabela-cards w-full text-sm">
+            <TableHeader>
+              <TableRow className="border-b border-border text-left text-xs uppercase text-muted-foreground">
+                <TableHead className="py-2 pr-3">Evento</TableHead>
+                <TableHead className="py-2 pr-3">Data</TableHead>
+                <TableHead className="py-2 pr-3">Status</TableHead>
+                <TableHead className="py-2 pr-3">Manual</TableHead>
+                <TableHead className="py-2 pr-3">Ocupação</TableHead>
+                <TableHead className="py-2 pr-3">Receita</TableHead>
+                <TableHead className="py-2 text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filtrados.map((e) => {
                 const ativas = ativasPorEvento(e.id);
                 const pct = e.capacidadeTotal ? Math.min(100, Math.round((ativas / e.capacidadeTotal) * 100)) : 0;
                 return (
-                  <tr key={e.id} className="border-b border-border/50">
-                    <td className="py-2 pr-3">
+                  <TableRow key={e.id} className="border-b border-border/50">
+                    <TableCell className="py-2 pr-3">
                       <p className="font-medium">{e.nome || "Sem nome"}</p>
                       <p className="text-xs text-muted-foreground">{e.cidade || "—"}/{e.uf} · <span className={e.modalidade ? "" : "text-warning"}>{nomeModalidade(e.modalidade)}</span></p>
                       {!["cancelado", "concluido", "arquivado"].includes(e.status) && (
                         <AvisoLotes evento={e} compacto onConfigurar={() => configurarLotes(e)} />
                       )}
-                    </td>
-                    <td data-rotulo="Data" className="py-2 pr-3 whitespace-nowrap">{formatarDataBR(e.inicioEm)}</td>
-                    <td data-rotulo="Status" className="py-2 pr-3"><Badge tom={tomStatusEvento[e.status]}>{e.status.replace("_", " ")}</Badge></td>
-                    <td data-rotulo="Manual" className="py-2 pr-3">
-                      {e.regras ? <Badge tom="sucesso">v{e.regras.versao}</Badge> : <span className="text-xs text-muted-foreground">sem manual</span>}
-                    </td>
-                    <td data-rotulo="Ocupação" className="py-2 pr-3 min-w-32">
+                    </TableCell>
+                    <TableCell data-rotulo="Data" className="py-2 pr-3 whitespace-nowrap">{formatarDataBR(e.inicioEm)}</TableCell>
+                    <TableCell data-rotulo="Status" className="py-2 pr-3"><Badge variant={tomStatusEvento[e.status]}>{e.status.replace("_", " ")}</Badge></TableCell>
+                    <TableCell data-rotulo="Manual" className="py-2 pr-3">
+                      {e.regras ? <Badge variant="success">v{e.regras.versao}</Badge> : <span className="text-xs text-muted-foreground">sem manual</span>}
+                    </TableCell>
+                    <TableCell data-rotulo="Ocupação" className="py-2 pr-3 min-w-32">
                       <p className="text-xs">{ativas}/{e.capacidadeTotal}</p>
                       <div className="mt-1 h-1.5 w-24 rounded bg-muted md:w-auto"><div className="h-1.5 rounded bg-primary" style={{ width: `${pct}%` }} /></div>
-                    </td>
-                    <td data-rotulo="Receita" className="py-2 pr-3 font-mono whitespace-nowrap">{formatarBRL(receitaEvento(e.id))}</td>
-                    <td className="celula-acoes py-2">
+                    </TableCell>
+                    <TableCell data-rotulo="Receita" className="py-2 pr-3 font-mono whitespace-nowrap">{formatarBRL(receitaEvento(e.id))}</TableCell>
+                    <TableCell className="celula-acoes py-2">
                       <div className="flex flex-wrap gap-1 md:justify-end">
-                        {e.status === "rascunho" && <Botao variante="fantasma" onClick={() => aoPublicar(e)}>Publicar</Botao>}
-                        {e.status === "publicado" && <Botao variante="fantasma" onClick={() => setCancelarEvt(e)}>Cancelar</Botao>}
+                        {e.status === "rascunho" && <Button variant="ghost" onClick={() => aoPublicar(e)}>Publicar</Button>}
+                        {e.status === "publicado" && <Button variant="ghost" onClick={() => setCancelarEvt(e)}>Cancelar</Button>}
                         {["publicado", "inscricoes_encerradas"].includes(e.status) && (
                           <Link to="/eventos/$eventoId" params={{ eventoId: e.id }}>
-                            <Botao variante="fantasma">Página pública</Botao>
+                            <Button variant="ghost">Página pública</Button>
                           </Link>
                         )}
-                        <Botao variante="fantasma" onClick={() => { selecionarEventoOrganizacao(e.id); navigate({ to: "/organizacao/checkin" }); }}>Abrir check-in</Botao>
-                        <Botao variante="contorno" onClick={() => abrirEditor(e, false)} disabled={["cancelado", "concluido"].includes(e.status)}>Editar</Botao>
-                        <Botao variante="perigo" onClick={() => setExcluirEvt(e)}>Excluir</Botao>
+                        <Button variant="ghost" onClick={() => { selecionarEventoOrganizacao(e.id); navigate({ to: "/organizacao/checkin" }); }}>Abrir check-in</Button>
+                        <Button variant="outline" onClick={() => abrirEditor(e, false)} disabled={["cancelado", "concluido"].includes(e.status)}>Editar</Button>
+                        <Button variant="destructive" onClick={() => setExcluirEvt(e)}>Excluir</Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
               {filtrados.length === 0 && (
-                <tr className="!border-0"><td colSpan={7} className="py-6 text-center text-muted-foreground">Nenhum evento encontrado.</td></tr>
+                <TableRow className="!border-0"><TableCell colSpan={7} className="py-6 text-center text-muted-foreground">Nenhum evento encontrado.</TableCell></TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
-      </Cartao>
+      </Card>
 
       {form && (
         <EventEditorDrawer
@@ -259,8 +266,8 @@ function PainelEventos() {
               </p>
             )}
             <div className="flex justify-end gap-2">
-              <Botao variante="fantasma" onClick={() => setExcluirEvt(null)}>Voltar</Botao>
-              <Botao variante="perigo" onClick={aoExcluir} disabled={ativasPorEvento(excluirEvt.id) > 0}>Excluir</Botao>
+              <Button variant="ghost" onClick={() => setExcluirEvt(null)}>Voltar</Button>
+              <Button variant="destructive" onClick={aoExcluir} disabled={ativasPorEvento(excluirEvt.id) > 0}>Excluir</Button>
             </div>
           </div>
         )}
@@ -274,11 +281,11 @@ function PainelEventos() {
               canceladas com estorno integral e os participantes serão notificados na plataforma.
             </p>
             <Campo rotulo="Justificativa (obrigatória)" htmlFor="just">
-              <AreaTexto id="just" value={justificativa} onChange={(e) => setJustificativa(e.target.value)} />
+              <Textarea id="just" value={justificativa} onChange={(e) => setJustificativa(e.target.value)} />
             </Campo>
             <div className="flex justify-end gap-2">
-              <Botao variante="fantasma" onClick={() => setCancelarEvt(null)}>Voltar</Botao>
-              <Botao variante="perigo" onClick={aoCancelarEvento}>Confirmar cancelamento</Botao>
+              <Button variant="ghost" onClick={() => setCancelarEvt(null)}>Voltar</Button>
+              <Button variant="destructive" onClick={aoCancelarEvento}>Confirmar cancelamento</Button>
             </div>
           </div>
         )}

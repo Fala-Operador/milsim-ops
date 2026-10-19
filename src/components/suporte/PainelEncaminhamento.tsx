@@ -6,13 +6,18 @@ import { useSuporte } from "@/contexts/SuporteContext";
 import { canalDe, encaminhamentos, type Encaminhamento } from "@/lib/suporte";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import type { BaseDados, Chamado, Usuario } from "@/lib/domain/types";
-import { AreaTexto, Badge, Botao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Conversa } from "./Conversa";
+import { Checkbox } from "@/components/ui/checkbox";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Label } from "@/components/ui/label";
 
 const novoId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
 
 export function SituacaoEncaminhamento({ e }: { e: Encaminhamento }) {
-  return e.situacao === "retorno_enviado" ? <Badge tom="sucesso">Retorno enviado à administração</Badge> : <Badge tom="aviso">Aguardando organizador</Badge>;
+  return e.situacao === "retorno_enviado" ? <Badge variant="success">Retorno enviado à administração</Badge> : <Badge variant="warning">Aguardando organizador</Badge>;
 }
 
 export function PainelEncaminhamento({ base, c, usuario }: { base: BaseDados; c: Chamado; usuario: Usuario }) {
@@ -50,24 +55,24 @@ export function PainelEncaminhamento({ base, c, usuario }: { base: BaseDados; c:
       <p className="font-medium">Encaminhar à organização {org?.nome ?? "do evento"}</p>
       <p className="text-xs text-muted-foreground">A organização não vê a conversa com o participante nem os dados pessoais. Escreva só o que for necessário.</p>
       <div>
-        <label htmlFor={`ori-${c.id}`} className="text-xs font-medium">Orientação ao organizador</label>
-        <AreaTexto id={`ori-${c.id}`} rows={4} maxLength={4000} value={orientacao} onChange={(e) => setOrientacao(e.target.value)} />
+        <Label htmlFor={`ori-${c.id}`} className="text-xs font-medium text-inherit">Orientação ao organizador</Label>
+        <Textarea id={`ori-${c.id}`} rows={4} maxLength={4000} value={orientacao} onChange={(e) => setOrientacao(e.target.value)} />
       </div>
       {disponiveis.length > 0 && (
         <fieldset>
           <legend className="text-xs font-medium">Anexos a compartilhar (opcional)</legend>
           {disponiveis.map((m) => (
-            <label key={m.id} className="mt-1 flex items-center gap-2 text-xs">
-              <input type="checkbox" checked={anexos.includes(m.id)} onChange={(e) => setAnexos((l) => (e.target.checked ? [...l, m.id] : l.filter((x) => x !== m.id)))} />
+            <Label key={m.id} className="mt-1 flex items-center gap-2 text-xs font-normal text-inherit">
+              <Checkbox checked={anexos.includes(m.id)} onCheckedChange={(marcado) => setAnexos((l) => (marcado === true ? [...l, m.id] : l.filter((x) => x !== m.id)))} />
               {m.anexo!.nome}
-            </label>
+            </Label>
           ))}
         </fieldset>
       )}
       {erro && <p role="alert" className="text-xs text-destructive">{erro}</p>}
       <div className="flex gap-2">
-        {encs.length > 0 && <Botao type="button" variante="contorno" onClick={() => setCriando(false)}>Cancelar</Botao>}
-        <Botao type="button" disabled={ocupado || !orientacao.trim()} onClick={enviar}><Send className="h-4 w-4" />Encaminhar ao organizador</Botao>
+        {encs.length > 0 && <Button type="button" variant="outline" onClick={() => setCriando(false)}>Cancelar</Button>}
+        <Button type="button" disabled={ocupado || !orientacao.trim()} onClick={enviar}><Send className="h-4 w-4" />Encaminhar ao organizador</Button>
       </div>
     </div>
   );
@@ -79,12 +84,12 @@ export function PainelEncaminhamento({ base, c, usuario }: { base: BaseDados; c:
       <div className="space-y-2 border-b border-border px-4 py-3 text-sm">
         <div className="flex flex-wrap items-center gap-2">
           {encs.length > 1 && (
-            <select aria-label="Encaminhamento" value={atual.id} onChange={(e) => setSelecionado(e.target.value)} className="rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground">
+            <NativeSelect aria-label="Encaminhamento" value={atual.id} onChange={(e) => setSelecionado(e.target.value)} className="rounded-md border border-input bg-background px-2 py-1 text-xs text-foreground w-auto sm:text-xs">
               {encs.map((e, i) => <option key={e.id} value={e.id}>Encaminhamento {i + 1} · {formatarDataHoraBR(e.criadoEm)}</option>)}
-            </select>
+            </NativeSelect>
           )}
           <SituacaoEncaminhamento e={atual} />
-          {!fechado && <Botao type="button" variante="fantasma" className="ml-auto !py-1 text-xs" onClick={() => setCriando(true)}>Novo encaminhamento</Botao>}
+          {!fechado && <Button type="button" variant="ghost" className="ml-auto !py-1 text-xs" onClick={() => setCriando(true)}>Novo encaminhamento</Button>}
         </div>
         <p className="text-xs text-muted-foreground">Orientação enviada:</p>
         <p className="whitespace-pre-wrap rounded-md border border-border bg-background/60 px-3 py-2">{atual.orientacao}</p>

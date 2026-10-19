@@ -16,9 +16,19 @@ import {
 } from "@/api/divulgacao.functions";
 import { arquivoParaDataUrl } from "@/lib/imagens";
 import { SecoesPublicas, SeletorLocalizacao } from "@/components/divulgacao";
-import { AreaTexto, Badge, Botao, Campo, Cartao, Entrada, EstadoVazio, Modal, Selecao, SkeletonPagina } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
+import { Campo, EstadoVazio, Modal, SkeletonPagina } from "@/components/ui";
 import { gerarId } from "@/services/db";
 import { GestaoImpulsionamentos } from "@/components/impulsionamentos";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/admin/divulgacao")({
   head: () => ({
@@ -45,7 +55,7 @@ const ROTULO_TIPO: Record<TipoSecao, string> = {
 const UFS = Object.keys(UF_REGIAO).sort();
 const paraLocal = (iso?: string) => (iso ? new Date(new Date(iso).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "");
 const deLocal = (v: string) => (v ? new Date(v).toISOString() : undefined);
-const tomStatus = { rascunho: "aviso", publicada: "sucesso", desativada: "padrao" } as const;
+const tomStatus = { rascunho: "warning", publicada: "success", desativada: "secondary" } as const;
 
 function PaginaDivulgacao() {
   const versao = useVersaoBase();
@@ -63,11 +73,13 @@ function PaginaDivulgacao() {
             Agendamentos são aplicados sempre que a página inicial é carregada.
           </p>
         </div>
-        <div className="flex gap-1" role="tablist">
-          <Botao role="tab" aria-selected={aba === "secoes"} variante={aba === "secoes" ? "primario" : "contorno"} onClick={() => setAba("secoes")}>Seções</Botao>
-          <Botao role="tab" aria-selected={aba === "parceiros"} variante={aba === "parceiros" ? "primario" : "contorno"} onClick={() => setAba("parceiros")}>Parceiros</Botao>
-          <Botao role="tab" aria-selected={aba === "impulsionamentos"} variante={aba === "impulsionamentos" ? "primario" : "contorno"} onClick={() => setAba("impulsionamentos")}>Impulsionamentos</Botao>
-        </div>
+        <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)}>
+          <TabsList className="gap-1">
+            <TabsTrigger value="secoes" asChild><Button variant={aba === "secoes" ? "default" : "outline"}>Seções</Button></TabsTrigger>
+            <TabsTrigger value="parceiros" asChild><Button variant={aba === "parceiros" ? "default" : "outline"}>Parceiros</Button></TabsTrigger>
+            <TabsTrigger value="impulsionamentos" asChild><Button variant={aba === "impulsionamentos" ? "default" : "outline"}>Impulsionamentos</Button></TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
       <div className="mt-4">
         {aba === "secoes" ? <GestaoSecoes base={base} />
@@ -99,8 +111,8 @@ function GestaoSecoes({ base }: { base: BaseDados }) {
   return (
     <div>
       <div className="flex flex-wrap gap-2">
-        <Botao onClick={() => setEditando(secaoVazia("destaques"))}>Nova seção</Botao>
-        <Botao variante="contorno" onClick={() => setPrevia(true)}>Prévia da página</Botao>
+        <Button onClick={() => setEditando(secaoVazia("destaques"))}>Nova seção</Button>
+        <Button variant="outline" onClick={() => setPrevia(true)}>Prévia da página</Button>
       </div>
       <ul className="mt-4 space-y-2" aria-label="Seções da página inicial (arraste para reordenar)">
         {ordenadas.map((s, i) => (
@@ -119,17 +131,17 @@ function GestaoSecoes({ base }: { base: BaseDados }) {
                 {s.agendamento.inicioEm || s.agendamento.fimEm ? " · agendada" : ""}
               </p>
             </div>
-            <Badge tom={tomStatus[s.status]}>{s.status}</Badge>
+            <Badge variant={tomStatus[s.status]}>{s.status}</Badge>
             <div className="flex gap-1">
-              <Botao variante="fantasma" className="!px-2" aria-label={`Mover ${s.titulo} para cima`} disabled={i === 0} onClick={() => mover(i, i - 1)}><ArrowUp className="h-4 w-4" /></Botao>
-              <Botao variante="fantasma" className="!px-2" aria-label={`Mover ${s.titulo} para baixo`} disabled={i === ordenadas.length - 1} onClick={() => mover(i, i + 1)}><ArrowDown className="h-4 w-4" /></Botao>
-              <Botao variante="contorno" onClick={() => setEditando(structuredClone(s))}>Editar</Botao>
+              <Button variant="ghost" className="!px-2" aria-label={`Mover ${s.titulo} para cima`} disabled={i === 0} onClick={() => mover(i, i - 1)}><ArrowUp className="h-4 w-4" /></Button>
+              <Button variant="ghost" className="!px-2" aria-label={`Mover ${s.titulo} para baixo`} disabled={i === ordenadas.length - 1} onClick={() => mover(i, i + 1)}><ArrowDown className="h-4 w-4" /></Button>
+              <Button variant="outline" onClick={() => setEditando(structuredClone(s))}>Editar</Button>
               {s.status !== "publicada" ? (
-                <Botao variante="secundario" onClick={() => alterarStatusSecao(s.id, "publicada")}>Publicar</Botao>
+                <Button variant="secondary" onClick={() => alterarStatusSecao(s.id, "publicada")}>Publicar</Button>
               ) : (
-                <Botao variante="secundario" onClick={() => alterarStatusSecao(s.id, "desativada")}>Desativar</Botao>
+                <Button variant="secondary" onClick={() => alterarStatusSecao(s.id, "desativada")}>Desativar</Button>
               )}
-              <Botao variante="fantasma" onClick={() => setExcluir(s)}>Excluir</Botao>
+              <Button variant="ghost" onClick={() => setExcluir(s)}>Excluir</Button>
             </div>
           </li>
         ))}
@@ -141,8 +153,8 @@ function GestaoSecoes({ base }: { base: BaseDados }) {
       <Modal aberto={!!excluir} titulo="Excluir seção" onFechar={() => setExcluir(null)}>
         <p className="text-sm text-muted-foreground">A seção “{excluir?.titulo}” será removida. Eventos e parceiros continuam cadastrados.</p>
         <div className="mt-4 flex justify-end gap-2">
-          <Botao variante="fantasma" onClick={() => setExcluir(null)}>Voltar</Botao>
-          <Botao variante="perigo" onClick={async () => { await excluirSecao(excluir!.id); setExcluir(null); }}>Excluir</Botao>
+          <Button variant="ghost" onClick={() => setExcluir(null)}>Voltar</Button>
+          <Button variant="destructive" onClick={async () => { await excluirSecao(excluir!.id); setExcluir(null); }}>Excluir</Button>
         </div>
       </Modal>
     </div>
@@ -163,25 +175,25 @@ function EditorAbrangencia({ valor, onMudar, rotulo }: { valor: Abrangencia; onM
   return (
     <fieldset className="grid gap-2 sm:grid-cols-3">
       <legend className="mb-1 text-sm font-medium">{rotulo}</legend>
-      <Selecao aria-label={`${rotulo}: escopo`} value={valor.escopo} onChange={(e) => {
+      <NativeSelect aria-label={`${rotulo}: escopo`} value={valor.escopo} onChange={(e) => {
         const escopo = e.target.value as Abrangencia["escopo"];
         onMudar(escopo === "nacional" ? NACIONAL : { escopo, regiao: "Sudeste", uf: "SP", cidade: escopo === "cidade" ? "São Paulo" : undefined });
       }}>
         <option value="nacional">Nacional</option><option value="regiao">Região</option>
         <option value="estado">Estado</option><option value="cidade">Cidade</option>
-      </Selecao>
+      </NativeSelect>
       {valor.escopo === "regiao" && (
-        <Selecao aria-label={`${rotulo}: região`} value={valor.regiao} onChange={(e) => onMudar({ escopo: "regiao", regiao: e.target.value as Abrangencia["regiao"] })}>
+        <NativeSelect aria-label={`${rotulo}: região`} value={valor.regiao} onChange={(e) => onMudar({ escopo: "regiao", regiao: e.target.value as Abrangencia["regiao"] })}>
           {REGIOES.map((r) => <option key={r}>{r}</option>)}
-        </Selecao>
+        </NativeSelect>
       )}
       {(valor.escopo === "estado" || valor.escopo === "cidade") && (
-        <Selecao aria-label={`${rotulo}: estado`} value={valor.uf} onChange={(e) => onMudar({ ...valor, regiao: undefined, uf: e.target.value })}>
+        <NativeSelect aria-label={`${rotulo}: estado`} value={valor.uf} onChange={(e) => onMudar({ ...valor, regiao: undefined, uf: e.target.value })}>
           {UFS.map((u) => <option key={u}>{u}</option>)}
-        </Selecao>
+        </NativeSelect>
       )}
       {valor.escopo === "cidade" && (
-        <Entrada aria-label={`${rotulo}: cidade`} value={valor.cidade ?? ""} onChange={(e) => onMudar({ ...valor, cidade: e.target.value })} placeholder="Cidade" />
+        <Input aria-label={`${rotulo}: cidade`} value={valor.cidade ?? ""} onChange={(e) => onMudar({ ...valor, cidade: e.target.value })} placeholder="Cidade" />
       )}
     </fieldset>
   );
@@ -211,77 +223,79 @@ function EditorSecao({ base, inicial, onFechar }: { base: BaseDados; inicial: Da
     <Modal aberto titulo={d.id ? "Editar seção" : "Nova seção"} onFechar={onFechar}>
       <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Campo htmlFor="sec-titulo" rotulo="Título"><Entrada id="sec-titulo" value={d.titulo} onChange={(e) => set({ titulo: e.target.value })} /></Campo>
-          <Campo htmlFor="sec-sub" rotulo="Subtítulo (opcional)"><Entrada id="sec-sub" value={d.subtitulo ?? ""} onChange={(e) => set({ subtitulo: e.target.value || undefined })} /></Campo>
+          <Campo htmlFor="sec-titulo" rotulo="Título"><Input id="sec-titulo" value={d.titulo} onChange={(e) => set({ titulo: e.target.value })} /></Campo>
+          <Campo htmlFor="sec-sub" rotulo="Subtítulo (opcional)"><Input id="sec-sub" value={d.subtitulo ?? ""} onChange={(e) => set({ subtitulo: e.target.value || undefined })} /></Campo>
           <Campo htmlFor="sec-tipo" rotulo="Tipo">
-            <Selecao id="sec-tipo" value={d.tipo} disabled={!!d.id} onChange={(e) => { const t = e.target.value as TipoSecao; setD({ ...secaoVazia(t), titulo: d.titulo }); }}>
+            <NativeSelect id="sec-tipo" value={d.tipo} disabled={!!d.id} onChange={(e) => { const t = e.target.value as TipoSecao; setD({ ...secaoVazia(t), titulo: d.titulo }); }}>
               {Object.entries(ROTULO_TIPO).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </Selecao>
+            </NativeSelect>
           </Campo>
           <Campo htmlFor="sec-layout" rotulo="Layout">
-            <Selecao id="sec-layout" value={d.layout} onChange={(e) => set({ layout: e.target.value as SecaoInicial["layout"] })}>
+            <NativeSelect id="sec-layout" value={d.layout} onChange={(e) => set({ layout: e.target.value as SecaoInicial["layout"] })}>
               {d.tipo === "banner" ? <option value="banner">Banner</option> : <><option value="grade">Grade</option><option value="carrossel">Carrossel</option></>}
-            </Selecao>
+            </NativeSelect>
           </Campo>
         </div>
         <EditorAbrangencia rotulo="Abrangência" valor={d.abrangencia} onMudar={(a) => set({ abrangencia: a })} />
         <div className="grid gap-3 sm:grid-cols-2">
-          <Campo htmlFor="sec-ini" rotulo="Início da exibição (opcional)"><Entrada id="sec-ini" type="datetime-local" value={paraLocal(d.agendamento.inicioEm)} onChange={(e) => set({ agendamento: { ...d.agendamento, inicioEm: deLocal(e.target.value) } })} /></Campo>
-          <Campo htmlFor="sec-fim" rotulo="Término da exibição (opcional)"><Entrada id="sec-fim" type="datetime-local" value={paraLocal(d.agendamento.fimEm)} onChange={(e) => set({ agendamento: { ...d.agendamento, fimEm: deLocal(e.target.value) } })} /></Campo>
+          <Campo htmlFor="sec-ini" rotulo="Início da exibição (opcional)"><Input id="sec-ini" type="datetime-local" value={paraLocal(d.agendamento.inicioEm)} onChange={(e) => set({ agendamento: { ...d.agendamento, inicioEm: deLocal(e.target.value) } })} /></Campo>
+          <Campo htmlFor="sec-fim" rotulo="Término da exibição (opcional)"><Input id="sec-fim" type="datetime-local" value={paraLocal(d.agendamento.fimEm)} onChange={(e) => set({ agendamento: { ...d.agendamento, fimEm: deLocal(e.target.value) } })} /></Campo>
         </div>
 
         {ehEventos && (
           <div className="space-y-3 rounded-lg border border-border p-3">
             <div className="flex flex-wrap gap-3 text-sm">
-              <label className="flex items-center gap-1"><input type="radio" checked={d.modo === "manual"} onChange={() => set({ modo: "manual" })} /> Curadoria manual</label>
-              <label className="flex items-center gap-1"><input type="radio" checked={d.modo === "automatico"} onChange={() => set({ modo: "automatico", automatica: auto })} /> Seleção automática</label>
-              <label className="flex items-center gap-1"><input type="checkbox" checked={d.mostrarEsgotados} onChange={(e) => set({ mostrarEsgotados: e.target.checked })} /> Manter esgotados visíveis</label>
+              <RadioGroup className="contents" value={d.modo} onValueChange={(modo) => set(modo === "manual" ? { modo: "manual" } : { modo: "automatico", automatica: auto })}>
+                <Label className="flex items-center gap-1 text-[length:inherit] font-normal text-inherit"><RadioGroupItem value="manual" /> Curadoria manual</Label>
+                <Label className="flex items-center gap-1 text-[length:inherit] font-normal text-inherit"><RadioGroupItem value="automatico" /> Seleção automática</Label>
+              </RadioGroup>
+              <Label className="flex items-center gap-1 text-[length:inherit] font-normal text-inherit"><Checkbox checked={d.mostrarEsgotados} onCheckedChange={(marcado) => set({ mostrarEsgotados: marcado === true })} /> Manter esgotados visíveis</Label>
             </div>
             {d.modo === "manual" ? (
               <div className="space-y-3">
                 {d.destaques.sort((a, b) => a.posicao - b.posicao).map((x, i) => (
                   <div key={x.id} className="grid gap-2 rounded-md border border-border p-2 sm:grid-cols-2">
-                    <Selecao aria-label="Evento" value={x.eventoId} onChange={(e) => setDestaque(i, { eventoId: e.target.value })}>
+                    <NativeSelect aria-label="Evento" value={x.eventoId} onChange={(e) => setDestaque(i, { eventoId: e.target.value })}>
                       {base.eventos.filter((e) => eventoElegivel(e, new Date()) || e.id === x.eventoId).map((e) => (
                         <option key={e.id} value={e.id}>{e.nome} — {e.cidade}/{e.uf}{eventoElegivel(e, new Date()) ? "" : " (fora da divulgação)"}</option>
                       ))}
-                    </Selecao>
-                    <Entrada aria-label="Posição" type="number" min={1} value={x.posicao} onChange={(e) => setDestaque(i, { posicao: Number(e.target.value) })} />
-                    <Entrada aria-label="Selo" placeholder="Selo (ex.: Destaque da semana)" value={x.selo ?? ""} onChange={(e) => setDestaque(i, { selo: e.target.value || undefined })} />
-                    <Entrada aria-label="Chamada curta" placeholder="Chamada curta" maxLength={90} value={x.chamada ?? ""} onChange={(e) => setDestaque(i, { chamada: e.target.value || undefined })} />
-                    <Entrada aria-label="Início da divulgação" type="datetime-local" value={paraLocal(x.agendamento.inicioEm)} onChange={(e) => setDestaque(i, { agendamento: { ...x.agendamento, inicioEm: deLocal(e.target.value) } })} />
-                    <Entrada aria-label="Término da divulgação" type="datetime-local" value={paraLocal(x.agendamento.fimEm)} onChange={(e) => setDestaque(i, { agendamento: { ...x.agendamento, fimEm: deLocal(e.target.value) } })} />
+                    </NativeSelect>
+                    <Input aria-label="Posição" type="number" min={1} value={x.posicao} onChange={(e) => setDestaque(i, { posicao: Number(e.target.value) })} />
+                    <Input aria-label="Selo" placeholder="Selo (ex.: Destaque da semana)" value={x.selo ?? ""} onChange={(e) => setDestaque(i, { selo: e.target.value || undefined })} />
+                    <Input aria-label="Chamada curta" placeholder="Chamada curta" maxLength={90} value={x.chamada ?? ""} onChange={(e) => setDestaque(i, { chamada: e.target.value || undefined })} />
+                    <Input aria-label="Início da divulgação" type="datetime-local" value={paraLocal(x.agendamento.inicioEm)} onChange={(e) => setDestaque(i, { agendamento: { ...x.agendamento, inicioEm: deLocal(e.target.value) } })} />
+                    <Input aria-label="Término da divulgação" type="datetime-local" value={paraLocal(x.agendamento.fimEm)} onChange={(e) => setDestaque(i, { agendamento: { ...x.agendamento, fimEm: deLocal(e.target.value) } })} />
                     <div className="flex flex-wrap items-center gap-2 text-xs sm:col-span-2">
-                      <label className="cursor-pointer rounded-md border border-border px-2 py-1">
+                      <Label className="cursor-pointer rounded-md border border-border px-2 py-1 text-[length:inherit] font-normal text-inherit">
                         {x.imagemPromocional ? "Trocar imagem promocional" : "Imagem promocional (opcional)"}
                         <input type="file" accept="image/*" className="sr-only" onChange={async (e) => {
                           const f = e.target.files?.[0]; if (!f) return;
                           try { setDestaque(i, { imagemPromocional: await arquivoParaDataUrl(f, 960) }); } catch (er) { setErro((er as Error).message); }
                         }} />
-                      </label>
-                      {x.imagemPromocional && <Botao variante="fantasma" onClick={() => setDestaque(i, { imagemPromocional: undefined })}>Usar imagem original</Botao>}
-                      <Botao variante="fantasma" className="ml-auto" onClick={() => set({ destaques: d.destaques.filter((_, j) => j !== i) })}>Remover destaque</Botao>
+                      </Label>
+                      {x.imagemPromocional && <Button variant="ghost" onClick={() => setDestaque(i, { imagemPromocional: undefined })}>Usar imagem original</Button>}
+                      <Button variant="ghost" className="ml-auto" onClick={() => set({ destaques: d.destaques.filter((_, j) => j !== i) })}>Remover destaque</Button>
                     </div>
                   </div>
                 ))}
-                <Botao variante="contorno" disabled={!elegiveis.length} onClick={() => set({
+                <Button variant="outline" disabled={!elegiveis.length} onClick={() => set({
                   destaques: [...d.destaques, { id: gerarId("dst"), eventoId: elegiveis[0]!.id, posicao: d.destaques.length + 1, agendamento: {} }],
-                })}>Adicionar evento</Botao>
+                })}>Adicionar evento</Button>
                 <p className="text-xs text-muted-foreground">Nome, data, local, vagas e preço vêm do cadastro do evento. Cancelados ou despublicados saem da página pública automaticamente.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 <EditorAbrangencia rotulo="Filtrar eventos por" valor={auto.abrangencia} onMudar={(a) => set({ automatica: { ...auto, abrangencia: a } })} />
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <Campo htmlFor="au-per" rotulo="Próximos dias (vazio = todos)"><Entrada id="au-per" type="number" min={1} value={auto.periodoDias ?? ""} onChange={(e) => set({ automatica: { ...auto, periodoDias: e.target.value ? Number(e.target.value) : undefined } })} /></Campo>
-                  <Campo htmlFor="au-max" rotulo="Máximo de cards"><Entrada id="au-max" type="number" min={1} value={auto.maximo} onChange={(e) => set({ automatica: { ...auto, maximo: Number(e.target.value) } })} /></Campo>
+                  <Campo htmlFor="au-per" rotulo="Próximos dias (vazio = todos)"><Input id="au-per" type="number" min={1} value={auto.periodoDias ?? ""} onChange={(e) => set({ automatica: { ...auto, periodoDias: e.target.value ? Number(e.target.value) : undefined } })} /></Campo>
+                  <Campo htmlFor="au-max" rotulo="Máximo de cards"><Input id="au-max" type="number" min={1} value={auto.maximo} onChange={(e) => set({ automatica: { ...auto, maximo: Number(e.target.value) } })} /></Campo>
                   <Campo htmlFor="au-ord" rotulo="Ordenação">
-                    <Selecao id="au-ord" value={auto.ordenacao} onChange={(e) => set({ automatica: { ...auto, ordenacao: e.target.value as "data" | "recentes" } })}>
+                    <NativeSelect id="au-ord" value={auto.ordenacao} onChange={(e) => set({ automatica: { ...auto, ordenacao: e.target.value as "data" | "recentes" } })}>
                       <option value="data">Data mais próxima</option><option value="recentes">Publicação mais recente</option>
-                    </Selecao>
+                    </NativeSelect>
                   </Campo>
                 </div>
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={auto.incluirEsgotados} onChange={(e) => set({ automatica: { ...auto, incluirEsgotados: e.target.checked } })} /> Incluir eventos esgotados</label>
+                <Label className="flex items-center gap-2 text-sm font-normal text-inherit"><Checkbox checked={auto.incluirEsgotados} onCheckedChange={(marcado) => set({ automatica: { ...auto, incluirEsgotados: marcado === true } })} /> Incluir eventos esgotados</Label>
               </div>
             )}
           </div>
@@ -294,11 +308,11 @@ function EditorSecao({ base, inicial, onFechar }: { base: BaseDados; inicial: Da
               const item = d.parceiros.find((i) => i.parceiroId === p.id);
               return (
                 <div key={p.id} className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" id={`sp-${p.id}`} checked={!!item} onChange={(e) => set({
-                    parceiros: e.target.checked ? [...d.parceiros, { parceiroId: p.id, posicao: d.parceiros.length + 1 }] : d.parceiros.filter((i) => i.parceiroId !== p.id),
+                  <Checkbox id={`sp-${p.id}`} checked={!!item} onCheckedChange={(marcado) => set({
+                    parceiros: marcado === true ? [...d.parceiros, { parceiroId: p.id, posicao: d.parceiros.length + 1 }] : d.parceiros.filter((i) => i.parceiroId !== p.id),
                   })} />
-                  <label htmlFor={`sp-${p.id}`} className="flex-1">{p.nome}{!p.ativo && " (inativo)"}</label>
-                  {item && <Entrada aria-label={`Posição de ${p.nome}`} type="number" min={1} className="!w-20" value={item.posicao} onChange={(e) => set({
+                  <Label htmlFor={`sp-${p.id}`} className="flex-1 text-[length:inherit] font-normal text-inherit">{p.nome}{!p.ativo && " (inativo)"}</Label>
+                  {item && <Input aria-label={`Posição de ${p.nome}`} type="number" min={1} className="!w-20" value={item.posicao} onChange={(e) => set({
                     parceiros: d.parceiros.map((i) => (i.parceiroId === p.id ? { ...i, posicao: Number(e.target.value) } : i)),
                   })} />}
                 </div>
@@ -306,16 +320,16 @@ function EditorSecao({ base, inicial, onFechar }: { base: BaseDados; inicial: Da
             })}
             <div className="grid gap-3 sm:grid-cols-3">
               <Campo htmlFor="sp-tam" rotulo="Tamanho dos logos">
-                <Selecao id="sp-tam" value={d.tamanhoLogo} onChange={(e) => set({ tamanhoLogo: e.target.value as "p" | "m" | "g" })}>
+                <NativeSelect id="sp-tam" value={d.tamanhoLogo} onChange={(e) => set({ tamanhoLogo: e.target.value as "p" | "m" | "g" })}>
                   <option value="p">Pequeno</option><option value="m">Médio</option><option value="g">Grande</option>
-                </Selecao>
+                </NativeSelect>
               </Campo>
               <Campo htmlFor="sp-sup" rotulo="Superfície atrás do logo">
-                <Selecao id="sp-sup" value={d.superficieLogo} onChange={(e) => set({ superficieLogo: e.target.value as SecaoInicial["superficieLogo"] })}>
+                <NativeSelect id="sp-sup" value={d.superficieLogo} onChange={(e) => set({ superficieLogo: e.target.value as SecaoInicial["superficieLogo"] })}>
                   <option value="nenhuma">Nenhuma</option><option value="clara">Neutra clara</option><option value="escura">Neutra escura</option>
-                </Selecao>
+                </NativeSelect>
               </Campo>
-              <label className="flex items-center gap-2 pt-6 text-sm"><input type="checkbox" checked={d.mostrarDescricoes} onChange={(e) => set({ mostrarDescricoes: e.target.checked })} /> Mostrar descrições</label>
+              <Label className="flex items-center gap-2 pt-6 text-sm font-normal text-inherit"><Checkbox checked={d.mostrarDescricoes} onCheckedChange={(marcado) => set({ mostrarDescricoes: marcado === true })} /> Mostrar descrições</Label>
             </div>
           </div>
         )}
@@ -324,9 +338,9 @@ function EditorSecao({ base, inicial, onFechar }: { base: BaseDados; inicial: Da
 
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex flex-wrap justify-end gap-2">
-          <Botao variante="fantasma" onClick={onFechar}>Cancelar</Botao>
-          <Botao variante="contorno" onClick={() => salvar("rascunho")}>Salvar rascunho</Botao>
-          <Botao onClick={() => salvar("publicada")}>Salvar e publicar</Botao>
+          <Button variant="ghost" onClick={onFechar}>Cancelar</Button>
+          <Button variant="outline" onClick={() => salvar("rascunho")}>Salvar rascunho</Button>
+          <Button onClick={() => salvar("publicada")}>Salvar e publicar</Button>
         </div>
       </div>
     </Modal>
@@ -337,43 +351,43 @@ function EditorBanner({ base, d, set, setErro }: { base: BaseDados; d: DadosSeca
   const b = d.banner ?? { textoAlt: "" };
   const up = (p: Partial<typeof b>) => set({ banner: { ...b, ...p } });
   const imagem = (campo: "imagemDesktop" | "imagemCelular", rotulo: string) => (
-    <label className="block cursor-pointer rounded-md border border-dashed border-border p-2 text-center text-xs">
+    <Label className="block cursor-pointer rounded-md border border-dashed border-border p-2 text-center text-xs font-normal text-inherit">
       {b[campo] ? <img src={b[campo]} alt="" className="mx-auto h-16 object-contain" /> : rotulo}
       <input type="file" accept="image/*" className="sr-only" onChange={async (e) => {
         const f = e.target.files?.[0]; if (!f) return;
         try { up({ [campo]: await arquivoParaDataUrl(f, 1600) }); } catch (er) { setErro((er as Error).message); }
       }} />
-    </label>
+    </Label>
   );
   return (
     <div className="space-y-3 rounded-lg border border-border p-3">
       <div className="grid gap-3 sm:grid-cols-2">{imagem("imagemDesktop", "Imagem para desktop")}{imagem("imagemCelular", "Imagem para celular (opcional)")}</div>
-      <Campo htmlFor="bn-alt" rotulo="Texto alternativo"><Entrada id="bn-alt" value={b.textoAlt} onChange={(e) => up({ textoAlt: e.target.value })} /></Campo>
+      <Campo htmlFor="bn-alt" rotulo="Texto alternativo"><Input id="bn-alt" value={b.textoAlt} onChange={(e) => up({ textoAlt: e.target.value })} /></Campo>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Campo htmlFor="bn-cha" rotulo="Chamada (opcional)"><Entrada id="bn-cha" value={b.chamada ?? ""} onChange={(e) => up({ chamada: e.target.value || undefined })} /></Campo>
-        <Campo htmlFor="bn-bot" rotulo="Texto do botão"><Entrada id="bn-bot" value={b.textoBotao ?? ""} onChange={(e) => up({ textoBotao: e.target.value || undefined })} /></Campo>
+        <Campo htmlFor="bn-cha" rotulo="Chamada (opcional)"><Input id="bn-cha" value={b.chamada ?? ""} onChange={(e) => up({ chamada: e.target.value || undefined })} /></Campo>
+        <Campo htmlFor="bn-bot" rotulo="Texto do botão"><Input id="bn-bot" value={b.textoBotao ?? ""} onChange={(e) => up({ textoBotao: e.target.value || undefined })} /></Campo>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <Campo htmlFor="bn-dt" rotulo="Destino (opcional)">
-          <Selecao id="bn-dt" value={b.destino?.tipo ?? ""} onChange={(e) => {
+          <NativeSelect id="bn-dt" value={b.destino?.tipo ?? ""} onChange={(e) => {
             const t = e.target.value;
             up({ destino: t ? ({ tipo: t, valor: "" } as NonNullable<typeof b.destino>) : undefined });
           }}>
             <option value="">Sem destino (não clicável)</option><option value="evento">Evento interno</option>
             <option value="secao">Seção interna</option><option value="parceiro">Parceiro cadastrado</option><option value="externo">Link externo</option>
-          </Selecao>
+          </NativeSelect>
         </Campo>
         {b.destino && (
           <Campo htmlFor="bn-dv" rotulo="Alvo">
             {b.destino.tipo === "externo" ? (
-              <Entrada id="bn-dv" placeholder="https://..." value={b.destino.valor} onChange={(e) => up({ destino: { tipo: "externo", valor: e.target.value } })} />
+              <Input id="bn-dv" placeholder="https://..." value={b.destino.valor} onChange={(e) => up({ destino: { tipo: "externo", valor: e.target.value } })} />
             ) : (
-              <Selecao id="bn-dv" value={b.destino.valor} onChange={(e) => up({ destino: { ...b.destino!, valor: e.target.value } as NonNullable<typeof b.destino> })}>
+              <NativeSelect id="bn-dv" value={b.destino.valor} onChange={(e) => up({ destino: { ...b.destino!, valor: e.target.value } as NonNullable<typeof b.destino> })}>
                 <option value="">Selecione</option>
                 {(b.destino.tipo === "evento" ? base.eventos.filter((e) => eventoElegivel(e, new Date())).map((e) => [e.id, e.nome])
                   : b.destino.tipo === "secao" ? base.secoesInicio.filter((s) => s.id !== d.id).map((s) => [s.id, s.titulo])
                   : base.parceiros.map((p) => [p.id, p.nome])).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
-              </Selecao>
+              </NativeSelect>
             )}
           </Campo>
         )}
@@ -395,16 +409,16 @@ function Previa({ base, aberto, onFechar }: { base: BaseDados; aberto: boolean; 
     <Modal aberto={aberto} titulo="Prévia da página inicial" onFechar={onFechar} largo>
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex gap-1">
-          <Botao variante={!celular ? "primario" : "contorno"} onClick={() => setCelular(false)}>Desktop</Botao>
-          <Botao variante={celular ? "primario" : "contorno"} onClick={() => setCelular(true)}>Celular</Botao>
+          <Button variant={!celular ? "default" : "outline"} onClick={() => setCelular(false)}>Desktop</Button>
+          <Button variant={celular ? "default" : "outline"} onClick={() => setCelular(true)}>Celular</Button>
         </div>
         <div className="flex gap-1">
-          <Botao variante={tema === "escuro" ? "primario" : "contorno"} onClick={() => setTema("escuro")}>Tema escuro</Botao>
-          <Botao variante={tema === "claro" ? "primario" : "contorno"} onClick={() => setTema("claro")}>Tema claro</Botao>
+          <Button variant={tema === "escuro" ? "default" : "outline"} onClick={() => setTema("escuro")}>Tema escuro</Button>
+          <Button variant={tema === "claro" ? "default" : "outline"} onClick={() => setTema("claro")}>Tema claro</Button>
         </div>
-        <label className="text-sm"><span className="mb-1 block text-xs text-muted-foreground">Data e horário simulados</span>
-          <Entrada type="datetime-local" value={data} onChange={(e) => setData(e.target.value)} /></label>
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={rascunhos} onChange={(e) => setRascunhos(e.target.checked)} /> Incluir rascunhos</label>
+        <Label className="text-sm font-normal text-inherit"><span className="mb-1 block text-xs text-muted-foreground">Data e horário simulados</span>
+          <Input type="datetime-local" value={data} onChange={(e) => setData(e.target.value)} /></Label>
+        <Label className="flex items-center gap-2 text-sm font-normal text-inherit"><Checkbox checked={rascunhos} onCheckedChange={(marcado) => setRascunhos(marcado === true)} /> Incluir rascunhos</Label>
       </div>
       <div className="mt-3"><SeletorLocalizacao base={base} valor={local} onMudar={setLocal} /></div>
       <div className={`mx-auto mt-4 rounded-lg border border-border bg-background p-4 text-foreground ${tema === "claro" ? "tema-claro" : "tema-escuro"} ${celular ? "max-w-[390px]" : ""}`}>
@@ -425,17 +439,17 @@ function GestaoParceiros({ base }: { base: BaseDados }) {
   const [editando, setEditando] = useState<DadosParceiro | null>(null);
   return (
     <div>
-      <Botao onClick={() => setEditando(parceiroVazio())}>Novo parceiro</Botao>
+      <Button onClick={() => setEditando(parceiroVazio())}>Novo parceiro</Button>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {base.parceiros.map((p) => (
-          <Cartao key={p.id}>
+          <Card key={p.id}>
             <div className="flex items-center gap-3">
               {p.logoUrl ? <img src={p.logoUrl} alt={p.textoAlt} className="h-12 w-20 rounded bg-secondary object-contain" /> : <div className="h-12 w-20 rounded bg-secondary" />}
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{p.nome}</p>
                 <p className="text-xs text-muted-foreground">{p.tipo} · {p.links.length ? `${p.links.length} link(s)` : "sem link"}</p>
               </div>
-              <Badge tom={p.ativo ? "sucesso" : "padrao"}>{p.ativo ? "ativo" : "inativo"}</Badge>
+              <Badge variant={p.ativo ? "success" : "secondary"}>{p.ativo ? "ativo" : "inativo"}</Badge>
             </div>
             {/* Pendências: links antigos que não puderam ser normalizados com segurança */}
             {linksPendentes(p).map(({ link, erro }) => (
@@ -444,10 +458,10 @@ function GestaoParceiros({ base }: { base: BaseDados }) {
               </p>
             ))}
             <div className="mt-3 flex gap-2">
-              <Botao variante="contorno" onClick={() => setEditando(structuredClone(p))}>Editar</Botao>
-              <Botao variante="fantasma" onClick={() => excluirParceiro(p.id)}>Excluir</Botao>
+              <Button variant="outline" onClick={() => setEditando(structuredClone(p))}>Editar</Button>
+              <Button variant="ghost" onClick={() => excluirParceiro(p.id)}>Excluir</Button>
             </div>
-          </Cartao>
+          </Card>
         ))}
       </div>
       {editando && <EditorParceiro inicial={editando} onFechar={() => setEditando(null)} />}
@@ -465,27 +479,27 @@ function EditorParceiro({ inicial, onFechar }: { inicial: DadosParceiro; onFecha
     <Modal aberto titulo={d.id ? "Editar parceiro" : "Novo parceiro"} onFechar={onFechar}>
       <div className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Campo htmlFor="pa-nome" rotulo="Nome"><Entrada id="pa-nome" value={d.nome} onChange={(e) => set({ nome: e.target.value })} /></Campo>
+          <Campo htmlFor="pa-nome" rotulo="Nome"><Input id="pa-nome" value={d.nome} onChange={(e) => set({ nome: e.target.value })} /></Campo>
           <Campo htmlFor="pa-tipo" rotulo="Tipo">
-            <Selecao id="pa-tipo" value={d.tipo} onChange={(e) => set({ tipo: e.target.value as Parceiro["tipo"] })}>
+            <NativeSelect id="pa-tipo" value={d.tipo} onChange={(e) => set({ tipo: e.target.value as Parceiro["tipo"] })}>
               <option value="patrocinador">Patrocinador</option><option value="apoiador">Apoiador</option><option value="ambos">Ambos</option>
-            </Selecao>
+            </NativeSelect>
           </Campo>
         </div>
-        <Campo htmlFor="pa-desc" rotulo="Descrição curta (opcional)"><AreaTexto id="pa-desc" maxLength={160} value={d.descricao ?? ""} onChange={(e) => set({ descricao: e.target.value || undefined })} /></Campo>
+        <Campo htmlFor="pa-desc" rotulo="Descrição curta (opcional)"><Textarea id="pa-desc" maxLength={160} value={d.descricao ?? ""} onChange={(e) => set({ descricao: e.target.value || undefined })} /></Campo>
         <div className="flex flex-wrap items-center gap-3">
           {d.logoUrl && <img src={d.logoUrl} alt="" className="h-14 w-24 rounded bg-secondary object-contain" />}
-          <label className="cursor-pointer rounded-md border border-border px-3 py-2 text-sm">
+          <Label className="cursor-pointer rounded-md border border-border px-3 py-2 text-sm font-normal text-inherit">
             {d.logoUrl ? "Trocar logo" : "Enviar logo"}
             <input type="file" accept="image/*" className="sr-only" onChange={async (e) => {
               const f = e.target.files?.[0]; if (!f) return;
               try { set({ logoUrl: await arquivoParaDataUrl(f, 480, "image/png") }); } catch (er) { setErro((er as Error).message); }
             }} />
-          </label>
-          {d.logoUrl && <Botao variante="fantasma" onClick={() => set({ logoUrl: undefined })}>Remover logo</Botao>}
+          </Label>
+          {d.logoUrl && <Button variant="ghost" onClick={() => set({ logoUrl: undefined })}>Remover logo</Button>}
         </div>
-        <Campo htmlFor="pa-alt" rotulo="Texto alternativo do logo"><Entrada id="pa-alt" value={d.textoAlt} onChange={(e) => set({ textoAlt: e.target.value })} /></Campo>
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={d.ativo} onChange={(e) => set({ ativo: e.target.checked })} /> Ativo</label>
+        <Campo htmlFor="pa-alt" rotulo="Texto alternativo do logo"><Input id="pa-alt" value={d.textoAlt} onChange={(e) => set({ textoAlt: e.target.value })} /></Campo>
+        <Label className="flex items-center gap-2 text-sm font-normal text-inherit"><Checkbox checked={d.ativo} onCheckedChange={(marcado) => set({ ativo: marcado === true })} /> Ativo</Label>
 
         <fieldset className="space-y-2 rounded-lg border border-border p-3">
           <legend className="text-sm font-medium">Links (nenhum é obrigatório)</legend>
@@ -495,29 +509,31 @@ function EditorParceiro({ inicial, onFechar }: { inicial: DadosParceiro; onFecha
             const vazio = l.tipo === "whatsapp" ? !l.telefone?.trim() : !l.url?.trim();
             return (
               <div key={l.id} className="grid gap-2 rounded-md border border-border p-2 sm:grid-cols-2">
-                <Selecao aria-label="Tipo de link" value={l.tipo} onChange={(e) => setLink(i, { tipo: e.target.value as LinkParceiro["tipo"] })}>
+                <NativeSelect aria-label="Tipo de link" value={l.tipo} onChange={(e) => setLink(i, { tipo: e.target.value as LinkParceiro["tipo"] })}>
                   <option value="site">Site</option><option value="instagram">Instagram</option><option value="whatsapp">WhatsApp</option>
                   <option value="externo">Página externa</option><option value="outro">Outro</option>
-                </Selecao>
+                </NativeSelect>
                 {l.tipo === "whatsapp" ? (
                   <>
-                    <Entrada aria-label="Telefone com código do país" placeholder="+55 11 99999-0000" value={l.telefone ?? ""} onChange={(e) => setLink(i, { telefone: e.target.value })} />
-                    <Entrada aria-label="Mensagem inicial (opcional)" placeholder="Mensagem inicial (opcional)" className="sm:col-span-2" value={l.mensagem ?? ""} onChange={(e) => setLink(i, { mensagem: e.target.value || undefined })} />
+                    <Input aria-label="Telefone com código do país" placeholder="+55 11 99999-0000" value={l.telefone ?? ""} onChange={(e) => setLink(i, { telefone: e.target.value })} />
+                    <Input aria-label="Mensagem inicial (opcional)" placeholder="Mensagem inicial (opcional)" className="sm:col-span-2" value={l.mensagem ?? ""} onChange={(e) => setLink(i, { mensagem: e.target.value || undefined })} />
                   </>
                 ) : l.tipo === "instagram" ? (
                   <div className="space-y-1">
-                    <label htmlFor={`pa-ig-${l.id}`} className="block text-xs font-medium">Instagram do parceiro</label>
-                    <Entrada id={`pa-ig-${l.id}`} placeholder="@nomedoperfil" value={l.url ?? ""}
+                    <Label htmlFor={`pa-ig-${l.id}`} className="block text-xs font-medium text-inherit">Instagram do parceiro</Label>
+                    <Input id={`pa-ig-${l.id}`} placeholder="@nomedoperfil" value={l.url ?? ""}
                       aria-describedby={`pa-ig-${l.id}-ajuda`} aria-invalid={!vazio && !!erroLink}
                       onChange={(e) => setLink(i, { url: e.target.value })} />
                     <p id={`pa-ig-${l.id}-ajuda`} className="text-xs text-muted-foreground">Informe o @ do perfil ou cole o link completo do Instagram.</p>
                   </div>
                 ) : (
-                  <Entrada aria-label="Endereço" placeholder="https://..." value={l.url ?? ""} onChange={(e) => setLink(i, { url: e.target.value })} />
+                  <Input aria-label="Endereço" placeholder="https://..." value={l.url ?? ""} onChange={(e) => setLink(i, { url: e.target.value })} />
                 )}
-                {l.tipo === "outro" && <Entrada aria-label="Rótulo" placeholder="Rótulo do botão" value={l.rotulo ?? ""} onChange={(e) => setLink(i, { rotulo: e.target.value })} />}
+                {l.tipo === "outro" && <Input aria-label="Rótulo" placeholder="Rótulo do botão" value={l.rotulo ?? ""} onChange={(e) => setLink(i, { rotulo: e.target.value })} />}
                 <div className="flex flex-wrap items-center gap-2 text-xs sm:col-span-2">
-                  <label className="flex items-center gap-1"><input type="radio" name="principal" checked={!!l.principal} onChange={() => set({ links: d.links.map((x, j) => ({ ...x, principal: j === i })) })} /> Link principal</label>
+                  <RadioGroup className="contents" value={l.principal ? "principal" : ""} onValueChange={() => set({ links: d.links.map((x, j) => ({ ...x, principal: j === i })) })}>
+                    <Label className="flex items-center gap-1 text-[length:inherit] font-normal text-inherit"><RadioGroupItem value="principal" /> Link principal</Label>
+                  </RadioGroup>
                   {href && !erroLink ? (
                     <span className="break-all text-muted-foreground">Destino: {href}</span>
                   ) : (
@@ -525,20 +541,20 @@ function EditorParceiro({ inicial, onFechar }: { inicial: DadosParceiro; onFecha
                       {vazio ? "Preencha para validar o link." : erroLink}
                     </span>
                   )}
-                  <Botao variante="contorno" className="!py-1" disabled={!href || !!erroLink} aria-label={`Testar ${rotuloDoLink(l)}`}
-                    onClick={() => href && window.open(href, "_blank", "noopener,noreferrer")}>Testar link</Botao>
-                  <Botao variante="fantasma" className="ml-auto !py-1" onClick={() => set({ links: d.links.filter((_, j) => j !== i) })}>Remover</Botao>
+                  <Button variant="outline" className="!py-1" disabled={!href || !!erroLink} aria-label={`Testar ${rotuloDoLink(l)}`}
+                    onClick={() => href && window.open(href, "_blank", "noopener,noreferrer")}>Testar link</Button>
+                  <Button variant="ghost" className="ml-auto !py-1" onClick={() => set({ links: d.links.filter((_, j) => j !== i) })}>Remover</Button>
                 </div>
               </div>
             );
           })}
-          <Botao variante="contorno" onClick={() => set({ links: [...d.links, { id: gerarId("lk"), tipo: "site", url: "", principal: d.links.length === 0 }] })}>Adicionar link</Botao>
+          <Button variant="outline" onClick={() => set({ links: [...d.links, { id: gerarId("lk"), tipo: "site", url: "", principal: d.links.length === 0 }] })}>Adicionar link</Button>
           <p className="text-xs text-muted-foreground">A validação confere apenas o formato; não garante que o destino esteja disponível.</p>
         </fieldset>
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex justify-end gap-2">
-          <Botao variante="fantasma" onClick={onFechar}>Cancelar</Botao>
-          <Botao onClick={async () => { setErro(""); try { await salvarParceiro(d); onFechar(); } catch (e) { setErro((e as Error).message); } }}>Salvar parceiro</Botao>
+          <Button variant="ghost" onClick={onFechar}>Cancelar</Button>
+          <Button onClick={async () => { setErro(""); try { await salvarParceiro(d); onFechar(); } catch (e) { setErro((e as Error).message); } }}>Salvar parceiro</Button>
         </div>
       </div>
     </Modal>

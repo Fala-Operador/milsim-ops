@@ -7,7 +7,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { erroTaxa, ROTULO_RECEBIMENTO, taxaDaPlataforma, taxaPlataforma } from "@/lib/repasses";
 import { formatarBRL } from "@/lib/domain/money";
-import { Badge, Botao, Campo, Cartao, Entrada } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Campo } from "@/components/ui";
 import type { StatusRecebimento } from "@/lib/domain/types";
 
 export const Route = createFileRoute("/admin/pagamentos")({
@@ -20,7 +24,7 @@ export const Route = createFileRoute("/admin/pagamentos")({
   component: Pagamentos,
 });
 
-const TOM: Record<StatusRecebimento, "sucesso" | "aviso" | "perigo"> = { ativa: "sucesso", em_analise: "aviso", pendente: "aviso", restrita: "perigo" };
+const TOM: Record<StatusRecebimento, "success" | "warning" | "destructive"> = { ativa: "success", em_analise: "warning", pendente: "warning", restrita: "destructive" };
 const ICONE: Record<StatusRecebimento, typeof Check> = { ativa: Check, em_analise: Clock, pendente: Clock, restrita: TriangleAlert };
 
 function Pagamentos() {
@@ -70,7 +74,7 @@ function Pagamentos() {
         </p>
       )}
 
-      <Cartao>
+      <Card>
         <h3 className="font-medium">Taxa da plataforma</h3>
         <p className="mt-1 text-sm text-muted-foreground">
           Percentual retido em cada ingresso vendido online e repassado à organização pelo Stripe Connect. Vendas de organizações
@@ -78,11 +82,11 @@ function Pagamentos() {
         </p>
         <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
           <Campo rotulo="Taxa (%)" htmlFor="taxa">
-            <Entrada id="taxa" inputMode="decimal" value={valor} onChange={(e) => { setValor(e.target.value); setErro(""); setAviso(""); }} className="sm:max-w-40" aria-describedby="taxa-ajuda" />
+            <Input id="taxa" inputMode="decimal" value={valor} onChange={(e) => { setValor(e.target.value); setErro(""); setAviso(""); }} className="sm:max-w-40" aria-describedby="taxa-ajuda" />
           </Campo>
-          <Botao type="button" onClick={salvar} disabled={salvando || percentual === atual} className="w-full sm:w-auto">
+          <Button type="button" onClick={salvar} disabled={salvando || percentual === atual} className="w-full sm:w-auto">
             {salvando ? "Salvando..." : "Salvar taxa"}
-          </Botao>
+          </Button>
         </div>
         <p id="taxa-ajuda" className="mt-2 text-xs text-muted-foreground">
           {erroCampo
@@ -92,9 +96,9 @@ function Pagamentos() {
         {config && <p className="mt-1 text-xs text-muted-foreground">Última alteração: {new Date(config.atualizadoEm).toLocaleString("pt-BR")}.</p>}
         {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
         {aviso && <p role="status" className="mt-2 text-sm text-success">{aviso}</p>}
-      </Cartao>
+      </Card>
 
-      <Cartao>
+      <Card>
         <h3 className="font-medium">Contas de recebimento das organizações</h3>
         <ul className="mt-3 space-y-2">
           {organizacoes.map((o) => {
@@ -104,7 +108,7 @@ function Pagamentos() {
               <li key={o.id} className="flex flex-col gap-1 rounded-md border border-border px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                 <span className="min-w-0 break-words text-sm font-medium">{o.nome}</span>
                 {r ? (
-                  <Badge tom={TOM[r.status]} aria-label={`Recebimentos: ${ROTULO_RECEBIMENTO[r.status]}`}><Icone aria-hidden="true" />{ROTULO_RECEBIMENTO[r.status]}</Badge>
+                  <Badge variant={TOM[r.status]} aria-label={`Recebimentos: ${ROTULO_RECEBIMENTO[r.status]}`}><Icone aria-hidden="true" />{ROTULO_RECEBIMENTO[r.status]}</Badge>
                 ) : (
                   <Badge aria-label="Recebimentos: não configurado"><Icone aria-hidden="true" />Não configurado</Badge>
                 )}
@@ -113,7 +117,7 @@ function Pagamentos() {
           })}
           {organizacoes.length === 0 && <li className="text-sm text-muted-foreground">Nenhuma organização cadastrada.</li>}
         </ul>
-      </Cartao>
+      </Card>
     </section>
   );
 }

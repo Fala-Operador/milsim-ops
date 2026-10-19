@@ -1,9 +1,18 @@
+import { ChevronRight } from "lucide-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
-import { Badge, Botao, Cartao, Selecao, Skeleton } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { analisar, resumoAtual } from "@/services/insights";
 import { faltaDados, ROTULO_PERIODO, sugestoesDisponiveis, type PeriodoAnalise, type ResultadoAnalise } from "@/lib/insights";
+import { Textarea } from "@/components/ui/textarea";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/admin/insights")({
   head: () => ({
@@ -61,7 +70,7 @@ function Central() {
       <header>
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="font-display text-2xl font-semibold uppercase tracking-wide">Central de análise</h2>
-          <Badge tom="destaque">Lovable AI</Badge>
+          <Badge variant="accent">Lovable AI</Badge>
         </div>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
           Explore o desempenho das operações e identifique oportunidades com base nos dados disponíveis.
@@ -83,21 +92,21 @@ function Central() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-6">
-          <Cartao>
+          <Card>
             <h3 className="font-display text-lg font-semibold uppercase">O que você quer analisar?</h3>
             <div className="mt-4 grid gap-4 sm:grid-cols-[200px]">
-              <label className="space-y-1.5 text-sm font-medium">
+              <Label className="space-y-1.5 text-sm font-medium text-inherit">
                 <span>Período</span>
-                <Selecao value={periodo} onChange={(e) => setPeriodo(e.target.value as PeriodoAnalise)}>
+                <NativeSelect value={periodo} onChange={(e) => setPeriodo(e.target.value as PeriodoAnalise)}>
                   {Object.entries(ROTULO_PERIODO).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </Selecao>
-              </label>
+                </NativeSelect>
+              </Label>
             </div>
             <div className="mt-4">
-              <label htmlFor="pergunta" className="flex items-baseline gap-2 text-sm font-medium">
+              <Label htmlFor="pergunta" className="flex items-baseline gap-2 text-sm font-medium text-inherit">
                 Sua pergunta <span className="text-xs font-normal text-muted-foreground">Opcional</span>
-              </label>
-              <textarea
+              </Label>
+              <Textarea rows={2}
                 id="pergunta"
                 ref={campo}
                 value={pergunta}
@@ -105,7 +114,7 @@ function Central() {
                 onChange={(e) => setPergunta(e.target.value)}
                 aria-describedby="pergunta-ajuda"
                 placeholder="Ex.: Quais eventos estão com baixa ocupação e merecem mais divulgação?"
-                className="mt-1.5 block min-h-[120px] w-full resize-y rounded-md border border-input bg-background px-4 py-3 text-base leading-relaxed text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="mt-1.5 block min-h-[120px] w-full resize-y rounded-md border border-input bg-background px-4 py-3 text-base leading-relaxed text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:text-base"
               />
               <p id="pergunta-ajuda" className="mt-1.5 text-xs text-muted-foreground">
                 Deixe em branco para gerar um panorama geral. Não inclua dados pessoais.
@@ -116,53 +125,53 @@ function Central() {
                 <p className="text-xs font-medium uppercase text-muted-foreground">Sugestões</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {sugestoes.map((s) => (
-                    <button
+                    <Button variant="plain" size="none"
                       key={s.id}
                       type="button"
                       onClick={() => { setPergunta(s.texto); campo.current?.focus(); }}
                       className="rounded-full border border-border px-3 py-1.5 text-left text-sm hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       {s.texto}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
             )}
             <div className="mt-5 flex flex-wrap items-center gap-2">
-              <Botao onClick={enviar} disabled={carregando || !!falta} aria-busy={carregando}>
+              <Button onClick={enviar} disabled={carregando || !!falta} aria-busy={carregando}>
                 {carregando ? "Analisando dados…" : "Gerar análise"}
-              </Botao>
-              <Botao variante="contorno" onClick={() => setPainel(true)}>Ver dados da análise</Botao>
+              </Button>
+              <Button variant="outline" onClick={() => setPainel(true)}>Ver dados da análise</Button>
             </div>
-          </Cartao>
+          </Card>
 
           <div aria-live="polite" className="space-y-4">
             {falta && (
-              <Cartao><p className="font-medium">Dados insuficientes</p><p className="mt-1 text-sm text-muted-foreground">{falta}</p></Cartao>
+              <Card><p className="font-medium">Dados insuficientes</p><p className="mt-1 text-sm text-muted-foreground">{falta}</p></Card>
             )}
             {erro && !carregando && (
               <div role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
                 <p>{erro}</p>
-                <Botao variante="contorno" className="mt-3" onClick={enviar}>Tentar novamente</Botao>
+                <Button variant="outline" className="mt-3" onClick={enviar}>Tentar novamente</Button>
               </div>
             )}
             {carregando && (
-              <Cartao>
+              <Card>
                 <p className="sr-only" role="status">Analisando dados…</p>
                 <div className="space-y-2"><Skeleton className="h-5 w-40" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" /><Skeleton className="h-4 w-2/3" /></div>
-              </Cartao>
+              </Card>
             )}
             {!gerado && !carregando && !erro && !falta && (
-              <Cartao className="border-dashed text-sm text-muted-foreground">
+              <Card className="border-dashed text-sm text-muted-foreground">
                 Escolha o período, escreva uma pergunta ou use uma sugestão e clique em “Gerar análise”. O resultado aparece aqui, separado em panorama, pontos de atenção, oportunidades e próximas ações.
-              </Cartao>
+              </Card>
             )}
             {gerado && !carregando && <Resultado g={gerado} desatualizado={!!desatualizado} />}
           </div>
         </div>
 
         <aside className="space-y-4">
-          <Cartao>
+          <Card>
             <h3 className="font-display text-base font-semibold uppercase">Base da análise</h3>
             <ul className="mt-3 space-y-2 text-sm">
               <li><span className="text-muted-foreground">Escopo:</span> todas as organizações · {ROTULO_PERIODO[periodo]}</li>
@@ -173,39 +182,35 @@ function Central() {
             <p className="mt-3 text-xs text-muted-foreground">
               Limitações: dados de demonstração; sem visitas por evento nem distância; receitas não são enviadas.
             </p>
-            <Botao variante="contorno" className="mt-4 w-full" onClick={() => setPainel(true)}>Ver dados da análise</Botao>
-          </Cartao>
-          <Cartao className="text-xs text-muted-foreground">
+            <Button variant="outline" className="mt-4 w-full" onClick={() => setPainel(true)}>Ver dados da análise</Button>
+          </Card>
+          <Card className="text-xs text-muted-foreground">
             Ao gerar, o resumo agregado (sem nomes, e-mails ou CPF) é enviado ao Lovable AI e não é armazenado.
-          </Cartao>
+          </Card>
         </aside>
       </div>
 
-      {painel && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={() => setPainel(false)} onKeyDown={(e) => e.key === "Escape" && setPainel(false)}>
-          <div
-            role="dialog" aria-modal="true" aria-label="Dados da análise"
-            className="h-full w-full max-w-md overflow-y-auto border-l border-border bg-popover p-6 text-popover-foreground"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <Sheet open={painel} onOpenChange={setPainel}>
+        <SheetContent side="right" showCloseButton={false} className="block w-full overflow-y-auto sm:max-w-md">
             <div className="flex items-center justify-between">
-              <h3 className="font-display text-lg font-semibold uppercase">Dados da análise</h3>
-              <Botao variante="fantasma" autoFocus aria-label="Fechar" onClick={() => setPainel(false)}>✕</Botao>
+              <SheetTitle className="uppercase">Dados da análise</SheetTitle>
+              <SheetClose asChild><Button variant="ghost" aria-label="Fechar">✕</Button></SheetClose>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">Destino ao gerar: Lovable AI. Somente estes campos agregados são enviados.</p>
+            <SheetDescription className="mt-2">Destino ao gerar: Lovable AI. Somente estes campos agregados são enviados.</SheetDescription>
             <h4 className="mt-4 text-sm font-semibold">Inscrições por modalidade</h4>
             <ul className="mt-1 text-sm">{Object.entries(resumo.inscricoesPorModalidade).map(([k, v]) => <li key={k}>{k}: {v}</li>)}</ul>
             <h4 className="mt-4 text-sm font-semibold">Inscrições por estado</h4>
             <ul className="mt-1 text-sm">{Object.entries(resumo.inscricoesPorUf).map(([k, v]) => <li key={k}>{k}: {v}</li>)}</ul>
             <h4 className="mt-4 text-sm font-semibold">Eventos</h4>
             <ul className="mt-1 space-y-1 text-sm">{resumo.eventos.map((e) => <li key={e.nome + e.data}>{e.nome} — {e.cidade} · {e.modalidade} · ocupação {e.ocupacaoPct}%</li>)}</ul>
-            <details className="mt-4 text-xs">
-              <summary className="cursor-pointer py-1 font-medium">Detalhes técnicos (JSON)</summary>
-              <pre className="mt-2 whitespace-pre-wrap break-words rounded bg-muted p-2">{JSON.stringify(resumo, null, 2)}</pre>
-            </details>
-          </div>
-        </div>
-      )}
+            <Collapsible className="mt-4 text-xs">
+              <CollapsibleTrigger className="group inline-flex cursor-pointer items-center gap-1 py-1 font-medium"><ChevronRight aria-hidden="true" className="h-3 w-3 transition-transform group-data-[state=open]:rotate-90" />Detalhes técnicos (JSON)</CollapsibleTrigger>
+              <CollapsibleContent>
+                <pre className="mt-2 whitespace-pre-wrap break-words rounded bg-muted p-2">{JSON.stringify(resumo, null, 2)}</pre>
+              </CollapsibleContent>
+            </Collapsible>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
@@ -222,7 +227,7 @@ function Resultado({ g, desatualizado }: { g: Gerado; desatualizado: boolean }) 
         </p>
       )}
       {g.resultado.secoes.map((s) => (
-        <Cartao key={s.titulo} className={s.titulo === "Pontos de atenção" ? "border-l-4 border-l-warning" : ""}>
+        <Card key={s.titulo} className={s.titulo === "Pontos de atenção" ? "border-l-4 border-l-warning" : ""}>
           <h3 className="font-display text-base font-semibold uppercase">{s.titulo}</h3>
           {s.texto.map((t, i) => <p key={i} className="mt-2 text-sm leading-relaxed">{t}</p>)}
           {s.achados.length > 0 && (
@@ -237,7 +242,7 @@ function Resultado({ g, desatualizado }: { g: Gerado; desatualizado: boolean }) 
             </ul>
           )}
           {LINKS[s.titulo] && <Link to={LINKS[s.titulo]!.to} className="mt-3 inline-block text-sm font-medium text-primary underline-offset-2 hover:underline">{LINKS[s.titulo]!.rotulo} →</Link>}
-        </Cartao>
+        </Card>
       ))}
     </div>
   );

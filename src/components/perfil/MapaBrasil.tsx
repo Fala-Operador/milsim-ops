@@ -6,7 +6,8 @@ import { NOMES_UF } from "@/lib/participacao";
 import { nomeModalidade } from "@/lib/modalidades";
 import { formatarDataBR } from "@/lib/domain/money";
 import type { OperacaoDTO } from "@/lib/perfilSocial";
-import { Botao, EstadoVazio } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { EstadoVazio } from "@/components/ui";
 import { BadgeParticipacao } from "./abas";
 
 type Situacao = "participou" | "participando" | "ambos";
@@ -87,7 +88,7 @@ export function MapaBrasil({ operacoes }: { operacoes: OperacaoDTO[] }) {
           <section aria-label={`Operações em ${NOMES_UF[aberto]}`} className="rounded-lg border border-border bg-card p-4">
             <div className="flex items-center justify-between gap-2">
               <h3 className="font-display text-lg font-semibold uppercase">{NOMES_UF[aberto]}</h3>
-              <Botao variante="fantasma" onClick={() => setAberto(null)} aria-label="Fechar detalhes do estado">✕</Botao>
+              <Button variant="ghost" onClick={() => setAberto(null)} aria-label="Fechar detalhes do estado">✕</Button>
             </div>
             {(porUf.get(aberto) ?? []).length === 0 ? (
               <p className="mt-2 text-sm text-muted-foreground">Nenhuma operação neste estado.</p>
@@ -113,10 +114,10 @@ export function MapaBrasil({ operacoes }: { operacoes: OperacaoDTO[] }) {
           <ul className="mt-2 grid gap-1 sm:grid-cols-2">
             {[...porUf.entries()].sort((a, b) => b[1].length - a[1].length).map(([uf, ops]) => (
               <li key={uf}>
-                <button type="button" onClick={() => setAberto(uf)} className="flex w-full items-center justify-between rounded-md border border-border px-3 py-2 text-left text-sm hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring">
+                <Button variant="plain" size="none" type="button" onClick={() => setAberto(uf)} className="flex w-full items-center justify-between rounded-md border border-border px-3 py-2 text-left text-sm hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring">
                   <span>{NOMES_UF[uf]}</span>
                   <span className="text-muted-foreground">{ops.length}</span>
-                </button>
+                </Button>
               </li>
             ))}
           </ul>

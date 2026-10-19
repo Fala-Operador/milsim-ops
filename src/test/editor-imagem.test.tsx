@@ -17,6 +17,9 @@ vi.mock("@/lib/recorteBanner", async (importOriginal) => {
 
 afterEach(cleanup);
 
+// Aumenta o zoom em um salto do teclado (PageUp = 10 passos de 0,05), como a pessoa faria.
+const aumentarZoom = (id: string) => fireEvent.keyDown(document.getElementById(id) as HTMLElement, { key: "PageUp" });
+
 describe("recortes do editor", () => {
   it("guarda o novo recorte imediatamente antes de sair da etapa, sem alterar o outro formato", async () => {
     let atual: Evento = {
@@ -30,10 +33,10 @@ describe("recortes do editor", () => {
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({} as CanvasRenderingContext2D);
     const view = render(<Editor />);
     await act(async () => {});
-    fireEvent.change(view.container.querySelector("#zoom-card") as HTMLInputElement, { target: { value: "1.8" } });
+    aumentarZoom("zoom-card");
     view.unmount();
-    expect(atual.imagemUrl).toBe("card:1.8:0:0");
-    expect(atual.imagem?.card.zoom).toBe(1.8);
+    expect(atual.imagemUrl).toBe("card:1.5:0:0");
+    expect(atual.imagem?.card.zoom).toBe(1.5);
     expect(atual.imagem?.bannerUrl).toBe("banner-salvo");
     expect(atual.imagem?.banner.zoom).toBe(1);
   });
@@ -49,7 +52,7 @@ describe("recortes do editor", () => {
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({} as CanvasRenderingContext2D);
     const view = render(<Editor />);
     await act(async () => {});
-    fireEvent.change(view.container.querySelector("#zoom-banner") as HTMLInputElement, { target: { value: "1.5" } });
+    aumentarZoom("zoom-banner");
     view.unmount();
     expect(atual.imagem?.bannerUrl).toBe("banner:1.5:0:0");
     expect(atual.imagemUrl).toBe("card-salvo");
@@ -57,7 +60,7 @@ describe("recortes do editor", () => {
     expect(atual.cep).toBe("13300-000");
     const reaberto = render(<Editor />);
     await act(async () => {});
-    expect((reaberto.container.querySelector("#zoom-banner") as HTMLInputElement).value).toBe("1.5");
-    expect((reaberto.container.querySelector("#zoom-card") as HTMLInputElement).value).toBe("1.8");
+    expect(reaberto.container.querySelector("#zoom-banner")).toHaveAttribute("aria-valuenow", "1.5");
+    expect(reaberto.container.querySelector("#zoom-card")).toHaveAttribute("aria-valuenow", "1.8");
   });
 });

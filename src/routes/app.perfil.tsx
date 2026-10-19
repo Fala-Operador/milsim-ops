@@ -5,7 +5,9 @@ import { obterPerfil } from "@/api/perfil.functions";
 import { MapaBrasil } from "@/components/perfil/MapaBrasil";
 import { AbaEquipamentos, AbaInsignias, AbaOperacoes, AbaRecompensas, Restrito } from "@/components/perfil/abas";
 import { EditarPerfil, Privacidade } from "@/components/perfil/edicao";
-import { ErroSecao, SkeletonPagina } from "@/components/ui";
+import { Card } from "@/components/ui/card";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Campo, ErroSecao, SkeletonPagina } from "@/components/ui";
 
 const ABAS = ["perfil", "equipamentos", "operacoes", "insignias", "privacidade"] as const;
 type Aba = (typeof ABAS)[number];
@@ -14,14 +16,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { formatarDataBR } from "@/lib/domain/money";
 import { mascararCpf, mascararTelefone } from "@/lib/domain/validators";
-import { Cartao, Selecao, Campo } from "@/components/ui";
 import { NomeExibicaoForm } from "@/components/NomeExibicaoForm";
 import { FotoPerfil } from "@/components/FotoPerfil";
 import { useEffect } from "react";
-import { Botao } from "@/components/ui";
+import { Button } from "@/components/ui/button";
 import { OpcoesModalidade, useSelecaoModalidades } from "@/components/PreferenciasModalidade";
 import { usePreferencias } from "@/contexts/PreferenciasContext";
 import { nomeModalidade } from "@/lib/modalidades";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/app/perfil")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -51,22 +54,24 @@ function Perfil() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-display text-2xl font-semibold uppercase">Meu perfil</h1>
-        <Link to="/operador/$usuarioId" params={{ usuarioId: usuario.id }} search={{ aba: undefined }}><Botao variante="contorno">Ver perfil público</Botao></Link>
+        <Link to="/operador/$usuarioId" params={{ usuarioId: usuario.id }} search={{ aba: undefined }}><Button variant="outline">Ver perfil público</Button></Link>
       </div>
       <div className="sm:hidden">
-        <label htmlFor="aba-meu-perfil" className="sr-only">Seção</label>
-        <select id="aba-meu-perfil" value={aba} onChange={(e) => irPara(e.target.value as Aba)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+        <Label htmlFor="aba-meu-perfil" className="sr-only text-[length:inherit] font-normal text-inherit">Seção</Label>
+        <NativeSelect id="aba-meu-perfil" value={aba} onChange={(e) => irPara(e.target.value as Aba)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
           {ABAS.map((a) => <option key={a} value={a}>{ROTULOS[a]}</option>)}
-        </select>
+        </NativeSelect>
       </div>
-      <div role="tablist" aria-label="Seções do meu perfil" className="hidden flex-wrap gap-1 border-b border-border sm:flex">
-        {ABAS.map((a) => (
-          <button key={a} role="tab" type="button" aria-selected={aba === a} onClick={() => irPara(a)}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring ${aba === a ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-            {ROTULOS[a]}
-          </button>
-        ))}
-      </div>
+      <Tabs value={aba} onValueChange={(v) => irPara(v as typeof aba)}>
+        <TabsList aria-label="Seções do meu perfil" className="hidden flex-wrap gap-1 border-b border-border sm:flex">
+          {ABAS.map((a) => (
+            <TabsTrigger key={a} value={a}
+              className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring ${aba === a ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              {ROTULOS[a]}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
       <div role="tabpanel" aria-label={ROTULOS[aba]}>
         {aba === "perfil" ? <DadosConta /> : <GestaoPerfil aba={aba} usuarioId={usuario.id} />}
       </div>
@@ -97,16 +102,16 @@ function GestaoPerfil({ aba, usuarioId }: { aba: Exclude<Aba, "perfil">; usuario
     </div>
   );
   return (
-    <Cartao>
+    <Card>
       <h2 className="font-display text-lg font-semibold uppercase">Privacidade do perfil</h2>
       <p className="mt-1 text-sm text-muted-foreground">Escolha o que outras pessoas veem: histórico, mapa, insígnias, equipamentos e fotos. Notas fiscais nunca são públicas.</p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Botao onClick={() => setPriv(true)}>Configurar privacidade</Botao>
-        <Botao variante="contorno" onClick={() => setEditar(true)}>Editar perfil social</Botao>
+        <Button onClick={() => setPriv(true)}>Configurar privacidade</Button>
+        <Button variant="outline" onClick={() => setEditar(true)}>Editar perfil social</Button>
       </div>
       {priv && <Privacidade perfil={p} aberto onFechar={() => setPriv(false)} onSalvo={recarregar} />}
       {editar && <EditarPerfil perfil={p} aberto onFechar={() => setEditar(false)} onSalvo={recarregar} />}
-    </Cartao>
+    </Card>
   );
 }
 
@@ -117,7 +122,7 @@ function DadosConta() {
   const [a, m, d] = usuario.dataNascimento.split("-");
   return (
     <div className="space-y-4">
-      <Cartao>
+      <Card>
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div><dt className="text-muted-foreground">Nome</dt><dd>{usuario.nomeCompleto}</dd></div>
           <div><dt className="text-muted-foreground">E-mail</dt><dd>{usuario.email}</dd></div>
@@ -129,23 +134,23 @@ function DadosConta() {
           {usuario.instagram && <div><dt className="text-muted-foreground">Instagram</dt><dd>{usuario.instagram}</dd></div>}
           <div><dt className="text-muted-foreground">Aceite dos termos</dt><dd>{usuario.aceiteTermosVersao} em {formatarDataBR(usuario.aceiteTermosEm)}</dd></div>
         </dl>
-      </Cartao>
-      <Cartao>
+      </Card>
+      <Card>
         <h2 className="font-display text-lg font-semibold uppercase">Foto</h2>
         <div className="mt-3"><FotoPerfil /></div>
-      </Cartao>
-      <Cartao>
+      </Card>
+      <Card>
         <h2 className="font-display text-lg font-semibold uppercase">Configurações</h2>
         <div className="mt-3"><NomeExibicaoForm /></div>
         <div className="mt-3 max-w-xs">
           <Campo rotulo="Aparência" htmlFor="tema">
-            <Selecao id="tema" value={tema} onChange={(e) => definirTema(e.target.value as "dark" | "light")}>
+            <NativeSelect id="tema" value={tema} onChange={(e) => definirTema(e.target.value as "dark" | "light")}>
               <option value="dark">Escuro — Verde-oliva</option>
               <option value="light">Claro — TAN</option>
-            </Selecao>
+            </NativeSelect>
           </Campo>
         </div>
-      </Cartao>
+      </Card>
       <PreferenciasEventos />
     </div>
   );
@@ -158,18 +163,18 @@ function PreferenciasEventos() {
   const atual = p.preferencia.estado === "selecionadas" ? p.preferencia.modalidades.map(nomeModalidade).join(", ")
     : p.preferencia.estado === "todas" ? "Explorar todas" : "Ainda não escolhidas";
   return (
-    <Cartao>
+    <Card>
       <h2 className="font-display text-lg font-semibold uppercase">Preferências de eventos</h2>
       <p className="mt-1 text-sm text-muted-foreground">Atual: {atual}. Suas favoritas aparecem primeiro em “Para você”, sem esconder as demais. Salvo nesta conta, neste navegador.</p>
       {p.montado && (
         <>
           <div className="mt-3"><OpcoesModalidade selecionadas={sel} onAlternar={alternar} nome="perfil-mod" /></div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Botao disabled={!sel.length} onClick={() => p.salvar(sel)}>Salvar preferências</Botao>
-            <Botao variante="secundario" onClick={p.explorarTodas}>Explorar todas</Botao>
+            <Button disabled={!sel.length} onClick={() => p.salvar(sel)}>Salvar preferências</Button>
+            <Button variant="secondary" onClick={p.explorarTodas}>Explorar todas</Button>
           </div>
         </>
       )}
-    </Cartao>
+    </Card>
   );
 }

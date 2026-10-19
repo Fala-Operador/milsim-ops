@@ -7,7 +7,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { formatarDataHoraBR } from "@/lib/domain/money";
-import { Botao, Cartao, EstadoVazio } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EstadoVazio } from "@/components/ui";
 import { SilencioNotificacoes } from "@/components/SilencioNotificacoes";
 
 export const Route = createFileRoute("/app/notificacoes")({
@@ -36,12 +38,12 @@ function CentralNotificacoes() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="font-display text-2xl font-semibold uppercase">Notificações</h1>
         <div className="flex flex-wrap gap-2">
-          <Botao variante="contorno" onClick={() => setSoNaoLidas((v) => !v)}>
+          <Button variant="outline" onClick={() => setSoNaoLidas((v) => !v)}>
             {soNaoLidas ? "Mostrar todas" : `Somente não lidas (${naoLidas})`}
-          </Botao>
-          <Botao variante="fantasma" onClick={marcarTodasLidas} disabled={naoLidas === 0}>
+          </Button>
+          <Button variant="ghost" onClick={marcarTodasLidas} disabled={naoLidas === 0}>
             Marcar todas como lidas
-          </Botao>
+          </Button>
         </div>
       </div>
       <SilencioNotificacoes />
@@ -54,7 +56,7 @@ function CentralNotificacoes() {
         <ul className="mt-4 space-y-2">
           {lista.map((n) => (
             <li key={n.id}>
-              <Cartao className={n.lida ? "opacity-70" : ""}>
+              <Card className={n.lida ? "opacity-70" : ""}>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                   <div className="min-w-0">
                     <p className="font-medium">
@@ -74,12 +76,12 @@ function CentralNotificacoes() {
                     )}
                   </div>
                   {!n.lida && (
-                    <Botao variante="fantasma" className="-ml-4 self-start sm:ml-0 sm:shrink-0" onClick={() => marcarLida(n.id)}>
+                    <Button variant="ghost" className="-ml-4 self-start sm:ml-0 sm:shrink-0" onClick={() => marcarLida(n.id)}>
                       Marcar como lida
-                    </Botao>
+                    </Button>
                   )}
                 </div>
-              </Cartao>
+              </Card>
             </li>
           ))}
         </ul>

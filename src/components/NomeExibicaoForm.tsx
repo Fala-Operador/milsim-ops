@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { nomeExibicao } from "@/services/comunidade";
 import { atualizarNomeExibicao } from "@/api/comunidade.functions";
-import { Botao, Campo, Entrada } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Campo } from "@/components/ui";
 
 /** Nome de exibição usado na comunidade (o nome completo segue nos contextos administrativos). */
 export function NomeExibicaoForm() {
@@ -13,10 +15,10 @@ export function NomeExibicaoForm() {
   return (
     <div className="max-w-sm space-y-2">
       <Campo rotulo="Nome de exibição na comunidade" htmlFor="nome-exib">
-        <Entrada id="nome-exib" maxLength={40} placeholder={nomeExibicao({ ...usuario, nomeExibicao: undefined })} value={nome} onChange={(e) => setNome(e.target.value)} />
+        <Input id="nome-exib" maxLength={40} placeholder={nomeExibicao({ ...usuario, nomeExibicao: undefined })} value={nome} onChange={(e) => setNome(e.target.value)} />
       </Campo>
-      <Botao
-        variante="contorno"
+      <Button
+        variant="outline"
         onClick={async () => {
           try {
             await atualizarNomeExibicao(nome);
@@ -27,7 +29,7 @@ export function NomeExibicaoForm() {
         }}
       >
         Salvar nome
-      </Botao>
+      </Button>
       {aviso && <p role="status" className="text-sm text-muted-foreground">{aviso}</p>}
     </div>
   );

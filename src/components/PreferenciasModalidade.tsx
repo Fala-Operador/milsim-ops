@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { Check } from "lucide-react";
-import { Botao } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { usePreferencias } from "@/contexts/PreferenciasContext";
 import { useLocalizacao } from "@/contexts/LocalizacaoContext";
 import { MODALIDADES, nomeModalidade, type ModalidadeId } from "@/lib/modalidades";
+import { Toggle } from "@/components/ui/toggle";
 
 /** Opções selecionáveis: estado marcado indicado por ícone + texto, não só cor. */
 export function OpcoesModalidade({ selecionadas, onAlternar, nome = "mod" }: { selecionadas: ModalidadeId[]; onAlternar: (id: ModalidadeId) => void; nome?: string }) {
@@ -13,14 +15,14 @@ export function OpcoesModalidade({ selecionadas, onAlternar, nome = "mod" }: { s
       {MODALIDADES.map((m) => {
         const ativo = selecionadas.includes(m.id);
         return (
-          <button key={m.id} type="button" id={`${nome}-${m.id}`} aria-pressed={ativo} onClick={() => onAlternar(m.id)}
-            className={`flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${ativo ? "border-primary bg-primary/15 text-foreground" : "border-border bg-background text-muted-foreground hover:border-accent hover:text-foreground"}`}>
+          <Toggle key={m.id} id={`${nome}-${m.id}`} pressed={ativo} onPressedChange={() => onAlternar(m.id)}
+            className="flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-left text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring data-[state=off]:border-border data-[state=off]:bg-background data-[state=off]:text-muted-foreground data-[state=off]:hover:border-accent data-[state=off]:hover:text-foreground data-[state=on]:border-primary data-[state=on]:bg-primary/15 data-[state=on]:text-foreground">
             <span aria-hidden className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${ativo ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
               {ativo && <Check className="h-3.5 w-3.5" />}
             </span>
             {m.nome}
             {ativo && <span className="sr-only">(selecionada)</span>}
-          </button>
+          </Toggle>
         );
       })}
     </div>
@@ -40,7 +42,6 @@ export function PreferenciasModal() {
   const caminho = useRouterState({ select: (s) => s.location.pathname });
   const [outroModal, setOutroModal] = useState(false);
   const { sel, setSel, alternar } = useSelecaoModalidades([]);
-  const caixa = useRef<HTMLDivElement>(null);
 
   // Não abre por cima de outra janela nem durante a solicitação de localização.
   useEffect(() => {
@@ -53,16 +54,9 @@ export function PreferenciasModal() {
   const aberto = p.editorAberto || convite;
 
   useEffect(() => {
-    if (aberto) { setSel(p.preferencia.modalidades); setTimeout(() => caixa.current?.querySelector("button")?.focus(), 0); }
+    if (aberto) setSel(p.preferencia.modalidades);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aberto]);
-
-  useEffect(() => {
-    if (!aberto) return;
-    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") p.agoraNao(); };
-    window.addEventListener("keydown", esc);
-    return () => window.removeEventListener("keydown", esc);
-  }, [aberto, p]);
 
   if (!p.montado) return null;
   if (p.ofertaAparelho && caminho === "/") {
@@ -73,30 +67,29 @@ export function PreferenciasModal() {
           {p.ofertaAparelho.estado === "todas" ? "Explorar todas" : p.ofertaAparelho.modalidades.map(nomeModalidade).join(", ")}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Botao onClick={p.aceitarAparelho}>Usar na conta</Botao>
-          <Botao variante="secundario" onClick={p.recusarAparelho}>Não, obrigado</Botao>
+          <Button onClick={p.aceitarAparelho}>Usar na conta</Button>
+          <Button variant="secondary" onClick={p.recusarAparelho}>Não, obrigado</Button>
         </div>
       </div>
     );
   }
-  if (!aberto) return null;
-
+  // Esc e clique fora equivalem a "Agora não"; o foco inicial vai para a primeira modalidade.
   return (
-    <div data-pref className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="pref-titulo" onClick={p.agoraNao}>
-      <div ref={caixa} onClick={(e) => e.stopPropagation()}
-        className="max-h-[85vh] w-full overflow-y-auto rounded-t-xl border border-border bg-popover p-5 text-popover-foreground shadow-xl sm:max-w-lg sm:rounded-lg">
-        <h2 id="pref-titulo" className="font-display text-xl font-semibold uppercase">Que tipo de operação você curte?</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Escolha suas modalidades favoritas para encontrar primeiro os eventos que combinam com você.</p>
+    <Dialog open={aberto} onOpenChange={(abrir) => !abrir && p.agoraNao()}>
+      <DialogContent data-pref showCloseButton={false}
+        className="bottom-0 top-auto block max-h-[85vh] w-full max-w-none translate-y-0 overflow-y-auto rounded-t-xl p-5 sm:bottom-auto sm:top-[50%] sm:w-[calc(100%-2rem)] sm:max-w-lg sm:translate-y-[-50%] sm:rounded-lg">
+        <DialogTitle className="text-xl uppercase">Que tipo de operação você curte?</DialogTitle>
+        <DialogDescription className="mt-1">Escolha suas modalidades favoritas para encontrar primeiro os eventos que combinam com você.</DialogDescription>
         <div className="mt-4"><OpcoesModalidade selecionadas={sel} onAlternar={alternar} nome="pref-modal" /></div>
         <p className="mt-3 text-xs text-muted-foreground">
           {p.daConta ? "Salvo na sua conta." : "Salvo neste aparelho — não é necessário criar conta."}
         </p>
         <div className="sticky bottom-0 mt-4 flex flex-wrap gap-2 bg-popover pt-2">
-          <Botao disabled={!sel.length} onClick={() => p.salvar(sel)}>Salvar preferências</Botao>
-          <Botao variante="secundario" onClick={p.explorarTodas}>Explorar todas</Botao>
-          <Botao variante="fantasma" onClick={p.agoraNao}>Agora não</Botao>
+          <Button disabled={!sel.length} onClick={() => p.salvar(sel)}>Salvar preferências</Button>
+          <Button variant="secondary" onClick={p.explorarTodas}>Explorar todas</Button>
+          <Button variant="ghost" onClick={p.agoraNao}>Agora não</Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

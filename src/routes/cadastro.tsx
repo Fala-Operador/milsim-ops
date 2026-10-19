@@ -8,9 +8,15 @@ import {
   mascaraCpf,
   mascaraTelefone,
 } from "@/lib/domain/validators";
-import { Botao, Campo, Cartao, Entrada, Selecao } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Campo } from "@/components/ui";
 import { EditorFoto } from "@/components/EditorFoto";
 import { TIPOS_FOTO, erroArquivoFoto } from "@/lib/recorteFoto";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/cadastro")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -114,7 +120,7 @@ function PaginaCadastro() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <Cartao>
+      <Card>
         <h1 className="font-display text-2xl font-semibold uppercase tracking-wide">
           Cadastro de participante
         </h1>
@@ -145,82 +151,82 @@ function PaginaCadastro() {
           )}
 
           <Campo rotulo="CPF" htmlFor="cpf">
-            <Entrada id="cpf" inputMode="numeric" value={f.cpf} onChange={(e) => setF((p) => ({ ...p, cpf: mascaraCpf(e.target.value) }))} placeholder="000.000.000-00" required />
+            <Input id="cpf" inputMode="numeric" value={f.cpf} onChange={(e) => setF((p) => ({ ...p, cpf: mascaraCpf(e.target.value) }))} placeholder="000.000.000-00" required />
           </Campo>
           <Campo rotulo="Data de nascimento" htmlFor="nasc">
-            <Entrada id="nasc" type="date" value={f.dataNascimento} onChange={set("dataNascimento")} required />
+            <Input id="nasc" type="date" value={f.dataNascimento} onChange={set("dataNascimento")} required />
           </Campo>
           <div className="sm:col-span-2">
             <Campo rotulo="Nome completo" htmlFor="nome">
-              <Entrada id="nome" value={f.nomeCompleto} onChange={set("nomeCompleto")} required />
+              <Input id="nome" value={f.nomeCompleto} onChange={set("nomeCompleto")} required />
             </Campo>
           </div>
           <Campo rotulo="E-mail" htmlFor="email">
-            <Entrada id="email" type="email" value={f.email} onChange={set("email")} required />
+            <Input id="email" type="email" value={f.email} onChange={set("email")} required />
           </Campo>
           <Campo rotulo="WhatsApp" htmlFor="whats">
-            <Entrada id="whats" inputMode="tel" value={f.whatsapp} onChange={(e) => setF((p) => ({ ...p, whatsapp: mascaraTelefone(e.target.value) }))} placeholder="(11) 99999-9999" required />
+            <Input id="whats" inputMode="tel" value={f.whatsapp} onChange={(e) => setF((p) => ({ ...p, whatsapp: mascaraTelefone(e.target.value) }))} placeholder="(11) 99999-9999" required />
           </Campo>
           <Campo rotulo="Senha" htmlFor="senha">
-            <Entrada id="senha" type="password" value={f.senha} onChange={set("senha")} required minLength={6} />
+            <Input id="senha" type="password" value={f.senha} onChange={set("senha")} required minLength={6} />
           </Campo>
           <Campo rotulo="Confirmar senha" htmlFor="senha2">
-            <Entrada id="senha2" type="password" value={f.confirmacaoSenha} onChange={set("confirmacaoSenha")} required />
+            <Input id="senha2" type="password" value={f.confirmacaoSenha} onChange={set("confirmacaoSenha")} required />
           </Campo>
 
           <Campo rotulo="CEP" htmlFor="cep">
             <div className="flex gap-2">
-              <Entrada id="cep" inputMode="numeric" value={f.cep} onChange={(e) => setF((p) => ({ ...p, cep: mascaraCep(e.target.value) }))} placeholder="00000-000" required />
-              <Botao type="button" variante="contorno" onClick={aoBuscarCep}>Buscar</Botao>
+              <Input id="cep" inputMode="numeric" value={f.cep} onChange={(e) => setF((p) => ({ ...p, cep: mascaraCep(e.target.value) }))} placeholder="00000-000" required />
+              <Button type="button" variant="outline" onClick={aoBuscarCep}>Buscar</Button>
             </div>
           </Campo>
           <Campo rotulo="Logradouro" htmlFor="logr">
-            <Entrada id="logr" value={f.logradouro} onChange={set("logradouro")} required />
+            <Input id="logr" value={f.logradouro} onChange={set("logradouro")} required />
           </Campo>
           <Campo rotulo="Número" htmlFor="num">
-            <Entrada id="num" value={f.numero} onChange={set("numero")} required />
+            <Input id="num" value={f.numero} onChange={set("numero")} required />
           </Campo>
           <Campo rotulo="Complemento (opcional)" htmlFor="comp">
-            <Entrada id="comp" value={f.complemento} onChange={set("complemento")} />
+            <Input id="comp" value={f.complemento} onChange={set("complemento")} />
           </Campo>
           <Campo rotulo="Bairro" htmlFor="bairro">
-            <Entrada id="bairro" value={f.bairro} onChange={set("bairro")} required />
+            <Input id="bairro" value={f.bairro} onChange={set("bairro")} required />
           </Campo>
           <Campo rotulo="Cidade" htmlFor="cidade">
-            <Entrada id="cidade" value={f.cidade} onChange={set("cidade")} required />
+            <Input id="cidade" value={f.cidade} onChange={set("cidade")} required />
           </Campo>
           <Campo rotulo="UF / Estado" htmlFor="uf">
-            <Selecao id="uf" value={f.uf} onChange={set("uf")} required>
+            <NativeSelect id="uf" value={f.uf} onChange={set("uf")} required>
               <option value="">Selecione</option>
               {UFS.map(([sigla, nome]) => (
                 <option key={sigla} value={sigla}>{sigla} — {nome}</option>
               ))}
-            </Selecao>
+            </NativeSelect>
           </Campo>
           <Campo rotulo="Instagram (opcional)" htmlFor="insta">
-            <Entrada id="insta" value={f.instagram} onChange={set("instagram")} placeholder="@seuperfil" />
+            <Input id="insta" value={f.instagram} onChange={set("instagram")} placeholder="@seuperfil" />
           </Campo>
           <Campo rotulo="Squad (opcional)" htmlFor="squad">
-            <Entrada id="squad" value={f.squad} onChange={set("squad")} />
+            <Input id="squad" value={f.squad} onChange={set("squad")} />
           </Campo>
 
           <div className="sm:col-span-2 space-y-2 text-sm">
-            <label className="flex items-start gap-2">
-              <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)} className="mt-1" required />
+            <Label className="flex items-start gap-2 text-[length:inherit] font-normal text-inherit">
+              <Checkbox checked={aceite} onCheckedChange={(marcado) => setAceite(marcado === true)} className="mt-1" required />
               <span>
                 Li e aceito os <Link to="/termos" className="text-accent hover:underline">termos de uso</Link> .
               </span>
-            </label>
-            <label className="flex items-start gap-2">
-              <input type="checkbox" checked={privacidade} onChange={(e) => setPrivacidade(e.target.checked)} className="mt-1" required />
+            </Label>
+            <Label className="flex items-start gap-2 text-[length:inherit] font-normal text-inherit">
+              <Checkbox checked={privacidade} onCheckedChange={(marcado) => setPrivacidade(marcado === true)} className="mt-1" required />
               <span>
                 Estou ciente do <Link to="/privacidade" className="text-accent hover:underline">aviso de privacidade</Link>.
               </span>
-            </label>
-            <label className="flex items-start gap-2">
-              <input type="checkbox" checked={promocional} onChange={(e) => setPromocional(e.target.checked)} className="mt-1" />
+            </Label>
+            <Label className="flex items-start gap-2 text-[length:inherit] font-normal text-inherit">
+              <Checkbox checked={promocional} onCheckedChange={(marcado) => setPromocional(marcado === true)} className="mt-1" />
               <span>Autorizo o recebimento de comunicações promocionais (opcional).</span>
-            </label>
+            </Label>
             <p className="text-xs text-muted-foreground">
               Participantes de 15 a 17 anos: o cadastro é criado com autorização do responsável
               pendente; a inscrição em eventos é liberada após aprovação. Fluxo sujeito à
@@ -233,11 +239,11 @@ function PaginaCadastro() {
               {erro}
             </p>
           )}
-          <Botao type="submit" disabled={carregando} className="sm:col-span-2">
+          <Button type="submit" disabled={carregando} className="sm:col-span-2">
             {carregando ? "Cadastrando..." : "Concluir cadastro"}
-          </Botao>
+          </Button>
         </form>
-      </Cartao>
+      </Card>
     </div>
   );
 }

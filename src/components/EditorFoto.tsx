@@ -3,11 +3,13 @@
 // 512 px; o servidor envia ao Storage. Teclado: setas movem, + e − ajustam o zoom.
 import { useEffect, useRef, useState } from "react";
 import { FlipHorizontal2, RotateCw, ZoomIn, ZoomOut } from "lucide-react";
-import { Botao, Modal } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui";
 import {
   AJUSTES_INICIAIS, LADO_SAIDA, ZOOM_MAXIMO, ZOOM_MINIMO, desenharRecorte, normalizarAjustes, proximaRotacao,
   type Ajustes,
 } from "@/lib/recorteFoto";
+import { Slider } from "@/components/ui/slider";
 
 const LADO_PREVIA = 288; // px na tela (cabe em celulares de 320 px)
 const PASSO_TECLADO = 0.02;
@@ -131,11 +133,11 @@ export function EditorFoto({ arquivo, onConfirmar, onCancelar }: {
   };
 
   const deslizante = (rotulo: string, valor: number, min: number, max: number, passo: number, mudar: (v: number) => void, texto: string) => (
-    <label className="block text-sm">
+    <div className="block text-sm">
       <span className="flex justify-between text-xs text-muted-foreground"><span>{rotulo}</span><span>{texto}</span></span>
-      <input type="range" className="w-full accent-[var(--color-primary)]" min={min} max={max} step={passo} value={valor}
-        onChange={(e) => mudar(Number(e.target.value))} aria-label={rotulo} />
-    </label>
+      <Slider className="w-full" min={min} max={max} step={passo} value={[valor]}
+        onValueChange={([v]) => v !== undefined && mudar(v)} aria-label={rotulo} />
+    </div>
   );
 
   return (
@@ -166,27 +168,27 @@ export function EditorFoto({ arquivo, onConfirmar, onCancelar }: {
 
         <div className="w-full space-y-3">
           <div className="flex items-center gap-2">
-            <Botao type="button" variante="contorno" aria-label="Diminuir zoom" onClick={() => ajustar((a) => ({ ...a, zoom: a.zoom - 0.2 }))}><ZoomOut className="h-4 w-4" /></Botao>
+            <Button type="button" variant="outline" aria-label="Diminuir zoom" onClick={() => ajustar((a) => ({ ...a, zoom: a.zoom - 0.2 }))}><ZoomOut className="h-4 w-4" /></Button>
             <div className="flex-1">
               {deslizante("Zoom", ajustes.zoom, ZOOM_MINIMO, ZOOM_MAXIMO, 0.01, (v) => ajustar((a) => ({ ...a, zoom: v })), `${Math.round(ajustes.zoom * 100)}%`)}
             </div>
-            <Botao type="button" variante="contorno" aria-label="Aumentar zoom" onClick={() => ajustar((a) => ({ ...a, zoom: a.zoom + 0.2 }))}><ZoomIn className="h-4 w-4" /></Botao>
+            <Button type="button" variant="outline" aria-label="Aumentar zoom" onClick={() => ajustar((a) => ({ ...a, zoom: a.zoom + 0.2 }))}><ZoomIn className="h-4 w-4" /></Button>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Botao type="button" variante="contorno" onClick={() => ajustar((a) => ({ ...a, rotacao: proximaRotacao(a.rotacao) }))}>
+            <Button type="button" variant="outline" onClick={() => ajustar((a) => ({ ...a, rotacao: proximaRotacao(a.rotacao) }))}>
               <RotateCw className="mr-1 inline h-4 w-4" /> Girar
-            </Botao>
-            <Botao type="button" variante={ajustes.espelhar ? "secundario" : "contorno"} aria-pressed={ajustes.espelhar} onClick={() => ajustar((a) => ({ ...a, espelhar: !a.espelhar }))}>
+            </Button>
+            <Button type="button" variant={ajustes.espelhar ? "secondary" : "outline"} aria-pressed={ajustes.espelhar} onClick={() => ajustar((a) => ({ ...a, espelhar: !a.espelhar }))}>
               <FlipHorizontal2 className="mr-1 inline h-4 w-4" /> Espelhar
-            </Botao>
-            <Botao type="button" variante="fantasma" onClick={() => setAjustes(AJUSTES_INICIAIS)}>Redefinir</Botao>
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => setAjustes(AJUSTES_INICIAIS)}>Redefinir</Button>
           </div>
           {deslizante("Brilho", ajustes.brilho, 50, 150, 1, (v) => ajustar((a) => ({ ...a, brilho: v })), `${ajustes.brilho}%`)}
           {deslizante("Contraste", ajustes.contraste, 50, 150, 1, (v) => ajustar((a) => ({ ...a, contraste: v })), `${ajustes.contraste}%`)}
           {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
           <div className="flex justify-end gap-2 pt-2">
-            <Botao type="button" variante="fantasma" onClick={onCancelar} disabled={salvando}>Cancelar</Botao>
-            <Botao type="button" onClick={confirmar} disabled={!img || salvando}>{salvando ? "Salvando..." : "Usar esta foto"}</Botao>
+            <Button type="button" variant="ghost" onClick={onCancelar} disabled={salvando}>Cancelar</Button>
+            <Button type="button" onClick={confirmar} disabled={!img || salvando}>{salvando ? "Salvando..." : "Usar esta foto"}</Button>
           </div>
         </div>
       </div>

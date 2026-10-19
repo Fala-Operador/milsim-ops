@@ -9,11 +9,19 @@ import { useEventosOrg } from "@/components/organizacao";
 import { useEventoOrganizacao } from "@/contexts/OrganizationEventContext";
 import { CheckinProvider, useCheckin } from "@/contexts/CheckinContext";
 import { LeitorQr } from "@/components/LeitorQr";
-import { AreaTexto, Badge, Botao, Cartao, EstadoVazio, Modal } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { EstadoVazio, Modal } from "@/components/ui";
 import {
   ROTULO_ORIGEM_ENTRADA, ROTULO_SYNC, entradaAtiva, lerConteudoQr,
   type IngressoCredenciamento, type RegistroCheckin, type ResultadoValidacao,
 } from "@/lib/checkin";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Toggle } from "@/components/ui/toggle";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/organizacao/checkin")({
   head: () => ({
@@ -85,7 +93,7 @@ function Portaria() {
     <>
       {/* Estado da conexão e preparação */}
       <div className="grid gap-3 lg:grid-cols-2">
-        <Cartao className="space-y-3">
+        <Card className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className={`inline-flex items-center gap-2 text-base font-semibold ${ck.online ? "text-success" : "text-warning"}`} role="status">
               {ck.online ? <Wifi className="h-5 w-5" /> : <WifiOff className="h-5 w-5" />}
@@ -93,12 +101,12 @@ function Portaria() {
             </span>
           </div>
           <div className="flex flex-col gap-2 text-sm">
-            <label className="flex items-center gap-2"><input type="checkbox" className="h-5 w-5" checked={ck.simularOffline} onChange={(e) => ck.setSimularOffline(e.target.checked)} /> Simular perda de conexão</label>
-            <label className="flex items-center gap-2"><input type="checkbox" className="h-5 w-5" checked={ck.simularFalha} onChange={(e) => ck.setSimularFalha(e.target.checked)} /> Simular falha de sincronização</label>
+            <Label className="flex items-center gap-2 text-[length:inherit] font-normal text-inherit"><Checkbox className="h-5 w-5" checked={ck.simularOffline} onCheckedChange={(marcado) => ck.setSimularOffline(marcado === true)} /> Simular perda de conexão</Label>
+            <Label className="flex items-center gap-2 text-[length:inherit] font-normal text-inherit"><Checkbox className="h-5 w-5" checked={ck.simularFalha} onCheckedChange={(marcado) => ck.setSimularFalha(marcado === true)} /> Simular falha de sincronização</Label>
           </div>
           <p className="text-xs text-muted-foreground">Os registros feitos sem conexão ficam guardados neste aparelho e são enviados ao servidor assim que a conexão volta. As opções acima servem para testar a portaria antes do evento.</p>
-        </Cartao>
-        <Cartao className="space-y-2">
+        </Card>
+        <Card className="space-y-2">
           <p className="flex items-center gap-2 font-semibold">
             {ck.fonte?.snapshot ? <ShieldCheck className="h-5 w-5 text-success" /> : <CloudOff className="h-5 w-5 text-warning" />}
             {ck.fonte?.snapshot ? "Aparelho pronto para uso offline" : "Aparelho ainda não preparado para offline"}
@@ -110,7 +118,7 @@ function Portaria() {
             Arquivos da aplicação: {ck.estadoSW === "ativo" ? "Service Worker ativo" : ck.estadoSW === "registrando" ? "verificando…" : "Service Worker indisponível neste navegador/prévia — reabrir sem internet não funcionará aqui"}
             {!ck.idb && " · IndexedDB indisponível"}
           </p>
-        </Cartao>
+        </Card>
       </div>
 
       {ck.aviso && <p role="status" className="rounded-md border border-border bg-secondary px-4 py-3 text-sm">{ck.aviso}</p>}
@@ -144,7 +152,7 @@ function Portaria() {
         <div className="space-y-4">
           <LeitorQr pausado={!!resultado || ck.ocupado} onLeitura={aoLerQr} onErro={() => {}} />
           {resultado && <CartaoResultado r={resultado} offline={registradoOffline} />}
-          {resultado && <Botao className="h-14 w-full text-base" onClick={() => setResultado(null)}><QrCode className="h-5 w-5" />Próxima leitura</Botao>}
+          {resultado && <Button className="h-14 w-full" onClick={() => setResultado(null)}><QrCode className="h-5 w-5" />Próxima leitura</Button>}
           {!resultado && <p className="text-center text-sm text-muted-foreground">Aponte a câmera para o QR Code do participante. Feche o modal para desligar a câmera.</p>}
         </div>
       </Modal>
@@ -180,20 +188,30 @@ function Portaria() {
 
 function Indicador({ icone: Icone, rotulo, valor }: { icone: typeof Users; rotulo: string; valor: number }) {
   return (
-    <Cartao className="p-4">
+    <Card>
       <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"><Icone className="h-4 w-4" />{rotulo}</p>
       <p className="mt-1 font-display text-3xl font-bold">{valor}</p>
-    </Cartao>
+    </Card>
   );
 }
 
+const GRANDE = "flex min-h-24 flex-col items-center justify-center gap-2 rounded-lg border-2 p-3 text-center text-base font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+// Com `ativo`, alterna um modo (Toggle); sem ele, é uma ação comum (Button).
 function BotaoGrande({ ativo, children, ...p }: React.ButtonHTMLAttributes<HTMLButtonElement> & { ativo?: boolean }) {
+  if (ativo === undefined) {
+    return (
+      <Button variant="plain" size="none" {...p}
+        className={`${GRANDE} border-border bg-card transition-colors hover:border-primary disabled:cursor-not-allowed disabled:opacity-50`}
+      >{children}</Button>
+    );
+  }
   return (
-    <button
+    <Toggle
       {...p}
-      aria-pressed={ativo}
-      className={`flex min-h-24 flex-col items-center justify-center gap-2 rounded-lg border-2 p-3 text-center text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${ativo ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:border-primary"}`}
-    >{children}</button>
+      pressed={ativo}
+      className={`${GRANDE} data-[state=off]:border-border data-[state=off]:bg-card data-[state=off]:hover:border-primary data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground`}
+    >{children}</Toggle>
   );
 }
 
@@ -226,40 +244,40 @@ function BuscaManual({ ingressos, registros, onEscolher }: {
   const termo = q.trim().toLowerCase();
   const lista = termo.length < 2 ? [] : ingressos.filter((i) => i.nome.toLowerCase().includes(termo) || i.codigo.toLowerCase().includes(termo)).slice(0, 20);
   return (
-    <Cartao className="space-y-3">
-      <label className="block text-sm font-medium" htmlFor="busca-ck">Buscar por nome ou código da inscrição</label>
-      <input id="busca-ck" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Digite ao menos 2 letras"
-        className="h-14 w-full rounded-md border border-input bg-background px-4 text-lg focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40" />
+    <Card className="space-y-3">
+      <Label className="block text-sm font-medium text-inherit" htmlFor="busca-ck">Buscar por nome ou código da inscrição</Label>
+      <Input id="busca-ck" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Digite ao menos 2 letras"
+        className="h-14 w-full rounded-md border border-input bg-background px-4 text-lg focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40 py-0 sm:text-lg" />
       <ul className="divide-y divide-border">
         {lista.map((i) => {
           const ativa = entradaAtiva(registros, i.inscricaoId);
           return (
             <li key={i.inscricaoId}>
-              <button onClick={() => onEscolher(i)} className="flex w-full items-center justify-between gap-3 py-3 text-left hover:bg-secondary">
+              <Button variant="plain" size="none" onClick={() => onEscolher(i)} className="flex w-full items-center justify-between gap-3 py-3 text-left hover:bg-secondary">
                 <span className="min-w-0"><span className="block truncate font-medium">{i.nome}</span><span className="block font-mono text-xs text-muted-foreground">{i.codigo} · {i.tipo}</span></span>
-                {i.status !== "confirmada" ? <Badge tom="perigo">✕ Cancelada</Badge> : ativa ? <Badge tom="sucesso">✓ Presente {hora(ativa.em)}</Badge> : <Badge>Aguardando</Badge>}
-              </button>
+                {i.status !== "confirmada" ? <Badge variant="destructive">✕ Cancelada</Badge> : ativa ? <Badge variant="success">✓ Presente {hora(ativa.em)}</Badge> : <Badge>Aguardando</Badge>}
+              </Button>
             </li>
           );
         })}
         {termo.length >= 2 && lista.length === 0 && <li className="py-4 text-center text-sm text-muted-foreground">Nenhum participante encontrado neste evento.</li>}
       </ul>
-    </Cartao>
+    </Card>
   );
 }
 
 function DigitarCodigo({ onBuscar }: { onBuscar: (c: string) => void }) {
   const [c, setC] = useState("");
   return (
-    <Cartao>
+    <Card>
       <form className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={(e) => { e.preventDefault(); if (c.trim()) onBuscar(c); }}>
-        <label className="flex-1 text-sm font-medium">Código do ingresso
-          <input autoFocus value={c} onChange={(e) => setC(e.target.value.toUpperCase())} placeholder="OP-XXXXX" autoCapitalize="characters"
-            className="mt-1 h-14 w-full rounded-md border border-input bg-background px-4 font-mono text-lg uppercase focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40" />
-        </label>
-        <Botao type="submit" className="h-14 text-base">Conferir</Botao>
+        <Label className="flex-1 text-sm font-medium text-inherit">Código do ingresso
+          <Input autoFocus value={c} onChange={(e) => setC(e.target.value.toUpperCase())} placeholder="OP-XXXXX" autoCapitalize="characters"
+            className="mt-1 h-14 w-full rounded-md border border-input bg-background px-4 font-mono text-lg uppercase focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40 py-0 sm:text-lg" />
+        </Label>
+        <Button type="submit" className="h-14">Conferir</Button>
       </form>
-    </Cartao>
+    </Card>
   );
 }
 
@@ -270,7 +288,7 @@ function ConferenciaManual({ ingresso, validacao, ocupado, onCancelar, onConfirm
   const [ciente, setCiente] = useState(false);
   const valido = validacao?.tipo === "valido";
   return (
-    <Cartao className="space-y-3 border-2 border-primary">
+    <Card className="space-y-3 border-2 border-primary">
       <h3 className="font-display text-lg font-semibold uppercase">Conferência antes do check-in manual</h3>
       <dl className="grid gap-1 text-base sm:grid-cols-2">
         <div><dt className="text-xs text-muted-foreground">Participante</dt><dd className="font-semibold">{ingresso.nome}</dd></div>
@@ -280,15 +298,15 @@ function ConferenciaManual({ ingresso, validacao, ocupado, onCancelar, onConfirm
       </dl>
       {validacao && !valido ? <CartaoResultado r={validacao} offline={false} /> : (
         <>
-          <AreaTexto placeholder="Motivo do check-in manual (obrigatório) — ex.: celular sem bateria" value={motivo} onChange={(e) => setMotivo(e.target.value)} aria-label="Motivo do check-in manual" />
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="h-5 w-5" checked={ciente} onChange={(e) => setCiente(e.target.checked)} /> Conferi o participante e o ingresso</label>
+          <Textarea placeholder="Motivo do check-in manual (obrigatório) — ex.: celular sem bateria" value={motivo} onChange={(e) => setMotivo(e.target.value)} aria-label="Motivo do check-in manual" />
+          <Label className="flex items-center gap-2 text-sm font-normal text-inherit"><Checkbox className="h-5 w-5" checked={ciente} onCheckedChange={(marcado) => setCiente(marcado === true)} /> Conferi o participante e o ingresso</Label>
         </>
       )}
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <Botao variante="contorno" className="h-12" onClick={onCancelar}>Voltar</Botao>
-        {valido && <Botao className="h-12 text-base" disabled={!ciente || !motivo.trim() || ocupado} onClick={() => onConfirmar(motivo)}><UserCheck className="h-5 w-5" />Confirmar entrada</Botao>}
+        <Button variant="outline" className="h-12" onClick={onCancelar}>Voltar</Button>
+        {valido && <Button className="h-12" disabled={!ciente || !motivo.trim() || ocupado} onClick={() => onConfirmar(motivo)}><UserCheck className="h-5 w-5" />Confirmar entrada</Button>}
       </div>
-    </Cartao>
+    </Card>
   );
 }
 
@@ -299,7 +317,7 @@ function EntradasRecentes({ registros, ingressos, onDesfazer }: {
   const revertidos = new Set(registros.filter((r) => r.tipo === "reversao").map((r) => r.revertidoId));
   const lista = registros.slice(0, 30);
   return (
-    <Cartao className="p-0">
+    <Card>
       <h3 className="border-b border-border px-4 py-3 font-display text-lg font-semibold uppercase">Entradas recentes</h3>
       {lista.length === 0 ? <p className="p-4 text-sm text-muted-foreground">Nenhuma entrada registrada ainda.</p> : (
         <ul className="divide-y divide-border">
@@ -313,11 +331,11 @@ function EntradasRecentes({ registros, ingressos, onDesfazer }: {
                 {r.conflito && <p className="text-xs font-medium text-destructive">⚠ {r.conflito}</p>}
               </div>
               <div className="flex items-center gap-2">
-                <Badge tom={r.sync === "sincronizado" ? "sucesso" : r.sync === "conflito" ? "perigo" : "aviso"}>
+                <Badge variant={r.sync === "sincronizado" ? "success" : r.sync === "conflito" ? "destructive" : "warning"}>
                   {r.sync === "sincronizado" ? "✓ " : r.sync === "conflito" ? "⚠ " : "⏳ "}{ROTULO_SYNC[r.sync]}
                 </Badge>
                 {r.tipo === "entrada" && r.sync !== "conflito" && !revertidos.has(r.id) && (
-                  <Botao variante="fantasma" className="px-2 py-1" onClick={() => onDesfazer(r)}><Undo2 className="h-4 w-4" />Desfazer</Botao>
+                  <Button variant="ghost" className="" onClick={() => onDesfazer(r)}><Undo2 className="h-4 w-4" />Desfazer</Button>
                 )}
                 {revertidos.has(r.id) && <Badge>Revertido</Badge>}
               </div>
@@ -325,7 +343,7 @@ function EntradasRecentes({ registros, ingressos, onDesfazer }: {
           ))}
         </ul>
       )}
-    </Cartao>
+    </Card>
   );
 }
 
@@ -336,13 +354,13 @@ function ModalDesfazer({ registro, onFechar }: { registro: RegistroCheckin; onFe
   return (
     <Modal aberto titulo="Desfazer check-in" onFechar={onFechar}>
       <p className="text-sm text-muted-foreground">O registro original é preservado e uma reversão é adicionada ao histórico.</p>
-      <div className="mt-3"><AreaTexto placeholder="Justificativa (obrigatória)" value={motivo} onChange={(e) => setMotivo(e.target.value)} aria-label="Justificativa" /></div>
+      <div className="mt-3"><Textarea placeholder="Justificativa (obrigatória)" value={motivo} onChange={(e) => setMotivo(e.target.value)} aria-label="Justificativa" /></div>
       {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
       <div className="mt-4 flex justify-end gap-2">
-        <Botao variante="fantasma" onClick={onFechar}>Voltar</Botao>
-        <Botao variante="perigo" disabled={!motivo.trim()} onClick={async () => {
+        <Button variant="ghost" onClick={onFechar}>Voltar</Button>
+        <Button variant="destructive" disabled={!motivo.trim()} onClick={async () => {
           try { await ck.desfazer(registro, motivo); onFechar(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha."); }
-        }}>Desfazer check-in</Botao>
+        }}>Desfazer check-in</Button>
       </div>
     </Modal>
   );

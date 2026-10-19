@@ -11,8 +11,11 @@ import {
   type CartaoEventoResolvido, type SecaoResolvida,
 } from "@/lib/divulgacao";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
-import { Badge, Selecao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { NativeSelect } from "@/components/ui/native-select";
 import { SectionCarousel } from "@/components/SectionCarousel";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 const UFS = Object.keys(UF_REGIAO).sort();
 
@@ -24,9 +27,9 @@ export function SeletorLocalizacao({
     : [];
   return (
     <div className="flex flex-wrap items-end gap-2" role="group" aria-label="Escolher localização">
-      <label className="text-sm">
+      <Label className="text-sm font-normal text-inherit">
         <span className="mb-1 block text-xs text-muted-foreground">Localização</span>
-        <Selecao
+        <NativeSelect
           value={valor.escopo}
           onChange={(e) => {
             const escopo = e.target.value as Abrangencia["escopo"];
@@ -37,32 +40,32 @@ export function SeletorLocalizacao({
           <option value="regiao">Região</option>
           <option value="estado">Estado</option>
           <option value="cidade">Cidade</option>
-        </Selecao>
-      </label>
+        </NativeSelect>
+      </Label>
       {valor.escopo === "regiao" && (
-        <label className="text-sm">
+        <Label className="text-sm font-normal text-inherit">
           <span className="mb-1 block text-xs text-muted-foreground">Região</span>
-          <Selecao value={valor.regiao} onChange={(e) => onMudar({ escopo: "regiao", regiao: e.target.value as Abrangencia["regiao"] })}>
+          <NativeSelect value={valor.regiao} onChange={(e) => onMudar({ escopo: "regiao", regiao: e.target.value as Abrangencia["regiao"] })}>
             {REGIOES.map((r) => <option key={r}>{r}</option>)}
-          </Selecao>
-        </label>
+          </NativeSelect>
+        </Label>
       )}
       {(valor.escopo === "estado" || valor.escopo === "cidade") && (
-        <label className="text-sm">
+        <Label className="text-sm font-normal text-inherit">
           <span className="mb-1 block text-xs text-muted-foreground">Estado</span>
-          <Selecao value={valor.uf} onChange={(e) => onMudar({ escopo: valor.escopo, uf: e.target.value, cidade: undefined })}>
+          <NativeSelect value={valor.uf} onChange={(e) => onMudar({ escopo: valor.escopo, uf: e.target.value, cidade: undefined })}>
             {UFS.map((u) => <option key={u}>{u}</option>)}
-          </Selecao>
-        </label>
+          </NativeSelect>
+        </Label>
       )}
       {valor.escopo === "cidade" && (
-        <label className="text-sm">
+        <Label className="text-sm font-normal text-inherit">
           <span className="mb-1 block text-xs text-muted-foreground">Cidade</span>
-          <Selecao value={valor.cidade ?? ""} onChange={(e) => onMudar({ ...valor, cidade: e.target.value })}>
+          <NativeSelect value={valor.cidade ?? ""} onChange={(e) => onMudar({ ...valor, cidade: e.target.value })}>
             <option value="">Selecione</option>
             {cidades.map((c) => <option key={c}>{c}</option>)}
-          </Selecao>
-        </label>
+          </NativeSelect>
+        </Label>
       )}
     </div>
   );
@@ -136,8 +139,8 @@ export function CartaoEvento({ c }: { c: CartaoEventoResolvido }) {
         )}
         {(c.selo || c.campanhaId) && (
           <span className="absolute left-2 top-2 flex gap-1">
-            {c.campanhaId && <Badge tom="aviso">Em destaque</Badge>}
-            {c.selo && <Badge tom="aviso">{c.selo}</Badge>}
+            {c.campanhaId && <Badge variant="warning">Em destaque</Badge>}
+            {c.selo && <Badge variant="warning">{c.selo}</Badge>}
           </span>
         )}
       </div>
@@ -147,7 +150,7 @@ export function CartaoEvento({ c }: { c: CartaoEventoResolvido }) {
             <h3 className="font-display text-lg font-semibold uppercase">{e.nome}</h3>
             <span className="mt-1 inline-block rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{nomeModalidade(e.modalidade)}</span>
           </div>
-          {c.esgotado ? <Badge tom="perigo">Esgotado</Badge> : <Badge tom="sucesso">Vagas abertas</Badge>}
+          {c.esgotado ? <Badge variant="destructive">Esgotado</Badge> : <Badge variant="success">Vagas abertas</Badge>}
         </div>
         <p className="mt-1 text-sm text-muted-foreground">{formatarDataBR(e.inicioEm)} · {e.cidade}/{e.uf}</p>
         {c.chamada && <p className="mt-2 text-sm">{c.chamada}</p>}
@@ -195,12 +198,12 @@ function CartaoParceiro({ p, secao, carrossel }: { p: Parceiro; secao: SecaoInic
           {botoes.map((l) => {
             const Icone = ICONE_LINK[l.tipo];
             return (
-              <a key={l.id} href={hrefDoLink(l)!} target="_blank" rel="noopener noreferrer"
-                aria-label={`Abrir ${rotuloDoLink(l)} de ${p.nome} (nova aba)`}
-                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
-                <Icone className="h-3.5 w-3.5" aria-hidden="true" />
-                {rotuloDoLink(l)}
-              </a>
+              <Button key={l.id} asChild variant="outline" size="none" className="gap-1 px-2 py-1 text-xs font-normal focus-visible:ring-2 focus-visible:ring-ring">
+                <a href={hrefDoLink(l)!} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${rotuloDoLink(l)} de ${p.nome} (nova aba)`}>
+                  <Icone className="h-3.5 w-3.5" aria-hidden="true" />
+                  {rotuloDoLink(l)}
+                </a>
+              </Button>
             );
           })}
         </div>
@@ -271,7 +274,7 @@ export function SecoesPublicas({
             <div className="flex flex-wrap items-center gap-2">
               <h2 id={`t-${secao.id}`} className="font-display text-2xl font-semibold uppercase tracking-wide">{secao.titulo}</h2>
               {regional && <Badge>{rotuloAbrangencia(secao.abrangencia)}</Badge>}
-              {secao.status === "rascunho" && <Badge tom="aviso">Rascunho</Badge>}
+              {secao.status === "rascunho" && <Badge variant="warning">Rascunho</Badge>}
             </div>
             {secao.subtitulo && <p className="text-sm text-muted-foreground">{secao.subtitulo}</p>}
           </>

@@ -5,6 +5,8 @@ import { useSuporte } from "@/contexts/SuporteContext";
 import { ErroSecao, SkeletonPagina } from "@/components/ui";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
 import type { ErrorComponentProps } from "@tanstack/react-router";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Label } from "@/components/ui/label";
 
 function ErroAdmin({ error, reset }: ErrorComponentProps) {
   console.error(error);
@@ -71,16 +73,16 @@ function LayoutAdmin() {
       <p className="mt-1 text-sm text-muted-foreground" aria-label="Você está em">
         Administração / <span className="text-foreground">{abaAtual.rotulo}</span>
       </p>
-      <label className="mt-4 block md:hidden">
+      <Label className="mt-4 block md:hidden text-[length:inherit] font-normal text-inherit">
         <span className="sr-only">Seção da administração</span>
-        <select
+        <NativeSelect
           value={abaAtual.to}
           onChange={(e) => navigate({ to: e.target.value })}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground"
         >
           {abas.map((a) => <option key={a.to} value={a.to}>{a.rotulo}{a.to === "/admin/suporte" && atencaoEquipe > 0 ? ` (${atencaoEquipe})` : ""}</option>)}
-        </select>
-      </label>
+        </NativeSelect>
+      </Label>
       <nav aria-label="Seções da administração" className="mt-4 hidden flex-wrap gap-1 border-b border-border md:flex">
         {abas.map((a) => (
           <Link

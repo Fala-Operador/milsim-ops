@@ -1,52 +1,10 @@
-// Componentes de interface reutilizáveis, todos via tokens semânticos.
-import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+// Composições do app sobre os componentes shadcn/ui de `src/components/ui/`.
+import { type ReactNode } from "react";
 
-type VarianteBotao = "primario" | "secundario" | "contorno" | "perigo" | "fantasma";
-
-export function Botao({
-  variante = "primario",
-  className = "",
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variante?: VarianteBotao; ref?: React.Ref<HTMLButtonElement> }) {
-  const estilos: Record<VarianteBotao, string> = {
-    primario: "bg-primary text-primary-foreground hover:opacity-90",
-    secundario: "bg-secondary text-secondary-foreground hover:opacity-90",
-    contorno: "border border-border bg-transparent text-foreground hover:bg-secondary",
-    perigo: "bg-destructive text-destructive-foreground hover:opacity-90",
-    fantasma: "bg-transparent text-foreground hover:bg-secondary",
-  };
-  return (
-    <button
-      className={`inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-50 ${estilos[variante]} ${className}`}
-      {...props}
-    />
-  );
-}
-
-export function Cartao({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-lg border border-border bg-card p-5 text-card-foreground shadow-sm ${className}`}>
-      {children}
-    </div>
-  );
-}
-
-type TomBadge = "padrao" | "sucesso" | "aviso" | "perigo" | "destaque";
-
-export function Badge({ tom = "padrao", children, "aria-label": ariaLabel }: { tom?: TomBadge; children: ReactNode; "aria-label"?: string }) {
-  const tons: Record<TomBadge, string> = {
-    padrao: "bg-secondary text-secondary-foreground",
-    sucesso: "bg-success text-success-foreground",
-    aviso: "bg-warning text-warning-foreground",
-    perigo: "bg-destructive text-destructive-foreground",
-    destaque: "bg-accent text-accent-foreground",
-  };
-  return (
-    <span aria-label={ariaLabel} className={`status-badge inline-flex w-max max-w-full shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium leading-4 [&_svg]:size-3 [&_svg]:shrink-0 ${tons[tom]}`}>
-      {children}
-    </span>
-  );
-}
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function Campo({
   rotulo,
@@ -61,9 +19,9 @@ export function Campo({
 }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-foreground">
+      <Label htmlFor={htmlFor} className="block">
         {rotulo}
-      </label>
+      </Label>
       {children}
       {erro && (
         <p role="alert" className="text-sm text-destructive">
@@ -72,23 +30,6 @@ export function Campo({
       )}
     </div>
   );
-}
-
-// Campos com 16px no celular (abaixo disso o Safari do iOS amplia a página ao focar) e
-// 14px a partir de sm. `className` complementa o estilo base em vez de substituí-lo.
-const CAMPO =
-  "w-full rounded-md border border-input bg-background px-3 py-2 text-base text-foreground focus:border-ring focus:outline-none sm:text-sm";
-
-export function Entrada({ className = "", ...props }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={`${CAMPO} placeholder:text-muted-foreground ${className}`} {...props} />;
-}
-
-export function AreaTexto({ className = "", ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className={`${CAMPO} placeholder:text-muted-foreground ${className}`} rows={4} {...props} />;
-}
-
-export function Selecao({ className = "", ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select className={`${CAMPO} ${className}`} {...props} />;
 }
 
 export function EstadoVazio({ titulo, descricao }: { titulo: string; descricao?: string }) {
@@ -113,37 +54,23 @@ export function Modal({
   children: ReactNode;
   largo?: boolean;
 }) {
-  if (!aberto) return null;
+  // No celular abre como folha a partir da base; a partir de sm, centralizado.
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label={titulo}
-      onClick={onFechar}
-    >
-      <div
-        className={`max-h-[92dvh] w-full ${largo ? "max-w-6xl" : "max-w-2xl"} overflow-y-auto rounded-t-xl border border-border bg-popover p-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-popover-foreground shadow-xl sm:max-h-[90vh] sm:rounded-lg sm:p-6`}
-        onClick={(e) => e.stopPropagation()}
+    <Dialog open={aberto} onOpenChange={(aberto) => !aberto && onFechar()}>
+      <DialogContent
+        showCloseButton={false}
+        aria-describedby={undefined}
+        className={`bottom-0 top-auto block max-h-[92dvh] w-full translate-y-0 overflow-y-auto rounded-t-xl p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:bottom-auto sm:top-[50%] sm:max-h-[90vh] sm:w-[calc(100%-2rem)] sm:translate-y-[-50%] sm:rounded-lg sm:p-6 ${largo ? "max-w-6xl" : "max-w-2xl"}`}
       >
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="min-w-0 font-display text-lg font-semibold">{titulo}</h2>
-          <Botao variante="fantasma" className="shrink-0" onClick={onFechar} aria-label="Fechar">
+          <DialogTitle className="min-w-0">{titulo}</DialogTitle>
+          <Button variant="ghost" className="shrink-0" onClick={onFechar} aria-label="Fechar">
             ✕
-          </Botao>
+          </Button>
         </div>
         {children}
-      </div>
-    </div>
-  );
-}
-
-export function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div
-      aria-hidden="true"
-      className={`animate-pulse rounded-md bg-secondary ${className}`}
-    />
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -199,16 +126,13 @@ export function ErroSecao({
       <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">{descricao}</p>
       <div className="mt-5 flex flex-wrap justify-center gap-2">
         {onTentar && (
-          <Botao variante="primario" onClick={onTentar}>
+          <Button onClick={onTentar}>
             Tentar novamente
-          </Botao>
+          </Button>
         )}
-        <a
-          href="/"
-          className="inline-flex items-center justify-center rounded-md border border-border bg-transparent px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary"
-        >
-          Voltar ao início
-        </a>
+        <Button variant="outline" asChild>
+          <a href="/">Voltar ao início</a>
+        </Button>
       </div>
     </div>
   );

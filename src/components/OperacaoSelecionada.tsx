@@ -2,16 +2,20 @@
 // Inscritos, Comunidade e Financeiro. Desktop: janela central. Celular: bottom sheet.
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ArrowLeftRight, CalendarDays, Check, ChevronDown, MapPin, Search, X } from "lucide-react";
-import { Badge, Botao, Selecao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { NativeSelect } from "@/components/ui/native-select";
 import { formatarDataBR } from "@/lib/domain/money";
 import type { Evento } from "@/lib/domain/types";
+import { Input } from "@/components/ui/input";
 
 export const ROTULO_STATUS_EVENTO: Record<string, string> = {
   rascunho: "Rascunho", publicado: "Publicado", inscricoes_encerradas: "Inscrições encerradas",
   cancelado: "Cancelado", concluido: "Concluído",
 };
 const tomStatusEvento = (s: string) =>
-  s === "publicado" ? "sucesso" : s === "cancelado" ? "perigo" : s === "rascunho" ? "padrao" : "aviso";
+  s === "publicado" ? "success" : s === "cancelado" ? "destructive" : s === "rascunho" ? "secondary" : "warning";
 
 export function Miniatura({ evento, tamanho = "h-16 w-16" }: { evento: Evento; tamanho?: string }) {
   return evento.imagemUrl ? (
@@ -28,7 +32,8 @@ export function OperacaoSelecionada({ eventos, evento, invalido, onSelecionar }:
 }) {
   const [aberto, setAberto] = useState(false);
   const botao = useRef<HTMLButtonElement>(null);
-  const fechar = () => { setAberto(false); botao.current?.focus(); };
+  // Depois que a janela (Radix) desmonta, devolve o foco ao botão que a abriu.
+  const fechar = () => { setAberto(false); requestAnimationFrame(() => botao.current?.focus()); };
   const escolher = (id: string) => { fechar(); if (id !== evento?.id) onSelecionar(id); };
 
   if (eventos.length === 0) return null;
@@ -46,19 +51,19 @@ export function OperacaoSelecionada({ eventos, evento, invalido, onSelecionar }:
             <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1"><CalendarDays className="h-4 w-4 shrink-0" />{formatarDataBR(evento.inicioEm)}</span>
               <span className="inline-flex min-w-0 items-center gap-1"><MapPin className="h-4 w-4 shrink-0" /><span className="truncate">{evento.cidade}/{evento.uf}</span></span>
-              <Badge tom={tomStatusEvento(evento.status)}>{ROTULO_STATUS_EVENTO[evento.status] ?? evento.status}</Badge>
+              <Badge variant={tomStatusEvento(evento.status)}>{ROTULO_STATUS_EVENTO[evento.status] ?? evento.status}</Badge>
             </p>
           </div>
-          <Botao
+          <Button
             ref={botao}
-            variante="contorno"
-            className="col-span-2 w-full border-primary bg-background sm:col-span-1 sm:w-auto"
+            variant="outline"
+            className="col-span-2 w-full border-primary sm:col-span-1 sm:w-auto"
             aria-haspopup="dialog"
             aria-expanded={aberto}
             onClick={() => setAberto(true)}
           >
             <ArrowLeftRight className="h-4 w-4" /> Trocar evento <ChevronDown className="h-4 w-4" />
-          </Botao>
+          </Button>
         </section>
       ) : (
         <section role="alert" className="flex flex-col gap-3 rounded-lg border border-warning/60 bg-warning/10 p-4 sm:flex-row sm:items-center">
@@ -67,7 +72,7 @@ export function OperacaoSelecionada({ eventos, evento, invalido, onSelecionar }:
             <p className="font-medium">{invalido ? "O evento selecionado não está mais disponível" : "Nenhum evento selecionado"}</p>
             <p className="text-sm text-muted-foreground">Escolha uma operação para continuar.</p>
           </div>
-          <Botao ref={botao} onClick={() => setAberto(true)}>Selecionar evento</Botao>
+          <Button ref={botao} onClick={() => setAberto(true)}>Selecionar evento</Button>
         </section>
       )}
       {aberto && <SeletorEventos eventos={eventos} atual={evento?.id ?? ""} onFechar={fechar} onSelecionar={escolher} />}
@@ -80,34 +85,25 @@ function SeletorEventos({ eventos, atual, onFechar, onSelecionar }: {
 }) {
   const [busca, setBusca] = useState("");
   const [status, setStatus] = useState("");
-  useEffect(() => {
-    const tecla = (e: KeyboardEvent) => e.key === "Escape" && onFechar();
-    window.addEventListener("keydown", tecla);
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { window.removeEventListener("keydown", tecla); document.body.style.overflow = overflow; };
-  }, [onFechar]);
   const lista = eventos.filter(
     (e) => (!status || e.status === status) && e.nome.toLowerCase().includes(busca.trim().toLowerCase()),
   );
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4" onClick={onFechar}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="titulo-trocar-evento"
-        onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[85dvh] w-full flex-col rounded-t-2xl border border-border bg-popover text-popover-foreground shadow-xl pb-[env(safe-area-inset-bottom)] sm:max-h-[85vh] sm:max-w-2xl sm:rounded-lg sm:pb-0"
+    <Dialog open onOpenChange={(aberto) => !aberto && onFechar()}>
+      <DialogContent
+        showCloseButton={false}
+        aria-describedby={undefined}
+        className="bottom-0 top-auto flex max-h-[85dvh] w-full max-w-none translate-y-0 flex-col gap-0 rounded-t-2xl p-0 pb-[env(safe-area-inset-bottom)] sm:bottom-auto sm:top-[50%] sm:max-h-[85vh] sm:w-[calc(100%-2rem)] sm:max-w-2xl sm:translate-y-[-50%] sm:rounded-lg sm:pb-0"
       >
         <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-border sm:hidden" aria-hidden="true" />
         <div className="flex items-center justify-between gap-2 px-4 pt-3 sm:px-6 sm:pt-5">
-          <h2 id="titulo-trocar-evento" className="font-display text-lg font-semibold uppercase">Trocar evento</h2>
-          <Botao variante="fantasma" onClick={onFechar} aria-label="Fechar"><X className="h-5 w-5" /></Botao>
+          <DialogTitle className="uppercase">Trocar evento</DialogTitle>
+          <Button variant="ghost" onClick={onFechar} aria-label="Fechar"><X className="h-5 w-5" /></Button>
         </div>
         <div className="grid gap-2 border-b border-border px-4 py-3 sm:grid-cols-[1fr_12rem] sm:px-6">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <input
+            <Input
               autoFocus
               aria-label="Buscar evento por nome"
               placeholder="Buscar por nome"
@@ -116,17 +112,17 @@ function SeletorEventos({ eventos, atual, onFechar, onSelecionar }: {
               className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-base focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40 sm:text-sm"
             />
           </div>
-          <Selecao aria-label="Filtrar por status" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <NativeSelect aria-label="Filtrar por status" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">Todos os status</option>
             {Object.entries(ROTULO_STATUS_EVENTO).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
-          </Selecao>
+          </NativeSelect>
         </div>
         <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-3 sm:px-6" role="listbox" aria-label="Eventos autorizados">
           {lista.map((e) => {
             const sel = e.id === atual;
             return (
               <li key={e.id}>
-                <button
+                <Button variant="plain" size="none"
                   role="option"
                   aria-selected={sel}
                   onClick={() => onSelecionar(e.id)}
@@ -138,13 +134,13 @@ function SeletorEventos({ eventos, atual, onFechar, onSelecionar }: {
                     <span className="block truncate text-xs text-muted-foreground">{formatarDataBR(e.inicioEm)} · {e.cidade}/{e.uf} · {ROTULO_STATUS_EVENTO[e.status] ?? e.status}</span>
                   </span>
                   {sel && <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-primary"><Check className="h-4 w-4" />Atual</span>}
-                </button>
+                </Button>
               </li>
             );
           })}
           {lista.length === 0 && <li className="py-6 text-center text-sm text-muted-foreground">Nenhum evento encontrado. Tente outro nome ou status.</li>}
         </ul>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

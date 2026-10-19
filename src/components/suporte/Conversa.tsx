@@ -24,7 +24,9 @@ import {
   TIPOS_ANEXO,
 } from "@/lib/suporte";
 import type { BaseDados, Chamado, MensagemChamado } from "@/lib/domain/types";
-import { Botao } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 const PAGINA = 30;
 const AGRUPAR_MS = 10 * 60_000; // mensagens seguidas da mesma pessoa em até 10 min: sem repetir o nome
@@ -111,7 +113,7 @@ function BotaoAnexo({ chamadoId, m }: { chamadoId: string; m: MensagemChamado })
   };
   return (
     <div className="mt-2 min-w-0">
-      <button
+      <Button variant="plain" size="none"
         type="button"
         onClick={abrir}
         disabled={abrindo}
@@ -124,7 +126,7 @@ function BotaoAnexo({ chamadoId, m }: { chamadoId: string; m: MensagemChamado })
         )}
         <span className="min-w-0 truncate">{m.anexo.nome}</span>
         <span className="shrink-0 text-muted-foreground">{kb(m.anexo.tamanho)}</span>
-      </button>
+      </Button>
       {erro && <p className="mt-1 text-xs text-destructive">{erro}</p>}
     </div>
   );
@@ -286,14 +288,14 @@ export function Conversa({
       >
         {inicio > 0 && (
           <div className="mb-3 text-center">
-            <Botao
+            <Button
               type="button"
-              variante="contorno"
+              variant="outline"
               className="!py-1 text-xs"
               onClick={carregarAnteriores}
             >
               Carregar mensagens anteriores
-            </Botao>
+            </Button>
           </div>
         )}
         <ol className="flex flex-col" aria-live="polite">
@@ -398,21 +400,21 @@ export function Conversa({
                       Falha no envio{p.erro ? `: ${p.erro}` : ""}
                     </p>
                     <div className="mt-1 flex flex-wrap justify-end gap-x-3 gap-y-1">
-                      <button
+                      <Button variant="plain" size="none"
                         type="button"
                         className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-2 hover:underline"
                         onClick={() => tentarNovamente(p.clienteId)}
                       >
                         <RotateCw className="h-3 w-3" />
                         Tentar novamente
-                      </button>
-                      <button
+                      </Button>
+                      <Button variant="plain" size="none"
                         type="button"
                         className="text-muted-foreground hover:underline"
                         onClick={() => descartar(p.clienteId)}
                       >
                         Voltar ao rascunho
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -422,7 +424,7 @@ export function Conversa({
         </ol>
         {novas && (
           <div className="pointer-events-none sticky bottom-2 flex justify-center">
-            <Botao
+            <Button
               type="button"
               className="pointer-events-auto !py-1 text-xs shadow-lg"
               onClick={() => {
@@ -433,7 +435,7 @@ export function Conversa({
             >
               <ArrowDown className="h-3.5 w-3.5" />
               Novas mensagens
-            </Botao>
+            </Button>
           </div>
         )}
       </div>
@@ -446,14 +448,14 @@ export function Conversa({
             <p className="mb-2 inline-flex max-w-full items-center gap-2 rounded-md border border-border px-2 py-1 text-xs">
               <Paperclip className="h-3.5 w-3.5 shrink-0" />
               <span className="min-w-0 truncate">{anexo.nome}</span>
-              <button
+              <Button variant="plain" size="none"
                 type="button"
                 className="shrink-0"
                 aria-label="Remover anexo"
                 onClick={() => setAnexo(null)}
               >
                 <X className="h-3.5 w-3.5" />
-              </button>
+              </Button>
             </p>
           )}
           {erroArquivo && (
@@ -473,20 +475,20 @@ export function Conversa({
                 e.target.value = "";
               }}
             />
-            <Botao
+            <Button
               type="button"
-              variante="contorno"
+              variant="outline"
               className="h-10 shrink-0 !px-2.5"
               aria-label="Anexar imagem ou PDF (até 5 MB)"
               title="Anexar imagem ou PDF (até 5 MB)"
               onClick={() => arquivo.current?.click()}
             >
               <Paperclip className="h-4 w-4" />
-            </Botao>
-            <label htmlFor={`msg-${chamado.id}${encaminhamentoId ?? ""}`} className="sr-only">
+            </Button>
+            <Label htmlFor={`msg-${chamado.id}${encaminhamentoId ?? ""}`} className="sr-only text-[length:inherit] font-normal text-inherit">
               Mensagem
-            </label>
-            <textarea
+            </Label>
+            <Textarea
               id={`msg-${chamado.id}${encaminhamentoId ?? ""}`}
               ref={campo}
               rows={1}
@@ -502,7 +504,7 @@ export function Conversa({
               }}
               className="rolagem-discreta block min-h-10 min-w-0 flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40"
             />
-            <Botao
+            <Button
               type="button"
               className="h-10 shrink-0 !px-3"
               onClick={submeter}
@@ -511,7 +513,7 @@ export function Conversa({
             >
               <SendHorizontal className="h-4 w-4" />
               <span className="hidden @min-[480px]:inline">{rotuloEnviar}</span>
-            </Botao>
+            </Button>
           </div>
           <p className="mt-1 hidden text-[11px] text-muted-foreground @min-[560px]:block">
             Enter envia · Shift+Enter quebra linha · Imagem ou PDF até 5 MB

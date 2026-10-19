@@ -3,6 +3,7 @@ import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { carregarBase } from "@/services/db";
 import { definirSilencio } from "@/api/conta.functions";
 import { BellOff, Bell } from "lucide-react";
+import { Toggle } from "@/components/ui/toggle";
 
 /** Preferências de silêncio: todas as notificações ou só as da comunidade. */
 export function SilencioNotificacoes() {
@@ -18,28 +19,14 @@ export function SilencioNotificacoes() {
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
       <span className="text-muted-foreground">Silenciar:</span>
-      <button
-        type="button"
-        onClick={() => void definirSilencio({ comunidade: !silencio.comunidade })}
-        className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs transition-colors ${
-          silencio.comunidade ? "border-accent bg-accent/10 text-accent" : "border-border text-muted-foreground hover:text-foreground"
-        }`}
-        aria-pressed={!!silencio.comunidade}
-      >
+      <Toggle variant="chipAccent" pressed={!!silencio.comunidade} onPressedChange={(comunidade) => void definirSilencio({ comunidade })}>
         {silencio.comunidade ? <BellOff className="h-3 w-3" /> : <Bell className="h-3 w-3" />}
         Comunidade {silencio.comunidade ? "silenciada" : ""}
-      </button>
-      <button
-        type="button"
-        onClick={() => void definirSilencio({ todas: !silencio.todas })}
-        className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs transition-colors ${
-          silencio.todas ? "border-accent bg-accent/10 text-accent" : "border-border text-muted-foreground hover:text-foreground"
-        }`}
-        aria-pressed={!!silencio.todas}
-      >
+      </Toggle>
+      <Toggle variant="chipAccent" pressed={!!silencio.todas} onPressedChange={(todas) => void definirSilencio({ todas })}>
         {silencio.todas ? <BellOff className="h-3 w-3" /> : <Bell className="h-3 w-3" />}
         Todas {silencio.todas ? "silenciadas" : ""}
-      </button>
+      </Toggle>
       {silencio.todas && <span className="text-xs text-muted-foreground">Você não receberá novas notificações enquanto estiver silenciado.</span>}
     </div>
   );

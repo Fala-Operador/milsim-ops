@@ -4,7 +4,10 @@ import { carregarBase } from "@/services/db";
 import { analisarSolicitacao } from "@/api/admin.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarDataHoraBR } from "@/lib/domain/money";
-import { AreaTexto, Badge, Botao, Cartao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/admin/solicitacoes")({
   head: () => ({
@@ -51,7 +54,7 @@ function Solicitacoes() {
           {pendentes.map((s) => {
             const u = base.usuarios.find((x) => x.id === s.usuarioId);
             return (
-              <Cartao key={s.id}>
+              <Card key={s.id}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="font-medium">{s.nomeOrganizacao}</p>
@@ -59,9 +62,9 @@ function Solicitacoes() {
                       {u?.nomeCompleto} · {s.possuiCnpj ? `CNPJ ${s.cnpj}` : "sem CNPJ"} · {formatarDataHoraBR(s.criadoEm)}
                     </p>
                   </div>
-                  <Badge tom="aviso">{s.status.replace("_", " ")}</Badge>
+                  <Badge variant="warning">{s.status.replace("_", " ")}</Badge>
                 </div>
-                <AreaTexto
+                <Textarea
                   className="mt-3"
                   rows={2}
                   placeholder="Justificativa (obrigatória para ajustes/rejeição)"
@@ -69,12 +72,12 @@ function Solicitacoes() {
                   onChange={(e) => setJustificativa((p) => ({ ...p, [s.id]: e.target.value }))}
                 />
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {s.status === "pendente" && <Botao variante="contorno" onClick={() => agir(s.id, "iniciar")}>Iniciar análise</Botao>}
-                  <Botao onClick={() => agir(s.id, "aprovar")}>Aprovar</Botao>
-                  <Botao variante="secundario" onClick={() => agir(s.id, "ajustes")}>Solicitar ajustes</Botao>
-                  <Botao variante="perigo" onClick={() => agir(s.id, "rejeitar")}>Rejeitar</Botao>
+                  {s.status === "pendente" && <Button variant="outline" onClick={() => agir(s.id, "iniciar")}>Iniciar análise</Button>}
+                  <Button onClick={() => agir(s.id, "aprovar")}>Aprovar</Button>
+                  <Button variant="secondary" onClick={() => agir(s.id, "ajustes")}>Solicitar ajustes</Button>
+                  <Button variant="destructive" onClick={() => agir(s.id, "rejeitar")}>Rejeitar</Button>
                 </div>
-              </Cartao>
+              </Card>
             );
           })}
         </div>
