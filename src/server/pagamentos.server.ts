@@ -38,13 +38,12 @@ import {
   obterContaConectada,
   obterSessaoCheckout,
   stripeConfigurado,
-  taxaPlataformaPercentual,
 } from "@/server/stripe.server";
 import { contaParaRepasse, gereRecebimento, type ContaStripe } from "@/lib/repasses";
 import { organizacaoDaConta, registrarRecebimentoNaBase } from "@/services/repasses";
 import type { Inscricao } from "@/lib/domain/types";
 
-export { stripeConfigurado, taxaPlataformaPercentual };
+export { stripeConfigurado };
 
 const MSG_FALHA_STRIPE = "Não foi possível abrir o pagamento agora. Tente novamente em instantes.";
 

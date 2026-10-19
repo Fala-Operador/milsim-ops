@@ -1,7 +1,8 @@
 // Conta de recebimento das organizações (Stripe Connect): grava na base o retrato da conta
 // devolvido pelo Stripe. As chamadas ao Stripe ficam em src/server/pagamentos.server.ts.
 import { gerarId } from "./db";
-import { recebimentoDaConta, type ContaStripe } from "@/lib/repasses";
+import { ErroDominio } from "./db";
+import { erroTaxa, recebimentoDaConta, taxaDaPlataforma, type ContaStripe } from "@/lib/repasses";
 import type { BaseDados } from "@/lib/domain/types";
 
 /**
@@ -31,3 +32,21 @@ export function registrarRecebimentoNaBase(base: BaseDados, organizacaoId: strin
 }
 
 export const organizacaoDaConta = (base: BaseDados, contaId: string) => base.organizacoes.find((o) => o.recebimento?.contaId === contaId);
+
+/**
+ * Administração define a taxa da plataforma. Vale para as reservas feitas daqui em diante;
+ * vendas já reservadas mantêm a taxa da reserva. Fica registrada na auditoria.
+ */
+export function definirTaxaPlataformaNaBase(base: BaseDados, percentual: number, autorId: string, agora = new Date()): void {
+  const erro = erroTaxa(percentual);
+  if (erro) throw new ErroDominio("taxa", erro);
+  const anterior = taxaDaPlataforma(base);
+  const iso = agora.toISOString();
+  const atual = base.configuracoes.find((c) => c.id === "plataforma");
+  if (atual) Object.assign(atual, { taxaPlataformaPercentual: percentual, atualizadoEm: iso, atualizadoPor: autorId });
+  else base.configuracoes.push({ id: "plataforma", taxaPlataformaPercentual: percentual, atualizadoEm: iso, atualizadoPor: autorId });
+  base.auditoria.push({
+    id: gerarId("aud"), autorId, acao: "taxa_plataforma", entidade: "configuracao", entidadeId: "plataforma",
+    justificativa: `Taxa da plataforma alterada de ${anterior}% para ${percentual}%.`, criadoEm: iso,
+  });
+}

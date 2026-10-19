@@ -470,6 +470,16 @@ export interface BaseDados {
   campanhasRecompensa: CampanhaRecompensa[];
   vouchers: Voucher[];
   correcoesParticipacao: CorrecaoParticipacao[];
+  /** Configurações da plataforma editadas pela administração (registro único "plataforma"). */
+  configuracoes: ConfiguracaoPlataforma[];
+}
+
+export interface ConfiguracaoPlataforma {
+  id: "plataforma";
+  /** Taxa retida nas vendas repassadas às organizações (Stripe Connect), em % (ex.: 8.5). */
+  taxaPlataformaPercentual: number;
+  atualizadoEm: string;
+  atualizadoPor: string;
 }
 
 // ===== Perfil do operador =====

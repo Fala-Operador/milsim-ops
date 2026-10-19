@@ -126,6 +126,9 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
     if (chave.startsWith(`${meuId}:`)) v.visitasComunidade[chave] = em;
   }
 
+  // ----- Configurações da plataforma (taxa do repasse): administração e organizadores -----
+  v.configuracoes = admin || eu?.perfil === "organizador" ? base.configuracoes : [];
+
   // ----- Divulgação -----
   v.parceiros = admin ? base.parceiros : base.parceiros.filter((p) => p.ativo);
   v.secoesInicio = admin ? base.secoesInicio : base.secoesInicio.filter((s) => s.status === "publicada");

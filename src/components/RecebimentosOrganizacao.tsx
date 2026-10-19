@@ -4,7 +4,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { Banknote, Check, Clock, ExternalLink, TriangleAlert } from "lucide-react";
 import { abrirPainelStripe, atualizarRecebimento, cadastrarRecebimento, configuracaoRepasse } from "@/api/repasses.functions";
 import { Badge, Botao } from "@/components/ui";
-import { ROTULO_RECEBIMENTO } from "@/lib/repasses";
+import { ROTULO_RECEBIMENTO, taxaDaPlataforma } from "@/lib/repasses";
+import { carregarBase } from "@/services/db";
 import type { Organizacao, StatusRecebimento } from "@/lib/domain/types";
 
 const TOM: Record<StatusRecebimento, "sucesso" | "aviso" | "perigo"> = { ativa: "sucesso", em_analise: "aviso", pendente: "aviso", restrita: "perigo" };
@@ -12,14 +13,14 @@ const ICONE: Record<StatusRecebimento, typeof Check> = { ativa: Check, em_analis
 
 export function RecebimentosOrganizacao({ organizacao, retorno }: { organizacao: Organizacao; retorno?: string | undefined }) {
   const navigate = useNavigate();
-  const [config, setConfig] = useState<{ pagamentoOnline: boolean; taxaPercentual: number } | null>(null);
+  const [config, setConfig] = useState<{ pagamentoOnline: boolean } | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState("");
   const rec = organizacao.recebimento;
   const conferido = useRef<string | null>(null);
 
   useEffect(() => {
-    configuracaoRepasse().then(setConfig).catch(() => setConfig({ pagamentoOnline: false, taxaPercentual: 0 }));
+    configuracaoRepasse().then(setConfig).catch(() => setConfig({ pagamentoOnline: false }));
   }, []);
 
   const irParaCadastro = async () => {
@@ -58,7 +59,8 @@ export function RecebimentosOrganizacao({ organizacao, retorno }: { organizacao:
 
   if (config && !config.pagamentoOnline) return null; // plataforma sem pagamentos online
 
-  const taxa = config?.taxaPercentual ? `${config.taxaPercentual.toLocaleString("pt-BR")}%` : null;
+  const percentual = taxaDaPlataforma(carregarBase());
+  const taxa = percentual ? `${percentual.toLocaleString("pt-BR")}%` : null;
   const Icone = rec ? ICONE[rec.status] : Banknote;
   return (
     <div>

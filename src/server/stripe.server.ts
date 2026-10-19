@@ -1,5 +1,6 @@
 // Cliente mínimo da API do Stripe (REST + fetch, sem SDK). Nunca importar no navegador.
-// Segredos: STRIPE_SECRET_KEY (sk_...) e STRIPE_WEBHOOK_SECRET (whsec_...).
+// Segredos do site: STRIPE_SECRET_KEY (sk_...) e MILSIM_WEBHOOK_SECRET (compartilhado com a
+// Edge Function stripe-webhook, que guarda os segredos de assinatura do Stripe).
 // Sem STRIPE_SECRET_KEY a plataforma confirma inscrições sem cobrança, como antes.
 import "@tanstack/react-start/server-only";
 import { codificarFormulario, type CobrancaStripe, type SessaoCheckout } from "@/lib/stripe";
@@ -11,12 +12,9 @@ export function stripeConfigurado(): boolean {
   return !!process.env["STRIPE_SECRET_KEY"];
 }
 
-/**
- * Segredos de assinatura aceitos no webhook: o do endpoint da conta da plataforma e, se
- * houver, o do endpoint de Connect (eventos das contas das organizações, ex. account.updated).
- */
-export function segredosWebhook(): string[] {
-  return [process.env["STRIPE_WEBHOOK_SECRET"], process.env["STRIPE_CONNECT_WEBHOOK_SECRET"]].filter((s): s is string => !!s);
+/** Segredo com que a Edge Function stripe-webhook assina os eventos repassados ao site. */
+export function segredoWebhookInterno(): string {
+  return process.env["MILSIM_WEBHOOK_SECRET"] ?? "";
 }
 
 export class ErroStripe extends Error {
@@ -111,12 +109,6 @@ export function criarReembolso(inscricaoId: string, intencaoId: string, repassad
 }
 
 // ---------- Stripe Connect (contas Express das organizações) ----------
-
-/** Taxa da plataforma sobre as vendas repassadas (%), de STRIPE_TAXA_PLATAFORMA_PERCENTUAL. */
-export function taxaPlataformaPercentual(): number {
-  const v = Number(String(process.env["STRIPE_TAXA_PLATAFORMA_PERCENTUAL"] ?? "0").replace(",", "."));
-  return Number.isFinite(v) && v > 0 ? Math.min(v, 100) : 0;
-}
 
 /** Cria a conta Express da organização (uma por organização, pela chave de idempotência). */
 export function criarContaConectada(d: { organizacaoId: string; nome: string; email?: string | undefined }): Promise<ContaStripe> {

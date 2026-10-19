@@ -1,12 +1,12 @@
-// Webhook do Stripe (POST /api/stripe/webhook). Cadastre no painel do Stripe com os eventos:
-// checkout.session.completed, checkout.session.async_payment_succeeded,
-// checkout.session.async_payment_failed, checkout.session.expired e charge.refunded.
-// Para o repasse às organizações, cadastre também um endpoint de Connect (mesma URL) com
-// account.updated; o segredo dele vai em STRIPE_CONNECT_WEBHOOK_SECRET.
-// A assinatura é conferida sobre o corpo bruto antes de qualquer leitura.
+// Eventos do Stripe (POST /api/stripe/webhook). Quem chama é a Edge Function do Supabase
+// `stripe-webhook` (supabase/functions/stripe-webhook): ela recebe os webhooks do Stripe,
+// confere a assinatura do Stripe com STRIPE_WEBHOOK_SECRET / STRIPE_CONNECT_WEBHOOK_SECRET
+// (guardados só no Supabase) e repassa o evento para cá assinado com MILSIM_WEBHOOK_SECRET,
+// o segredo compartilhado entre a função e o site. A assinatura é conferida sobre o corpo
+// bruto antes de qualquer leitura.
 import { createFileRoute } from "@tanstack/react-router";
-import { assinaturaValida, type EventoStripe } from "@/lib/stripe";
-import { segredosWebhook } from "@/server/stripe.server";
+import { assinaturaValida, CABECALHO_ASSINATURA_INTERNA, type EventoStripe } from "@/lib/stripe";
+import { segredoWebhookInterno } from "@/server/stripe.server";
 import { tratarEventoStripe } from "@/server/pagamentos.server";
 
 export const Route = createFileRoute("/api/stripe/webhook")({
@@ -14,9 +14,7 @@ export const Route = createFileRoute("/api/stripe/webhook")({
     handlers: {
       POST: async ({ request }) => {
         const corpo = await request.text();
-        const assinatura = request.headers.get("stripe-signature");
-        const valida = (await Promise.all(segredosWebhook().map((s) => assinaturaValida(corpo, assinatura, s)))).some(Boolean);
-        if (!valida) {
+        if (!(await assinaturaValida(corpo, request.headers.get(CABECALHO_ASSINATURA_INTERNA), segredoWebhookInterno()))) {
           return new Response("Assinatura inválida.", { status: 400 });
         }
         let evento: EventoStripe;

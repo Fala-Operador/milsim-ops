@@ -3,8 +3,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { restaurarBase } from "@/test/baseTeste";
 import { confirmarInscricao, confirmarPagamentoNaBase } from "@/services/inscricoes";
-import { registrarRecebimentoNaBase } from "@/services/repasses";
-import { contaParaRepasse, recebimentoDaConta, resumoRepasse, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
+import { definirTaxaPlataformaNaBase, registrarRecebimentoNaBase } from "@/services/repasses";
+import { contaParaRepasse, recebimentoDaConta, resumoRepasse, taxaDaPlataforma, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
 import { visaoParaUsuario } from "@/lib/visao";
 import type { BaseDados, Evento } from "@/lib/domain/types";
 
@@ -18,6 +18,7 @@ const contaAtiva: ContaStripe = { id: "acct_1", details_submitted: true, payouts
 
 beforeEach(() => {
   base = restaurarBase();
+  definirTaxaPlataformaNaBase(base, 10, "usr-admin");
   base.eventos.push({
     id: EVT, organizacaoId: org().id, nome: "Operação Repasse", descricaoResumida: "", enredo: "",
     inicioEm: iso(30 * dia), fimEm: iso(31 * dia), fuso: "America/Sao_Paulo", local: "", endereco: "", cidade: "Itu", uf: "SP",
@@ -29,7 +30,7 @@ beforeEach(() => {
 });
 
 const reservar = () =>
-  confirmarInscricao({ eventoId: EVT, usuarioId: "usr-participante", tipoId: "tp-a", exercitoId: "ex-a" }, { pagamentoOnline: true, taxaPercentual: 10 });
+  confirmarInscricao({ eventoId: EVT, usuarioId: "usr-participante", tipoId: "tp-a", exercitoId: "ex-a" }, { pagamentoOnline: true });
 
 describe("situação da conta", () => {
   it("traduz o retrato do Stripe", () => {
@@ -89,5 +90,32 @@ describe("visão", () => {
     expect(doOrganizador.organizacoes.find((o) => o.id === org().id)?.recebimento?.contaId).toBe("acct_1");
     expect(doOrganizador.inscricoes.find((i) => i.id === ins.id)?.pagamento).toMatchObject({ contaDestino: "acct_1", taxaCentavos: 2000 });
     expect(visaoParaUsuario(base, null).organizacoes.find((o) => o.id === org().id)?.recebimento).toBeUndefined();
+  });
+});
+
+describe("taxa configurada pela administração", () => {
+  it("valida, grava em configurações e audita", () => {
+    expect(() => definirTaxaPlataformaNaBase(base, 60, "usr-admin")).toThrow(/entre 0% e 50%/);
+    expect(() => definirTaxaPlataformaNaBase(base, 8.555, "usr-admin")).toThrow(/duas casas/);
+    definirTaxaPlataformaNaBase(base, 8.5, "usr-admin");
+    expect(base.configuracoes).toHaveLength(1);
+    expect(taxaDaPlataforma(base)).toBe(8.5);
+    expect(base.auditoria.at(-1)).toMatchObject({ acao: "taxa_plataforma", justificativa: "Taxa da plataforma alterada de 10% para 8.5%." });
+  });
+
+  it("nova taxa vale para reservas novas; as já feitas mantêm a sua", async () => {
+    registrarRecebimentoNaBase(base, org().id, contaAtiva);
+    const antes = await reservar();
+    definirTaxaPlataformaNaBase(base, 5, "usr-admin");
+    expect(base.inscricoes.find((i) => i.id === antes.id)?.pagamento?.taxaCentavos).toBe(2000);
+    base.inscricoes = base.inscricoes.filter((i) => i.id !== antes.id);
+    expect((await reservar()).pagamento?.taxaCentavos).toBe(1000);
+  });
+
+  it("taxa chega à administração e aos organizadores, não aos participantes", () => {
+    expect(visaoParaUsuario(base, usuario("usr-admin")).configuracoes).toHaveLength(1);
+    expect(visaoParaUsuario(base, usuario("usr-organizador")).configuracoes).toHaveLength(1);
+    expect(visaoParaUsuario(base, usuario("usr-participante")).configuracoes).toHaveLength(0);
+    expect(visaoParaUsuario(base, null).configuracoes).toHaveLength(0);
   });
 });

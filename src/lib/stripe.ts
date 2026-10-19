@@ -17,6 +17,12 @@ export function codificarFormulario(dados: Record<string, Valor>): string {
   return pares.join("&");
 }
 
+/**
+ * Cabeçalho com que a Edge Function stripe-webhook assina o evento repassado ao site, no
+ * mesmo formato do Stripe-Signature (t=...,v1=HMAC-SHA256 de "t.corpo").
+ */
+export const CABECALHO_ASSINATURA_INTERNA = "x-milsim-assinatura";
+
 /** Tolerância padrão do Stripe para o horário da assinatura (protege contra replay). */
 export const TOLERANCIA_ASSINATURA_S = 300;
 

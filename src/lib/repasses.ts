@@ -31,9 +31,23 @@ export function contaParaRepasse(org: Organizacao | undefined): string | undefin
   return r?.transferenciasAtivas ? r.contaId : undefined;
 }
 
+/** Taxa da plataforma (%) configurada pela administração; sem configuração, zero. */
+export function taxaDaPlataforma(base: Pick<BaseDados, "configuracoes">): number {
+  const v = base.configuracoes.find((c) => c.id === "plataforma")?.taxaPlataformaPercentual ?? 0;
+  return Number.isFinite(v) && v > 0 ? Math.min(v, 100) : 0;
+}
+
+/** Erro de validação da taxa digitada pela administração (vazio = válida). */
+export function erroTaxa(percentual: number): string {
+  if (!Number.isFinite(percentual)) return "Informe a taxa em porcentagem.";
+  if (percentual < 0 || percentual > 50) return "A taxa deve ficar entre 0% e 50%.";
+  if (Math.round(percentual * 100) !== percentual * 100) return "Use no máximo duas casas decimais.";
+  return "";
+}
+
 /**
  * Taxa da plataforma sobre o valor cobrado, em centavos (arredonda para baixo, nunca passa
- * do valor). `percentual` vem de STRIPE_TAXA_PLATAFORMA_PERCENTUAL (ex.: 8.5 = 8,5%).
+ * do valor). `percentual` vem da configuração da plataforma (ex.: 8.5 = 8,5%).
  */
 export function taxaPlataforma(valorCentavos: number, percentual: number): number {
   if (!Number.isFinite(percentual) || percentual <= 0 || valorCentavos <= 0) return 0;

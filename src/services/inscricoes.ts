@@ -5,7 +5,7 @@ import { gerarTokenEntrada } from "@/lib/checkin";
 import { descontoDoBeneficio, statusVoucher } from "@/lib/participacao";
 import { restaurarVoucherDaInscricao } from "@/services/progressao";
 import { exigeEstornoOnline, fimDaReserva, ocupaVaga, reservaVigente } from "@/lib/pagamentos";
-import { contaParaRepasse, taxaPlataforma } from "@/lib/repasses";
+import { contaParaRepasse, taxaDaPlataforma, taxaPlataforma } from "@/lib/repasses";
 import type { BaseDados, Cupom, Evento, Inscricao, PagamentoInscricao, Usuario } from "@/lib/domain/types";
 import { descontoCupom, disponibilidadeTipo, normalizarCodigoCupom, situacaoCupom, TEXTO_MOTIVO } from "@/lib/vendas";
 
@@ -107,8 +107,6 @@ export interface OpcoesInscricao {
    * com a vaga reservada até o pagamento ser confirmado. Sem ela, confirma direto.
    */
   pagamentoOnline?: boolean;
-  /** Taxa da plataforma (%) retida quando a venda é repassada à conta da organização. */
-  taxaPercentual?: number;
 }
 
 /** Folga depois do fim da reserva antes de liberá-la por tempo (o Stripe pode avisar com atraso). */
@@ -155,7 +153,7 @@ export function liberarReservasVencidas(base: BaseDados, eventoId?: string, agor
  * Pagamento de uma reserva nova. Com a conta da organização apta, a cobrança já nasce com
  * destino a ela (repasse automático menos a taxa); senão o valor fica na plataforma.
  */
-function pagamentoInicial(base: BaseDados, evento: Evento, valorCentavos: number, taxaPercentual: number, agora: Date): PagamentoInscricao {
+function pagamentoInicial(base: BaseDados, evento: Evento, valorCentavos: number, agora: Date): PagamentoInscricao {
   const contaDestino = contaParaRepasse(base.organizacoes.find((o) => o.id === evento.organizacaoId));
   return {
     provedor: "stripe",
@@ -163,7 +161,7 @@ function pagamentoInicial(base: BaseDados, evento: Evento, valorCentavos: number
     valorCentavos,
     expiraEm: fimDaReserva(agora),
     contaDestino,
-    taxaCentavos: contaDestino ? taxaPlataforma(valorCentavos, taxaPercentual) : undefined,
+    taxaCentavos: contaDestino ? taxaPlataforma(valorCentavos, taxaDaPlataforma(base)) : undefined,
   };
 }
 
@@ -340,7 +338,7 @@ export async function confirmarInscricao(dados: DadosInscricao, opcoes: OpcoesIn
       cupomId,
       cortesiaId: dados.cortesiaId,
       voucherId: voucherUsado?.id,
-      pagamento: pagarOnline ? pagamentoInicial(base, evento, valorFinal, opcoes.taxaPercentual ?? 0, agora) : undefined,
+      pagamento: pagarOnline ? pagamentoInicial(base, evento, valorFinal, agora) : undefined,
       criadoEm,
     };
     base.inscricoes.push(inscricao);
