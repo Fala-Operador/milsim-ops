@@ -174,7 +174,7 @@ function ElementoStripe({ instancia, componente, aoSair, className = "" }: {
           O Stripe não conseguiu abrir este painel. Se o navegador avisou que bloqueou uma janela, permita pop-ups para este site e tente de novo.
         </p>
       )}
-      <div ref={area} className={`w-full min-w-0 overflow-x-auto ${className}`} />
+      <div ref={area} className={`w-full min-w-0 ${className}`} />
     </>
   );
 }
