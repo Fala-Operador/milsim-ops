@@ -18,11 +18,12 @@ Nenhuma.
 ## Regras
 
 - `pagamentoOnline` é `true` quando `STRIPE_SECRET_KEY` está configurada no servidor.
-- `componentesStripe` é `true` quando, além disso, `STRIPE_PUBLISHABLE_KEY` está configurada (painéis de saques e pagamentos em Financeiro).
+- `componentesStripe` é `true` quando, além disso, `STRIPE_PUBLISHABLE_KEY` está configurada e combina com a chave secreta (mesmo modo e mesma conta Stripe). Com chaves trocadas fica `false` e o recebimento volta a abrir no site do Stripe.
+- `avisoChaves` explica o que não combina entre as chaves (ausente quando está tudo certo); aparece em Administração → Pagamentos.
 
 ## Resposta
 
-`{ pagamentoOnline, componentesStripe }` (não usa `chamar`).
+`{ pagamentoOnline, componentesStripe, avisoChaves? }` (não usa `chamar`).
 
 ## Exemplo
 

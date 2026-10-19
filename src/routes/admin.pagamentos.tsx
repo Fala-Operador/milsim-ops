@@ -38,9 +38,15 @@ function Pagamentos() {
   const [aviso, setAviso] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [pagamentoOnline, setPagamentoOnline] = useState<boolean | null>(null);
+  const [avisoChaves, setAvisoChaves] = useState("");
 
   useEffect(() => {
-    configuracaoRepasse().then((c) => setPagamentoOnline(c.pagamentoOnline)).catch(() => setPagamentoOnline(null));
+    configuracaoRepasse()
+      .then((c) => {
+        setPagamentoOnline(c.pagamentoOnline);
+        setAvisoChaves(c.avisoChaves ?? "");
+      })
+      .catch(() => setPagamentoOnline(null));
   }, [usuario?.id]);
   // Mantém o campo em dia quando a taxa muda (outra aba, outro admin).
   useEffect(() => setValor(String(atual).replace(".", ",")), [atual]);
@@ -71,6 +77,11 @@ function Pagamentos() {
       {pagamentoOnline === false && (
         <p role="status" className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">
           Os pagamentos online estão desligados: falta configurar a chave secreta do Stripe no servidor. A taxa pode ser definida mesmo assim.
+        </p>
+      )}
+      {avisoChaves && (
+        <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          Os painéis do Stripe dentro do site estão desligados: {avisoChaves} Enquanto isso, o cadastro de recebimentos abre no site do Stripe.
         </p>
       )}
 

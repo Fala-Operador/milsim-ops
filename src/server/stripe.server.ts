@@ -3,7 +3,7 @@
 // Edge Function stripe-webhook, que guarda os segredos de assinatura do Stripe).
 // Sem STRIPE_SECRET_KEY a plataforma confirma inscrições sem cobrança, como antes.
 import "@tanstack/react-start/server-only";
-import { codificarFormulario, type CobrancaStripe, type SessaoCheckout } from "@/lib/stripe";
+import { codificarFormulario, problemaDasChaves, type CobrancaStripe, type SessaoCheckout } from "@/lib/stripe";
 import type { ContaStripe, SaldoStripe, SaqueStripe } from "@/lib/repasses";
 
 const API = "https://api.stripe.com/v1";
@@ -14,7 +14,12 @@ export function stripeConfigurado(): boolean {
 
 /** Chave publicável (pk_...), só para os componentes embutidos do Stripe Connect. */
 export function chavePublicavel(): string | undefined {
-  return process.env["STRIPE_PUBLISHABLE_KEY"] || undefined;
+  return process.env["STRIPE_PUBLISHABLE_KEY"]?.trim() || undefined;
+}
+
+/** Chave publicável que não combina com a secreta (modo ou conta diferentes); "" quando ok. */
+export function problemaChavesStripe(): string {
+  return problemaDasChaves(process.env["STRIPE_SECRET_KEY"], chavePublicavel());
 }
 
 /** Segredo com que a Edge Function stripe-webhook assina os eventos repassados ao site. */
