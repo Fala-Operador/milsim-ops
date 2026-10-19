@@ -48,6 +48,10 @@ export const trocarCodigoFn = createServerFn({ method: "POST" })
   .validator(z.object({ codigo: z.string().min(1).max(500) }).parse)
   .handler(({ data }) => auth.trocarCodigoRecuperacao(data.codigo));
 
+export const validarTokenRecuperacaoFn = createServerFn({ method: "POST" })
+  .validator(z.object({ tokenHash: z.string().min(1).max(500) }).parse)
+  .handler(({ data }) => auth.validarTokenRecuperacao(data.tokenHash));
+
 export const definirNovaSenhaFn = createServerFn({ method: "POST" })
   .validator(z.object({ senha: z.string().max(200) }).parse)
   .handler(({ data }) => auth.definirNovaSenha(data.senha));
@@ -59,4 +63,5 @@ export const sair = () => chamar(sairFn());
 export const cadastrar = (dados: DadosCadastro) => chamar(cadastrarFn({ data: dados }));
 export const recuperarSenha = (email: string) => recuperarSenhaFn({ data: { email } });
 export const trocarCodigoRecuperacao = (codigo: string) => trocarCodigoFn({ data: { codigo } });
+export const validarTokenRecuperacao = (tokenHash: string) => validarTokenRecuperacaoFn({ data: { tokenHash } });
 export const definirNovaSenha = (senha: string) => chamar(definirNovaSenhaFn({ data: { senha } }));

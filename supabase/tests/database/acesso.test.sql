@@ -2,13 +2,13 @@
 -- banco, então anon e authenticated não podem ler nem gravar nada e só service_role executa
 -- as RPCs do servidor. Roda com `supabase test db` sobre todas as migrations aplicadas do zero.
 begin;
-select plan(8);
+select plan(9);
 
 select is(
-  (select array_agg(t order by t) from unnest(public.tabelas_base()) t
+  (select array_agg(t order by t) from unnest(public.base_tables()) t
     where to_regclass('public.' || t) is null),
   null,
-  'toda tabela de tabelas_base() existe em public'
+  'toda tabela de base_tables() existe em public'
 );
 
 select is(
@@ -33,29 +33,36 @@ select is(
 );
 
 select ok(
-  not has_function_privilege('anon', 'public.aplicar_mudancas(jsonb, bigint)', 'execute')
-    and not has_function_privilege('authenticated', 'public.aplicar_mudancas(jsonb, bigint)', 'execute'),
-  'aplicar_mudancas fechada para anon e authenticated'
+  not has_function_privilege('anon', 'public.apply_changes(jsonb, bigint)', 'execute')
+    and not has_function_privilege('authenticated', 'public.apply_changes(jsonb, bigint)', 'execute'),
+  'apply_changes fechada para anon e authenticated'
 );
 
 select ok(
-  has_function_privilege('service_role', 'public.aplicar_mudancas(jsonb, bigint)', 'execute')
-    and has_function_privilege('service_role', 'public.exportar_base()', 'execute'),
+  has_function_privilege('service_role', 'public.apply_changes(jsonb, bigint)', 'execute')
+    and has_function_privilege('service_role', 'public.export_base()', 'execute'),
   'service_role executa as RPCs do servidor'
 );
 
 select throws_ok(
-  $$insert into public.configuracoes_plataforma (id, taxa_plataforma_percentual, atualizado_por) values ('plataforma', 60, 'teste')$$,
+  $$insert into public.platform_settings (id, platform_fee_percent, updated_by) values ('plataforma', 60, 'teste')$$,
   '23514',
   null,
   'taxa da plataforma acima de 50% é rejeitada'
 );
 
 select throws_ok(
-  $$insert into public.configuracoes_plataforma (id, taxa_plataforma_percentual, atualizado_por) values ('outra', 5, 'teste')$$,
+  $$insert into public.platform_settings (id, platform_fee_percent, updated_by) values ('outra', 5, 'teste')$$,
   '23514',
   null,
   'só existe o registro "plataforma"'
+);
+
+select is(
+  (select array_agg(c.table_name || '.' || c.column_name order by 1) from information_schema.columns c
+    where c.table_schema = 'public' and c.data_type in ('json', 'jsonb')),
+  null,
+  'nenhuma coluna json/jsonb em public: listas e objetos ficam em tabelas próprias'
 );
 
 select * from finish();

@@ -64,7 +64,7 @@ try {
 ## Escritas: atomicidade e idempotência
 
 - Toda escrita roda em `mutar` (`src/server/unidade.server.ts`): lê a base, executa a regra e
-  grava todas as mudanças numa **única transação** (`aplicar_mudancas`). Ou tudo é gravado, ou nada.
+  grava todas as mudanças numa **única transação** (`apply_changes`). Ou tudo é gravado, ou nada.
 - Efeitos externos (Stripe, Storage de documentos privados) acontecem **fora** da transação,
   antes ou depois dela, nunca dentro (a regra pode ser repetida num conflito).
 - APIs que recebem `clienteId` são **idempotentes**: gere o id uma vez no navegador
@@ -92,7 +92,7 @@ try {
 
 ## Índice
 
-103 server functions em 14 módulos, mais os [webhooks do Stripe](#webhooks).
+104 server functions em 14 módulos, mais os [webhooks do Stripe](#webhooks).
 
 ### Sessão e leitura
 <a id="sessao"></a>
@@ -106,9 +106,10 @@ Login, cadastro, recuperação de senha e a visão da pessoa. Arquivo: [`src/api
 | [`entrar`](sessao/entrar.md) | POST | Pública | Login com e-mail e senha (Supabase Auth). |
 | [`sair`](sessao/sair.md) | POST | Pública | Encerra a sessão (`signOut`) e limpa os cookies. |
 | [`cadastrar`](sessao/cadastrar.md) | POST | Pública | Cria a conta de participante: valida os dados, cria o usuário no Supabase Auth (e-mail já confirmado), grava o perfil e faz login. |
-| [`recuperarSenha`](sessao/recuperarSenha.md) | POST | Pública | Envia o e-mail de recuperação de senha (`resetPasswordForEmail`) com retorno para `/recuperar-senha`. |
+| [`recuperarSenha`](sessao/recuperarSenha.md) | POST | Pública | Envia o e-mail de recuperação de senha (`resetPasswordForEmail`) com o template em português `supabase/templates/recuperar-senha.html`. |
 | [`trocarCodigoRecuperacao`](sessao/trocarCodigoRecuperacao.md) | POST | Pública | Troca o `code` do link de recuperação por uma sessão (PKCE, `exchangeCodeForSession`). |
-| [`definirNovaSenha`](sessao/definirNovaSenha.md) | POST | Sessão de recuperação (depois de `trocarCodigoRecuperacao`) | Define a nova senha da conta (`updateUser`) e devolve a visão da pessoa logada. |
+| [`validarTokenRecuperacao`](sessao/validarTokenRecuperacao.md) | POST | Pública (quem tem o link do e-mail) | Valida o link do e-mail de recuperação (`?token_hash=…&type=recovery`) e abre a sessão de recuperação (`verifyOtp`). |
+| [`definirNovaSenha`](sessao/definirNovaSenha.md) | POST | Sessão de recuperação (depois de `validarTokenRecuperacao` ou `trocarCodigoRecuperacao`) | Define a nova senha da conta (`updateUser`) e devolve a visão da pessoa logada. |
 
 ### Conta
 <a id="conta"></a>

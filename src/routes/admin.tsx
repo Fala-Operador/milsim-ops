@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useExigirLogin } from "@/hooks/useExigirLogin";
 import { useSuporte } from "@/contexts/SuporteContext";
 import { ErroSecao, SkeletonPagina } from "@/components/ui";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
@@ -57,9 +58,7 @@ function LayoutAdmin() {
   useEffect(() => setMontado(true), []);
   const endereco = useRouterState({ select: (s) => s.location.href });
   // Sem sessão: pede login e volta ao mesmo endereço (permissão revalidada depois).
-  useEffect(() => {
-    if (montado && !usuario) navigate({ to: "/login", search: { redirect: endereco } });
-  }, [montado, usuario, navigate, endereco]);
+  useExigirLogin("/admin");
   useEffect(() => {
     if (usuario && usuario.perfil !== "admin") navigate({ to: "/app" });
   }, [usuario, navigate]);

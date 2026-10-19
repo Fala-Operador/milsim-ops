@@ -34,9 +34,9 @@ sequenceDiagram
     F->>F: valida a entrada (zod)
     F->>U: mutar(regra)
     U->>U: identidade pela sessão (JWT)
-    U->>DB: versão atual (e exportar_base se mudou)
+    U->>DB: versão atual (e export_base se mudou)
     U->>U: executa a regra sobre a base
-    U->>DB: aplicar_mudancas(lote, versão) — 1 transação
+    U->>DB: apply_changes(lote, versão) — 1 transação
     alt outra escrita entrou antes (MS409)
         U->>U: espera e refaz (até 4 vezes)
     end
@@ -63,8 +63,8 @@ flowchart LR
 ```
 
 - Login: [`entrar`](api/sessao/entrar.md); a sessão fica em cookies. Conta desativada é deslogada.
-- Senha esquecida: [`recuperarSenha`](api/sessao/recuperarSenha.md) → e-mail →
-  `/recuperar-senha` → [`trocarCodigoRecuperacao`](api/sessao/trocarCodigoRecuperacao.md) →
+- Senha esquecida: [`recuperarSenha`](api/sessao/recuperarSenha.md) → e-mail em português →
+  `/recuperar-senha?token_hash=…` → [`validarTokenRecuperacao`](api/sessao/validarTokenRecuperacao.md) →
   [`definirNovaSenha`](api/sessao/definirNovaSenha.md).
 
 ## 3. Inscrição com pagamento (Stripe)

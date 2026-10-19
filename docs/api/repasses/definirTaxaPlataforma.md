@@ -20,7 +20,7 @@ Define a taxa da plataforma (%) retida em cada venda repassada às organizaçõe
 ## Regras
 
 - Vale para reservas novas; vendas já feitas guardam a taxa do momento.
-- Fica em `configuracoes_plataforma` e é auditada.
+- Fica em `platform_settings` e é auditada.
 
 ## Resposta
 

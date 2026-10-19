@@ -18,8 +18,8 @@ export async function entrar(email: string, senha: string): Promise<RespostaApi<
   const sessao = supabaseSessao();
   const { data, error } = await sessao.auth.signInWithPassword({ email: normalizarEmail(email), password: senha });
   if (error || !data.user) throw new Error("E-mail ou senha incorretos.");
-  const { data: perfil } = await supabaseAdmin().from("usuarios").select("ativo").eq("id", data.user.id).maybeSingle();
-  if (!perfil?.ativo) {
+  const { data: perfil } = await supabaseAdmin().from("users").select("active").eq("id", data.user.id).maybeSingle();
+  if (!perfil?.active) {
     await sessao.auth.signOut();
     throw new Error("Conta inativa.");
   }
@@ -70,6 +70,16 @@ export async function recuperarSenha(email: string): Promise<void> {
 /** Troca o código do link de e-mail por uma sessão de recuperação. */
 export async function trocarCodigoRecuperacao(codigo: string): Promise<void> {
   const { error } = await supabaseSessao().auth.exchangeCodeForSession(codigo);
+  if (error) throw new Error("Link de recuperação inválido ou expirado. Solicite um novo.");
+}
+
+/**
+ * Valida o link do template de e-mail (`?token_hash=…&type=recovery`) e abre a sessão de
+ * recuperação. Diferente do `code` (PKCE), funciona em qualquer aparelho: não depende de um
+ * cookie criado no navegador que pediu a troca de senha.
+ */
+export async function validarTokenRecuperacao(tokenHash: string): Promise<void> {
+  const { error } = await supabaseSessao().auth.verifyOtp({ type: "recovery", token_hash: tokenHash });
   if (error) throw new Error("Link de recuperação inválido ou expirado. Solicite um novo.");
 }
 

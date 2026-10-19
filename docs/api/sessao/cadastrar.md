@@ -32,7 +32,7 @@ Cria a conta de participante: valida os dados, cria o usuário no Supabase Auth 
 - CPF e e-mail são únicos.
 - Menores de 18 anos (15 a 17) ficam com `autorizacaoResponsavel = "pendente"` e só se inscrevem depois da aprovação do admin.
 - Se a gravação do perfil falhar, a conta criada no Auth é apagada (não fica conta órfã).
-- Perfil, papel e organização ficam na tabela `usuarios`, nunca em `user_metadata`.
+- Perfil, papel e organização ficam na tabela `users`, nunca em `user_metadata`.
 
 ## Resposta
 

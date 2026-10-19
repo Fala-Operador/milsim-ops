@@ -10,6 +10,7 @@ import { criarBaseInicial, SENHAS_DEMO } from "@/data/seed";
 import { gerarHistoricoDemo } from "@/data/seedAnalytics";
 import { aleatorioSeguro } from "@/lib/checkin";
 import { baseDasTabelas, calcularMudancas, objetosAlterados, paraLinha, type TabelasExportadas } from "@/lib/persistencia";
+import { CAMPANHAS_METRICAS, REGISTROS_METRICAS } from "@/lib/esquemaBanco";
 import { enviarMidia } from "@/server/midia";
 import type { BaseDados } from "@/lib/domain/types";
 
@@ -67,22 +68,22 @@ export async function semearBase(admin: SupabaseClient, opcoes: OpcoesSemeadura 
   await enviarMidia(admin, objetosAlterados(baseDasTabelas({}), base));
 
   // 3. Conteúdo das tabelas (substituição completa, numa transação)
-  const { data: atual, error: erroLeitura } = await admin.rpc("exportar_base");
+  const { data: atual, error: erroLeitura } = await admin.rpc("export_base");
   if (erroLeitura) throw new Error(`Falha ao ler a base: ${erroLeitura.message}`);
-  const r = atual as { versao: number; tabelas: TabelasExportadas };
-  const lote = calcularMudancas(baseDasTabelas(r.tabelas), base);
-  const { error: erroGravacao } = await admin.rpc("aplicar_mudancas", { p_mudancas: lote, p_versao: r.versao });
+  const r = atual as { version: number; tables: TabelasExportadas };
+  const lote = calcularMudancas(baseDasTabelas(r.tables), base);
+  const { error: erroGravacao } = await admin.rpc("apply_changes", { p_changes: lote, p_version: r.version });
   if (erroGravacao) throw new Error(`Falha ao gravar a seed: ${erroGravacao.message}`);
   log("Tabelas da aplicação substituídas pela base demonstrativa.");
 
   // 4. Métricas fictícias
   const { campanhas, registros } = gerarHistoricoDemo(base.eventos);
-  await admin.from("analytics_registros").delete().neq("id", "");
-  await admin.from("campanhas").delete().neq("id", "");
-  const { error: erroCamp } = await admin.from("campanhas").insert(campanhas.map(paraLinha));
+  await admin.from(REGISTROS_METRICAS.tabela).delete().neq("id", "");
+  await admin.from(CAMPANHAS_METRICAS.tabela).delete().neq("id", "");
+  const { error: erroCamp } = await admin.from(CAMPANHAS_METRICAS.tabela).insert(campanhas.map((c) => paraLinha(CAMPANHAS_METRICAS, c)));
   if (erroCamp) throw new Error(`Falha ao gravar campanhas: ${erroCamp.message}`);
   for (let i = 0; i < registros.length; i += 1000) {
-    const { error } = await admin.from("analytics_registros").insert(registros.slice(i, i + 1000).map(paraLinha));
+    const { error } = await admin.from(REGISTROS_METRICAS.tabela).insert(registros.slice(i, i + 1000).map((r) => paraLinha(REGISTROS_METRICAS, r)));
     if (error) throw new Error(`Falha ao gravar métricas: ${error.message}`);
   }
   log(`${registros.length} registros de métricas fictícios gravados.`);

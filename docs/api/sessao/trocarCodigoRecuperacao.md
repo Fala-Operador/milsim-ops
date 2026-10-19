@@ -9,7 +9,7 @@
 | Método | `POST` |
 | Acesso | Pública |
 
-Troca o `code` do link de recuperação por uma sessão (PKCE, `exchangeCodeForSession`). Usada pela página `/recuperar-senha`.
+Troca o `code` do link de recuperação por uma sessão (PKCE, `exchangeCodeForSession`). Mantida para links do template padrão do Supabase; o template atual usa [`validarTokenRecuperacao`](validarTokenRecuperacao.md), que funciona em qualquer aparelho.
 
 ## Entrada
 
@@ -20,6 +20,7 @@ Troca o `code` do link de recuperação por uma sessão (PKCE, `exchangeCodeForS
 ## Regras
 
 - O código é de uso único e expira.
+- PKCE: só funciona no mesmo navegador em que a recuperação foi pedida.
 
 ## Resposta
 

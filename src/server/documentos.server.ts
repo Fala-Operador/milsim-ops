@@ -1,4 +1,4 @@
-// Notas fiscais dos equipamentos: bucket PRIVADO "documentos" + tabela documentos_privados,
+// Notas fiscais dos equipamentos: bucket PRIVADO "documentos" + tabela private_documents,
 // fora da base transacional (nunca entram na visão do navegador). Só o dono acessa,
 // por URL assinada de curta duração. Nada é extraído ou interpretado do arquivo.
 import "@tanstack/react-start/server-only";
@@ -28,10 +28,10 @@ export function lerArquivoNota(dataUrl: string): ArquivoNota {
   return { bytes, tipo: m[1]!, ext: regra.ext };
 }
 
-interface LinhaDoc { id: string; usuario_id: string; equipamento_id: string; caminho: string; nome: string; tipo: string; tamanho: number }
+interface LinhaDoc { id: string; user_id: string; equipment_id: string; path: string; name: string; type: string; size: number }
 
 async function docDoEquipamento(equipamentoId: string): Promise<LinhaDoc | null> {
-  const { data, error } = await supabaseAdmin().from("documentos_privados").select("*").eq("equipamento_id", equipamentoId).maybeSingle();
+  const { data, error } = await supabaseAdmin().from("private_documents").select("*").eq("equipment_id", equipamentoId).maybeSingle();
   if (error) throw new Error(error.message);
   return data as LinhaDoc | null;
 }
@@ -42,19 +42,19 @@ export async function gravarNota(usuarioId: string, equipamentoId: string, nome:
   const { error } = await storage.upload(caminho, arq.bytes, { contentType: arq.tipo, upsert: false });
   if (error) throw new Error(`Falha ao enviar documento: ${error.message}`);
   const anterior = await docDoEquipamento(equipamentoId);
-  const linha = { id: `doc-${equipamentoId}`, usuario_id: usuarioId, equipamento_id: equipamentoId, caminho, nome, tipo: arq.tipo, tamanho: arq.bytes.byteLength, enviado_em: new Date().toISOString() };
-  const { error: e2 } = await supabaseAdmin().from("documentos_privados").upsert(linha, { onConflict: "equipamento_id" });
+  const linha = { id: `doc-${equipamentoId}`, user_id: usuarioId, equipment_id: equipamentoId, path: caminho, name: nome, type: arq.tipo, size: arq.bytes.byteLength, uploaded_at: new Date().toISOString() };
+  const { error: e2 } = await supabaseAdmin().from("private_documents").upsert(linha, { onConflict: "equipment_id" });
   if (e2) { await storage.remove([caminho]); throw new Error(e2.message); }
-  if (anterior) await storage.remove([anterior.caminho]);
-  return { nome, tipo: arq.tipo, tamanho: arq.bytes.byteLength, enviadaEm: linha.enviado_em };
+  if (anterior) await storage.remove([anterior.path]);
+  return { nome, tipo: arq.tipo, tamanho: arq.bytes.byteLength, enviadaEm: linha.uploaded_at };
 }
 
 /** URL assinada (60 s) — somente para o dono do documento. */
 export async function urlDaNota(usuarioId: string, equipamentoId: string, baixar: boolean): Promise<string> {
   const doc = await docDoEquipamento(equipamentoId);
-  if (!doc || doc.usuario_id !== usuarioId) throw new ErroDominio("nota", "Documento não encontrado.");
+  if (!doc || doc.user_id !== usuarioId) throw new ErroDominio("nota", "Documento não encontrado.");
   const { data, error } = await supabaseAdmin().storage.from(BUCKET)
-    .createSignedUrl(doc.caminho, 60, baixar ? { download: doc.nome } : undefined);
+    .createSignedUrl(doc.path, 60, baixar ? { download: doc.name } : undefined);
   if (error || !data) throw new Error(error?.message ?? "Falha ao gerar link.");
   return data.signedUrl;
 }
@@ -62,8 +62,8 @@ export async function urlDaNota(usuarioId: string, equipamentoId: string, baixar
 export async function removerNota(usuarioId: string, equipamentoId: string): Promise<void> {
   const doc = await docDoEquipamento(equipamentoId);
   if (!doc) return;
-  if (doc.usuario_id !== usuarioId) throw new ErroDominio("nota", "Documento não encontrado.");
-  await supabaseAdmin().storage.from(BUCKET).remove([doc.caminho]);
-  await supabaseAdmin().from("documentos_privados").delete().eq("id", doc.id);
+  if (doc.user_id !== usuarioId) throw new ErroDominio("nota", "Documento não encontrado.");
+  await supabaseAdmin().storage.from(BUCKET).remove([doc.path]);
+  await supabaseAdmin().from("private_documents").delete().eq("id", doc.id);
 }
 

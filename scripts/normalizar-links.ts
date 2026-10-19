@@ -17,10 +17,10 @@ if (!url || !chave) {
 const aplicar = process.argv.includes("--aplicar");
 const admin = createClient(url, chave, { auth: { persistSession: false, autoRefreshToken: false } });
 
-const { data, error } = await admin.rpc("exportar_base");
+const { data, error } = await admin.rpc("export_base");
 if (error) throw new Error(error.message);
-const r = data as { versao: number; tabelas: TabelasExportadas };
-const antes = baseDasTabelas(r.tabelas);
+const r = data as { version: number; tables: TabelasExportadas };
+const antes = baseDasTabelas(r.tables);
 const depois = structuredClone(antes);
 
 for (const p of depois.parceiros) {
@@ -33,13 +33,18 @@ for (const p of depois.parceiros) {
 }
 
 const lote = calcularMudancas(antes, depois);
-const total = lote["parceiros"]?.gravar.length ?? 0;
+// Links ficam na tabela partner_links: conta os parceiros com alguma linha alterada.
+const alterados = new Set(
+  ["partners", "partner_links"].flatMap((t) => [...(lote[t]?.gravar ?? []), ...(lote[t]?.excluir ?? [])])
+    .map((l) => String(l["partner_id"] ?? l["id"])),
+);
+const total = alterados.size;
 if (total === 0) {
   console.log("Nada a normalizar.");
 } else if (!aplicar) {
   console.log(`${total} parceiro(s) seriam atualizados. Rode com -- --aplicar para gravar.`);
 } else {
-  const { error: erro } = await admin.rpc("aplicar_mudancas", { p_mudancas: lote, p_versao: r.versao });
+  const { error: erro } = await admin.rpc("apply_changes", { p_changes: lote, p_version: r.version });
   if (erro) throw new Error(`Falha ao gravar: ${erro.message}`);
   console.log(`${total} parceiro(s) atualizados.`);
 }
