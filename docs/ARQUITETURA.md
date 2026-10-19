@@ -4,6 +4,9 @@ Documento técnico para quem vai manter ou evoluir o sistema. Complementa o
 [README](../README.md) (visão geral e execução) e o [AGENTS.md](../AGENTS.md) (regras
 obrigatórias). Em caso de conflito, o `AGENTS.md` prevalece.
 
+Veja também: [regras de negócio](regras-de-negocio.md), [fluxos](fluxos.md) e a
+[referência das APIs](api/README.md) (uma página por API, com exemplo).
+
 ---
 
 ## 1. Visão geral
@@ -144,6 +147,9 @@ registrado no log do servidor e vira "Não foi possível concluir a operação".
   `search_path` vazio, `SECURITY INVOKER`.
 - Bucket `midia`: leitura pública por URL; upload só pelo servidor. Tipos permitidos: jpeg,
   png, webp, gif e pdf; tamanho máximo de 10 MB (PDF até 5 MB, validado no servidor).
+- Bucket `documentos`: **privado** (5 MB). Notas fiscais (`<usuario>/<uuid>.<ext>`, só o dono) e
+  anexos do suporte (`suporte/<chamado>/…`, depois de conferir o acesso). Acesso só por URL
+  assinada de curta duração gerada pelo servidor; o tipo real é conferido pelos primeiros bytes.
 
 ### 5.2 Convenções
 
@@ -167,18 +173,32 @@ registrado no log do servidor e vira "Não foi possível concluir a operação".
 | Engajamento | `missoes`, `entregas`, `comunicados`, `comentarios` |
 | Suporte e governança | `chamados`, `notificacoes`, `auditoria`, `privacidade` |
 | Comunidade | `foruns`, `publicacoes`, `respostas`, `curtidas`, `denuncias`, `preferencias_forum`, `restricoes_comunidade`, `moderacao`, `visitas_comunidade` |
-| Divulgação | `parceiros`, `secoes_inicio` |
+| Divulgação | `parceiros`, `secoes_inicio`, `impulsionamentos` |
 | Check-in | `checkins` (base de referência da portaria) |
+| Perfil e gamificação | `perfis_operador`, `equipamentos`, `fotos_perfil`, `insignias`, `concessoes_insignia`, `campanhas_recompensa`, `vouchers`, `correcoes_participacao` |
+| Pagamentos | `configuracoes_plataforma` (taxa); os dados do Stripe ficam em `inscricoes.pagamento` e `organizacoes.recebimento` (jsonb) |
+| Documentos privados (fora da base transacional) | `documentos_privados` (metadados das notas fiscais; nunca na visão) |
 | Métricas (fora da base transacional) | `analytics_registros` (append-only), `campanhas` |
 | Controle | `controle_base` (versão global) |
 
 ### 5.4 Mudando o schema
 
-1. `npx supabase migration new <nome>`; RLS ligado, sem policies, `grant` só para `service_role`.
+As migrations ficam em `supabase/migrations/` e são aplicadas pelo **GitHub Actions**
+(`.github/workflows/deploy.yml`, `supabase db push` a cada push no `main`). O
+`check.yml` simula o push e roda os testes pgTAP em todo PR que mexe em `supabase/`.
+
+1. `npx supabase migration new <nome>`: RLS ligado, sem policies, `grant` só para `service_role`.
+   O carimbo de data precisa ser **posterior** à última migration aplicada.
 2. Atualize o tipo em `src/lib/domain/types.ts`, `TABELAS` em `src/lib/persistencia.ts` e,
    se for uma tabela transacional nova, a lista em `tabelas_base()` (SQL).
 3. Filtre a nova coleção em `visaoParaUsuario` e cubra com teste.
-4. `bun run db:push` e `npx supabase db advisors --linked`.
+4. Aplique com `npx supabase db push --linked` (ou deixe o deploy aplicar) e rode
+   `npx supabase db advisors --linked`. **Nunca** aplique uma migration à mão (`db query -f`, psql):
+   ela fica fora do histórico, e o `db push` seguinte recusa todo o deploy.
+5. Se aplicar localmente com `db push`, envie o arquivo para o `main` logo em seguida: o banco com uma
+   migration que não está na pasta também faz o deploy falhar.
+6. Mudanças destrutivas (apagar coluna/tabela) só com aprovação, numa migration própria que confere
+   antes se há dados (ex.: `20261019200000_remove_colunas_pix.sql`).
 
 ---
 
@@ -197,29 +217,41 @@ registrado no log do servidor e vira "Não foi possível concluir a operação".
 | Notificações | — | as próprias | as próprias | todas |
 | Auditoria | — | — | — | toda |
 | Seções e parceiros | publicados/ativos | idem | idem | todos |
+| Link do grupo do WhatsApp do evento | — | só com inscrição confirmada | dos seus eventos | todos |
+| Pagamento (Stripe) de terceiros | situação mínima para contar vagas | idem | sem ids do Stripe | completo |
+| Notas fiscais | — | nunca (só o dono, por link assinado) | nunca | nunca |
 
 O "perfil público" troca CPF, e-mail, telefone e endereço por vazios, e o nome completo pelo nome
 de exibição. Os cupons nunca vão ao navegador: a prévia de desconto usa `previsualizarCupomFn`.
+O número de WhatsApp do organizador (`evento.whatsappContato`) é público.
 
 ---
 
 ## 7. APIs — `src/api/*.functions.ts`
 
 Cada arquivo exporta as server functions (`...Fn`) e wrappers de mesmo nome para o navegador.
+São 103 server functions em 14 módulos, mais o webhook do Stripe. A referência completa, com
+entrada, regras, erros e exemplo de cada uma, está em **[docs/api/](api/README.md)**.
 
 | Arquivo | Operações |
 |---|---|
-| `sessao` | `obterVisao`, `obterEvento`, `entrar`, `sair`, `cadastrar`, `recuperarSenha`, `trocarCodigo`, `definirNovaSenha` |
-| `inscricoes` | `confirmarInscricao` (sempre para si mesmo), `cancelarInscricao` (titular, organização ou admin), `previsualizarCupom` |
-| `organizador` | `solicitarOrganizador`, `reenviarSolicitacao` (só o dono), `salvarEvento` (status e organização decididos pelo servidor), `publicarEvento` (cria os fóruns), `cancelarEvento`, `excluirEvento`, `criarCupom`, `criarCortesia` (só a gestão do evento) |
-| `admin` | `analisarSolicitacao`, `desativarUsuario`, `aprovarAutorizacao`, `responderPrivacidade` |
-| `comunidade` | publicações, respostas, curtidas, denúncias, moderação, fóruns, preferências, nome de exibição, `garantirForuns`, `registrarVisita` |
-| `divulgacao` | seções e parceiros da página inicial (somente admin, auditado) |
-| `conta` | missões, privacidade, suporte, notificações (lidas), silêncio, tema, preferências de modalidade |
-| `checkin` | `sincronizarCheckins` (aceite da fila da portaria) |
-| `analytics` | `registrarAnalytics` (lote ≤ 50, sem login), `listarAnalytics` (organização/admin), `criarCampanha` |
+| `sessao` | visão, evento (loaders), login, cadastro, logout, recuperação de senha |
+| `conta` | missões, privacidade, notificações, silêncio, foto, tema, preferências |
+| `admin` | solicitações de organizador, desativação, autorização de menores, privacidade |
+| `organizador` | solicitação, eventos (salvar, publicar, cancelar, excluir), cupons, cortesias |
+| `inscricoes` | inscrição (idempotente), checkout do Stripe (retomar, sincronizar), cancelamento, prévia de cupom |
+| `repasses` | conta Stripe Connect da organização, saldo e saques, painéis do Stripe, taxa da plataforma |
+| `comunidade` | publicações, respostas, curtidas, denúncias, moderação, fóruns, preferências |
+| `perfil` | perfil social, privacidade, arsenal, galeria, notas fiscais privadas |
+| `suporte` | chamados, mensagens, encaminhamento à organização, status, anexos |
+| `divulgacao` | seções e parceiros da página inicial (admin) |
+| `impulsionamentos` | campanhas de destaque de eventos (admin) |
+| `gamificacao` | insígnias, campanhas de recompensa, correção de participação |
+| `checkin` | sincronização da fila da portaria |
+| `analytics` | coleta anônima, leitura, campanhas de rastreio |
 
-Todas as server functions passam pelo middleware de CSRF de `src/start.ts`.
+Todas as server functions passam pelo middleware de CSRF de `src/start.ts`. O único endpoint
+HTTP público é `POST /api/stripe/webhook`, chamado pela Edge Function `stripe-webhook`.
 
 ---
 
@@ -290,6 +322,15 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
 - **Localização e preferências**: a localização (cidade/UF) e as preferências do visitante ficam
   no `localStorage`; as da conta, na tabela `usuarios`.
 - **Insights IA** (`lib/insights.*`): resumo agregado enviado ao gateway de IA do Lovable.
+- **Contato do evento no WhatsApp** (`lib/contatoEvento.ts`): normalização do número (DDI) e do
+  convite do grupo (só `chat.whatsapp.com`), validação no editor e no servidor (`salvarEvento`) e
+  `podeVerGrupo`, usado pela visão para entregar o link só a inscritos confirmados e à gestão.
+- **Movimentações do financeiro** (`lib/movimentacoes.ts`): abas por tipo, filtros (busca, período,
+  meio de pagamento), ordenação e totais; o valor real dos descontos vem da inscrição.
+- **Central de Suporte** (`lib/suporte.ts`, `services/suporte.ts`): triagem só da administração,
+  encaminhamento à organização, canal interno, status derivados do histórico imutável.
+
+Regras detalhadas de cada área: [regras-de-negocio.md](regras-de-negocio.md).
 
 ---
 
@@ -308,14 +349,21 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
 
 ## 10. Testes
 
-`bun run test`: 16 arquivos, 104 testes.
+`bun run test`: 29 arquivos, 268 testes (os serviços rodam sobre uma base em memória).
 
 | Arquivo | Cobre |
 |---|---|
-| `regras.test.ts`, `comunidade.test.ts`, `divulgacao.test.ts`, `checkin.test.ts`, `modalidades.test.ts`, ... | regras de negócio (base em memória) |
+| `regras.test.ts`, `cupons-lotes.test.ts`, `inscritos.test.ts`, `editor-evento.test.ts`, `modalidades.test.ts` | inscrição, lotes, cupons, cortesias, editor de eventos, modalidades |
+| `pagamentos.test.ts`, `repasses.test.ts` | reserva e confirmação idempotentes no Stripe, liberação, reembolso, webhook, repasse e taxa |
+| `contato-evento.test.ts`, `movimentacoes.test.ts` | WhatsApp do evento (normalização, validação, quem vê o grupo) e filtros do financeiro |
+| `comunidade.test.ts`, `suporte.test.ts`, `silencio-notificacoes.test.ts` | comunidade, Central de Suporte, notificações |
+| `checkin.test.ts`, `conta-checkin.test.ts` | check-in offline, fila e conflitos; operações da conta |
+| `perfil-operador.test.ts`, `foto-perfil.test.ts`, `instagram.test.ts` | perfil social, privacidade, fotos, links |
+| `divulgacao.test.ts`, `impulsionamento.test.ts`, `carrossel.test.ts`, `localizacao-tema.test.ts` | página inicial, impulsionamento, localização e tema |
+| `relatorio-metricas.test.ts`, `insights.test.ts` | métricas e insights |
 | `persistencia.test.ts` | camelCase↔snake_case, timestamps, ida e volta da base inteira, diff mínimo, chave composta |
 | `visao.test.ts` | o que cada perfil recebe (sem CPF/e-mail para visitantes, cupons isolados por organização, inscrições anônimas...) |
-| `conta-checkin.test.ts` | regras que passaram ao servidor: suporte, privacidade, notificações, token na inscrição, aceite da fila do check-in |
+| `app-routing.test.tsx`, `error-boundary.test.tsx`, `editor-imagem.test.tsx`, `manual-regras.test.ts` | rotas, erros de página, recorte de imagem, manual de regras |
 
 O fluxo completo também foi exercitado num navegador real contra o Supabase: visitante, login
 inválido, sessão em cookie, escrita, redirecionamentos por perfil, logout, organizador, admin,
@@ -323,12 +371,25 @@ cadastro com foto, inscrição, inscrição duplicada recusada e publicação co
 
 ---
 
-## 11. Mapa de arquivos novos
+## 11. Mapa de arquivos
 
 ```
+docs/
+  README.md                        índice da documentação
+  regras-de-negocio.md, fluxos.md  regras por área e fluxos ponta a ponta
+  api/                             uma página por API (entrada, regras, erros, exemplo)
+.github/workflows/
+  check.yml                        PR: carimbos únicos, simulação do db push, testes pgTAP
+  deploy.yml                       main: aplica migrations e publica Edge Functions
 supabase/
   config.toml                      configuração do projeto (Auth: site_url e redirects)
-  migrations/…_esquema_inicial.sql tabelas, RLS, grants, RPCs, bucket
+  migrations/                      esquema versionado (aplicado pelo deploy)
+  functions/stripe-webhook/        Edge Function: confere a assinatura do Stripe e repassa ao site
+  tests/                           testes pgTAP do banco
+src/routes/api.stripe.webhook.ts   POST /api/stripe/webhook (eventos do Stripe)
+src/server/
+  pagamentos.server.ts, stripe.server.ts   Stripe Checkout, reembolsos, Connect
+  documentos.server.ts, anexosSuporte.server.ts   bucket privado: notas fiscais e anexos
 scripts/
   seed.ts                          bun run db:seed [-- --limpar-contas]
   assets-hook.mjs, registrar-assets.mjs   imagens importadas pela seed viram data URLs

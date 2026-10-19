@@ -8,8 +8,12 @@ evento, painel do organizador e administração da plataforma.
 app. O Supabase fornece Postgres, Auth e Storage, e o navegador **nunca** acessa o banco
 diretamente: toda leitura e escrita passa pelas server functions, que autenticam a pessoa e
 aplicam as regras de negócio. A venda de ingressos usa o **Stripe Checkout** quando
-`STRIPE_SECRET_KEY` está configurada (sem ela, a inscrição é confirmada sem cobrança). Mensagens
-externas (e-mail, WhatsApp) continuam simuladas.
+`STRIPE_SECRET_KEY` está configurada (sem ela, a inscrição é confirmada sem cobrança), com repasse
+automático às organizações pelo **Stripe Connect**. Não há envio automático de e-mail ou WhatsApp:
+os avisos ficam nas notificações do app.
+
+**Documentação:** [regras de negócio](docs/regras-de-negocio.md) · [fluxos](docs/fluxos.md) ·
+[APIs com exemplos](docs/api/README.md) · [arquitetura](docs/ARQUITETURA.md) · [índice](docs/README.md)
 
 > Projeto conectado ao [Lovable](https://lovable.dev): commits na branch `main` sincronizam com o
 > editor. Não reescreva histórico já publicado (force push, rebase, amend). Veja `AGENTS.md`.
@@ -18,7 +22,8 @@ externas (e-mail, WhatsApp) continuam simuladas.
 
 - **TanStack Start** (React 19 + SSR) com roteamento por arquivos (`src/routes/`) e server functions (`src/api/`)
 - **Supabase**: Postgres (tabelas com RLS, acesso só pelo servidor), Auth (sessão em cookies via `@supabase/ssr`) e Storage (bucket `midia`)
-- **Vite 8** via `@lovable.dev/vite-tanstack-config` (build com Nitro, alvo Cloudflare)
+- **Vite 8** via `@lovable.dev/vite-tanstack-config` (build com Nitro: servidor Node em `.output/`; dentro do Lovable o alvo continua Cloudflare)
+- **Stripe** (Checkout, reembolsos e Connect Express) por `fetch`, sem SDK; webhooks pela Edge Function `supabase/functions/stripe-webhook`
 - **Tailwind CSS 4**, `lucide-react`, `recharts`; **Vitest** + Testing Library
 - Apoio: `qrcode` / `jsqr` (check-in), `jspdf` (relatórios), `zod` (validação das APIs), `ai` (insights)
 
@@ -28,9 +33,10 @@ externas (e-mail, WhatsApp) continuam simuladas.
 bun install
 cp .env.example .env.local   # preencha as chaves do Supabase
 bun run dev                  # http://localhost:8080
-bun run test                 # 104 testes (regras, persistência, visão por perfil)
+bun run test                 # 268 testes (regras, pagamentos, persistência, visão por perfil)
 bun run typecheck
 bun run build
+bun run start                # servidor Node gerado pelo build (.output/server/index.mjs)
 ```
 
 ### Variáveis de ambiente
@@ -41,12 +47,16 @@ bun run build
 | `SUPABASE_PUBLISHABLE_KEY` | chave publicável; o servidor a usa para a sessão do Supabase Auth |
 | `SUPABASE_SECRET_KEY` | chave secreta, **somente servidor** (acesso ao banco, Storage e Auth admin) |
 | `SUPABASE_DB_PASSWORD` | só para `supabase link` / `db push` |
-| `STRIPE_SECRET_KEY` | opcional, liga a venda pelo Stripe Checkout e o Stripe Connect, **somente servidor** |
-| `MILSIM_WEBHOOK_SECRET` | segredo compartilhado com a Edge Function `stripe-webhook` |
+| `STRIPE_SECRET_KEY` | opcional, **somente servidor**: liga a venda pelo Stripe Checkout e o Stripe Connect (sem ela, inscrição confirmada sem cobrança) |
+| `MILSIM_WEBHOOK_SECRET` | segredo compartilhado entre a Edge Function `stripe-webhook` e o site (mesmo valor nos dois lados) |
 | `STRIPE_PUBLISHABLE_KEY` | opcional (`pk_...`), mostra os painéis embutidos do Stripe (saques e pagamentos) em Financeiro |
 | `LOVABLE_API_KEY` | opcional, habilita Admin › Insights IA |
 
-Na publicação (Lovable/Cloudflare), configure as três primeiras como **segredos** do ambiente.
+Na publicação, configure as variáveis do Supabase (e as do Stripe, se usar) como **segredos** do
+ambiente. Os segredos `whsec_…` do Stripe ficam só no Supabase (Edge Functions → Secrets), junto
+com `MILSIM_WEBHOOK_URL`; veja [a página do webhook](docs/api/webhooks/stripe-webhook-edge.md).
+O Supabase Auth precisa da URL publicada nas URLs de retorno, e um SMTP próprio para a
+recuperação de senha chegar a qualquer e-mail.
 
 ### Banco de dados
 
@@ -75,7 +85,9 @@ backup completo como artefato da execução (30 dias). Detalhes em
   (supabase.com/dashboard/account/tokens) e `SUPABASE_DB_PASSWORD`. Variável opcional
   `SUPABASE_PROJECT_REF` (padrão: `fezrmoyjsffufdjptamp`).
 - Toda mudança de esquema é uma migration nova em `supabase/migrations/`, que precisa aplicar
-  num banco vazio. Não altere o banco à mão: o histórico da CLI deixaria de bater.
+  num banco vazio e ter data **posterior** à última aplicada. Não altere o banco à mão
+  (`db query -f`, psql): a migration fica fora do histórico da CLI e o `db push` do deploy passa a
+  recusar tudo. Se aplicar uma migration localmente com `db push`, envie o arquivo ao `main` em seguida.
 - As migrations anteriores ao deploy automático foram aplicadas à mão (psql) e são idempotentes:
   o primeiro deploy as reaplica sem efeito. Migrations novas não precisam ser idempotentes.
 
@@ -90,20 +102,27 @@ backup completo como artefato da execução (30 dias). Detalhes em
 > **Atenção:** essas senhas são públicas (estão neste repositório). Antes de abrir o app para
 > pessoas reais, troque a senha do admin e desative ou remova as contas de exemplo. A restauração
 > da base existe só como script de desenvolvimento (`bun run db:seed`) e apaga todos os dados.
+>
+> No projeto `milsim-ops` a base foi limpa em 19/10/2026: das contas acima, só o admin existe.
+> As contas de participante e organizador de exemplo voltam apenas se a seed for rodada de novo.
 
 ## Funcionalidades
 
 | Área | Rotas | O que faz |
 |---|---|---|
-| Pública | `/`, `/eventos/$id`, `/inscricao/$id`, `/login`, `/cadastro`, `/recuperar-senha` | Página inicial com seções por região, busca por cidade, preferências de modalidade, página do evento, inscrição com lotes, cupons (validados no servidor) e cortesias, recuperação de senha por e-mail |
-| Participante | `/app/*` | Ingressos com QR Code, comunidades, missões, notificações, suporte, perfil e solicitações de privacidade (LGPD) |
+| Pública | `/`, `/eventos/$id`, `/inscricao/$id`, `/operador/$id`, `/login`, `/cadastro`, `/recuperar-senha` | Página inicial com seções por região e campanhas de destaque, busca por cidade, preferências de modalidade, página do evento (com "Falar com o organizador no WhatsApp"), inscrição com lotes, cupons (validados no servidor), cortesias e pagamento pelo Stripe, perfil público do operador |
+| Participante | `/app/*` | Ingressos com QR Code, pagamento pendente ("Concluir pagamento"), grupo do WhatsApp do evento, comunidades, missões, notificações, Central de Suporte, perfil do operador (arsenal, galeria, notas fiscais privadas, insígnias e recompensas) e privacidade (LGPD) |
 | Comunidade | `/comunidade/$eventoId/*` | Fóruns com feed social, imagens no Storage, curtidas, denúncias, moderação e gestão de fóruns |
-| Organizador | `/organizacao/*`, `/app/organizador` | Eventos, inscritos, check-in (QR/manual/offline com sincronização), comunidade, financeiro simulado, métricas e campanhas |
-| Admin | `/admin/*` | Dashboard, Insights IA, métricas consolidadas, divulgação, solicitações, usuários, privacidade e auditoria |
+| Organizador | `/organizacao/*`, `/app/organizador` | Eventos (editor em etapas, contato no WhatsApp), inscritos, check-in (QR/manual/offline com sincronização), comunidade, financeiro (resumo, movimentações com abas e filtros, recebimentos pelo Stripe Connect), cupons e cortesias, métricas e campanhas, recompensas, suporte encaminhado |
+| Admin | `/admin/*` | Dashboard, Insights IA, métricas, divulgação e impulsionamento, solicitações, usuários, pagamentos (taxa da plataforma), gamificação, Central de Suporte (triagem), privacidade e auditoria |
 
 ## Documentação
 
-- [docs/ARQUITETURA.md](docs/ARQUITETURA.md): camadas, APIs, unidade de trabalho, visão por perfil, banco, segurança e mapa de arquivos
+- [docs/README.md](docs/README.md): índice da documentação
+- [docs/regras-de-negocio.md](docs/regras-de-negocio.md): o que o sistema decide em cada área, e as lacunas conhecidas
+- [docs/fluxos.md](docs/fluxos.md): fluxos ponta a ponta com diagramas (inscrição com Stripe, check-in, suporte, repasse…)
+- [docs/api/](docs/api/README.md): uma página por API (103 server functions + webhook do Stripe), com entrada, regras, erros e exemplo
+- [docs/ARQUITETURA.md](docs/ARQUITETURA.md): camadas, unidade de trabalho, visão por perfil, banco, deploy, segurança e mapa de arquivos
 - [AGENTS.md](AGENTS.md): regras técnicas obrigatórias
 - [roadmap.md](roadmap.md): status das entregas
 
@@ -125,6 +144,9 @@ backup completo como artefato da execução (30 dias). Detalhes em
   `STRIPE_PUBLISHABLE_KEY`, os painéis embutidos do Stripe. Se o site ganhar uma CSP, libere
   `https://connect-js.stripe.com` e `https://js.stripe.com` em `script-src` e `frame-src`.
   Contestações (chargebacks) ficam registradas no pagamento e aparecem em Financeiro.
-- **Mensagens externas**: simuladas (sem e-mail transacional ou WhatsApp).
+- **Mensagens externas**: sem e-mail transacional nem WhatsApp automático (o WhatsApp do evento
+  é só um link para o organizador e o grupo).
+- **Fim do evento**: nenhuma tela marca o evento como concluído, e "participou", insígnias e
+  recompensas dependem disso. Ver [lacunas](docs/regras-de-negocio.md#19-lacunas-conhecidas).
 - **Storage**: arquivos substituídos ou removidos não são apagados do bucket (sem limpeza de órfãos).
 - **LGPD**: retenção, exclusão e validação jurídica (incl. adolescentes de 15–17 anos) ainda pendentes.
