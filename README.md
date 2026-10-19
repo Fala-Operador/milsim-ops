@@ -41,6 +41,9 @@ bun run build
 | `SUPABASE_PUBLISHABLE_KEY` | chave publicável; o servidor a usa para a sessão do Supabase Auth |
 | `SUPABASE_SECRET_KEY` | chave secreta, **somente servidor** (acesso ao banco, Storage e Auth admin) |
 | `SUPABASE_DB_PASSWORD` | só para `supabase link` / `db push` |
+| `STRIPE_SECRET_KEY` | opcional, liga a venda pelo Stripe Checkout e o Stripe Connect, **somente servidor** |
+| `MILSIM_WEBHOOK_SECRET` | segredo compartilhado com a Edge Function `stripe-webhook` |
+| `STRIPE_PUBLISHABLE_KEY` | opcional (`pk_...`), mostra os painéis embutidos do Stripe (saques e pagamentos) em Financeiro |
 | `LOVABLE_API_KEY` | opcional, habilita Admin › Insights IA |
 
 Na publicação (Lovable/Cloudflare), configure as três primeiras como **segredos** do ambiente.
@@ -112,7 +115,11 @@ bun run db:seed -- --limpar-contas              # idem, removendo também as con
   (Financeiro → Recebimentos), cada venda é repassada automaticamente a ela, descontada a taxa da
   plataforma (definida em Administração → Pagamentos); antes disso, o valor fica na plataforma.
   Os webhooks do Stripe chegam pela Edge Function `supabase/functions/stripe-webhook`, que confere
-  a assinatura e repassa o evento à API do site.
+  a assinatura e repassa o evento à API do site (lista de eventos no cabeçalho da função).
+  Com a conta ativa, Financeiro mostra saldo, próximos saques e banco lidos do Stripe e, com
+  `STRIPE_PUBLISHABLE_KEY`, os painéis embutidos do Stripe. Se o site ganhar uma CSP, libere
+  `https://connect-js.stripe.com` e `https://js.stripe.com` em `script-src` e `frame-src`.
+  Contestações (chargebacks) ficam registradas no pagamento e aparecem em Financeiro.
 - **Mensagens externas**: simuladas (sem e-mail transacional ou WhatsApp).
 - **Storage**: arquivos substituídos ou removidos não são apagados do bucket (sem limpeza de órfãos).
 - **LGPD**: retenção, exclusão e validação jurídica (incl. adolescentes de 15–17 anos) ainda pendentes.

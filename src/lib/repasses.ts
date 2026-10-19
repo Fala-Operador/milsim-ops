@@ -11,6 +11,40 @@ export interface ContaStripe {
   payouts_enabled?: boolean;
   capabilities?: { transfers?: string; card_payments?: string } | null;
   requirements?: { currently_due?: string[] | null; disabled_reason?: string | null } | null;
+  settings?: { payouts?: { schedule?: CronogramaStripe | null } | null } | null;
+  external_accounts?: { data?: ContaExternaStripe[] | null } | null;
+}
+
+export interface CronogramaStripe {
+  interval?: "manual" | "daily" | "weekly" | "monthly" | string;
+  delay_days?: number;
+  weekly_anchor?: string;
+  monthly_anchor?: number;
+}
+
+interface ContaExternaStripe {
+  object?: string;
+  bank_name?: string | null;
+  last4?: string | null;
+  default_for_currency?: boolean | null;
+}
+
+/** GET /v1/balance da conta conectada. */
+export interface SaldoStripe {
+  available?: { amount: number; currency: string }[];
+  pending?: { amount: number; currency: string }[];
+}
+
+export type StatusSaque = "paid" | "pending" | "in_transit" | "canceled" | "failed";
+
+/** Item de GET /v1/payouts da conta conectada. */
+export interface SaqueStripe {
+  id: string;
+  amount: number;
+  currency: string;
+  arrival_date: number;
+  status: StatusSaque | string;
+  failure_message?: string | null;
 }
 
 /** Converte o retrato da conta no Stripe na situação guardada na organização. */
@@ -83,4 +117,88 @@ export function resumoRepasse(base: BaseDados, eventoId: string) {
   // Vendas feitas antes da conta ficar ativa ficaram na plataforma: repasse manual.
   const naPlataforma = pagas.filter((i) => !i.pagamento?.contaDestino).reduce((s, i) => s + i.pagamento!.valorCentavos, 0);
   return { cobrado, taxas, repassado, naPlataforma };
+}
+
+// ---------- Saldo e saques da conta conectada (lidos do Stripe, nunca guardados na base) ----------
+
+export const ROTULO_SAQUE: Record<StatusSaque, string> = {
+  paid: "Pago",
+  pending: "Agendado",
+  in_transit: "A caminho do banco",
+  canceled: "Cancelado",
+  failed: "Falhou",
+};
+
+export interface SaqueResumido {
+  id: string;
+  valorCentavos: number;
+  /** Data prevista (ou efetiva) de chegada no banco, ISO. */
+  chegada: string;
+  status: StatusSaque;
+  falha?: string | undefined;
+}
+
+export interface SaldoRecebimento {
+  disponivelCentavos: number;
+  aLiberarCentavos: number;
+  /** Próximo saque ainda não pago (o de chegada mais próxima). */
+  proximoSaque?: SaqueResumido | undefined;
+  saques: SaqueResumido[];
+  cronograma: string;
+  /** Banco de destino, só com os últimos dígitos. */
+  banco?: string | undefined;
+}
+
+const somaBrl = (itens: { amount: number; currency: string }[] | undefined) =>
+  (itens ?? []).filter((i) => i.currency === "brl").reduce((s, i) => s + i.amount, 0);
+
+const statusSaque = (s: string): StatusSaque => (s in ROTULO_SAQUE ? (s as StatusSaque) : "pending");
+
+const DIAS_SEMANA: Record<string, string> = {
+  monday: "segunda-feira", tuesday: "terça-feira", wednesday: "quarta-feira", thursday: "quinta-feira",
+  friday: "sexta-feira", saturday: "sábado", sunday: "domingo",
+};
+
+/** Cronograma de saque em português (ex.: "Semanal, às segundas-feiras"). */
+export function descreverCronograma(c: CronogramaStripe | null | undefined): string {
+  const prazo = c?.delay_days ? ` (cada venda fica disponível ${c.delay_days} ${c.delay_days === 1 ? "dia" : "dias"} depois)` : "";
+  switch (c?.interval) {
+    case "daily": return `Diário${prazo}`;
+    case "weekly": return `Semanal, toda ${DIAS_SEMANA[c.weekly_anchor ?? ""] ?? "semana"}${prazo}`;
+    case "monthly": return `Mensal, no dia ${c.monthly_anchor ?? 1}${prazo}`;
+    case "manual": return "Manual, pelo painel do Stripe";
+    default: return "Definido pelo Stripe";
+  }
+}
+
+/** Banco padrão de saque da conta, mostrando só os últimos dígitos. */
+export function bancoDaConta(conta: ContaStripe): string | undefined {
+  const contas = conta.external_accounts?.data ?? [];
+  const c = contas.find((x) => x.default_for_currency) ?? contas[0];
+  if (!c?.last4) return undefined;
+  return `${c.bank_name ?? (c.object === "card" ? "Cartão" : "Conta")} •••• ${c.last4}`;
+}
+
+/** Junta saldo, saques e conta do Stripe no resumo mostrado em Financeiro (valores em BRL). */
+export function resumoSaldo(saldo: SaldoStripe, saques: SaqueStripe[], conta: ContaStripe): SaldoRecebimento {
+  const lista: SaqueResumido[] = saques
+    .filter((p) => p.currency === "brl")
+    .map((p) => ({
+      id: p.id,
+      valorCentavos: p.amount,
+      chegada: new Date(p.arrival_date * 1000).toISOString(),
+      status: statusSaque(p.status),
+      falha: p.failure_message ?? undefined,
+    }));
+  const proximoSaque = lista
+    .filter((p) => p.status === "pending" || p.status === "in_transit")
+    .sort((a, b) => a.chegada.localeCompare(b.chegada))[0];
+  return {
+    disponivelCentavos: somaBrl(saldo.available),
+    aLiberarCentavos: somaBrl(saldo.pending),
+    proximoSaque,
+    saques: lista,
+    cronograma: descreverCronograma(conta.settings?.payouts?.schedule),
+    banco: bancoDaConta(conta),
+  };
 }

@@ -11,6 +11,7 @@ import {
   confirmarPagamentoNaBase,
   liberarReservaNaBase,
   marcarPagamentoProcessando,
+  registrarDisputaNaBase,
   registrarReembolsoNaBase,
   registrarResultadoEstornoNaBase,
 } from "@/services/inscricoes";
@@ -18,28 +19,35 @@ import { estornoPendente } from "@/lib/pagamentos";
 import {
   acaoDaSessao,
   acaoDoEvento,
+  disputaDoStripe,
   inscricaoDaSessao,
   intencaoDaCobranca,
+  intencaoDaDisputa,
   intencaoDaSessao,
   type AcaoSessao,
   type CobrancaStripe,
+  type DisputaStripe,
   type EventoStripe,
   type SessaoCheckout,
 } from "@/lib/stripe";
 import { contextoSomenteLeitura, ler, mutar, type RespostaApi } from "@/server/unidade.server";
 import {
+  chavePublicavel,
   criarContaConectada,
   criarReembolso,
   criarSessaoCheckout,
+  criarSessaoDeConta,
   ErroStripe,
   expirarSessaoCheckout,
   linkDeCadastro,
   linkDoPainel,
   obterContaConectada,
   obterSessaoCheckout,
+  saldoDaConta,
+  saquesDaConta,
   stripeConfigurado,
 } from "@/server/stripe.server";
-import { contaParaRepasse, gereRecebimento, type ContaStripe } from "@/lib/repasses";
+import { contaParaRepasse, gereRecebimento, resumoSaldo, type ContaStripe, type SaldoRecebimento } from "@/lib/repasses";
 import { organizacaoDaConta, registrarRecebimentoNaBase } from "@/services/repasses";
 import type { Inscricao } from "@/lib/domain/types";
 
@@ -227,6 +235,11 @@ export async function tratarEventoStripe(evento: EventoStripe): Promise<void> {
       );
       if (ins) registrarReembolsoNaBase(base, ins.id, integral);
     }, { exigirLogin: false });
+  } else if (evento.type.startsWith("charge.dispute.")) {
+    // Contestação: com cobrança com destino, o valor sai da plataforma; só registramos e avisamos.
+    const disputa = evento.data.object as DisputaStripe;
+    const intencao = intencaoDaDisputa(disputa);
+    if (intencao) await mutar(({ base }) => void registrarDisputaNaBase(base, intencao, disputaDoStripe(disputa)), { exigirLogin: false });
   } else if (evento.type === "account.updated") {
     await aplicarContaAtualizada(evento.data.object as ContaStripe);
     return;
@@ -245,7 +258,7 @@ async function organizacaoGerida(organizacaoId: string) {
     const org = base.organizacoes.find((o) => o.id === organizacaoId);
     if (!org || !gereRecebimento(usuario, organizacaoId)) throw new ErroDominio("permissao", "Você só pode configurar os recebimentos da sua organização.");
     const responsavel = base.usuarios.find((u) => u.id === org.responsavelId);
-    return { nome: org.nome, contaId: org.recebimento?.contaId, email: responsavel?.email };
+    return { nome: org.nome, contaId: org.recebimento?.contaId, ativa: org.recebimento?.status === "ativa", email: responsavel?.email };
   });
   return resultado;
 }
@@ -306,3 +319,40 @@ export async function aplicarContaAtualizada(conta: ContaStripe): Promise<void> 
     if (org) registrarRecebimentoNaBase(base, org.id, conta);
   }, { exigirLogin: false });
 }
+
+// ---------- Saldo, saques e componentes embutidos (só leitura, nada vai para a base) ----------
+
+const VALIDADE_SALDO_MS = 60_000;
+const saldosRecentes = new Map<string, { em: number; saldo: SaldoRecebimento }>();
+
+/**
+ * Saldo disponível e a liberar, últimos saques, cronograma e banco da conta da organização,
+ * lidos do Stripe com o cabeçalho Stripe-Account. Cache curto por conta para não estourar o
+ * limite de chamadas; `undefined` quando a conta ainda não está ativa.
+ */
+export async function consultarSaldoRecebimento(organizacaoId: string, atualizar = false): Promise<SaldoRecebimento | undefined> {
+  const org = await organizacaoGerida(organizacaoId);
+  if (!org.contaId || !org.ativa || !stripeConfigurado()) return undefined;
+  const contaId = org.contaId;
+  const guardado = saldosRecentes.get(contaId);
+  if (!atualizar && guardado && Date.now() - guardado.em < VALIDADE_SALDO_MS) return guardado.saldo;
+  const saldo = await comStripe(async () => {
+    const [b, p, c] = await Promise.all([saldoDaConta(contaId), saquesDaConta(contaId, 10), obterContaConectada(contaId)]);
+    return resumoSaldo(b, p, c);
+  });
+  saldosRecentes.set(contaId, { em: Date.now(), saldo });
+  return saldo;
+}
+
+/** Componentes embutidos do Stripe (saques e pagamentos): chave publicável + segredo da sessão. */
+export async function sessaoComponentesStripe(organizacaoId: string): Promise<{ chavePublicavel: string; clientSecret: string }> {
+  const org = await organizacaoGerida(organizacaoId);
+  const chave = chavePublicavel();
+  if (!chave || !stripeConfigurado()) throw new Error("Os painéis do Stripe ainda não foram ativados na plataforma.");
+  if (!org.contaId || !org.ativa) throw new Error("Conclua o cadastro de recebimentos para ver os painéis do Stripe.");
+  const sessao = await comStripe(() => criarSessaoDeConta(org.contaId!));
+  return { chavePublicavel: chave, clientSecret: sessao.client_secret };
+}
+
+/** Os componentes embutidos só aparecem com a chave publicável configurada. */
+export const componentesStripeAtivos = () => stripeConfigurado() && !!chavePublicavel();

@@ -3,6 +3,8 @@
 //  CTR dos cards = cliques ÷ exibições × 100
 //  Conversão de visitantes = visitantes com inscrição confirmada ÷ visitantes únicos × 100
 //  Conclusão da inscrição = fluxos concluídos ÷ fluxos iniciados × 100
+//  Receita confirmada = Σ (valor − desconto) das inscrições confirmadas no período
+//  Ticket médio = receita confirmada ÷ pedidos pagos (valor final > 0)
 
 export type TipoAnalytics =
   | "exibicao"
@@ -112,6 +114,42 @@ export function indicadores(regs: RegistroAnalytics[], todos: RegistroAnalytics[
     conversao: taxa(convertidos.size, visitantes.size),
     conclusao: taxa(concluidas, iniciadas.length),
   };
+}
+
+/** Campos da inscrição usados nas métricas de venda (sem dados pessoais). */
+export interface VendaAnalisada {
+  eventoId: string;
+  status: string;
+  valorCentavos: number;
+  descontoCentavos: number;
+  criadoEm: string;
+  pagamento?: { status: string; valorCentavos: number; pagoEm?: string | undefined } | undefined;
+}
+
+export interface ResumoVendas {
+  receitaCentavos: number;
+  pedidos: number;
+  ticketMedioCentavos: number | null;
+  pagoOnlineCentavos: number;
+}
+
+/**
+ * Vendas confirmadas no período, a partir das inscrições (sem chamar o Stripe). A data é a do
+ * pagamento quando houver; inscrições canceladas ou estornadas não entram.
+ */
+export function resumoVendas(inscricoes: VendaAnalisada[], f: { eventoIds: Set<string>; desde: number; ate: number }): ResumoVendas {
+  let receitaCentavos = 0, pedidos = 0, pagoOnlineCentavos = 0;
+  for (const i of inscricoes) {
+    if (i.status !== "confirmada" || !f.eventoIds.has(i.eventoId)) continue;
+    const t = new Date(i.pagamento?.pagoEm ?? i.criadoEm).getTime();
+    if (t < f.desde || t > f.ate) continue;
+    const valor = Math.max(0, i.valorCentavos - i.descontoCentavos);
+    if (valor <= 0) continue;
+    receitaCentavos += valor;
+    pedidos += 1;
+    if (i.pagamento?.status === "pago") pagoOnlineCentavos += i.pagamento.valorCentavos;
+  }
+  return { receitaCentavos, pedidos, ticketMedioCentavos: pedidos ? Math.round(receitaCentavos / pedidos) : null, pagoOnlineCentavos };
 }
 
 /** Variação contra o período anterior; null quando a base anterior é zero. */

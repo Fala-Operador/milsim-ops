@@ -8,6 +8,7 @@ import {
   confirmarPagamentoNaBase,
   liberarReservasVencidas,
   marcarPagamentoProcessando,
+  registrarDisputaNaBase,
   registrarReembolsoNaBase,
   registrarResultadoEstornoNaBase,
   resumoFinanceiro,
@@ -16,7 +17,7 @@ import {
 import { cancelarEvento } from "@/services/organizador";
 import { ocupaVaga, reservaVigente } from "@/lib/pagamentos";
 import { visaoParaUsuario } from "@/lib/visao";
-import { acaoDaSessao, acaoDoEvento, assinarPayload, assinaturaValida, codificarFormulario } from "@/lib/stripe";
+import { acaoDaSessao, acaoDoEvento, assinarPayload, assinaturaValida, codificarFormulario, disputaDoStripe, statusDaDisputa } from "@/lib/stripe";
 import type { BaseDados, Evento, Inscricao } from "@/lib/domain/types";
 
 let base: BaseDados;
@@ -235,5 +236,30 @@ describe("Stripe: formulário, webhook e sessões", () => {
     expect(acaoDoEvento("checkout.session.expired", { id: "cs" })).toBe("liberar_expirada");
     expect(acaoDaSessao({ id: "cs", status: "open", payment_status: "unpaid" })).toBe("nada");
     expect(acaoDaSessao({ id: "cs", status: "expired" })).toBe("liberar_expirada");
+  });
+});
+
+describe("contestação (chargeback)", () => {
+  it("registra a disputa, avisa a organização uma vez e acompanha o desfecho", async () => {
+    const i = await reservar();
+    confirmarPagamentoNaBase(base, i.id, { intencaoId: "pi_d" });
+    const avisos = () => base.notificacoes.filter((n) => n.titulo === "Pagamento contestado").length;
+    const antes = avisos();
+    const aberta = disputaDoStripe({ id: "dp_1", amount: 15000, status: "needs_response", reason: "fraudulent", created: 1_700_000_000, payment_intent: "pi_d" });
+    expect(registrarDisputaNaBase(base, "pi_d", aberta)?.id).toBe(i.id);
+    expect(ins(i.id).pagamento?.disputa).toMatchObject({ status: "aberta", valorCentavos: 15000, motivo: "fraudulent" });
+    expect(resumoFinanceiro(EVT).disputas.map((x) => x.id)).toEqual([i.id]);
+    const ganha = disputaDoStripe({ id: "dp_1", amount: 15000, status: "won", created: 1_700_000_000 });
+    registrarDisputaNaBase(base, "pi_d", ganha);
+    expect(ins(i.id).pagamento?.disputa?.status).toBe("ganha");
+    expect(avisos() - antes).toBe(base.organizacoes.find((o) => o.id === base.eventos[0]!.organizacaoId)?.responsavelId ? 1 : 0);
+    expect(registrarDisputaNaBase(base, "pi_outro", ganha)).toBeUndefined();
+  });
+
+  it("traduz as situações do Stripe", () => {
+    expect(statusDaDisputa("warning_needs_response")).toBe("aberta");
+    expect(statusDaDisputa("under_review")).toBe("em_analise");
+    expect(statusDaDisputa("lost")).toBe("perdida");
+    expect(statusDaDisputa("warning_closed")).toBe("encerrada");
   });
 });

@@ -10,6 +10,12 @@
 //   MILSIM_WEBHOOK_URL             https://<site>/api/stripe/webhook
 //   MILSIM_WEBHOOK_SECRET          segredo aleatório, igual ao configurado no site
 //
+// Eventos a assinar no Stripe:
+//   conta da plataforma: checkout.session.completed, checkout.session.async_payment_succeeded,
+//     checkout.session.async_payment_failed, checkout.session.expired, charge.refunded,
+//     charge.dispute.created, charge.dispute.updated, charge.dispute.closed
+//   contas conectadas (Connect): account.updated
+//
 // Publicar sem exigir JWT (o Stripe não envia token do Supabase):
 //   supabase functions deploy stripe-webhook --no-verify-jwt
 

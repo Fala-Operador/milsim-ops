@@ -235,6 +235,20 @@ export interface PagamentoInscricao {
   contaDestino?: string | undefined;
   /** Taxa da plataforma retida no repasse, em centavos. */
   taxaCentavos?: number | undefined;
+  /** Contestação (chargeback) aberta pelo comprador no banco do cartão. */
+  disputa?: DisputaPagamento | undefined;
+}
+
+export type StatusDisputa = "aberta" | "em_analise" | "ganha" | "perdida" | "encerrada";
+
+export interface DisputaPagamento {
+  status: StatusDisputa;
+  /** Valor contestado, em centavos. */
+  valorCentavos: number;
+  /** Motivo informado pelo banco (código do Stripe, ex.: "fraudulent"). */
+  motivo?: string | undefined;
+  abertaEm: string;
+  atualizadaEm: string;
 }
 
 export interface Inscricao {
