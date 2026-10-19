@@ -276,6 +276,6 @@ describe("chaves do Stripe", () => {
     expect(problemaDasChaves(`sk_live_${conta}a`, `pk_test_${conta}b`)).toMatch(/produção.*teste/);
     expect(problemaDasChaves(`sk_test_${conta}a`, "pk_test_51OutraContaQualquer")).toMatch(/contas Stripe diferentes/);
     expect(problemaDasChaves(`sk_test_${conta}a`, `sk_test_${conta}b`)).toMatch(/pk_test_/);
-    expect(problemaDasChaves(`pk_test_${conta}a`, `pk_test_${conta}b`)).toMatch(/STRIPE_SECRET_KEY/);
+    expect(problemaDasChaves(`pk_test_${conta}a`, `pk_test_${conta}b`)).toMatch(/STRIPE_SERVER_API_KEY/);
   });
 });

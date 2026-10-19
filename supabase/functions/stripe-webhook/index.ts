@@ -1,14 +1,17 @@
 // Edge Function "stripe-webhook": endpoint cadastrado no Stripe para os webhooks da conta da
 // plataforma e de Connect. Confere a assinatura do Stripe (Stripe-Signature) com os segredos
 // guardados só aqui e repassa o evento, intacto, para a API do site, assinado com o segredo
-// compartilhado MILSIM_WEBHOOK_SECRET. As regras (confirmar inscrição, liberar vaga, reembolso,
+// compartilhado STRIPE_WEBHOOK_FORWARD_SECRET. As regras (confirmar inscrição, liberar vaga, reembolso,
 // situação da conta da organização) rodam no site, em src/server/pagamentos.server.ts.
 //
-// Segredos (Supabase → Edge Functions → Secrets):
-//   STRIPE_WEBHOOK_SECRET          whsec_... do endpoint "Events on your account"
-//   STRIPE_CONNECT_WEBHOOK_SECRET  whsec_... do endpoint "Events on Connected accounts"
-//   MILSIM_WEBHOOK_URL             https://<site>/api/stripe/webhook
-//   MILSIM_WEBHOOK_SECRET          segredo aleatório, igual ao configurado no site
+// Segredos (Supabase → Edge Functions → Secrets); o nome antigo, entre parênteses, ainda vale:
+//   STRIPE_PAYMENTS_WEBHOOK_SIGNING_SECRET  whsec_... do endpoint "Events on your account"
+//                                           (STRIPE_WEBHOOK_SECRET)
+//   STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET   whsec_... do endpoint "Events on Connected accounts"
+//                                           (STRIPE_CONNECT_WEBHOOK_SECRET)
+//   STRIPE_WEBHOOK_FORWARD_URL              https://<site>/api/stripe/webhook (MILSIM_WEBHOOK_URL)
+//   STRIPE_WEBHOOK_FORWARD_SECRET           segredo aleatório, igual ao do site
+//                                           (MILSIM_WEBHOOK_SECRET)
 //
 // Eventos a assinar no Stripe:
 //   conta da plataforma: checkout.session.completed, checkout.session.async_payment_succeeded,
@@ -54,11 +57,17 @@ async function assinaturaDoStripeValida(corpo: string, cabecalho: string | null,
   return false;
 }
 
+/** Lê o segredo pelo nome novo ou, enquanto não for recadastrado, pelo nome antigo. */
+const lerSegredo = (nome: string, nomeAntigo: string) => Deno.env.get(nome)?.trim() || Deno.env.get(nomeAntigo)?.trim() || undefined;
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Método não permitido.", { status: 405 });
-  const segredos = [Deno.env.get("STRIPE_WEBHOOK_SECRET"), Deno.env.get("STRIPE_CONNECT_WEBHOOK_SECRET")].filter((s): s is string => !!s);
-  const destino = Deno.env.get("MILSIM_WEBHOOK_URL");
-  const segredoInterno = Deno.env.get("MILSIM_WEBHOOK_SECRET");
+  const segredos = [
+    lerSegredo("STRIPE_PAYMENTS_WEBHOOK_SIGNING_SECRET", "STRIPE_WEBHOOK_SECRET"),
+    lerSegredo("STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET", "STRIPE_CONNECT_WEBHOOK_SECRET"),
+  ].filter((s): s is string => !!s);
+  const destino = lerSegredo("STRIPE_WEBHOOK_FORWARD_URL", "MILSIM_WEBHOOK_URL");
+  const segredoInterno = lerSegredo("STRIPE_WEBHOOK_FORWARD_SECRET", "MILSIM_WEBHOOK_SECRET");
   if (!segredos.length || !destino || !segredoInterno) {
     console.error("stripe-webhook: segredos ou URL do site não configurados");
     return new Response("Função não configurada.", { status: 500 }); // o Stripe tenta de novo depois

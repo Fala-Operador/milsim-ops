@@ -159,7 +159,7 @@ Código: `src/lib/pagamentos.ts`, `src/lib/stripe.ts`, `src/server/pagamentos.se
   contestação fica registrada no pagamento (`aberta`, `em_analise`, `ganha`, `perdida` ou `encerrada`,
   com valor e motivo). O responsável pela organização é notificado na abertura; aparece em
   Financeiro e nas métricas. A inscrição não é cancelada automaticamente.
-- **Sem `STRIPE_SECRET_KEY`** no servidor, tudo funciona como antes: confirmação direta, sem cobrança.
+- **Sem `STRIPE_SERVER_API_KEY`** no servidor, tudo funciona como antes: confirmação direta, sem cobrança.
 
 ## 8. Cancelamento, estorno e reembolso
 
@@ -190,7 +190,7 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
 - Reembolso de venda repassada desfaz a transferência e devolve a taxa.
 - Com a conta ativa, o Financeiro mostra **saldo** disponível e a liberar, próximo saque, últimos
   saques, cronograma e banco (só os últimos dígitos), lidos do Stripe com cache de 60 s.
-  Com `STRIPE_PUBLISHABLE_KEY`, tudo acontece dentro do site: o cadastro da conta (inclusive o
+  Com `STRIPE_BROWSER_PUBLIC_KEY`, tudo acontece dentro do site: o cadastro da conta (inclusive o
   inicial), os avisos de pendência, os dados da conta e banco, os saques e os pagamentos usam os
   componentes embutidos do Stripe. Contas Express ainda passam por uma confirmação de e-mail ou
   celular numa janela do Stripe. Sem a chave, cadastro e painel abrem no site do Stripe.

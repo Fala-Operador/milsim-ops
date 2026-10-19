@@ -192,13 +192,13 @@ export function problemaDasChaves(secreta: string | undefined, publicavel: strin
   if (!secreta || !publicavel) return "";
   const s = CHAVE_SECRETA.exec(secreta.trim());
   const p = CHAVE_PUBLICAVEL.exec(publicavel.trim());
-  if (!p) return "STRIPE_PUBLISHABLE_KEY não é uma chave publicável do Stripe (deve começar com pk_test_ ou pk_live_).";
-  if (!s) return "STRIPE_SECRET_KEY não é uma chave secreta do Stripe (deve começar com sk_test_, sk_live_ ou rk_).";
+  if (!p) return "STRIPE_BROWSER_PUBLIC_KEY não é uma chave publicável do Stripe (deve começar com pk_test_ ou pk_live_).";
+  if (!s) return "STRIPE_SERVER_API_KEY não é uma chave secreta do Stripe (deve começar com sk_test_, sk_live_ ou rk_).";
   const modoS = s[2] as keyof typeof MODO, corpoS = s[3]!;
   const modoP = p[1] as keyof typeof MODO, corpoP = p[2]!;
   if (modoS !== modoP) return `A chave secreta é ${MODO[modoS]} e a publicável é ${MODO[modoP]}: use as duas do mesmo modo.`;
   if (corpoS.slice(0, 12) !== corpoP.slice(0, 12)) {
-    return "STRIPE_SECRET_KEY e STRIPE_PUBLISHABLE_KEY são de contas Stripe diferentes (por exemplo, uma de uma sandbox e outra do modo de teste). Copie as duas da mesma tela de chaves de API.";
+    return "STRIPE_SERVER_API_KEY e STRIPE_BROWSER_PUBLIC_KEY são de contas Stripe diferentes (por exemplo, uma de uma sandbox e outra do modo de teste). Copie as duas da mesma tela de chaves de API.";
   }
   return "";
 }

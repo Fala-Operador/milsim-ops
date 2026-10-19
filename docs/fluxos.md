@@ -69,7 +69,7 @@ flowchart LR
 
 ## 3. Inscrição com pagamento (Stripe)
 
-Com `STRIPE_SECRET_KEY` configurada e valor a pagar. Sem Stripe ou sem valor, a inscrição é
+Com `STRIPE_SERVER_API_KEY` configurada e valor a pagar. Sem Stripe ou sem valor, a inscrição é
 confirmada direto no primeiro passo.
 
 ```mermaid

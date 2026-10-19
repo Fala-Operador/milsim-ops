@@ -19,7 +19,7 @@ Cria a sessão dos componentes embutidos do Stripe para a conta da organização
 
 ## Regras
 
-- Exige `STRIPE_PUBLISHABLE_KEY` configurada e da mesma conta e modo da `STRIPE_SECRET_KEY`.
+- Exige `STRIPE_BROWSER_PUBLIC_KEY` configurada e da mesma conta e modo da `STRIPE_SERVER_API_KEY`.
 - Sem conta de recebimento, cria a conta Express da organização (como `cadastrarRecebimento`) antes da sessão.
 - Saques e pagamentos só entram na sessão com a conta ativa.
 - O `clientSecret` é de uso curto e só serve para a conta da organização.

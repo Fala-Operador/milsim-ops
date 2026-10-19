@@ -8,7 +8,7 @@ evento, painel do organizador e administração da plataforma.
 app. O Supabase fornece Postgres, Auth e Storage, e o navegador **nunca** acessa o banco
 diretamente: toda leitura e escrita passa pelas server functions, que autenticam a pessoa e
 aplicam as regras de negócio. A venda de ingressos usa o **Stripe Checkout** quando
-`STRIPE_SECRET_KEY` está configurada (sem ela, a inscrição é confirmada sem cobrança), com repasse
+`STRIPE_SERVER_API_KEY` está configurada (sem ela, a inscrição é confirmada sem cobrança), com repasse
 automático às organizações pelo **Stripe Connect**. Não há envio automático de e-mail ou WhatsApp:
 os avisos ficam nas notificações do app.
 
@@ -47,14 +47,28 @@ bun run start                # servidor Node gerado pelo build (.output/server/i
 | `SUPABASE_PUBLISHABLE_KEY` | chave publicável; o servidor a usa para a sessão do Supabase Auth |
 | `SUPABASE_SECRET_KEY` | chave secreta, **somente servidor** (acesso ao banco, Storage e Auth admin) |
 | `SUPABASE_DB_PASSWORD` | só para `supabase link` / `db push` |
-| `STRIPE_SECRET_KEY` | opcional, **somente servidor**: liga a venda pelo Stripe Checkout e o Stripe Connect (sem ela, inscrição confirmada sem cobrança) |
-| `MILSIM_WEBHOOK_SECRET` | segredo compartilhado entre a Edge Function `stripe-webhook` e o site (mesmo valor nos dois lados) |
-| `STRIPE_PUBLISHABLE_KEY` | opcional (`pk_...`): o cadastro e a gestão do recebimento da organização acontecem dentro do site (componentes embutidos do Stripe) |
+| `STRIPE_SERVER_API_KEY` | opcional, **somente servidor**: liga a venda pelo Stripe Checkout e o Stripe Connect (sem ela, inscrição confirmada sem cobrança) |
+| `STRIPE_WEBHOOK_FORWARD_SECRET` | segredo compartilhado entre a Edge Function `stripe-webhook` e o site (mesmo valor nos dois lados) |
+| `STRIPE_BROWSER_PUBLIC_KEY` | opcional (`pk_...`): o cadastro e a gestão do recebimento da organização acontecem dentro do site (componentes embutidos do Stripe) |
 | `LOVABLE_API_KEY` | opcional, habilita Admin › Insights IA |
 
 Na publicação, configure as variáveis do Supabase (e as do Stripe, se usar) como **segredos** do
 ambiente. Os segredos `whsec_…` do Stripe ficam só no Supabase (Edge Functions → Secrets), junto
-com `MILSIM_WEBHOOK_URL`; veja [a página do webhook](docs/api/webhooks/stripe-webhook-edge.md).
+com `STRIPE_WEBHOOK_FORWARD_URL`; veja [a página do webhook](docs/api/webhooks/stripe-webhook-edge.md).
+#### Nomes das variáveis do Stripe (renomeadas em 19/10/2026)
+
+Os nomes antigos ainda funcionam, como reserva: cadastre os novos e, depois de conferir, apague
+os antigos. Todas precisam ser do mesmo ambiente do Stripe (mesma conta e mesmo modo).
+
+| Nome novo | Nome antigo | Onde cadastrar | O que faz |
+|---|---|---|---|
+| `STRIPE_SERVER_API_KEY` | `STRIPE_SECRET_KEY` | site | chave secreta (`sk_…`) com que o servidor chama a API do Stripe |
+| `STRIPE_BROWSER_PUBLIC_KEY` | `STRIPE_PUBLISHABLE_KEY` | site | chave publicável (`pk_…`) dos painéis embutidos em Financeiro |
+| `STRIPE_WEBHOOK_FORWARD_SECRET` | `MILSIM_WEBHOOK_SECRET` | site **e** Edge Function | senha com que a Edge Function assina o evento repassado ao site |
+| `STRIPE_WEBHOOK_FORWARD_URL` | `MILSIM_WEBHOOK_URL` | Edge Function | endereço do site que recebe o repasse (`https://<site>/api/stripe/webhook`) |
+| `STRIPE_PAYMENTS_WEBHOOK_SIGNING_SECRET` | `STRIPE_WEBHOOK_SECRET` | Edge Function | `whsec_…` do endpoint de eventos da conta (pagamentos) |
+| `STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET` | `STRIPE_CONNECT_WEBHOOK_SECRET` | Edge Function | `whsec_…` do endpoint de eventos das contas conectadas (Connect) |
+
 O Supabase Auth precisa da URL publicada nas URLs de retorno, e um SMTP próprio para a
 recuperação de senha chegar a qualquer e-mail.
 
@@ -141,7 +155,7 @@ backup completo como artefato da execução (30 dias). Detalhes em
   Os webhooks do Stripe chegam pela Edge Function `supabase/functions/stripe-webhook`, que confere
   a assinatura e repassa o evento à API do site (lista de eventos no cabeçalho da função).
   Com a conta ativa, Financeiro mostra saldo, próximos saques e banco lidos do Stripe e, com
-  `STRIPE_PUBLISHABLE_KEY`, o cadastro da conta, os avisos, os dados bancários, os saques e os
+  `STRIPE_BROWSER_PUBLIC_KEY`, o cadastro da conta, os avisos, os dados bancários, os saques e os
   pagamentos ficam embutidos no site. Se o site ganhar uma CSP, libere
   `https://connect-js.stripe.com` e `https://js.stripe.com` em `script-src` e `frame-src`.
   Contestações (chargebacks) ficam registradas no pagamento e aparecem em Financeiro.
