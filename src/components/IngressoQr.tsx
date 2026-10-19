@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Download, Save } from "lucide-react";
-import { Botao, Modal } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui";
 import { conteudoQr } from "@/lib/checkin";
 import { tokenDaInscricao } from "@/services/checkin";
 import { guardarArquivosApp } from "@/lib/sw";
@@ -67,8 +68,8 @@ export function IngressoQr({ inscricao, evento, usuarioId, onFechar }: {
           <p className="font-mono text-2xl font-bold">{inscricao.codigo}</p>
           <p className="rounded-md border border-warning/60 bg-warning/10 p-3 text-left text-sm">Salve o ingresso ou baixe a imagem <strong>antes de ficar sem internet</strong> — no local do evento pode não haver sinal.</p>
           <div className="grid gap-2 sm:grid-cols-2">
-            <Botao variante="contorno" onClick={salvar} disabled={!qr}><Save className="h-4 w-4" />Salvar no aparelho</Botao>
-            <Botao onClick={baixar} disabled={!qr}><Download className="h-4 w-4" />Baixar imagem</Botao>
+            <Button variant="outline" onClick={salvar} disabled={!qr}><Save className="h-4 w-4" />Salvar no aparelho</Button>
+            <Button onClick={baixar} disabled={!qr}><Download className="h-4 w-4" />Baixar imagem</Button>
           </div>
           {msg && <p role="status" className="text-sm">{msg}</p>}
         </div>

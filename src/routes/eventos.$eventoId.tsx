@@ -8,7 +8,10 @@ import { useEventoAtual } from "@/hooks/useEventoAtual";
 import { registrarCliqueInscrever, registrarVisita } from "@/services/analytics";
 import { vagasRestantes, loteVigente } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
-import { Badge, Botao, Cartao, Modal, SkeletonPagina } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Modal, SkeletonPagina } from "@/components/ui";
 import { ContatoWhatsapp } from "@/components/ContatoWhatsapp";
 
 export const Route = createFileRoute("/eventos/$eventoId")({
@@ -77,7 +80,7 @@ function PaginaEvento() {
   const aPartirDe = precos.length ? Math.min(...precos) : null;
   const linkInscricao = (
     <Link to="/inscricao/$eventoId" params={{ eventoId: evento.id }} search={{ cortesia: undefined, voucher: undefined }} onClick={() => registrarCliqueInscrever(evento.id)} className="block">
-      <Botao className="w-full">Inscrever-se</Botao>
+      <Button className="w-full">Inscrever-se</Button>
     </Link>
   );
 
@@ -108,14 +111,14 @@ function PaginaEvento() {
         <div className="md:shrink-0 md:text-right">
           {inscricoesAbertas ? (
             <>
-              <Badge tom={restantes <= evento.capacidadeTotal * 0.15 ? "aviso" : "sucesso"}>
+              <Badge variant={restantes <= evento.capacidadeTotal * 0.15 ? "warning" : "success"}>
                 {restantes} vagas restantes
               </Badge>
               <div className="mt-2 hidden md:block">{linkInscricao}</div>
               <Link to="/app/suporte" search={{ evento: evento.id }} className="mt-2 block text-sm text-accent hover:underline">Dúvidas? Falar com o suporte do evento</Link>
             </>
           ) : (
-            <Badge tom="perigo">
+            <Badge variant="destructive">
               {evento.status === "cancelado" ? "Evento cancelado" : restantes <= 0 ? "Esgotado" : "Inscrições encerradas"}
             </Badge>
           )}
@@ -125,13 +128,13 @@ function PaginaEvento() {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <Cartao>
+          <Card>
             <h2 className="font-display text-lg font-semibold uppercase">Enredo</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{evento.enredo}</p>
             <p className="mt-2 text-sm text-muted-foreground">{evento.descricaoResumida}</p>
-          </Cartao>
+          </Card>
 
-          <Cartao>
+          <Card>
             <h2 className="font-display text-lg font-semibold uppercase">Exércitos</h2>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {evento.exercitos.map((ex) => (
@@ -141,9 +144,9 @@ function PaginaEvento() {
                 </div>
               ))}
             </div>
-          </Cartao>
+          </Card>
 
-          <Cartao>
+          <Card>
             <h2 className="font-display text-lg font-semibold uppercase">Cronograma</h2>
             <ol className="mt-3 space-y-3">
               {evento.cronograma
@@ -162,11 +165,11 @@ function PaginaEvento() {
                   </li>
                 ))}
             </ol>
-          </Cartao>
+          </Card>
         </div>
 
         <div className="space-y-6">
-          <Cartao>
+          <Card>
             <h2 className="font-display text-lg font-semibold uppercase">Ingressos e lotes</h2>
             <ul className="mt-3 space-y-3 text-sm">
               {evento.tipos.map((t) => {
@@ -185,18 +188,18 @@ function PaginaEvento() {
                 );
               })}
             </ul>
-          </Cartao>
+          </Card>
 
           {evento.regras && (
-            <Cartao>
+            <Card>
               <h2 className="font-display text-lg font-semibold uppercase">Caderno de regras</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {evento.regras.titulo} · v{evento.regras.versao} · atualizado em {formatarDataBR(evento.regras.atualizadoEm)}
               </p>
-              <Botao variante="contorno" className="mt-3 w-full" onClick={() => setRegrasAbertas(true)}>
+              <Button variant="outline" className="mt-3 w-full" onClick={() => setRegrasAbertas(true)}>
                 Ler dentro da plataforma
-              </Botao>
-            </Cartao>
+              </Button>
+            </Card>
           )}
         </div>
       </div>

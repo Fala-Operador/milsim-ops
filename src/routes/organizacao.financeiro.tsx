@@ -5,7 +5,12 @@ import { criarCortesia } from "@/api/organizador.functions";
 import { useNavigate } from "@tanstack/react-router";
 import { CuponsEvento } from "@/components/CuponsEvento";
 import { useAuth } from "@/contexts/AuthContext";
-import { Badge, Botao, Campo, Cartao, Entrada, Selecao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Campo } from "@/components/ui";
 import { RecebimentosOrganizacao } from "@/components/RecebimentosOrganizacao";
 import { AvisoLotes, Financeiro, useEventoSelecionado, useEventosOrg } from "@/components/organizacao";
 
@@ -69,51 +74,51 @@ function PaginaFinanceiro() {
         <h2 className="font-display text-lg font-semibold uppercase">Financeiro</h2>
       </div>
       {organizacao && (
-        <Cartao>
+        <Card>
           <RecebimentosOrganizacao organizacao={organizacao} retorno={retornoRecebimento} />
-        </Cartao>
+        </Card>
       )}
       <OperacaoSelecionada eventos={eventos} evento={eventos.find((e) => e.id === eventoId)} invalido={invalido} onSelecionar={setEventoId} />
 
       {erro && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
 
       {eventos.length === 0 ? (
-        <Cartao><p className="text-sm text-muted-foreground">Nenhum evento criado ainda. Crie um evento no Painel.</p></Cartao>
+        <Card><p className="text-sm text-muted-foreground">Nenhum evento criado ainda. Crie um evento no Painel.</p></Card>
       ) : (
         evento && (
           <>
-            <Cartao>
+            <Card>
               <Financeiro eventoId={evento.id} />
-            </Cartao>
+            </Card>
 
-            <Cartao>
+            <Card>
               <AvisoLotes evento={evento} onConfigurar={() => navigate({ to: "/organizacao", search: { lotes: evento.id } })} />
-            </Cartao>
+            </Card>
 
-            <Cartao>
+            <Card>
               <CuponsEvento evento={evento} cupons={base.cupons.filter((c) => c.eventoId === evento.id)} />
-            </Cartao>
+            </Card>
 
-            <Cartao>
+            <Card>
               <h3 className="font-display text-base font-semibold uppercase">Cortesias</h3>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <Campo rotulo="Nome do convidado" htmlFor="ct-nome">
-                  <Entrada id="ct-nome" value={cortesiaForm.nome} onChange={(e) => setCortesiaForm((p) => ({ ...p, nome: e.target.value }))} />
+                  <Input id="ct-nome" value={cortesiaForm.nome} onChange={(e) => setCortesiaForm((p) => ({ ...p, nome: e.target.value }))} />
                 </Campo>
                 <Campo rotulo="E-mail do convidado" htmlFor="ct-email">
-                  <Entrada id="ct-email" type="email" value={cortesiaForm.email} onChange={(e) => setCortesiaForm((p) => ({ ...p, email: e.target.value }))} />
+                  <Input id="ct-email" type="email" value={cortesiaForm.email} onChange={(e) => setCortesiaForm((p) => ({ ...p, email: e.target.value }))} />
                 </Campo>
                 <Campo rotulo="Tipo de ingresso" htmlFor="ct-tipo">
-                  <Selecao id="ct-tipo" value={cortesiaForm.tipoId} onChange={(e) => setCortesiaForm((p) => ({ ...p, tipoId: e.target.value }))}>
+                  <NativeSelect id="ct-tipo" value={cortesiaForm.tipoId} onChange={(e) => setCortesiaForm((p) => ({ ...p, tipoId: e.target.value }))}>
                     <option value="">Selecione</option>
                     {evento.tipos.filter((t) => !t.arquivado).map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
-                  </Selecao>
+                  </NativeSelect>
                 </Campo>
                 <Campo rotulo="Validade do convite" htmlFor="ct-val">
-                  <Entrada id="ct-val" type="date" value={cortesiaForm.validade} onChange={(e) => setCortesiaForm((p) => ({ ...p, validade: e.target.value }))} />
+                  <Input id="ct-val" type="date" value={cortesiaForm.validade} onChange={(e) => setCortesiaForm((p) => ({ ...p, validade: e.target.value }))} />
                 </Campo>
                 <div className="sm:col-span-2 flex justify-end">
-                  <Botao onClick={aoCriarCortesia} disabled={!cortesiaForm.tipoId}>Emitir cortesia</Botao>
+                  <Button onClick={aoCriarCortesia} disabled={!cortesiaForm.tipoId}>Emitir cortesia</Button>
                 </div>
               </div>
               <ul className="mt-3 space-y-1 text-sm">
@@ -121,18 +126,18 @@ function PaginaFinanceiro() {
                   <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-elevated px-3 py-2">
                     <span>{c.nomeConvidado} — {c.emailConvidado}</span>
                     <span className="flex items-center gap-2">
-                      <Badge tom={c.status === "resgatada" ? "sucesso" : c.status === "pendente" ? "aviso" : "perigo"}>{c.status}</Badge>
-                      <Botao
-                        variante="fantasma"
+                      <Badge variant={c.status === "resgatada" ? "success" : c.status === "pendente" ? "warning" : "destructive"}>{c.status}</Badge>
+                      <Button
+                        variant="ghost"
                         onClick={() => navigator.clipboard?.writeText(`${location.origin}/inscricao/${evento.id}?cortesia=${c.codigo}`)}
                       >
                         Copiar link
-                      </Botao>
+                      </Button>
                     </span>
                   </li>
                 ))}
               </ul>
-            </Cartao>
+            </Card>
           </>
         )
       )}

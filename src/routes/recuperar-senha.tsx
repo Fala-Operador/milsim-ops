@@ -1,7 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { definirNovaSenha, recuperarSenha, trocarCodigoRecuperacao } from "@/api/sessao.functions";
-import { Botao, Campo, Cartao, Entrada, Spinner } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Campo, Spinner } from "@/components/ui";
 
 export const Route = createFileRoute("/recuperar-senha")({
   // O link do e-mail do Supabase Auth volta para esta página com ?code=...
@@ -24,13 +27,13 @@ function PaginaRecuperar() {
   const { code, error_description } = Route.useSearch();
   return (
     <div className="mx-auto max-w-md px-4 py-12">
-      <Cartao>
+      <Card>
         <h1 className="font-display text-2xl font-semibold uppercase tracking-wide">Recuperar senha</h1>
         {code ? <NovaSenha codigo={code} /> : <PedirLink erroLink={error_description} />}
         <p className="mt-4 text-sm">
           <Link to="/login" search={{ redirect: undefined }} className="text-accent hover:underline">Voltar ao login</Link>
         </p>
-      </Cartao>
+      </Card>
     </div>
   );
 }
@@ -65,9 +68,9 @@ function PedirLink({ erroLink }: { erroLink?: string | undefined }) {
   return (
     <form onSubmit={aoEnviar} className="mt-4 space-y-4">
       <Campo rotulo="E-mail" htmlFor="email" erro={erro || undefined}>
-        <Entrada id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </Campo>
-      <Botao type="submit" className="w-full" disabled={enviando}>{enviando ? "Enviando..." : "Enviar link de recuperação"}</Botao>
+      <Button type="submit" className="w-full" disabled={enviando}>{enviando ? "Enviando..." : "Enviar link de recuperação"}</Button>
     </form>
   );
 }
@@ -114,12 +117,12 @@ function NovaSenha({ codigo }: { codigo: string }) {
   return (
     <form onSubmit={aoSalvar} className="mt-4 space-y-4">
       <Campo rotulo="Nova senha" htmlFor="senha">
-        <Entrada id="senha" type="password" autoComplete="new-password" value={senha} onChange={(e) => setSenha(e.target.value)} required />
+        <Input id="senha" type="password" autoComplete="new-password" value={senha} onChange={(e) => setSenha(e.target.value)} required />
       </Campo>
       <Campo rotulo="Confirme a nova senha" htmlFor="confirmacao" erro={erro || undefined}>
-        <Entrada id="confirmacao" type="password" autoComplete="new-password" value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} required />
+        <Input id="confirmacao" type="password" autoComplete="new-password" value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} required />
       </Campo>
-      <Botao type="submit" className="w-full" disabled={salvando}>{salvando ? "Salvando..." : "Salvar nova senha"}</Botao>
+      <Button type="submit" className="w-full" disabled={salvando}>{salvando ? "Salvando..." : "Salvar nova senha"}</Button>
     </form>
   );
 }

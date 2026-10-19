@@ -3,7 +3,8 @@ import { useComunidade } from "@/hooks/useComunidade";
 import { detalhePublicacao, forunsVisiveis, podeResponder } from "@/services/comunidade";
 import { responder } from "@/api/comunidade.functions";
 import { CartaoPublicacao, CompositorResposta, ItemResposta, SemAcesso } from "@/components/comunidade";
-import { Botao, SkeletonPagina } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { SkeletonPagina } from "@/components/ui";
 
 export const Route = createFileRoute("/comunidade/$eventoId/p/$postId")({
   head: () => ({
@@ -35,7 +36,7 @@ function DetalhePublicacao() {
         <Link to="/comunidade/$eventoId" params={{ eventoId }} search={{}} className="hover:underline">Comunidade</Link> /{" "}
         <Link to="/comunidade/$eventoId" params={{ eventoId }} search={{ forum: forum.id }} className="hover:underline">{forum.nome}</Link> / Publicação
       </nav>
-      <Botao variante="fantasma" className="mt-2" onClick={voltar}>← Voltar</Botao>
+      <Button variant="ghost" className="mt-2" onClick={voltar}>← Voltar</Button>
       <div className="mt-2">
         <CartaoPublicacao
           base={base}

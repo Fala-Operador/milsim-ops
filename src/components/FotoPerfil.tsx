@@ -6,7 +6,7 @@ import { definirFoto } from "@/api/conta.functions";
 import { nomeExibicao } from "@/services/comunidade";
 import { EditorFoto } from "@/components/EditorFoto";
 import { TIPOS_FOTO, erroArquivoFoto } from "@/lib/recorteFoto";
-import { Botao } from "@/components/ui";
+import { Button } from "@/components/ui/button";
 
 export function FotoPerfil() {
   const { usuario } = useAuth();
@@ -51,13 +51,13 @@ export function FotoPerfil() {
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">Aparece na comunidade dos eventos. JPG, PNG ou WebP — você ajusta o recorte antes de salvar.</p>
         <div className="flex flex-wrap gap-2">
-          <Botao type="button" variante="contorno" onClick={() => entrada.current?.click()}>
+          <Button type="button" variant="outline" onClick={() => entrada.current?.click()}>
             <Camera className="h-4 w-4" /> {usuario.fotoUrl ? "Trocar foto" : "Adicionar foto"}
-          </Botao>
+          </Button>
           {usuario.fotoUrl && (
-            <Botao type="button" variante="fantasma" onClick={remover} disabled={removendo}>
+            <Button type="button" variant="ghost" onClick={remover} disabled={removendo}>
               <Trash2 className="h-4 w-4" /> Remover
-            </Botao>
+            </Button>
           )}
         </div>
         {aviso && (

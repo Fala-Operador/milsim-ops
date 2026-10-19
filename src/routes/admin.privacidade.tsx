@@ -3,7 +3,9 @@ import { useState } from "react";
 import { carregarBase } from "@/services/db";
 import { responderPrivacidade } from "@/api/admin.functions";
 import { useAuth } from "@/contexts/AuthContext";
-import { Badge, Botao, Cartao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 export const Route = createFileRoute("/admin/privacidade")({
   head: () => ({
@@ -31,15 +33,15 @@ function Privacidade() {
       ) : (
         <div className="mt-3 space-y-2">
           {base.privacidade.map((p) => (
-            <Cartao key={p.id}>
+            <Card key={p.id}>
               <div className="flex justify-between">
                 <span className="font-medium capitalize">{p.tipo}</span>
-                <Badge tom={p.status === "respondida" ? "sucesso" : "aviso"}>{p.status}</Badge>
+                <Badge variant={p.status === "respondida" ? "success" : "warning"}>{p.status}</Badge>
               </div>
               <p className="text-sm text-muted-foreground">{p.detalhes}</p>
               {p.status === "aberta" && (
-                <Botao
-                  variante="contorno"
+                <Button
+                  variant="outline"
                   className="mt-2"
                   onClick={() => {
                     const r = prompt("Resposta ao participante:");
@@ -47,9 +49,9 @@ function Privacidade() {
                   }}
                 >
                   Responder
-                </Botao>
+                </Button>
               )}
-            </Cartao>
+            </Card>
           ))}
         </div>
       )}

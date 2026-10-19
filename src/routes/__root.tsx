@@ -23,6 +23,7 @@ import { LocalizacaoProvider } from "@/contexts/LocalizacaoContext";
 import { PreferenciasProvider } from "@/contexts/PreferenciasContext";
 import { PreferenciasModal } from "@/components/PreferenciasModalidade";
 import { Header } from "@/components/Header";
+import { Button } from "@/components/ui/button";
 
 function NotFoundComponent() {
   return (
@@ -34,12 +35,9 @@ function NotFoundComponent() {
           A página que você procura não existe ou foi movida.
         </p>
         <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
-          >
-            Voltar ao início
-          </Link>
+          <Button asChild>
+            <Link to="/">Voltar ao início</Link>
+          </Button>
         </div>
       </div>
     </div>
@@ -63,21 +61,17 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
           Algo deu errado. Tente novamente ou volte ao início.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
+          <Button
             onClick={() => {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
             Tentar novamente
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
-          >
-            Voltar ao início
-          </a>
+          </Button>
+          <Button variant="outline" className="border-input bg-background hover:bg-accent" asChild>
+            <a href="/">Voltar ao início</a>
+          </Button>
         </div>
       </div>
     </div>

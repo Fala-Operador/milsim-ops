@@ -38,18 +38,26 @@ import {
 } from "@/lib/suporte";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import type { BaseDados, Chamado, StatusChamado, Usuario } from "@/lib/domain/types";
-import { AreaTexto, Badge, Botao, EstadoVazio, Selecao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
+import { EstadoVazio } from "@/components/ui";
 import { Conversa } from "./Conversa";
 import { NovoChamado } from "./NovoChamado";
 import { useAlturaDisponivel } from "./useAlturaDisponivel";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Toggle } from "@/components/ui/toggle";
+import { Label } from "@/components/ui/label";
 
-const TOM: Record<StatusExibido, "padrao" | "sucesso" | "aviso" | "destaque"> = {
-  aberto: "destaque",
-  em_atendimento: "aviso",
-  aguardando_participante: "padrao",
-  aguardando_organizador: "padrao",
-  resolvido: "sucesso",
-  fechado: "padrao",
+const TOM: Record<StatusExibido, "secondary" | "success" | "warning" | "accent"> = {
+  aberto: "accent",
+  em_atendimento: "warning",
+  aguardando_participante: "secondary",
+  aguardando_organizador: "secondary",
+  resolvido: "success",
+  fechado: "secondary",
 };
 const nome = (u: Usuario | undefined) => (u ? u.nomeExibicao || u.nomeCompleto : "—");
 /** Chamado de evento cujo evento não está mais visível (ex.: voltou a rascunho) não vira "Plataforma". */
@@ -57,7 +65,7 @@ const nomeEvento = (c: Chamado, ev: { nome: string } | undefined) =>
   c.eventoId ? (ev?.nome ?? "Evento indisponível") : "Plataforma";
 
 export function StatusChamadoBadge({ s }: { s: StatusExibido }) {
-  return <Badge tom={TOM[s]}>{ROTULO_STATUS_EXIBIDO[s]}</Badge>;
+  return <Badge variant={TOM[s]}>{ROTULO_STATUS_EXIBIDO[s]}</Badge>;
 }
 
 /** Mesma mensagem para inexistente e sem acesso: não revela nada restrito. */
@@ -68,9 +76,9 @@ export function Indisponivel({ onVoltar }: { onVoltar: () => void }) {
         titulo="Esta solicitação não está disponível para sua conta."
         descricao="Ela pode ter sido removida ou pertencer a outra pessoa."
       />
-      <Botao type="button" variante="contorno" onClick={onVoltar}>
+      <Button type="button" variant="outline" onClick={onVoltar}>
         Voltar para meus atendimentos
-      </Botao>
+      </Button>
     </div>
   );
 }
@@ -193,16 +201,15 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
       {modo === "equipe" && (
         <dl className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {(Object.keys(indicadores) as (keyof typeof indicadores)[]).map((k) => (
-            <button
+            <Toggle
               key={k}
-              type="button"
-              onClick={() => setFiltro((f) => ({ ...f, status: f.status === k ? "" : k }))}
-              className={`min-w-0 rounded-lg border p-3 text-left ${filtro.status === k ? "border-primary bg-primary/10" : "border-border bg-card"}`}
-              aria-pressed={filtro.status === k}
+              pressed={filtro.status === k}
+              onPressedChange={() => setFiltro((f) => ({ ...f, status: f.status === k ? "" : k }))}
+              className="min-w-0 rounded-lg border p-3 text-left data-[state=off]:border-border data-[state=off]:bg-card data-[state=on]:border-primary data-[state=on]:bg-primary/10"
             >
               <dt className="truncate text-xs text-muted-foreground">{ROTULO_STATUS_EXIBIDO[k]}</dt>
               <dd className="font-display text-2xl font-semibold">{indicadores[k]}</dd>
-            </button>
+            </Toggle>
           ))}
         </dl>
       )}
@@ -220,7 +227,7 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
           >
             <div className="space-y-2 border-b border-border p-3">
               <div className="flex items-center gap-2">
-                <label className="relative min-w-0 flex-1">
+                <Label className="relative min-w-0 flex-1 text-[length:inherit] font-normal text-inherit">
                   <span className="sr-only">
                     Buscar por protocolo, assunto{modo === "equipe" ? " ou solicitante" : ""}
                   </span>
@@ -228,25 +235,25 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                     aria-hidden="true"
                     className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
                   />
-                  <input
+                  <Input
                     value={busca}
                     onChange={(e) => setBusca(e.target.value)}
                     placeholder={
                       modo === "equipe" ? "Protocolo, assunto ou solicitante" : "Buscar chamados"
                     }
-                    className="h-9 w-full min-w-0 rounded-md border border-input bg-background pl-8 pr-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40"
+                    className="h-9 w-full min-w-0 rounded-md border border-input bg-background pl-8 pr-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40 py-0"
                   />
-                </label>
+                </Label>
                 {modo === "participante" && (
-                  <Botao type="button" className="shrink-0 !px-3 !py-2" onClick={() => abrirNovo()}>
+                  <Button type="button" className="shrink-0 !px-3 !py-2" onClick={() => abrirNovo()}>
                     <Plus className="h-4 w-4" />
                     Novo
-                  </Botao>
+                  </Button>
                 )}
               </div>
               {modo === "equipe" && (
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <Selecao
+                  <NativeSelect
                     aria-label="Filtrar por evento"
                     value={filtro.evento}
                     onChange={(e) => setFiltro({ ...filtro, evento: e.target.value })}
@@ -261,8 +268,8 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                           </option>
                         ),
                     )}
-                  </Selecao>
-                  <Selecao
+                  </NativeSelect>
+                  <NativeSelect
                     aria-label="Filtrar por categoria"
                     value={filtro.categoria}
                     onChange={(e) => setFiltro({ ...filtro, categoria: e.target.value })}
@@ -271,8 +278,8 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                     {CATEGORIAS_SUPORTE.map((c) => (
                       <option key={c}>{c}</option>
                     ))}
-                  </Selecao>
-                  <Selecao
+                  </NativeSelect>
+                  <NativeSelect
                     aria-label="Filtrar por status"
                     value={filtro.status}
                     onChange={(e) => setFiltro({ ...filtro, status: e.target.value })}
@@ -283,8 +290,8 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                         {ROTULO_STATUS_EXIBIDO[s]}
                       </option>
                     ))}
-                  </Selecao>
-                  <Selecao
+                  </NativeSelect>
+                  <NativeSelect
                     aria-label="Filtrar por responsável"
                     value={filtro.responsavel}
                     onChange={(e) => setFiltro({ ...filtro, responsavel: e.target.value })}
@@ -300,7 +307,7 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                             {nome(u)}
                           </option>
                         ))}
-                  </Selecao>
+                  </NativeSelect>
                 </div>
               )}
             </div>
@@ -326,7 +333,7 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                 const sel = c.id === selecionado;
                 return (
                   <li key={c.id}>
-                    <button
+                    <Button variant="plain" size="none"
                       type="button"
                       onClick={() => {
                         setNovo(null);
@@ -363,9 +370,9 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                       )}
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
                         <StatusChamadoBadge s={statusExibido(base, c)} />
-                        {modo === "equipe" && retornoRecebido(base, c) && <Badge tom="destaque">Retorno do organizador recebido</Badge>}
+                        {modo === "equipe" && retornoRecebido(base, c) && <Badge variant="accent">Retorno do organizador recebido</Badge>}
                         {modo === "equipe" && pendenteDeResposta(c) && (
-                          <Badge tom="aviso">Aguardando resposta</Badge>
+                          <Badge variant="warning">Aguardando resposta</Badge>
                         )}
                         {modo === "equipe" && (
                           <span className="text-[11px] text-muted-foreground">
@@ -378,7 +385,7 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                           {formatarDataHoraBR(ultimaAtividade(c))}
                         </span>
                       </div>
-                    </button>
+                    </Button>
                   </li>
                 );
               })}
@@ -485,15 +492,17 @@ function AreasAtendimento({ base, c, usuario, rodape }: { base: BaseDados; c: Ch
     `min-w-0 flex-1 border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${ativa ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`;
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div role="tablist" aria-label="Área do atendimento" className="flex min-w-0 border-b border-border">
-        <button type="button" role="tab" aria-selected={aba === "participante"} className={abaCls(aba === "participante")} onClick={() => setAba("participante")}>
+      <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)}>
+      <TabsList aria-label="Área do atendimento" className="min-w-0 border-b border-border">
+        <TabsTrigger value="participante" className={abaCls(aba === "participante")}>
           Conversa com o participante
-        </button>
-        <button type="button" role="tab" aria-selected={aba === "interno"} className={abaCls(aba === "interno")} onClick={() => setAba("interno")}>
+        </TabsTrigger>
+        <TabsTrigger value="interno" className={abaCls(aba === "interno")}>
           Encaminhamento ao organizador{encs.length > 0 && ` (${encs.length})`}
           {retorno && <span className="ml-1.5 whitespace-nowrap rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">Retorno</span>}
-        </button>
-      </div>
+        </TabsTrigger>
+      </TabsList>
+      </Tabs>
       {aba === "participante" ? (
         <Conversa key={c.id} base={base} chamado={c} usuarioId={usuario.id} rodape={rodape}
           rotuloEnviar="Responder ao participante" aviso="Visível para o participante." />
@@ -507,10 +516,10 @@ function AreasAtendimento({ base, c, usuario, rodape }: { base: BaseDados; c: Ch
 function BotaoVoltar({ onClick }: { onClick: () => void }) {
   return (
     <div className="border-b border-border px-2 py-1.5 @min-[760px]:hidden">
-      <Botao type="button" variante="fantasma" className="!px-2 !py-1 text-sm" onClick={onClick}>
+      <Button type="button" variant="ghost" className="!px-2 !py-1 text-sm" onClick={onClick}>
         <ArrowLeft className="h-4 w-4" />
         Voltar aos chamados
-      </Botao>
+      </Button>
     </div>
   );
 }
@@ -546,10 +555,10 @@ function CabecalhoConversa({
           <StatusChamadoBadge s={statusExibido(base, c)} />
         </div>
       </div>
-      <Botao
+      <Button
         ref={botao}
         type="button"
-        variante="contorno"
+        variant="outline"
         className="shrink-0 !px-3 !py-1.5"
         onClick={onDetalhes}
         aria-expanded={detalhes}
@@ -558,7 +567,7 @@ function CabecalhoConversa({
       >
         <Info className="h-4 w-4" />
         Detalhes
-      </Botao>
+      </Button>
     </header>
   );
 }
@@ -601,20 +610,20 @@ function RodapeStatus({
             : "Este chamado foi fechado e está disponível somente para leitura."}
         </p>
         {estado === "resolvido" && (
-          <Botao
+          <Button
             type="button"
-            variante="contorno"
+            variant="outline"
             className="shrink-0"
             disabled={ocupado}
             onClick={reabrir}
           >
             {ocupado ? "Reabrindo…" : "Reabrir chamado"}
-          </Botao>
+          </Button>
         )}
         {estado === "fechado" && modo === "participante" && (
-          <Botao type="button" variante="contorno" className="shrink-0" onClick={onNovoVinculado}>
+          <Button type="button" variant="outline" className="shrink-0" onClick={onNovoVinculado}>
             Abrir novo chamado
-          </Botao>
+          </Button>
         )}
       </div>
       {erro && (
@@ -717,16 +726,16 @@ function PainelDetalhes({
         <h3 id="detalhes-titulo" className="font-display text-base font-semibold">
           Detalhes do chamado
         </h3>
-        <Botao
+        <Button
           ref={fechar}
           type="button"
-          variante="fantasma"
+          variant="ghost"
           className="shrink-0 !px-2 !py-1"
           onClick={onFechar}
           aria-label="Fechar detalhes"
         >
           <X className="h-4 w-4" />
-        </Botao>
+        </Button>
       </div>
       <div className="rolagem-discreta min-h-0 flex-1 px-4 py-4">
         <dl className="space-y-3">
@@ -769,19 +778,19 @@ function PainelDetalhes({
           {modo === "equipe" && atende && ativo(c) && (
             <>
               {resp !== usuario.id && (
-                <Botao
+                <Button
                   type="button"
                   className="w-full"
                   disabled={ocupado}
                   onClick={() => executar(() => assumirChamado(c.id))}
                 >
                   Assumir atendimento
-                </Botao>
+                </Button>
               )}
               {usuario.perfil === "admin" && (
                 <div className="flex min-w-0 flex-wrap gap-2">
                   <div className="min-w-0 flex-1">
-                    <Selecao
+                    <NativeSelect
                       aria-label="Atribuir a"
                       value={atribuir}
                       onChange={(e) => setAtribuir(e.target.value)}
@@ -795,36 +804,36 @@ function PainelDetalhes({
                             {u.perfil === "admin" ? " (admin)" : " (organização)"}
                           </option>
                         ))}
-                    </Selecao>
+                    </NativeSelect>
                   </div>
-                  <Botao
+                  <Button
                     type="button"
-                    variante="contorno"
+                    variant="outline"
                     className="shrink-0 !px-3"
                     disabled={!atribuir || ocupado}
                     onClick={() => executar(() => assumirChamado(c.id, atribuir))}
                   >
                     Atribuir
-                  </Botao>
+                  </Button>
                 </div>
               )}
               {pode("aguardar") && c.status !== "aguardando_participante" && (
-                <Botao
+                <Button
                   type="button"
-                  variante="contorno"
+                  variant="outline"
                   className="w-full"
                   disabled={ocupado}
                   onClick={() => acao("aguardar")}
                 >
                   Aguardar participante
-                </Botao>
+                </Button>
               )}
               {resolvendo ? (
                 <div className="space-y-2 rounded-md border border-border p-2">
-                  <label htmlFor="sol" className="text-xs font-medium">
+                  <Label htmlFor="sol" className="text-xs font-medium text-inherit">
                     Descrição da solução
-                  </label>
-                  <AreaTexto
+                  </Label>
+                  <Textarea
                     id="sol"
                     rows={3}
                     maxLength={500}
@@ -832,55 +841,55 @@ function PainelDetalhes({
                     onChange={(e) => setTextoSolucao(e.target.value)}
                   />
                   <div className="flex flex-wrap gap-2">
-                    <Botao
+                    <Button
                       type="button"
-                      variante="contorno"
+                      variant="outline"
                       className="flex-1 !py-1"
                       onClick={() => setResolvendo(false)}
                     >
                       Cancelar
-                    </Botao>
-                    <Botao
+                    </Button>
+                    <Button
                       type="button"
                       className="flex-1 !py-1"
                       disabled={ocupado || !textoSolucao.trim()}
                       onClick={() => acao("resolver", textoSolucao)}
                     >
                       Resolver
-                    </Botao>
+                    </Button>
                   </div>
                 </div>
               ) : (
                 pode("resolver") && (
-                  <Botao
+                  <Button
                     type="button"
-                    variante="secundario"
+                    variant="secondary"
                     className="w-full"
                     disabled={ocupado}
                     onClick={() => setResolvendo(true)}
                   >
                     Marcar como resolvido
-                  </Botao>
+                  </Button>
                 )
               )}
             </>
           )}
           {pode("reabrir") && (
-            <Botao
+            <Button
               type="button"
-              variante="contorno"
+              variant="outline"
               className="w-full"
               disabled={ocupado}
               onClick={() => acao("reabrir")}
             >
               Reabrir chamado
-            </Botao>
+            </Button>
           )}
           {/* Fechar: só quando a regra permite; para a equipe, como antes, após resolver. */}
           {pode("fechar") && (modo === "participante" || c.status === "resolvido") && (
-            <Botao
+            <Button
               type="button"
-              variante="fantasma"
+              variant="ghost"
               className="w-full"
               disabled={ocupado}
               onClick={() => {
@@ -893,12 +902,12 @@ function PainelDetalhes({
               }}
             >
               Fechar chamado
-            </Botao>
+            </Button>
           )}
           {c.status === "fechado" && modo === "participante" && (
-            <Botao type="button" variante="contorno" className="w-full" onClick={onNovoVinculado}>
+            <Button type="button" variant="outline" className="w-full" onClick={onNovoVinculado}>
               Abrir novo chamado
-            </Botao>
+            </Button>
           )}
         </div>
       </div>

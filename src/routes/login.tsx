@@ -2,7 +2,10 @@ import { destinoDoLink, redirectSeguro } from "@/lib/links";
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Botao, Campo, Cartao, Entrada } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Campo } from "@/components/ui";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -44,11 +47,11 @@ function PaginaLogin() {
 
   return (
     <div className="mx-auto flex max-w-md flex-col px-4 py-12">
-      <Cartao>
+      <Card>
         <h1 className="font-display text-2xl font-semibold uppercase tracking-wide">Entrar</h1>
         <form onSubmit={aoEnviar} className="mt-5 space-y-4">
           <Campo rotulo="E-mail" htmlFor="email" erro={erro && undefined}>
-            <Entrada
+            <Input
               id="email"
               type="text"
               autoComplete="email"
@@ -58,7 +61,7 @@ function PaginaLogin() {
             />
           </Campo>
           <Campo rotulo="Senha" htmlFor="senha">
-            <Entrada
+            <Input
               id="senha"
               type="password"
               autoComplete="current-password"
@@ -72,9 +75,9 @@ function PaginaLogin() {
               {erro}
             </p>
           )}
-          <Botao type="submit" disabled={carregando} className="w-full">
+          <Button type="submit" disabled={carregando} className="w-full">
             {carregando ? "Entrando..." : "Entrar"}
-          </Botao>
+          </Button>
         </form>
         <div className="mt-4 flex justify-between text-sm">
           <Link to="/recuperar-senha" className="text-accent hover:underline">
@@ -88,7 +91,7 @@ function PaginaLogin() {
             Criar cadastro
           </Link>
         </div>
-      </Cartao>
+      </Card>
     </div>
   );
 }

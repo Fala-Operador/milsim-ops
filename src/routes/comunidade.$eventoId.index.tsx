@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { useComunidade } from "@/hooks/useComunidade";
@@ -12,9 +13,15 @@ import {
 } from "@/services/comunidade";
 import { definirPreferenciaForum, registrarVisita } from "@/api/comunidade.functions";
 import { CartaoPublicacao, Compositor, SemAcesso } from "@/components/comunidade";
-import { Badge, Cartao, Entrada, EstadoVazio, Selecao, SkeletonPagina, Botao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { EstadoVazio, SkeletonPagina } from "@/components/ui";
 import { formatarDataBR } from "@/lib/domain/money";
 import { dataUrlParaBlobUrl } from "@/lib/imagens";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export const Route = createFileRoute("/comunidade/$eventoId/")({
   validateSearch: (s: Record<string, unknown>): { forum?: string | undefined; q?: string | undefined } => ({
@@ -95,7 +102,7 @@ function ComunidadeInicio() {
         </div>
         {gestao && (
           <Link to="/comunidade/$eventoId/gerenciar" params={{ eventoId }}>
-            <Botao variante="contorno">Gerenciar comunidade</Botao>
+            <Button variant="outline">Gerenciar comunidade</Button>
           </Link>
         )}
       </header>
@@ -108,14 +115,14 @@ function ComunidadeInicio() {
 
       {/* Seletor de fóruns no celular */}
       <div className="mt-4 lg:hidden">
-        <Selecao aria-label="Escolher fórum" value={forumAtual?.id ?? ""} onChange={(e) => irPara(e.target.value || undefined)}>
+        <NativeSelect aria-label="Escolher fórum" value={forumAtual?.id ?? ""} onChange={(e) => irPara(e.target.value || undefined)}>
           <option value="">Todos os fóruns</option>
           {foruns.map((f) => (
             <option key={f.id} value={f.id}>
               {f.icone} {f.nome}{f.status === "arquivado" ? " (arquivado)" : ""}{novidades[f.id] ? ` • ${novidades[f.id]} novas` : ""}
             </option>
           ))}
-        </Selecao>
+        </NativeSelect>
       </div>
 
       <div className="mt-4 grid gap-6 lg:grid-cols-[240px_1fr_260px]">
@@ -146,19 +153,19 @@ function ComunidadeInicio() {
             }}
             className="flex gap-2"
           >
-            <Entrada aria-label="Buscar fóruns e publicações" placeholder="Buscar fóruns e publicações…" value={busca} onChange={(e) => setBusca(e.target.value)} />
-            <Botao type="submit" variante="contorno">Buscar</Botao>
+            <Input aria-label="Buscar fóruns e publicações" placeholder="Buscar fóruns e publicações…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+            <Button type="submit" variant="outline">Buscar</Button>
           </form>
 
           {forumAtual && (
-            <Cartao>
+            <Card>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <h2 className="font-display text-xl font-semibold">{forumAtual.icone} {forumAtual.nome}</h2>
                   <p className="text-sm text-muted-foreground">{forumAtual.descricao}</p>
                 </div>
                 <div className="w-44">
-                  <Selecao
+                  <NativeSelect
                     aria-label="Notificações deste fórum"
                     value={pref}
                     onChange={async (e) => { await definirPreferenciaForum(forumAtual.id, e.target.value as "seguir" | "silenciar" | "padrao"); atualizar(); }}
@@ -166,7 +173,7 @@ function ComunidadeInicio() {
                     <option value="padrao">Notificações: padrão</option>
                     <option value="seguir">Seguir novas publicações</option>
                     <option value="silenciar">Silenciar</option>
-                  </Selecao>
+                  </NativeSelect>
                 </div>
               </div>
               {forumAtual.regras && <p className="mt-2 rounded-md bg-secondary p-2 text-xs"><strong>Regras do fórum:</strong> {forumAtual.regras}</p>}
@@ -174,20 +181,20 @@ function ComunidadeInicio() {
               {forumAtual.publicacao === "gestao" && forumAtual.status === "ativo" && (
                 <p className="mt-2 text-xs text-muted-foreground">Publicações oficiais da organização{forumAtual.respostas === "membros" ? " · respostas abertas aos participantes" : ""}.</p>
               )}
-            </Cartao>
+            </Card>
           )}
 
           {q && (
-            <Cartao>
+            <Card>
               <p className="text-sm">Resultados para <strong>“{q}”</strong> · <Link to="/comunidade/$eventoId" params={{ eventoId }} search={{ forum: forumSel }} className="text-accent hover:underline">limpar busca</Link></p>
               {forunsEncontrados.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {forunsEncontrados.map((f) => (
-                    <button key={f.id} onClick={() => irPara(f.id)} className="rounded-full border border-border px-3 py-1 text-xs hover:bg-secondary">{f.icone} {f.nome}</button>
+                    <Button variant="plain" size="none" key={f.id} onClick={() => irPara(f.id)} className="rounded-full border border-border px-3 py-1 text-xs hover:bg-secondary">{f.icone} {f.nome}</Button>
                   ))}
                 </div>
               )}
-            </Cartao>
+            </Card>
           )}
 
           {(forumAtual ? podePublicar(base, usuario, forumAtual) : permitidos.length > 0) && (
@@ -210,38 +217,42 @@ function ComunidadeInicio() {
             ))}
             {feed.length > limite && (
               <div className="text-center">
-                <Botao variante="contorno" onClick={() => setLimite((l) => l + TAMANHO_PAGINA)}>Carregar mais</Botao>
+                <Button variant="outline" onClick={() => setLimite((l) => l + TAMANHO_PAGINA)}>Carregar mais</Button>
               </div>
             )}
           </section>
         </main>
 
         <aside className="space-y-4" aria-label="Atalhos do evento">
-          <Cartao>
+          <Card>
             <h2 className="font-display text-sm font-semibold uppercase">Cronograma</h2>
             <ul className="mt-2 space-y-1 text-sm">
               {evento.cronograma.slice().sort((a, b) => a.ordem - b.ordem).map((at) => (
                 <li key={at.id}><span className="font-mono text-xs text-accent">{formatarDataBR(at.data)} {at.horario}</span> {at.titulo}</li>
               ))}
             </ul>
-          </Cartao>
+          </Card>
           {evento.regras && (
-            <details className="rounded-lg border border-border bg-card p-4 text-sm">
-              <summary className="cursor-pointer font-display font-semibold uppercase">Caderno de regras</summary>
-              {evento.regras.pdfDataUrl ? (
-                <LeitorPdf titulo={evento.regras.titulo} dataUrl={evento.regras.pdfDataUrl} />
-              ) : (
-                <div className="mt-2 max-h-64 overflow-y-auto [&_h2]:font-semibold [&_p]:text-muted-foreground" dangerouslySetInnerHTML={{ __html: evento.regras.conteudoHtml ?? "" }} />
-              )}
-            </details>
+            <Collapsible className="rounded-lg border border-border bg-card p-4 text-sm">
+              <CollapsibleTrigger className="group flex cursor-pointer items-center gap-1 text-left font-display font-semibold uppercase">
+                <ChevronRight aria-hidden="true" className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />Caderno de regras
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                {evento.regras.pdfDataUrl ? (
+                  <LeitorPdf titulo={evento.regras.titulo} dataUrl={evento.regras.pdfDataUrl} />
+                ) : (
+                  <div className="mt-2 max-h-64 overflow-y-auto [&_h2]:font-semibold [&_p]:text-muted-foreground" dangerouslySetInnerHTML={{ __html: evento.regras.conteudoHtml ?? "" }} />
+                )}
+              </CollapsibleContent>
+            </Collapsible>
           )}
-          <Cartao>
+          <Card>
             <ul className="space-y-2 text-sm">
               <li><Link to="/app/missoes" className="text-accent hover:underline">🎯 Missões</Link></li>
               <li><Link to="/app/suporte" search={{ evento: eventoId }} className="text-accent hover:underline">🛟 Suporte (privado)</Link></li>
               {evento.whatsappGrupoUrl && <li><a href={evento.whatsappGrupoUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">💬 Grupo do WhatsApp ↗</a></li>}
             </ul>
-          </Cartao>
+          </Card>
         </aside>
       </div>
     </div>
@@ -251,18 +262,18 @@ function ComunidadeInicio() {
 function ItemForum({ ativo, onClick, rotulo, descricao, novas, arquivado }: { ativo: boolean; onClick: () => void; rotulo: string; descricao?: string; novas?: number | undefined; arquivado?: boolean }) {
   return (
     <li>
-      <button
+      <Button variant="plain" size="none"
         onClick={onClick}
         aria-current={ativo ? "page" : undefined}
         className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${ativo ? "bg-secondary font-semibold" : "hover:bg-secondary"}`}
       >
         <span className="flex items-center justify-between gap-2">
           <span className="truncate">{rotulo}</span>
-          {!!novas && <Badge tom="destaque">{novas}</Badge>}
+          {!!novas && <Badge variant="accent">{novas}</Badge>}
           {arquivado && <Badge>Arquivado</Badge>}
         </span>
         {descricao && <span className="mt-0.5 block truncate text-xs font-normal text-muted-foreground">{descricao}</span>}
-      </button>
+      </Button>
     </li>
   );
 }

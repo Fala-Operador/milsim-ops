@@ -11,7 +11,11 @@ import { confirmarInscricao, previsualizarCupom } from "@/api/inscricoes.functio
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { descontoDoBeneficio, descreverBeneficio, statusVoucher } from "@/lib/participacao";
-import { Botao, Campo, Cartao, Entrada, Selecao, SkeletonPagina } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Campo, SkeletonPagina } from "@/components/ui";
 
 const novoId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
 
@@ -119,7 +123,7 @@ function PaginaInscricao() {
     const destino = `/inscricao/${evento.id}${codigoCortesia ? `?cortesia=${codigoCortesia}` : ""}`;
     return (
       <div className="mx-auto max-w-md px-4 py-16">
-        <Cartao>
+        <Card>
           <h1 className="font-display text-xl font-semibold uppercase">Entre para se inscrever</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Para se inscrever em <strong>{evento.nome}</strong>, entre na sua conta ou conclua o
@@ -127,13 +131,13 @@ function PaginaInscricao() {
           </p>
           <div className="mt-4 flex gap-2">
             <Link to="/login" search={{ redirect: destino }}>
-              <Botao>Entrar</Botao>
+              <Button>Entrar</Button>
             </Link>
             <Link to="/cadastro" search={{ redirect: destino }}>
-              <Botao variante="contorno">Cadastrar</Botao>
+              <Button variant="outline">Cadastrar</Button>
             </Link>
           </div>
-        </Cartao>
+        </Card>
       </div>
     );
   }
@@ -216,7 +220,7 @@ function PaginaInscricao() {
         <Link to="/eventos/$eventoId" params={{ eventoId: evento.id }} className="hover:underline">{evento.nome}</Link>{" "}
         / Inscrição
       </nav>
-      <Cartao className="mt-3">
+      <Card className="mt-3">
         <h1 className="font-display text-2xl font-semibold uppercase">Inscrição — {evento.nome}</h1>
         {cortesia && (
           <p className="mt-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent">
@@ -245,7 +249,7 @@ function PaginaInscricao() {
           )}
 
           <Campo rotulo="1. Tipo de ingresso" htmlFor="tipo">
-            <Selecao id="tipo" value={tipoId} onChange={(e) => aoTrocarTipo(e.target.value)} disabled={!!cortesia}>
+            <NativeSelect id="tipo" value={tipoId} onChange={(e) => aoTrocarTipo(e.target.value)} disabled={!!cortesia}>
               <option value="">Selecione</option>
               {tiposAtivos.map((t) => {
                 const d = disponibilidades.get(t.id)!;
@@ -255,7 +259,7 @@ function PaginaInscricao() {
                   </option>
                 );
               })}
-            </Selecao>
+            </NativeSelect>
           </Campo>
 
           {tipo && !cortesia && (
@@ -265,7 +269,7 @@ function PaginaInscricao() {
           )}
 
           <Campo rotulo="3. Exército" htmlFor="exercito">
-            <Selecao id="exercito" value={exercitoId} onChange={(e) => setExercitoId(e.target.value)}>
+            <NativeSelect id="exercito" value={exercitoId} onChange={(e) => setExercitoId(e.target.value)}>
               <option value="">Selecione</option>
               {evento.exercitos.map((ex) => {
                 const livres = ex.capacidade - ocupacaoExercito(base, evento.id, ex.id);
@@ -275,17 +279,17 @@ function PaginaInscricao() {
                   </option>
                 );
               })}
-            </Selecao>
+            </NativeSelect>
           </Campo>
 
           {!cortesia && vouchers.length > 0 && (
             <Campo rotulo="Benefício de recompensa (opcional)" htmlFor="voucher">
-              <Selecao id="voucher" value={voucherId} onChange={(e) => { setVoucherId(e.target.value); setCupomAplicado(null); }}>
+              <NativeSelect id="voucher" value={voucherId} onChange={(e) => { setVoucherId(e.target.value); setCupomAplicado(null); }}>
                 <option value="">Não usar benefício</option>
                 {vouchers.map((v) => (
                   <option key={v.id} value={v.id}>{v.beneficio.nome} — {descreverBeneficio(v.beneficio)} (até {formatarDataBR(v.beneficio.resgatarAte)})</option>
                 ))}
-              </Selecao>
+              </NativeSelect>
               <p className="text-xs text-muted-foreground">O benefício não reserva vaga e não acumula com cupom. Ele só é consumido quando a inscrição for confirmada.</p>
               {voucher && tipo && !voucherServe && <p role="alert" className="text-sm text-destructive">Este benefício não vale para o ingresso escolhido.</p>}
             </Campo>
@@ -296,12 +300,12 @@ function PaginaInscricao() {
               {cupomAplicado ? (
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm text-success" role="status">
                   <span>{cupomAplicado.codigo} aplicado: {cupomAplicado.percentual}% de desconto.</span>
-                  <Botao type="button" variante="fantasma" onClick={removerCupom}>Remover cupom</Botao>
+                  <Button type="button" variant="ghost" onClick={removerCupom}>Remover cupom</Button>
                 </div>
               ) : (
                 <div className="flex gap-2">
-                  <Entrada id="cupom" value={cupom} onChange={(e) => { setCupom(e.target.value); setErroCupom(""); }} placeholder="CODIGO" aria-describedby="cupom-msg" />
-                  <Botao type="button" variante="contorno" onClick={aoAplicarCupom} disabled={!cupom.trim()}>Aplicar</Botao>
+                  <Input id="cupom" value={cupom} onChange={(e) => { setCupom(e.target.value); setErroCupom(""); }} placeholder="CODIGO" aria-describedby="cupom-msg" />
+                  <Button type="button" variant="outline" onClick={aoAplicarCupom} disabled={!cupom.trim()}>Aplicar</Button>
                 </div>
               )}
               <div id="cupom-msg">
@@ -339,16 +343,16 @@ function PaginaInscricao() {
           )}
           {erro && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
 
-          <Botao onClick={aoConfirmar} disabled={confirmando || !!impedimento} className="w-full">
+          <Button onClick={aoConfirmar} disabled={confirmando || !!impedimento} className="w-full">
             {confirmando ? (vaiPagar ? "Abrindo pagamento..." : "Confirmando...") : vaiPagar ? "Ir para o pagamento" : "Confirmar inscrição"}
-          </Botao>
+          </Button>
           <p className="text-center text-xs text-muted-foreground">
             {pagamentoOnline
               ? "O pagamento é feito no ambiente seguro do Stripe; a plataforma não recebe nem guarda dados do seu cartão. A vaga fica reservada por cerca de 30 minutos enquanto você paga."
               : "A plataforma não processa pagamentos: não pedimos cartão, PIX ou dados de pagamento."}
           </p>
         </div>
-      </Cartao>
+      </Card>
     </div>
   );
 }

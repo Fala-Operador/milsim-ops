@@ -4,14 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Banknote, Check, Clock, ExternalLink, TriangleAlert } from "lucide-react";
 import { abrirPainelStripe, atualizarRecebimento, cadastrarRecebimento, configuracaoRepasse } from "@/api/repasses.functions";
-import { Badge, Botao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { PaineisStripe } from "@/components/PaineisStripe";
 import { SaldoRecebimento } from "@/components/SaldoRecebimento";
 import { ROTULO_RECEBIMENTO, taxaDaPlataforma } from "@/lib/repasses";
 import { carregarBase } from "@/services/db";
 import type { Organizacao, StatusRecebimento } from "@/lib/domain/types";
 
-const TOM: Record<StatusRecebimento, "sucesso" | "aviso" | "perigo"> = { ativa: "sucesso", em_analise: "aviso", pendente: "aviso", restrita: "perigo" };
+const TOM: Record<StatusRecebimento, "success" | "warning" | "destructive"> = { ativa: "success", em_analise: "warning", pendente: "warning", restrita: "destructive" };
 const ICONE: Record<StatusRecebimento, typeof Check> = { ativa: Check, em_analise: Clock, pendente: Clock, restrita: TriangleAlert };
 
 export function RecebimentosOrganizacao({ organizacao, retorno }: { organizacao: Organizacao; retorno?: string | undefined }) {
@@ -78,7 +79,7 @@ export function RecebimentosOrganizacao({ organizacao, retorno }: { organizacao:
         </div>
         {rec && (
           <div className="shrink-0">
-            <Badge tom={TOM[rec.status]} aria-label={`Recebimentos: ${ROTULO_RECEBIMENTO[rec.status]}`}><Icone aria-hidden="true" />{ROTULO_RECEBIMENTO[rec.status]}</Badge>
+            <Badge variant={TOM[rec.status]} aria-label={`Recebimentos: ${ROTULO_RECEBIMENTO[rec.status]}`}><Icone aria-hidden="true" />{ROTULO_RECEBIMENTO[rec.status]}</Badge>
           </div>
         )}
       </div>
@@ -88,14 +89,14 @@ export function RecebimentosOrganizacao({ organizacao, retorno }: { organizacao:
       {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {rec?.status !== "ativa" && (
-          <Botao type="button" className="w-full sm:w-auto" onClick={irParaCadastro} disabled={ocupado || !config}>
+          <Button type="button" className="w-full sm:w-auto" onClick={irParaCadastro} disabled={ocupado || !config}>
             {ocupado ? "Abrindo o Stripe..." : rec ? "Continuar cadastro no Stripe" : "Configurar recebimentos"}
-          </Botao>
+          </Button>
         )}
         {rec && (rec.status === "ativa" || rec.saquesAtivos || rec.transferenciasAtivas) && (
-          <Botao type="button" variante="contorno" className="w-full sm:w-auto" onClick={abrirPainel}>
+          <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={abrirPainel}>
             <ExternalLink className="h-4 w-4" aria-hidden="true" />Abrir painel do Stripe
-          </Botao>
+          </Button>
         )}
       </div>
       {config && rec?.status === "ativa" && (

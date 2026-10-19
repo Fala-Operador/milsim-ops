@@ -4,9 +4,8 @@
 import { MessageCircle, Users } from "lucide-react";
 import { linkContatoEvento } from "@/lib/contatoEvento";
 import type { Evento } from "@/lib/domain/types";
+import { Button } from "@/components/ui/button";
 
-const BOTAO =
-  "inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring";
 
 export function ContatoWhatsapp({ evento, className = "" }: { evento: Evento; className?: string }) {
   const contato = linkContatoEvento(evento);
@@ -14,16 +13,20 @@ export function ContatoWhatsapp({ evento, className = "" }: { evento: Evento; cl
   return (
     <div className={`flex flex-wrap gap-2 ${className}`}>
       {evento.whatsappGrupoUrl && (
-        <a href={evento.whatsappGrupoUrl} target="_blank" rel="noopener noreferrer" className={`${BOTAO} bg-primary text-primary-foreground hover:opacity-90`}>
-          <Users className="h-4 w-4" aria-hidden="true" />
-          Entrar no grupo do WhatsApp
-        </a>
+        <Button asChild className="px-3">
+          <a href={evento.whatsappGrupoUrl} target="_blank" rel="noopener noreferrer">
+            <Users className="h-4 w-4" aria-hidden="true" />
+            Entrar no grupo do WhatsApp
+          </a>
+        </Button>
       )}
       {contato && (
-        <a href={contato} target="_blank" rel="noopener noreferrer" className={`${BOTAO} border border-border hover:bg-secondary`}>
-          <MessageCircle className="h-4 w-4" aria-hidden="true" />
-          Falar com o organizador no WhatsApp
-        </a>
+        <Button asChild variant="outline" className="px-3">
+          <a href={contato} target="_blank" rel="noopener noreferrer">
+            <MessageCircle className="h-4 w-4" aria-hidden="true" />
+            Falar com o organizador no WhatsApp
+          </a>
+        </Button>
       )}
     </div>
   );

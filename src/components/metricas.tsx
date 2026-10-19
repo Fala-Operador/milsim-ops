@@ -14,8 +14,17 @@ import { linkCampanha } from "@/services/analytics";
 import { criarCampanha, listarMetricas } from "@/api/analytics.functions";
 import { inscricoesAtivasDoEvento } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
-import { Badge, Botao, Cartao, Entrada, EstadoVazio, Selecao, Skeleton } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EstadoVazio } from "@/components/ui";
 import { baixarCsv, baixarPdf, montarRelatorio, nomeArquivo } from "@/lib/relatorioMetricas";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
 
 const DIA = 86400000;
 const fmtN = (n: number) => n.toLocaleString("pt-BR");
@@ -25,12 +34,12 @@ export const AVISO_METRICAS = "Métricas anônimas coletadas pela plataforma. Ac
 
 function Indicador({ rotulo, valor, ajuda, anterior }: { rotulo: string; valor: string; ajuda: string; anterior?: ReactNode }) {
   return (
-    <Cartao className="!p-4">
+    <Card className="!p-4">
       <p className="text-xs text-muted-foreground">{rotulo}</p>
       <p className="mt-1 font-display text-2xl font-semibold">{valor}</p>
       {anterior}
       <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{ajuda}</p>
-    </Cartao>
+    </Card>
   );
 }
 
@@ -49,10 +58,10 @@ function Tabela({ cab, linhas, vazio = "Sem dados no período." }: { cab: string
   if (!linhas.length) return <p className="text-sm text-muted-foreground">{vazio}</p>;
   return (
     <div className="overflow-x-auto rounded-lg border border-border">
-      <table className="w-full text-sm">
-        <thead className="bg-secondary text-left"><tr>{cab.map((c) => <th key={c} className="px-3 py-2 font-medium">{c}</th>)}</tr></thead>
-        <tbody>{linhas.map((l, i) => <tr key={i} className="border-t border-border">{l.map((v, j) => <td key={j} className="px-3 py-2">{v}</td>)}</tr>)}</tbody>
-      </table>
+      <Table className="w-full text-sm">
+        <TableHeader className="bg-secondary text-left"><TableRow>{cab.map((c) => <TableHead key={c} className="px-3 py-2 font-medium">{c}</TableHead>)}</TableRow></TableHeader>
+        <TableBody>{linhas.map((l, i) => <TableRow key={i} className="border-t border-border">{l.map((v, j) => <TableCell key={j} className="px-3 py-2">{v}</TableCell>)}</TableRow>)}</TableBody>
+      </Table>
     </div>
   );
 }
@@ -145,38 +154,38 @@ export function PainelMetricas({ base, eventos, modo }: { base: BaseDados; event
       <p className="rounded-md border border-border bg-secondary px-3 py-2 text-xs">{AVISO_METRICAS}</p>
 
       <div className="flex flex-wrap items-end gap-3">
-        <label className="text-sm"><span className="mb-1 block text-xs text-muted-foreground">Evento</span>
-          <Selecao value={eventoId} onChange={(e) => { setEventoId(e.target.value); setOrigem(""); }}>
+        <Label className="text-sm font-normal text-inherit"><span className="mb-1 block text-xs text-muted-foreground">Evento</span>
+          <NativeSelect value={eventoId} onChange={(e) => { setEventoId(e.target.value); setOrigem(""); }}>
             {modo === "admin" && <option value="todos">Todos os eventos</option>}
             {eventos.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-          </Selecao>
-        </label>
-        <label className="text-sm"><span className="mb-1 block text-xs text-muted-foreground">Período</span>
-          <Selecao value={periodo.tipo} onChange={(e) => setPeriodo({ ...periodo, tipo: e.target.value as Periodo["tipo"] })}>
+          </NativeSelect>
+        </Label>
+        <Label className="text-sm font-normal text-inherit"><span className="mb-1 block text-xs text-muted-foreground">Período</span>
+          <NativeSelect value={periodo.tipo} onChange={(e) => setPeriodo({ ...periodo, tipo: e.target.value as Periodo["tipo"] })}>
             <option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option>
             <option value="tudo">Todo o período</option><option value="custom">Intervalo personalizado</option>
-          </Selecao>
-        </label>
+          </NativeSelect>
+        </Label>
         {periodo.tipo === "custom" && (
           <>
-            <label className="text-sm"><span className="mb-1 block text-xs text-muted-foreground">De</span><Entrada type="date" value={periodo.de} onChange={(e) => setPeriodo({ ...periodo, de: e.target.value })} /></label>
-            <label className="text-sm"><span className="mb-1 block text-xs text-muted-foreground">Até</span><Entrada type="date" value={periodo.ate} onChange={(e) => setPeriodo({ ...periodo, ate: e.target.value })} /></label>
+            <Label className="text-sm font-normal text-inherit"><span className="mb-1 block text-xs text-muted-foreground">De</span><Input type="date" value={periodo.de} onChange={(e) => setPeriodo({ ...periodo, de: e.target.value })} /></Label>
+            <Label className="text-sm font-normal text-inherit"><span className="mb-1 block text-xs text-muted-foreground">Até</span><Input type="date" value={periodo.ate} onChange={(e) => setPeriodo({ ...periodo, ate: e.target.value })} /></Label>
           </>
         )}
-        <label className="text-sm"><span className="mb-1 block text-xs text-muted-foreground">Origem ou campanha</span>
-          <Selecao value={origem} onChange={(e) => setOrigem(e.target.value)}>
+        <Label className="text-sm font-normal text-inherit"><span className="mb-1 block text-xs text-muted-foreground">Origem ou campanha</span>
+          <NativeSelect value={origem} onChange={(e) => setOrigem(e.target.value)}>
             <option value="">Todas</option>
             {Object.entries(ROTULO_ORIGEM).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             {campanhasVisiveis.map((c) => <option key={c.id} value={`cmp:${c.id}`}>Campanha: {c.nome}</option>)}
-          </Selecao>
-        </label>
-        <label className="flex items-center gap-2 pb-2 text-sm"><input type="checkbox" checked={comparar} onChange={(e) => setComparar(e.target.checked)} /> Comparar com período anterior</label>
+          </NativeSelect>
+        </Label>
+        <Label className="flex items-center gap-2 pb-2 text-sm font-normal text-inherit"><Checkbox checked={comparar} onCheckedChange={(marcado) => setComparar(marcado === true)} /> Comparar com período anterior</Label>
         <div className="ml-auto text-right text-xs text-muted-foreground">
           Última atualização: {formatarDataHoraBR(new Date(dados.em).toISOString())}
           <div className="mt-1 flex justify-end gap-2">
-            <Botao variante="contorno" className="!py-1" onClick={() => baixarCsv(relatorio(), nomeArquivo(rotEvento, "csv"))}>Exportar CSV</Botao>
-            <Botao variante="contorno" className="!py-1" onClick={() => void baixarPdf(relatorio(), nomeArquivo(rotEvento, "pdf"))}>Exportar PDF</Botao>
-            <Botao variante="contorno" className="!py-1" onClick={recarregar}>Atualizar</Botao>
+            <Button variant="outline" className="!py-1" onClick={() => baixarCsv(relatorio(), nomeArquivo(rotEvento, "csv"))}>Exportar CSV</Button>
+            <Button variant="outline" className="!py-1" onClick={() => void baixarPdf(relatorio(), nomeArquivo(rotEvento, "pdf"))}>Exportar PDF</Button>
+            <Button variant="outline" className="!py-1" onClick={recarregar}>Atualizar</Button>
           </div>
         </div>
       </div>
@@ -280,7 +289,7 @@ export function PainelMetricas({ base, eventos, modo }: { base: BaseDados; event
             <Bloco titulo="Comparação entre organizações"><Tabela cab={["Organização", ...cab]} linhas={org.map((g) => [g.chave, ...linhaComVolume(g.ind)])} /></Bloco>
             <Bloco titulo="Comparação por localização do evento" nota="O filtro usa a localização do evento, não a localização física dos visitantes.">
               <div className="mb-2 flex gap-1">
-                {(["regiao", "uf", "cidade"] as const).map((a) => <Botao key={a} variante={agrupamento === a ? "primario" : "contorno"} onClick={() => setAgrupamento(a)}>{a === "regiao" ? "Região" : a === "uf" ? "Estado" : "Cidade"}</Botao>)}
+                {(["regiao", "uf", "cidade"] as const).map((a) => <Button key={a} variant={agrupamento === a ? "default" : "outline"} onClick={() => setAgrupamento(a)}>{a === "regiao" ? "Região" : a === "uf" ? "Estado" : "Cidade"}</Button>)}
               </div>
               <Tabela cab={["Local", ...cab]} linhas={geo.map((g) => [g.chave, ...linhaComVolume(g.ind)])} />
             </Bloco>
@@ -330,36 +339,36 @@ function Campanhas({ evento, campanhas, regs, onCriada }: { evento: Evento; camp
         <p className="mt-1 text-sm text-muted-foreground">Dê um nome à campanha e escolha o canal para acompanhar os acessos e inscrições gerados pelo link.</p>
         <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <div>
-            <label htmlFor="camp-nome" className="text-sm font-medium">Nome da campanha <span className="text-destructive">*</span></label>
-            <input id="camp-nome" ref={nomeRef} value={nome} maxLength={60} required
+            <Label htmlFor="camp-nome" className="text-sm font-medium text-inherit">Nome da campanha <span className="text-destructive">*</span></Label>
+            <Input id="camp-nome" ref={nomeRef} value={nome} maxLength={60} required
               aria-invalid={!!erroNome} aria-describedby={erroNome ? "camp-nome-erro" : "camp-nome-ajuda"}
               placeholder="Ex.: Lançamento — Operação Tempestade"
               onChange={(e) => { setNome(e.target.value); if (erroNome && e.target.value.trim()) setErroNome(""); }}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void gerar(); } }}
-              className={`mt-1 h-10 w-full rounded-md border ${borda} bg-background px-3 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40`} />
+              className={`mt-1 h-10 w-full rounded-md border ${borda} bg-background px-3 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40 py-0`} />
             {erroNome
               ? <p id="camp-nome-erro" role="alert" className="mt-1 text-xs text-destructive">{erroNome}</p>
               : <p id="camp-nome-ajuda" className="mt-1 text-xs text-muted-foreground">Escolha um nome para identificar esta divulgação nos relatórios.</p>}
           </div>
           <div>
-            <label htmlFor="camp-canal" className="text-sm font-medium">Canal de divulgação <span className="text-destructive">*</span></label>
-            <select id="camp-canal" value={origem} aria-describedby="camp-canal-ajuda" onChange={(e) => setOrigem(e.target.value as OrigemCampanha)}
-              className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40">
+            <Label htmlFor="camp-canal" className="text-sm font-medium text-inherit">Canal de divulgação <span className="text-destructive">*</span></Label>
+            <NativeSelect id="camp-canal" value={origem} aria-describedby="camp-canal-ajuda" onChange={(e) => setOrigem(e.target.value as OrigemCampanha)}
+              className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40 py-0">
               {Object.entries(ROTULO_ORIGEM_CAMPANHA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
+            </NativeSelect>
             <p id="camp-canal-ajuda" className="mt-1 text-xs text-muted-foreground">Selecione onde você pretende compartilhar o link.</p>
           </div>
         </div>
-        <div className="mt-3"><Botao type="button" onClick={gerar} disabled={salvando} className="w-full sm:w-auto">{salvando ? "Gerando…" : "Gerar link de divulgação"}</Botao></div>
+        <div className="mt-3"><Button type="button" onClick={gerar} disabled={salvando} className="w-full sm:w-auto">{salvando ? "Gerando…" : "Gerar link de divulgação"}</Button></div>
         {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
         {criada && (
           <div className="mt-4 rounded-md border border-border bg-background p-3 text-sm" aria-live="polite">
             <p className="font-medium">{criada.nome} <Badge>{ROTULO_ORIGEM_CAMPANHA[criada.origem]}</Badge></p>
-            <label htmlFor="camp-link" className="mt-2 block text-xs text-muted-foreground">Link gerado</label>
+            <Label htmlFor="camp-link" className="mt-2 block text-xs text-muted-foreground font-normal">Link gerado</Label>
             <div className="mt-1 flex flex-col gap-2 sm:flex-row">
-              <input id="camp-link" readOnly value={linkCampanha(criada)} onFocus={(e) => e.target.select()}
-                className="h-10 w-full min-w-0 rounded-md border border-input bg-muted px-3 text-sm text-foreground" />
-              <Botao type="button" variante="contorno" onClick={() => copiar(criada)}>{copiado === criada.id ? "Link copiado" : "Copiar link"}</Botao>
+              <Input id="camp-link" readOnly value={linkCampanha(criada)} onFocus={(e) => e.target.select()}
+                className="h-10 w-full min-w-0 rounded-md border border-input bg-muted px-3 text-sm text-foreground py-0" />
+              <Button type="button" variant="outline" onClick={() => copiar(criada)}>{copiado === criada.id ? "Link copiado" : "Copiar link"}</Button>
             </div>
           </div>
         )}
@@ -370,7 +379,7 @@ function Campanhas({ evento, campanhas, regs, onCriada }: { evento: Evento; camp
           linhas={campanhas.map((c) => {
             const r = regs.filter((x) => x.campanhaId === c.id);
             return [c.nome, <Badge key="b">{ROTULO_ORIGEM_CAMPANHA[c.origem]}</Badge>, fmtN(r.filter((x) => x.tipo === "visita").length), fmtN(r.filter((x) => x.tipo === "inscricao_confirmada").length),
-              <Botao key="c" variante="contorno" className="!py-1" onClick={() => copiar(c)}>{copiado === c.id ? "Link copiado" : "Copiar link"}</Botao>];
+              <Button key="c" variant="outline" className="!py-1" onClick={() => copiar(c)}>{copiado === c.id ? "Link copiado" : "Copiar link"}</Button>];
           })} />
       </div>
     </Bloco>

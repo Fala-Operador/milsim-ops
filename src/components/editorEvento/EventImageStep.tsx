@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Botao, Campo, Entrada } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Campo } from "@/components/ui";
 import { arquivoParaDataUrl } from "@/lib/imagens";
 import type { Recorte } from "@/lib/domain/types";
 import {
@@ -7,6 +9,7 @@ import {
   RECORTE_INICIAL, ZOOM_MAX, type FormatoRecorte,
 } from "@/lib/recorteBanner";
 import { Ajuda, inval, MsgErro, type PropsEtapa } from "./comum";
+import { Slider } from "@/components/ui/slider";
 
 function EditorRecorte({ img, formato, recorte, onChange }: { img: HTMLImageElement; formato: FormatoRecorte; recorte: Recorte; onChange: (r: Recorte) => void }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -65,10 +68,10 @@ function EditorRecorte({ img, formato, recorte, onChange }: { img: HTMLImageElem
         }}
       />
       <div className="flex items-center gap-3">
-        <label htmlFor={`zoom-${formato}`} className="text-xs text-muted-foreground">Zoom</label>
-        <input id={`zoom-${formato}`} type="range" min={1} max={ZOOM_MAX} step={0.05} value={recorte.zoom} className="flex-1 accent-primary"
-          onChange={(e) => onChange(normalizarRecorte({ ...recorte, zoom: Number(e.target.value) }))} />
-        <Botao type="button" variante="fantasma" onClick={() => onChange(RECORTE_INICIAL)}>Centralizar</Botao>
+        <span id={`zoom-${formato}-rotulo`} className="text-xs text-muted-foreground">Zoom</span>
+        <Slider id={`zoom-${formato}`} aria-labelledby={`zoom-${formato}-rotulo`} min={1} max={ZOOM_MAX} step={0.05} value={[recorte.zoom]} className="flex-1"
+          onValueChange={([zoom]) => zoom !== undefined && onChange(normalizarRecorte({ ...recorte, zoom }))} />
+        <Button type="button" variant="ghost" onClick={() => onChange(RECORTE_INICIAL)}>Centralizar</Button>
       </div>
     </figure>
   );
@@ -134,11 +137,11 @@ export function EtapaImagem({ ev, set, erros, onErro }: PropsEtapa & { onErro: (
         <div className="mt-3 flex flex-wrap justify-center gap-2">
           <input ref={inputRef} id="ev-img-arquivo" type="file" accept="image/jpeg,image/png,image/webp" className="sr-only"
             onChange={(e) => { const a = e.target.files?.[0]; e.target.value = ""; void escolher(a); }} />
-          <Botao type="button" variante="contorno" disabled={processando} onClick={() => inputRef.current?.click()}>
+          <Button type="button" variant="outline" disabled={processando} onClick={() => inputRef.current?.click()}>
             {processando ? "Processando…" : imagem ? "Escolher outra imagem" : "Selecionar arquivo"}
-          </Botao>
+          </Button>
           {imagem && (
-            <Botao type="button" variante="fantasma" onClick={() => { set("imagem", undefined); set("imagemUrl", undefined); }}>Remover imagem</Botao>
+            <Button type="button" variant="ghost" onClick={() => { set("imagem", undefined); set("imagemUrl", undefined); }}>Remover imagem</Button>
           )}
         </div>
         <MsgErro erros={erros} id="ev-img-arquivo" />
@@ -149,14 +152,14 @@ export function EtapaImagem({ ev, set, erros, onErro }: PropsEtapa & { onErro: (
         <figure className="space-y-2">
           <figcaption className="text-sm font-medium">Imagem atual do evento</figcaption>
           <img src={ev.imagemUrl} alt={`Imagem de ${ev.nome}`} className="aspect-video w-full max-w-lg rounded-md object-cover" />
-          <Botao type="button" variante="fantasma" onClick={() => set("imagemUrl", undefined)}>Remover imagem</Botao>
+          <Button type="button" variant="ghost" onClick={() => set("imagemUrl", undefined)}>Remover imagem</Button>
         </figure>
       )}
 
       {imagem && (
         <>
           <Campo rotulo="Texto alternativo" htmlFor="ev-img-alt">
-            <Entrada id="ev-img-alt" maxLength={200} placeholder="Ex.: Operadores avançando em mata fechada ao amanhecer" value={imagem.alt}
+            <Input id="ev-img-alt" maxLength={200} placeholder="Ex.: Operadores avançando em mata fechada ao amanhecer" value={imagem.alt}
               onChange={(e) => set("imagem", { ...imagem, alt: e.target.value })} {...inval(erros, "ev-img-alt")} />
             <MsgErro erros={erros} id="ev-img-alt" />
             <Ajuda>Descreve a imagem para quem usa leitor de tela.</Ajuda>

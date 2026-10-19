@@ -3,7 +3,9 @@
 // e qualquer saída com alterações pendentes passa pela confirmação.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Botao } from "@/components/ui";
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import type { Evento } from "@/lib/domain/types";
 import { ETAPAS, revisarEvento, validarEtapa, type Ocupacao } from "@/lib/eventoEditor";
 import type { OcupacaoLote } from "@/lib/vendas";
@@ -15,6 +17,7 @@ import { EtapaCronograma, EtapaExercitos, EtapaGeral, EtapaLocal } from "./Event
 import { EtapaImagem } from "./EventImageStep";
 import { EtapaIngressos } from "./EventTicketsStep";
 import { EtapaRevisao } from "./EventReviewStep";
+import { ABRIR_SECAO } from "./comum";
 
 type EstadoSalvamento = "ocioso" | "salvando" | "salvo" | "erro";
 const ESPERA_AUTOSAVE = 1500;
@@ -59,7 +62,6 @@ export function EventEditorDrawer(p: PropsEditor) {
   const silencioso = useRef(false);
   const salvandoRef = useRef(false);
   const focoPendente = useRef<string | null>(null);
-  const painelRef = useRef<HTMLDivElement>(null);
   const conteudoRef = useRef<HTMLDivElement>(null);
   const tituloRef = useRef<HTMLHeadingElement>(null);
 
@@ -163,7 +165,7 @@ export function EventEditorDrawer(p: PropsEditor) {
     focoPendente.current = null;
     requestAnimationFrame(() => {
       const el = document.getElementById(id);
-      el?.closest("details")?.setAttribute("open", "");
+      el?.closest("[data-secao]")?.dispatchEvent(new Event(ABRIR_SECAO));
       el?.focus();
       el?.scrollIntoView({ block: "center" });
     });
@@ -191,36 +193,14 @@ export function EventEditorDrawer(p: PropsEditor) {
     fecharDeVez();
   };
 
-  // Entrada animada, rolagem do fundo bloqueada, foco inicial.
+  // Entrada animada; rolagem do fundo, foco preso e Esc (fecha a confirmação antes do painel) ficam com o Sheet/AlertDialog.
+  // O foco volta para onde estava antes de abrir.
+  const focoAnterior = useRef<HTMLElement | null>(null);
   useEffect(() => {
-    const anterior = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const foco = document.activeElement as HTMLElement | null;
-    requestAnimationFrame(() => { setEntrou(true); tituloRef.current?.focus(); });
-    return () => { document.body.style.overflow = anterior; foco?.focus?.(); };
+    focoAnterior.current = document.activeElement as HTMLElement | null;
+    requestAnimationFrame(() => setEntrou(true));
+    return () => focoAnterior.current?.focus?.();
   }, []);
-
-  // Escape: fecha primeiro a confirmação; no painel, segue a mesma proteção do ✕. Tab fica preso no painel.
-  useEffect(() => {
-    const aoTeclar = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (e.defaultPrevented) return;
-        e.preventDefault();
-        if (confirmar) setConfirmar(false);
-        else pedirFechar();
-      } else if (e.key === "Tab" && painelRef.current) {
-        const focaveis = [...painelRef.current.querySelectorAll<HTMLElement>("button:not([disabled]),input:not([disabled]):not(.sr-only),select,textarea,summary,canvas[tabindex],[tabindex='0']")]
-          .filter((el) => el.offsetParent !== null);
-        const prim = focaveis[0];
-        const ult = focaveis[focaveis.length - 1];
-        if (!prim || !ult) return;
-        if (e.shiftKey && document.activeElement === prim) { e.preventDefault(); ult.focus(); }
-        else if (!e.shiftKey && document.activeElement === ult) { e.preventDefault(); prim.focus(); }
-      }
-    };
-    document.addEventListener("keydown", aoTeclar);
-    return () => document.removeEventListener("keydown", aoTeclar);
-  }, [confirmar, pedirFechar]);
 
   const irPara = useCallback((i: number, campo?: string) => {
     if (i > alcancada) return;
@@ -287,27 +267,29 @@ export function EventEditorDrawer(p: PropsEditor) {
   const titulo = p.existente ? "Editar operação" : "Criar operação";
 
   return (
-    <div className="fixed inset-0 z-50" role="presentation">
+    <Sheet open={entrou} onOpenChange={(abrir) => !abrir && pedirFechar()}>
       {/* Fundo: não fecha ao clicar (evita perder o preenchimento por um clique fora). */}
-      <div aria-hidden className={`absolute inset-0 bg-background/70 backdrop-blur-[1px] transition-opacity duration-200 motion-reduce:transition-none ${entrou ? "opacity-100" : "opacity-0"}`} />
-      <div
-        ref={painelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="editor-evento-titulo"
-        className={`absolute inset-y-0 right-0 flex h-dvh w-full flex-col border-l border-border bg-popover text-popover-foreground shadow-2xl transition-transform duration-200 ease-out motion-reduce:transition-none md:w-[80vw] ${entrou ? "translate-x-0" : "translate-x-full"}`}
+      <SheetContent
+        side="right"
+        showCloseButton={false}
+        aria-describedby={undefined}
+        overlayClassName="bg-background/70 backdrop-blur-[1px] data-[state=closed]:duration-200 data-[state=open]:duration-200"
+        onInteractOutside={(e) => e.preventDefault()}
+        onOpenAutoFocus={(e) => { e.preventDefault(); tituloRef.current?.focus(); }}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+        className="flex h-dvh w-full flex-col gap-0 p-0 shadow-2xl ease-out data-[state=closed]:duration-200 data-[state=open]:duration-200 motion-reduce:animate-none sm:max-w-none md:w-[80vw]"
       >
         <header className="space-y-3 border-b border-border px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:px-6">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="min-w-0">
-              <h2 id="editor-evento-titulo" ref={tituloRef} tabIndex={-1} className="font-display text-lg font-semibold uppercase tracking-wide focus:outline-none">{titulo}</h2>
+              <SheetTitle id="editor-evento-titulo" ref={tituloRef} tabIndex={-1} className="uppercase tracking-wide focus:outline-none">{titulo}</SheetTitle>
               <p className="truncate text-sm text-muted-foreground">
                 {ev.nome ? <span className="text-foreground">{ev.nome} · </span> : null}
                 Etapa {etapa + 1} de {ETAPAS.length}
                 {textoEstado && <span role="status" className={`ml-2 ${estado === "erro" ? "text-destructive" : ""}`}>· {textoEstado}</span>}
               </p>
             </div>
-            <Botao type="button" variante="fantasma" aria-label="Fechar editor" onClick={pedirFechar}>✕</Botao>
+            <Button type="button" variant="ghost" aria-label="Fechar editor" onClick={pedirFechar}>✕</Button>
           </div>
           <EventStepNavigation atual={etapa} alcancada={alcancada} irPara={(i) => irPara(i)} />
         </header>
@@ -328,37 +310,39 @@ export function EventEditorDrawer(p: PropsEditor) {
         <footer className="border-t border-border px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:px-6">
           {msg && <p role="alert" className={`mb-2 text-sm ${estado === "erro" ? "text-destructive" : "text-muted-foreground"}`}>{msg}</p>}
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <Botao type="button" variante="contorno" disabled={etapa === 0} onClick={() => { setErros({}); setEtapa(etapa - 1); }}>Voltar</Botao>
+            <Button type="button" variant="outline" disabled={etapa === 0} onClick={() => { setErros({}); setEtapa(etapa - 1); }}>Voltar</Button>
             <div className="flex flex-wrap gap-2">
-              <Botao type="button" variante="fantasma" disabled={enviando || estado === "salvando"} onClick={salvarESair}
-                title={modoServidor ? undefined : "Guarda as alterações neste dispositivo sem alterar a página pública"}>Salvar e sair</Botao>
+              <Button type="button" variant="ghost" disabled={enviando || estado === "salvando"} onClick={salvarESair}
+                title={modoServidor ? undefined : "Guarda as alterações neste dispositivo sem alterar a página pública"}>Salvar e sair</Button>
               {ultima ? (
-                <Botao type="button" disabled={enviando || estado === "salvando"} onClick={finalizar}>
+                <Button type="button" disabled={enviando || estado === "salvando"} onClick={finalizar}>
                   {enviando ? "Enviando…" : modoServidor ? "Publicar operação" : "Salvar alterações"}
-                </Botao>
+                </Button>
               ) : (
-                <Botao type="button" onClick={continuar}>Continuar</Botao>
+                <Button type="button" onClick={continuar}>Continuar</Button>
               )}
             </div>
           </div>
         </footer>
 
-        {confirmar && (
-          <div className="absolute inset-0 z-10 grid place-items-center bg-background/80 p-4">
-            <div role="alertdialog" aria-modal="true" aria-labelledby="sair-titulo" aria-describedby="sair-desc" className="w-full max-w-md rounded-lg border border-border bg-card p-5 shadow-xl">
-              <h3 id="sair-titulo" className="font-display text-base font-semibold uppercase">Sair do editor?</h3>
-              <p id="sair-desc" className="mt-1 text-sm text-muted-foreground">
-                {estado === "erro" ? "O último salvamento falhou. " : ""}Há alterações que ainda não foram salvas.
-              </p>
-              <div className="mt-4 flex flex-col gap-2">
-                <Botao type="button" autoFocus onClick={salvarESair}>Salvar e sair</Botao>
-                <Botao type="button" variante="perigo" onClick={descartar}>Descartar alterações não salvas</Botao>
-                <Botao type="button" variante="contorno" onClick={() => setConfirmar(false)}>Continuar editando</Botao>
-              </div>
+        <AlertDialog open={confirmar} onOpenChange={setConfirmar}>
+          <AlertDialogContent
+            overlayClassName="bg-background/80"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            className="block w-[calc(100%-2rem)] max-w-md rounded-lg bg-card p-5 text-card-foreground"
+          >
+            <AlertDialogTitle className="text-base uppercase">Sair do editor?</AlertDialogTitle>
+            <AlertDialogDescription className="mt-1">
+              {estado === "erro" ? "O último salvamento falhou. " : ""}Há alterações que ainda não foram salvas.
+            </AlertDialogDescription>
+            <div className="mt-4 flex flex-col gap-2">
+              <Button type="button" autoFocus onClick={salvarESair}>Salvar e sair</Button>
+              <Button type="button" variant="destructive" onClick={descartar}>Descartar alterações não salvas</Button>
+              <Button type="button" variant="outline" onClick={() => setConfirmar(false)}>Continuar editando</Button>
             </div>
-          </div>
-        )}
-      </div>
-    </div>
+          </AlertDialogContent>
+        </AlertDialog>
+      </SheetContent>
+    </Sheet>
   );
 }

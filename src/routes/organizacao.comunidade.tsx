@@ -1,6 +1,8 @@
 import { OperacaoSelecionada } from "@/components/OperacaoSelecionada";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Badge, Botao, Cartao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { useEventoSelecionado, useEventosOrg } from "@/components/organizacao";
 
 export const Route = createFileRoute("/organizacao/comunidade")({
@@ -30,7 +32,7 @@ function PaginaComunidadeOrg() {
       </div>
       <OperacaoSelecionada eventos={eventos} evento={eventos.find((e) => e.id === eventoId)} invalido={invalido} onSelecionar={setEventoId} />
       {eventos.length === 0 ? (
-        <Cartao><p className="text-sm text-muted-foreground">Nenhum evento criado ainda. Crie um evento no Painel.</p></Cartao>
+        <Card><p className="text-sm text-muted-foreground">Nenhum evento criado ainda. Crie um evento no Painel.</p></Card>
       ) : !eventoId ? null : (
         <>
           <section aria-label="Resumo da comunidade" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -40,15 +42,15 @@ function PaginaComunidadeOrg() {
               ["Denúncias pendentes", String(denunciasPendentes.length), denunciasPendentes.length ? "Exigem análise" : "Nada a revisar"],
               ["Participantes suspensos", String(suspensoes.length), "Restrições ativas"],
             ] as const).map(([rotulo, valor, sub]) => (
-              <Cartao key={rotulo}>
+              <Card key={rotulo}>
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">{rotulo}</p>
                 <p className="mt-1 font-mono text-2xl font-semibold">{valor}</p>
                 <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
-              </Cartao>
+              </Card>
             ))}
           </section>
 
-          <Cartao>
+          <Card>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-display text-base font-semibold uppercase">Moderação e fóruns</h3>
@@ -58,10 +60,10 @@ function PaginaComunidadeOrg() {
               </div>
               <div className="flex gap-2">
                 <Link to="/comunidade/$eventoId" params={{ eventoId }}>
-                  <Botao variante="contorno">Ver comunidade</Botao>
+                  <Button variant="outline">Ver comunidade</Button>
                 </Link>
                 <Link to="/comunidade/$eventoId/gerenciar" params={{ eventoId }}>
-                  <Botao>Gerenciar comunidade</Botao>
+                  <Button>Gerenciar comunidade</Button>
                 </Link>
               </div>
             </div>
@@ -70,9 +72,9 @@ function PaginaComunidadeOrg() {
                 Há {denunciasPendentes.length} denúncia(s) aguardando análise na moderação.
               </p>
             )}
-          </Cartao>
+          </Card>
 
-          <Cartao>
+          <Card>
             <h3 className="font-display text-base font-semibold uppercase">Fóruns do evento</h3>
             <ul className="mt-3 space-y-1 text-sm">
               {foruns.map((f) => (
@@ -87,7 +89,7 @@ function PaginaComunidadeOrg() {
                     <span className="text-xs text-muted-foreground">
                       {publicacoes.filter((p) => p.forumId === f.id).length} publicações
                     </span>
-                    {f.status === "arquivado" && <Badge tom="aviso">arquivado</Badge>}
+                    {f.status === "arquivado" && <Badge variant="warning">arquivado</Badge>}
                   </span>
                 </li>
               ))}
@@ -95,7 +97,7 @@ function PaginaComunidadeOrg() {
                 <li className="text-muted-foreground">Nenhum fórum. Eles são criados automaticamente ao publicar a comunidade.</li>
               )}
             </ul>
-          </Cartao>
+          </Card>
         </>
       )}
     </div>

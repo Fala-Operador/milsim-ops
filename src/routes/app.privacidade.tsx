@@ -4,7 +4,12 @@ import { carregarBase } from "@/services/db";
 import { solicitarPrivacidade } from "@/api/conta.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarDataBR } from "@/lib/domain/money";
-import { AreaTexto, Badge, Botao, Campo, Cartao, Selecao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
+import { Campo } from "@/components/ui";
 import type { SolicitacaoPrivacidade } from "@/lib/domain/types";
 
 export const Route = createFileRoute("/app/privacidade")({
@@ -45,34 +50,34 @@ function Privacidade() {
       <p className="text-sm text-muted-foreground">
         As solicitações são analisadas e respondidas pela administração da plataforma.
       </p>
-      <Cartao>
+      <Card>
         <div className="space-y-3">
           <Campo rotulo="Tipo de solicitação" htmlFor="tipo">
-            <Selecao id="tipo" value={tipo} onChange={(e) => setTipo(e.target.value as SolicitacaoPrivacidade["tipo"])}>
+            <NativeSelect id="tipo" value={tipo} onChange={(e) => setTipo(e.target.value as SolicitacaoPrivacidade["tipo"])}>
               <option value="acesso">Acesso aos dados</option>
               <option value="correcao">Correção</option>
               <option value="exportacao">Exportação</option>
               <option value="exclusao">Exclusão</option>
-            </Selecao>
+            </NativeSelect>
           </Campo>
           <Campo rotulo="Detalhes" htmlFor="det">
-            <AreaTexto id="det" value={detalhes} onChange={(e) => setDetalhes(e.target.value)} />
+            <Textarea id="det" value={detalhes} onChange={(e) => setDetalhes(e.target.value)} />
           </Campo>
           {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
-          <Botao onClick={enviar}>Enviar solicitação</Botao>
+          <Button onClick={enviar}>Enviar solicitação</Button>
         </div>
-      </Cartao>
+      </Card>
       <ul className="space-y-2">
         {minhas.map((p) => (
           <li key={p.id}>
-            <Cartao>
+            <Card>
               <div className="flex justify-between">
                 <span className="font-medium capitalize">{p.tipo}</span>
-                <Badge tom={p.status === "respondida" ? "sucesso" : "aviso"}>{p.status === "respondida" ? "Respondida" : "Aberta"}</Badge>
+                <Badge variant={p.status === "respondida" ? "success" : "warning"}>{p.status === "respondida" ? "Respondida" : "Aberta"}</Badge>
               </div>
               <p className="text-xs text-muted-foreground">{formatarDataBR(p.criadoEm)}</p>
               {p.resposta && <p className="mt-2 text-sm">Resposta: {p.resposta}</p>}
-            </Cartao>
+            </Card>
           </li>
         ))}
       </ul>

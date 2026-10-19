@@ -5,8 +5,14 @@ import { solicitarOrganizador, reenviarSolicitacao } from "@/api/organizador.fun
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import { mascaraTelefone } from "@/lib/domain/validators";
-import { Badge, Botao, Campo, Cartao, Entrada } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Campo } from "@/components/ui";
 import type { StatusSolicitacao } from "@/lib/domain/types";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/app/organizador")({
   head: () => ({
@@ -65,10 +71,10 @@ function QueroSerOrganizador() {
 
   if (usuario.perfil === "organizador") {
     return (
-      <Cartao>
+      <Card>
         <p>Você já é organizador aprovado.</p>
         <Link to="/organizacao" className="text-accent hover:underline">Ir para minha organização →</Link>
-      </Cartao>
+      </Card>
     );
   }
 
@@ -77,10 +83,10 @@ function QueroSerOrganizador() {
       <h1 className="font-display text-2xl font-semibold uppercase">Quero ser organizador</h1>
 
       {atual && (
-        <Cartao>
+        <Card>
           <div className="flex items-center justify-between">
             <p className="font-medium">{atual.nomeOrganizacao}</p>
-            <Badge tom={atual.status === "aprovada" ? "sucesso" : atual.status === "rejeitada" ? "perigo" : "aviso"}>
+            <Badge variant={atual.status === "aprovada" ? "success" : atual.status === "rejeitada" ? "destructive" : "warning"}>
               {rotulos[atual.status]}
             </Badge>
           </div>
@@ -90,41 +96,41 @@ function QueroSerOrganizador() {
               Observação da administração: {atual.observacaoAdmin}
             </p>
           )}
-        </Cartao>
+        </Card>
       )}
 
       {(podeNova || precisaAjuste) && (
-        <Cartao>
+        <Card>
           <form onSubmit={enviar} className="space-y-4">
             {!precisaAjuste && (
               <fieldset>
                 <legend className="text-sm font-medium">Possui CNPJ?</legend>
-                <div className="mt-1 flex gap-4 text-sm">
-                  <label className="flex items-center gap-1"><input type="radio" checked={possuiCnpj} onChange={() => setPossuiCnpj(true)} /> Sim</label>
-                  <label className="flex items-center gap-1"><input type="radio" checked={!possuiCnpj} onChange={() => setPossuiCnpj(false)} /> Não</label>
-                </div>
+                <RadioGroup className="mt-1 flex gap-4 text-sm" value={possuiCnpj ? "sim" : "nao"} onValueChange={(v) => setPossuiCnpj(v === "sim")}>
+                  <Label className="flex items-center gap-1 text-[length:inherit] font-normal text-inherit"><RadioGroupItem value="sim" /> Sim</Label>
+                  <Label className="flex items-center gap-1 text-[length:inherit] font-normal text-inherit"><RadioGroupItem value="nao" /> Não</Label>
+                </RadioGroup>
               </fieldset>
             )}
             {possuiCnpj && !precisaAjuste && (
               <Campo rotulo="CNPJ" htmlFor="cnpj">
-                <Entrada id="cnpj" value={f.cnpj} onChange={(e) => setF((p) => ({ ...p, cnpj: e.target.value }))} required />
+                <Input id="cnpj" value={f.cnpj} onChange={(e) => setF((p) => ({ ...p, cnpj: e.target.value }))} required />
               </Campo>
             )}
             <Campo rotulo="Nome da organização" htmlFor="nomeorg">
-              <Entrada id="nomeorg" value={f.nomeOrganizacao} onChange={(e) => setF((p) => ({ ...p, nomeOrganizacao: e.target.value }))} required />
+              <Input id="nomeorg" value={f.nomeOrganizacao} onChange={(e) => setF((p) => ({ ...p, nomeOrganizacao: e.target.value }))} required />
             </Campo>
             <Campo rotulo="Instagram da organização" htmlFor="instaorg">
-              <Entrada id="instaorg" value={f.instagram} onChange={(e) => setF((p) => ({ ...p, instagram: e.target.value }))} />
+              <Input id="instaorg" value={f.instagram} onChange={(e) => setF((p) => ({ ...p, instagram: e.target.value }))} />
             </Campo>
             <Campo rotulo="Telefone para contato" htmlFor="telorg">
-              <Entrada id="telorg" value={f.telefone} onChange={(e) => setF((p) => ({ ...p, telefone: mascaraTelefone(e.target.value) }))} required />
+              <Input id="telorg" value={f.telefone} onChange={(e) => setF((p) => ({ ...p, telefone: mascaraTelefone(e.target.value) }))} required />
             </Campo>
             {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
-            <Botao type="submit" disabled={enviando}>
+            <Button type="submit" disabled={enviando}>
               {precisaAjuste ? "Corrigir e reenviar" : "Enviar solicitação"}
-            </Botao>
+            </Button>
           </form>
-        </Cartao>
+        </Card>
       )}
     </div>
   );

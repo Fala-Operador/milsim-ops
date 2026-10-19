@@ -3,9 +3,14 @@ import { useState } from "react";
 import { salvarPerfil, salvarPrivacidade } from "@/api/perfil.functions";
 import { arquivoParaDataUrl } from "@/lib/imagens";
 import { FotoPerfil } from "@/components/FotoPerfil";
-import { AreaTexto, Botao, Campo, Entrada, Modal, Selecao } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
+import { Campo, Modal } from "@/components/ui";
 import type { PerfilDTO } from "@/lib/perfilSocial";
 import type { PrivacidadePerfil, VisibilidadeBloco } from "@/lib/domain/types";
+import { Label } from "@/components/ui/label";
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : "Não foi possível salvar.");
 
@@ -43,33 +48,33 @@ export function EditarPerfil({ perfil, aberto, onFechar, onSalvo }: { perfil: Pe
             {previaCapa && <img src={previaCapa} alt="" className="h-full w-full object-cover" />}
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
-            <label className="inline-flex cursor-pointer items-center rounded-md border border-border px-3 py-1.5 text-sm hover:bg-secondary">
+            <Label className="inline-flex cursor-pointer items-center rounded-md border border-border px-3 py-1.5 text-sm hover:bg-secondary font-normal text-inherit">
               Escolher imagem
               <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={async (e) => {
                 const f = e.target.files?.[0]; e.target.value = "";
                 if (!f) return;
                 try { setCapa(await arquivoParaDataUrl(f, 1600)); } catch (err) { setErro(msg(err)); }
               }} />
-            </label>
-            {previaCapa && <Botao type="button" variante="fantasma" onClick={() => setCapa(null)}>Remover capa</Botao>}
+            </Label>
+            {previaCapa && <Button type="button" variant="ghost" onClick={() => setCapa(null)}>Remover capa</Button>}
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Campo rotulo="Callsign" htmlFor="callsign"><Entrada id="callsign" maxLength={30} value={callsign} onChange={(e) => setCallsign(e.target.value)} placeholder="Ex.: Falcão" /></Campo>
-          <Campo rotulo="Squad (opcional)" htmlFor="squad"><Entrada id="squad" maxLength={60} value={squad} onChange={(e) => setSquad(e.target.value)} /></Campo>
-          <Campo rotulo="Instagram (opcional)" htmlFor="insta"><Entrada id="insta" maxLength={31} value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@usuario" /></Campo>
+          <Campo rotulo="Callsign" htmlFor="callsign"><Input id="callsign" maxLength={30} value={callsign} onChange={(e) => setCallsign(e.target.value)} placeholder="Ex.: Falcão" /></Campo>
+          <Campo rotulo="Squad (opcional)" htmlFor="squad"><Input id="squad" maxLength={60} value={squad} onChange={(e) => setSquad(e.target.value)} /></Campo>
+          <Campo rotulo="Instagram (opcional)" htmlFor="insta"><Input id="insta" maxLength={31} value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="@usuario" /></Campo>
           <Campo rotulo="Insígnia em destaque" htmlFor="destaque">
-            <Selecao id="destaque" value={destaque} onChange={(e) => setDestaque(e.target.value)} disabled={!conquistadas.length}>
+            <NativeSelect id="destaque" value={destaque} onChange={(e) => setDestaque(e.target.value)} disabled={!conquistadas.length}>
               <option value="">{conquistadas.length ? "Nenhuma" : "Nenhuma conquistada ainda"}</option>
               {conquistadas.map((i) => <option key={i.id} value={i.id}>{i.icone} {i.nome}</option>)}
-            </Selecao>
+            </NativeSelect>
           </Campo>
         </div>
-        <Campo rotulo={`Biografia curta (${bio.length}/280)`} htmlFor="bio"><AreaTexto id="bio" maxLength={280} rows={3} value={bio} onChange={(e) => setBio(e.target.value)} /></Campo>
+        <Campo rotulo={`Biografia curta (${bio.length}/280)`} htmlFor="bio"><Textarea id="bio" maxLength={280} rows={3} value={bio} onChange={(e) => setBio(e.target.value)} /></Campo>
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex justify-end gap-2">
-          <Botao variante="contorno" onClick={onFechar}>Cancelar</Botao>
-          <Botao onClick={salvar} disabled={salvando}>{salvando ? "Salvando…" : "Salvar perfil"}</Botao>
+          <Button variant="outline" onClick={onFechar}>Cancelar</Button>
+          <Button onClick={salvar} disabled={salvando}>{salvando ? "Salvando…" : "Salvar perfil"}</Button>
         </div>
       </div>
     </Modal>
@@ -112,18 +117,18 @@ export function Privacidade({ perfil, aberto, onFechar, onSalvo }: { perfil: Per
               <p className="text-xs text-muted-foreground">{b.descricao}</p>
             </div>
             <div className="w-56">
-              <Selecao aria-label={`Quem vê: ${b.rotulo}`} value={p[b.chave]} onChange={(e) => setP({ ...p, [b.chave]: e.target.value as VisibilidadeBloco })}>
+              <NativeSelect aria-label={`Quem vê: ${b.rotulo}`} value={p[b.chave]} onChange={(e) => setP({ ...p, [b.chave]: e.target.value as VisibilidadeBloco })}>
                 <option value="eu">Somente eu</option>
                 <option value="autenticados">Participantes com conta</option>
-              </Selecao>
+              </NativeSelect>
             </div>
           </div>
         ))}
       </div>
       {erro && <p role="alert" className="mt-3 text-sm text-destructive">{erro}</p>}
       <div className="mt-4 flex justify-end gap-2">
-        <Botao variante="contorno" onClick={onFechar}>Cancelar</Botao>
-        <Botao onClick={salvar} disabled={salvando}>{salvando ? "Salvando…" : "Salvar privacidade"}</Botao>
+        <Button variant="outline" onClick={onFechar}>Cancelar</Button>
+        <Button onClick={salvar} disabled={salvando}>{salvando ? "Salvando…" : "Salvar privacidade"}</Button>
       </div>
     </Modal>
   );

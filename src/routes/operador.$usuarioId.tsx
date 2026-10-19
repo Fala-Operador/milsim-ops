@@ -7,7 +7,12 @@ import { obterPerfil } from "@/api/perfil.functions";
 import { MapaBrasil } from "@/components/perfil/MapaBrasil";
 import { AbaEquipamentos, AbaFotos, AbaInsignias, AbaOperacoes, AbaRecompensas, CartaoOperacao, Restrito } from "@/components/perfil/abas";
 import { EditarPerfil, Privacidade } from "@/components/perfil/edicao";
-import { Botao, Cartao, ErroSecao, EstadoVazio, SkeletonPagina } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ErroSecao, EstadoVazio, SkeletonPagina } from "@/components/ui";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Label } from "@/components/ui/label";
 
 const ABAS = ["visao", "operacoes", "mapa", "insignias", "equipamentos", "fotos", "recompensas"] as const;
 type Aba = (typeof ABAS)[number];
@@ -77,19 +82,19 @@ function PaginaOperador() {
         </div>
         {p.proprio && (
           <div className="flex flex-wrap gap-2 pb-1">
-            <Link to="/app/perfil" search={{ aba: "equipamentos" }}><Botao>Gerenciar meu perfil</Botao></Link>
-            <Botao variante="contorno" onClick={() => setEditar(true)}><Pencil className="h-4 w-4" /> Editar perfil</Botao>
-            <Botao variante="contorno" onClick={() => setPrivacidade(true)}><Lock className="h-4 w-4" /> Privacidade</Botao>
+            <Link to="/app/perfil" search={{ aba: "equipamentos" }}><Button>Gerenciar meu perfil</Button></Link>
+            <Button variant="outline" onClick={() => setEditar(true)}><Pencil className="h-4 w-4" /> Editar perfil</Button>
+            <Button variant="outline" onClick={() => setPrivacidade(true)}><Lock className="h-4 w-4" /> Privacidade</Button>
           </div>
         )}
       </div>
       {p.social?.bio && <p className="mt-3 max-w-2xl whitespace-pre-wrap px-1 text-sm sm:px-4">{p.social.bio}</p>}
 
       {p.restrito ? (
-        <Cartao className="mt-6 text-center">
+        <Card className="mt-6 text-center">
           <p className="font-medium">Entre na sua conta para ver o perfil completo deste operador.</p>
-          <Link to="/login" search={{ redirect: `/operador/${usuarioId}` }} className="mt-3 inline-block"><Botao>Entrar</Botao></Link>
-        </Cartao>
+          <Link to="/login" search={{ redirect: `/operador/${usuarioId}` }} className="mt-3 inline-block"><Button>Entrar</Button></Link>
+        </Card>
       ) : (
         <>
           <dl className="mt-5 grid grid-cols-3 gap-2 sm:max-w-lg">
@@ -111,19 +116,21 @@ function PaginaOperador() {
 
           {/* Abas: seletor compacto no celular, lista no computador */}
           <div className="mt-6 sm:hidden">
-            <label htmlFor="aba-perfil" className="sr-only">Seção do perfil</label>
-            <select id="aba-perfil" value={aba} onChange={(e) => irPara(e.target.value as Aba)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+            <Label htmlFor="aba-perfil" className="sr-only text-[length:inherit] font-normal text-inherit">Seção do perfil</Label>
+            <NativeSelect id="aba-perfil" value={aba} onChange={(e) => irPara(e.target.value as Aba)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
               {abas.map((a) => <option key={a} value={a}>{ROTULOS[a]}</option>)}
-            </select>
+            </NativeSelect>
           </div>
-          <div role="tablist" aria-label="Seções do perfil" className="mt-6 hidden flex-wrap gap-1 border-b border-border sm:flex">
-            {abas.map((a) => (
-              <button key={a} role="tab" type="button" aria-selected={aba === a} onClick={() => irPara(a)}
-                className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring ${aba === a ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-                {ROTULOS[a]}
-              </button>
-            ))}
-          </div>
+          <Tabs value={aba} onValueChange={(v) => irPara(v as typeof aba)}>
+            <TabsList aria-label="Seções do perfil" className="mt-6 hidden flex-wrap gap-1 border-b border-border sm:flex">
+              {abas.map((a) => (
+                <TabsTrigger key={a} value={a}
+                  className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring ${aba === a ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                  {ROTULOS[a]}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
 
           <div role="tabpanel" aria-label={ROTULOS[aba]} className="mt-5">
             {aba === "visao" && (

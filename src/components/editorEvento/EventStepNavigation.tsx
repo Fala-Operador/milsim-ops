@@ -1,4 +1,5 @@
 import { ETAPAS } from "@/lib/eventoEditor";
+import { Button } from "@/components/ui/button";
 
 /** Etapas concluídas, atual e pendentes. Só permite ir até a etapa mais avançada já validada. */
 export function EventStepNavigation({ atual, alcancada, irPara }: { atual: number; alcancada: number; irPara: (i: number) => void }) {
@@ -16,7 +17,7 @@ export function EventStepNavigation({ atual, alcancada, irPara }: { atual: numbe
           const estado = i === atual ? "atual" : i < alcancada || i < atual ? "concluida" : "pendente";
           return (
             <li key={e.id}>
-              <button
+              <Button variant="plain" size="none"
                 type="button"
                 disabled={i > alcancada}
                 aria-current={i === atual ? "step" : undefined}
@@ -28,7 +29,7 @@ export function EventStepNavigation({ atual, alcancada, irPara }: { atual: numbe
                 <span aria-hidden className="grid h-5 w-5 place-items-center rounded-full border border-current font-mono text-[10px]">{estado === "concluida" ? "✓" : i + 1}</span>
                 {e.titulo}
                 <span className="sr-only">{estado === "concluida" ? " (concluída)" : estado === "pendente" ? " (pendente)" : " (atual)"}</span>
-              </button>
+              </Button>
             </li>
           );
         })}

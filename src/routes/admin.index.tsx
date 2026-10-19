@@ -2,7 +2,10 @@ import { nomeModalidade } from "@/lib/modalidades";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { carregarBase } from "@/services/db";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
-import { Badge, Botao, Cartao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -29,10 +32,10 @@ function Dashboard() {
     <div className="space-y-8">
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {cards.map(([r, v]) => (
-          <Cartao key={r}>
+          <Card key={r}>
             <p className="text-xs uppercase text-muted-foreground">{r}</p>
             <p className="font-display text-2xl font-semibold">{v}</p>
-          </Cartao>
+          </Card>
         ))}
       </section>
 
@@ -42,51 +45,51 @@ function Dashboard() {
           <p className="mt-2 text-sm text-muted-foreground">Nenhum evento cadastrado.</p>
         ) : (
           <div className="mt-3 overflow-x-auto">
-            <table className="tabela-cards w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-                  <th className="py-2 pr-3">Evento</th>
-                  <th className="py-2 pr-3">Data</th>
-                  <th className="py-2 pr-3">Status</th>
-                  <th className="py-2 pr-3">Ocupação</th>
-                  <th className="py-2 pr-3">Receita</th>
-                  <th className="py-2">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="tabela-cards w-full text-sm">
+              <TableHeader>
+                <TableRow className="border-b border-border text-left text-xs uppercase text-muted-foreground">
+                  <TableHead className="py-2 pr-3">Evento</TableHead>
+                  <TableHead className="py-2 pr-3">Data</TableHead>
+                  <TableHead className="py-2 pr-3">Status</TableHead>
+                  <TableHead className="py-2 pr-3">Ocupação</TableHead>
+                  <TableHead className="py-2 pr-3">Receita</TableHead>
+                  <TableHead className="py-2">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {base.eventos.map((ev) => {
                   const inscritas = base.inscricoes.filter((i) => i.eventoId === ev.id && i.status === "confirmada").length;
                   const receita = base.movimentacoes.filter((m) => m.eventoId === ev.id).reduce((s, m) => s + m.valorCentavos, 0);
                   const org = base.organizacoes.find((o) => o.id === ev.organizacaoId);
                   const tom =
-                    ev.status === "publicado" ? "sucesso" : ev.status === "cancelado" ? "perigo" : ev.status === "rascunho" ? "aviso" : "padrao";
+                    ev.status === "publicado" ? "success" : ev.status === "cancelado" ? "destructive" : ev.status === "rascunho" ? "warning" : "secondary";
                   return (
-                    <tr key={ev.id} className="border-b border-border/50">
-                      <td className="py-2 pr-3">
+                    <TableRow key={ev.id} className="border-b border-border/50">
+                      <TableCell className="py-2 pr-3">
                         <p className="font-medium">{ev.nome}</p>
                         <p className="text-xs text-muted-foreground">{org?.nome ?? "—"} · {ev.cidade}/{ev.uf} · {nomeModalidade(ev.modalidade)}</p>
-                      </td>
-                      <td data-rotulo="Data" className="py-2 pr-3">{formatarDataBR(ev.inicioEm)}</td>
-                      <td data-rotulo="Status" className="py-2 pr-3"><Badge tom={tom}>{ev.status.replace("_", " ")}</Badge></td>
-                      <td data-rotulo="Ocupação" className="py-2 pr-3">{inscritas}/{ev.capacidadeTotal}</td>
-                      <td data-rotulo="Receita" className="py-2 pr-3">{formatarBRL(receita)}</td>
-                      <td className="celula-acoes py-2">
+                      </TableCell>
+                      <TableCell data-rotulo="Data" className="py-2 pr-3">{formatarDataBR(ev.inicioEm)}</TableCell>
+                      <TableCell data-rotulo="Status" className="py-2 pr-3"><Badge variant={tom}>{ev.status.replace("_", " ")}</Badge></TableCell>
+                      <TableCell data-rotulo="Ocupação" className="py-2 pr-3">{inscritas}/{ev.capacidadeTotal}</TableCell>
+                      <TableCell data-rotulo="Receita" className="py-2 pr-3">{formatarBRL(receita)}</TableCell>
+                      <TableCell className="celula-acoes py-2">
                         <div className="flex flex-wrap gap-2">
                           <Link to="/eventos/$eventoId" params={{ eventoId: ev.id }}>
-                            <Botao variante="contorno">Ver</Botao>
+                            <Button variant="outline">Ver</Button>
                           </Link>
                           {ev.status === "publicado" && (
                             <Link to="/admin/divulgacao" search={{ aba: "impulsionamentos", evento: ev.id }}>
-                              <Botao variante="contorno">Impulsionar operação</Botao>
+                              <Button variant="outline">Impulsionar operação</Button>
                             </Link>
                           )}
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </section>

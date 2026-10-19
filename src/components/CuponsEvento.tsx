@@ -3,11 +3,18 @@ import { useEffect, useMemo, useState } from "react";
 import { atualizarCupom, criarCupom } from "@/api/organizador.functions";
 import { formatarDataBR } from "@/lib/domain/money";
 import { normalizarCodigoCupom, resumoCupom, situacaoCupom, validarDadosCupom, type DadosCupom, type SituacaoCupom } from "@/lib/vendas";
-import { Badge, Botao, Campo, Entrada, Selecao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Campo } from "@/components/ui";
 import type { Cupom, Evento } from "@/lib/domain/types";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { Label } from "@/components/ui/label";
 
-const TOM: Record<SituacaoCupom, "sucesso" | "aviso" | "perigo" | "padrao"> = {
-  ativo: "sucesso", agendado: "aviso", expirado: "padrao", esgotado: "perigo", inativo: "padrao",
+const TOM: Record<SituacaoCupom, "success" | "warning" | "destructive" | "secondary"> = {
+  ativo: "success", agendado: "warning", expirado: "secondary", esgotado: "destructive", inativo: "secondary",
 };
 
 function paraLocal(iso: string) {
@@ -77,7 +84,7 @@ export function CuponsEvento({ evento, cupons }: { evento: Evento; cupons: Cupom
           <h3 className="font-display text-base font-semibold uppercase">Cupons de desconto</h3>
           <p className="text-sm text-muted-foreground">Crie códigos promocionais para esta operação.</p>
         </div>
-        <Botao onClick={() => { setAviso(""); setPainel({ cupom: null }); }}>Criar cupom</Botao>
+        <Button onClick={() => { setAviso(""); setPainel({ cupom: null }); }}>Criar cupom</Button>
       </div>
       {aviso && <p role="status" className="mt-3 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm text-success">{aviso}</p>}
       {erroAcao && <p role="alert" className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erroAcao}</p>}
@@ -91,14 +98,14 @@ export function CuponsEvento({ evento, cupons }: { evento: Evento; cupons: Cupom
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="flex items-center gap-2">
                   <span className="font-mono font-semibold">{c.codigo}</span>
-                  <Botao variante="fantasma" aria-label={`Copiar código ${c.codigo}`} onClick={() => { navigator.clipboard?.writeText(c.codigo); setCopiado(c.id); }}>
+                  <Button variant="ghost" aria-label={`Copiar código ${c.codigo}`} onClick={() => { navigator.clipboard?.writeText(c.codigo); setCopiado(c.id); }}>
                     {copiado === c.id ? "Copiado" : "Copiar"}
-                  </Botao>
-                  <Badge tom={TOM[sit]}>{sit}</Badge>
+                  </Button>
+                  <Badge variant={TOM[sit]}>{sit}</Badge>
                 </span>
                 <span className="flex gap-1">
-                  <Botao variante="fantasma" onClick={() => { setAviso(""); setPainel({ cupom: c }); }}>Editar</Botao>
-                  <Botao variante="fantasma" onClick={() => alternarAtivo(c)}>{c.ativo ? "Desativar" : "Reativar"}</Botao>
+                  <Button variant="ghost" onClick={() => { setAviso(""); setPainel({ cupom: c }); }}>Editar</Button>
+                  <Button variant="ghost" onClick={() => alternarAtivo(c)}>{c.ativo ? "Desativar" : "Reativar"}</Button>
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -180,71 +187,71 @@ function PainelCupom({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" role="dialog" aria-modal="true" aria-label={cupom ? "Editar cupom" : "Criar cupom"} onClick={onFechar}>
-      <div className="flex h-full w-full flex-col overflow-y-auto border-l border-border bg-popover p-5 text-popover-foreground shadow-xl sm:max-w-xl" onClick={(e) => e.stopPropagation()}>
+    <Sheet open onOpenChange={(aberto) => !aberto && onFechar()}>
+      <SheetContent side="right" showCloseButton={false} className="flex w-full flex-col gap-0 overflow-y-auto border-border p-5 sm:max-w-xl">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h2 className="font-display text-lg font-semibold">{cupom ? `Editar cupom ${cupom.codigo}` : "Criar cupom"}</h2>
-            <p className="text-sm text-muted-foreground">Operação: <strong className="text-foreground">{evento.nome}</strong></p>
+            <SheetTitle>{cupom ? `Editar cupom ${cupom.codigo}` : "Criar cupom"}</SheetTitle>
+            <SheetDescription>Operação: <strong className="text-foreground">{evento.nome}</strong></SheetDescription>
           </div>
-          <Botao variante="fantasma" onClick={onFechar} aria-label="Fechar">✕</Botao>
+          <Button variant="ghost" onClick={onFechar} aria-label="Fechar">✕</Button>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Campo rotulo="Código do cupom" htmlFor="cp-codigo" erro={mostrar("codigo")}>
-              <Entrada id="cp-codigo" value={cupom ? cupom.codigo : f.codigo} disabled={!!cupom} placeholder="Ex.: FALAOPERADOR" autoComplete="off"
+              <Input id="cp-codigo" value={cupom ? cupom.codigo : f.codigo} disabled={!!cupom} placeholder="Ex.: FALAOPERADOR" autoComplete="off"
                 onChange={(e) => set("codigo", e.target.value)} />
               {cupom && <p className="text-xs text-muted-foreground">O código não muda depois de criado, para preservar o histórico.</p>}
             </Campo>
           </div>
           <Campo rotulo="Desconto (%)" htmlFor="cp-desc" erro={mostrar("descontoPercentual")}>
             <div className="relative">
-              <Entrada id="cp-desc" type="number" inputMode="numeric" min={1} max={100} step={1} placeholder="Ex.: 15" className="pr-8"
+              <Input id="cp-desc" type="number" inputMode="numeric" min={1} max={100} step={1} placeholder="Ex.: 15" className="pr-8"
                 value={f.desconto} onChange={(e) => set("desconto", e.target.value)} />
               <span aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
             </div>
           </Campo>
           <Campo rotulo="Limite total de utilizações" htmlFor="cp-lim" erro={mostrar("limiteUsos")}>
-            <Entrada id="cp-lim" type="number" inputMode="numeric" min={1} step={1} placeholder="Ex.: 10" disabled={f.semLimite}
+            <Input id="cp-lim" type="number" inputMode="numeric" min={1} step={1} placeholder="Ex.: 10" disabled={f.semLimite}
               value={f.semLimite ? "" : f.limite} onChange={(e) => set("limite", e.target.value)} />
-            <label className="flex items-center gap-2 text-xs">
-              <input type="checkbox" checked={f.semLimite} onChange={(e) => set("semLimite", e.target.checked)} /> Sem limite de utilizações
-            </label>
+            <Label className="flex items-center gap-2 text-xs font-normal text-inherit">
+              <Checkbox checked={f.semLimite} onCheckedChange={(marcado) => set("semLimite", marcado === true)} /> Sem limite de utilizações
+            </Label>
           </Campo>
           <Campo rotulo="Início da validade" htmlFor="cp-ini" erro={mostrar("validoDe")}>
-            <Entrada id="cp-ini" type="datetime-local" value={f.inicio} onChange={(e) => set("inicio", e.target.value)} />
+            <Input id="cp-ini" type="datetime-local" value={f.inicio} onChange={(e) => set("inicio", e.target.value)} />
           </Campo>
           <Campo rotulo="Fim da validade" htmlFor="cp-fim" erro={mostrar("validoAte")}>
-            <Entrada id="cp-fim" type="datetime-local" disabled={f.semFim} value={f.semFim ? "" : f.fim} onChange={(e) => set("fim", e.target.value)} />
-            <label className="flex items-center gap-2 text-xs">
-              <input type="checkbox" checked={f.semFim} onChange={(e) => set("semFim", e.target.checked)} /> Sem data de término
-            </label>
+            <Input id="cp-fim" type="datetime-local" disabled={f.semFim} value={f.semFim ? "" : f.fim} onChange={(e) => set("fim", e.target.value)} />
+            <Label className="flex items-center gap-2 text-xs font-normal text-inherit">
+              <Checkbox checked={f.semFim} onCheckedChange={(marcado) => set("semFim", marcado === true)} /> Sem data de término
+            </Label>
           </Campo>
           <div className="sm:col-span-2">
             <Campo rotulo="Tipos de ingresso elegíveis" htmlFor="cp-tipos" erro={mostrar("tiposElegiveis")}>
-              <Selecao id="cp-tipos" value={f.todosTipos ? "todos" : "selecao"} onChange={(e) => set("todosTipos", e.target.value === "todos")}>
+              <NativeSelect id="cp-tipos" value={f.todosTipos ? "todos" : "selecao"} onChange={(e) => set("todosTipos", e.target.value === "todos")}>
                 <option value="todos">Todos os ingressos</option>
                 <option value="selecao">Seleção específica</option>
-              </Selecao>
+              </NativeSelect>
               {!f.todosTipos && (
                 <div className="mt-2 space-y-1">
                   {tipos.map((t) => (
-                    <label key={t.id} className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={f.tipos.includes(t.id)}
-                        onChange={(e) => set("tipos", e.target.checked ? [...f.tipos, t.id] : f.tipos.filter((x) => x !== t.id))} />
+                    <Label key={t.id} className="flex items-center gap-2 text-sm font-normal text-inherit">
+                      <Checkbox checked={f.tipos.includes(t.id)}
+                        onCheckedChange={(marcado) => set("tipos", marcado === true ? [...f.tipos, t.id] : f.tipos.filter((x) => x !== t.id))} />
                       {t.nome}
-                    </label>
+                    </Label>
                   ))}
                 </div>
               )}
             </Campo>
           </div>
           <Campo rotulo="Status" htmlFor="cp-status">
-            <Selecao id="cp-status" value={f.ativo ? "ativo" : "inativo"} onChange={(e) => set("ativo", e.target.value === "ativo")}>
+            <NativeSelect id="cp-status" value={f.ativo ? "ativo" : "inativo"} onChange={(e) => set("ativo", e.target.value === "ativo")}>
               <option value="ativo">Ativo</option>
               <option value="inativo">Inativo</option>
-            </Selecao>
+            </NativeSelect>
           </Campo>
         </div>
 
@@ -262,10 +269,10 @@ function PainelCupom({
         {tentou && Object.keys(erros).length > 0 && <p role="alert" className="mt-3 text-sm text-destructive">Corrija os campos destacados.</p>}
 
         <div className="mt-auto flex justify-end gap-2 pt-5">
-          <Botao variante="contorno" onClick={onFechar}>Cancelar</Botao>
-          <Botao onClick={salvar} disabled={salvando}>{salvando ? "Salvando..." : cupom ? "Salvar alterações" : "Criar cupom"}</Botao>
+          <Button variant="outline" onClick={onFechar}>Cancelar</Button>
+          <Button onClick={salvar} disabled={salvando}>{salvando ? "Salvando..." : cupom ? "Salvar alterações" : "Criar cupom"}</Button>
         </div>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }

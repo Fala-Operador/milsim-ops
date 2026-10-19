@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { carregarBase } from "@/services/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarDataBR } from "@/lib/domain/money";
-import { Badge, Cartao, EstadoVazio } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { EstadoVazio } from "@/components/ui";
 
 export const Route = createFileRoute("/app/")({
   head: () => ({
@@ -56,10 +58,10 @@ function VisaoGeral() {
             {proximos.map(({ inscricao, evento }) => {
               const exercito = evento.exercitos.find((e) => e.id === inscricao.exercitoId);
               return (
-                <Cartao key={inscricao.id}>
+                <Card key={inscricao.id}>
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-medium">{evento.nome}</h3>
-                    <Badge tom="sucesso">Confirmado</Badge>
+                    <Badge variant="success">Confirmado</Badge>
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {formatarDataBR(evento.inicioEm)} · {evento.cidade}/{evento.uf}
@@ -72,7 +74,7 @@ function VisaoGeral() {
                   >
                     Acessar comunidade →
                   </Link>
-                </Cartao>
+                </Card>
               );
             })}
           </div>

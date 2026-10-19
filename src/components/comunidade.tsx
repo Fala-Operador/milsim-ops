@@ -28,7 +28,15 @@ import {
 } from "@/api/comunidade.functions";
 import { arquivoParaDataUrl } from "@/lib/imagens";
 import { formatarDataHoraBR } from "@/lib/domain/money";
-import { AreaTexto, Badge, Botao, Campo, Entrada, Modal, Selecao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
+import { Campo, Modal } from "@/components/ui";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
 
 function msg(e: unknown) {
   return e instanceof Error ? e.message : "Algo deu errado. Tente novamente.";
@@ -87,16 +95,16 @@ function SeletorImagens({ imagens, setImagens, max, onErro }: { imagens: ImagemP
             <div key={i} className="space-y-1">
               <div className="relative">
                 <img src={img.url} alt={img.alt ?? "Prévia da imagem"} className="h-28 w-full rounded-md object-cover" />
-                <button
+                <Button variant="plain" size="none"
                   type="button"
                   onClick={() => setImagens(imagens.filter((_, j) => j !== i))}
                   className="absolute right-1 top-1 rounded-full bg-background/90 px-2 text-sm text-foreground"
                   aria-label={`Remover imagem ${i + 1}`}
                 >
                   ✕
-                </button>
+                </Button>
               </div>
-              <Entrada
+              <Input
                 placeholder="Descrição alternativa (opcional)"
                 aria-label={`Descrição alternativa da imagem ${i + 1}`}
                 value={img.alt ?? ""}
@@ -108,9 +116,9 @@ function SeletorImagens({ imagens, setImagens, max, onErro }: { imagens: ImagemP
       )}
       <input ref={ref} type="file" accept="image/*" multiple={max > 1} className="hidden" onChange={(e) => adicionar(e.target.files)} />
       {imagens.length < max && (
-        <Botao type="button" variante="fantasma" onClick={() => ref.current?.click()}>
+        <Button type="button" variant="ghost" onClick={() => ref.current?.click()}>
           🖼 Adicionar imagem
-        </Botao>
+        </Button>
       )}
     </div>
   );
@@ -161,7 +169,7 @@ export function Compositor({
       <div className="flex gap-3">
         <Avatar usuario={usuario} />
         <div className="flex-1 space-y-2">
-          <AreaTexto
+          <Textarea
             aria-label="Texto da publicação"
             rows={3}
             placeholder="Compartilhe algo com os participantes…"
@@ -175,23 +183,23 @@ export function Compositor({
               <span className="text-xs text-muted-foreground">Publicando em <strong className="text-foreground">{forumFixo.nome}</strong></span>
             ) : (
               <div className="min-w-48">
-                <Selecao aria-label="Fórum de destino" value={forumId} onChange={(e) => setForumId(e.target.value)}>
+                <NativeSelect aria-label="Fórum de destino" value={forumId} onChange={(e) => setForumId(e.target.value)}>
                   <option value="">Escolha o fórum…</option>
                   {forunsPermitidos.map((f) => (
                     <option key={f.id} value={f.id}>{f.icone} {f.nome}</option>
                   ))}
-                </Selecao>
+                </NativeSelect>
               </div>
             )}
             {gestao && (
-              <label className="flex items-center gap-1 text-xs">
-                <input type="checkbox" checked={importante} onChange={(e) => setImportante(e.target.checked)} /> Importante (notifica todos)
-              </label>
+              <Label className="flex items-center gap-1 text-xs font-normal text-inherit">
+                <Checkbox checked={importante} onCheckedChange={(marcado) => setImportante(marcado === true)} /> Importante (notifica todos)
+              </Label>
             )}
             <span className={`ml-auto font-mono text-xs ${restante < 0 ? "text-destructive" : "text-muted-foreground"}`} aria-live="polite">
               {restante}
             </span>
-            <Botao onClick={publicar} disabled={enviando || restante < 0}>{enviando ? "Publicando…" : "Publicar"}</Botao>
+            <Button onClick={publicar} disabled={enviando || restante < 0}>{enviando ? "Publicando…" : "Publicar"}</Button>
           </div>
           {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         </div>
@@ -231,7 +239,7 @@ function CabecalhoAutor({ base, autorId, eventoId, criadoEm, editadoEm, extra }:
       {autor ? (
         <Link to="/operador/$usuarioId" params={{ usuarioId: autor.id }} search={{ aba: undefined }} className="font-semibold hover:underline">{nomeExibicao(autor)}</Link>
       ) : <span className="font-semibold">{nomeExibicao(autor)}</span>}
-      {selo && <Badge tom={selo === "Admin" ? "perigo" : "destaque"}>{selo}</Badge>}
+      {selo && <Badge variant={selo === "Admin" ? "destructive" : "accent"}>{selo}</Badge>}
       <span className="text-xs text-muted-foreground">· {formatarDataHoraBR(criadoEm)}</span>
       {editadoEm && <span className="text-xs text-muted-foreground">(editado)</span>}
       {extra}
@@ -298,16 +306,17 @@ export function CartaoPublicacao({
               <CabecalhoAutor base={base} autorId={pub.autorId} eventoId={pub.eventoId} criadoEm={pub.criadoEm} editadoEm={pub.editadoEm} />
               <div className="mt-0.5 flex flex-wrap gap-1">
                 {mostrarForum && forum && <span className="text-xs text-muted-foreground">em {forum.icone} {forum.nome}</span>}
-                {pub.fixada && <Badge tom="destaque">📌 Fixada</Badge>}
-                {pub.importante && <Badge tom="aviso">Importante</Badge>}
+                {pub.fixada && <Badge variant="accent">📌 Fixada</Badge>}
+                {pub.importante && <Badge variant="warning">Importante</Badge>}
                 {pub.respostasFechadas && <Badge>Respostas fechadas</Badge>}
-                {pub.oculta && <Badge tom="perigo">Oculta: {pub.motivoOcultacao}</Badge>}
+                {pub.oculta && <Badge variant="destructive">Oculta: {pub.motivoOcultacao}</Badge>}
               </div>
             </div>
-            <div className="relative">
-              <Botao variante="fantasma" aria-label="Ações da publicação" aria-expanded={menu} onClick={() => setMenu((m) => !m)}>⋯</Botao>
-              {menu && (
-                <div role="menu" className="absolute right-0 z-20 mt-1 w-56 rounded-md border border-border bg-popover p-1 text-sm text-popover-foreground shadow-lg">
+            <DropdownMenu open={menu} onOpenChange={setMenu} modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" aria-label="Ações da publicação">⋯</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 border-border text-sm shadow-lg">
                   <ItemMenu onClick={copiarLink}>Copiar link</ItemMenu>
                   {proprio && !pub.removidaPeloAutor && <ItemMenu onClick={() => { setModal("editar"); setMenu(false); }}>Editar</ItemMenu>}
                   {proprio && (
@@ -316,7 +325,7 @@ export function CartaoPublicacao({
                   {!proprio && <ItemMenu onClick={() => { setModal("denunciar"); setMenu(false); }}>Denunciar</ItemMenu>}
                   {gestao && (
                     <>
-                      <div className="my-1 border-t border-border" />
+                      <DropdownMenuSeparator />
                       <ItemMenu onClick={() => executar(() => fixarPublicacao(pub.id))}>{pub.fixada ? "Desafixar" : "Fixar"}</ItemMenu>
                       <ItemMenu onClick={() => executar(() => alternarRespostas(pub.id))}>{pub.respostasFechadas ? "Reabrir respostas" : "Fechar respostas"}</ItemMenu>
                       {pub.oculta ? (
@@ -327,9 +336,8 @@ export function CartaoPublicacao({
                       <ItemMenu onClick={() => { setModal("mover"); setMenu(false); }}>Mover para outro fórum…</ItemMenu>
                     </>
                   )}
-                </div>
-              )}
-            </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {pub.removidaPeloAutor ? (
@@ -342,7 +350,7 @@ export function CartaoPublicacao({
           )}
 
           <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
-            <button
+            <Button variant="plain" size="none"
               type="button"
               className={`flex items-center gap-1 hover:text-foreground disabled:cursor-not-allowed ${curtido ? "text-accent" : ""}`}
               aria-pressed={curtido}
@@ -351,7 +359,7 @@ export function CartaoPublicacao({
               onClick={() => executar(() => alternarCurtida(pub.id))}
             >
               {curtido ? "♥" : "♡"} {contarCurtidas(base, pub.id)}
-            </button>
+            </Button>
             {noDetalhe ? (
               <span>💬 {contarRespostas(base, pub.id, gestao)}</span>
             ) : (
@@ -396,9 +404,9 @@ export function CartaoPublicacao({
 
 function ItemMenu({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" role="menuitem" onClick={onClick} className="block w-full rounded px-3 py-1.5 text-left hover:bg-secondary">
+    <DropdownMenuItem onSelect={onClick} className="block py-1.5">
       {children}
-    </button>
+    </DropdownMenuItem>
   );
 }
 
@@ -414,16 +422,16 @@ export function ItemResposta({ base, r, usuario, gestao, eventoId, arquivado, on
     <div className={`flex gap-3 border-t border-border py-3 ${r.oculta ? "opacity-60" : ""}`}>
       <AvatarLink usuario={base.usuarios.find((u) => u.id === r.autorId)} />
       <div className="min-w-0 flex-1">
-        <CabecalhoAutor base={base} autorId={r.autorId} eventoId={eventoId} criadoEm={r.criadoEm} editadoEm={r.editadoEm} extra={r.oculta ? <Badge tom="perigo">Oculta: {r.motivoOcultacao}</Badge> : null} />
+        <CabecalhoAutor base={base} autorId={r.autorId} eventoId={eventoId} criadoEm={r.criadoEm} editadoEm={r.editadoEm} extra={r.oculta ? <Badge variant="destructive">Oculta: {r.motivoOcultacao}</Badge> : null} />
         {r.texto && <p className="mt-1 whitespace-pre-wrap break-words text-sm">{r.texto}</p>}
         {r.imagem && <Galeria imagens={[r.imagem]} />}
         <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
-          {proprio && !arquivado && <button className="hover:text-foreground" onClick={() => setModal("editar")}>Editar</button>}
-          {proprio && <button className="hover:text-foreground" onClick={() => window.confirm("Excluir esta resposta?") && run(() => excluirResposta(r.id))}>Excluir</button>}
-          {!proprio && <button className="hover:text-foreground" onClick={() => setModal("denunciar")}>Denunciar</button>}
+          {proprio && !arquivado && <Button variant="plain" size="none" className="hover:text-foreground" onClick={() => setModal("editar")}>Editar</Button>}
+          {proprio && <Button variant="plain" size="none" className="hover:text-foreground" onClick={() => window.confirm("Excluir esta resposta?") && run(() => excluirResposta(r.id))}>Excluir</Button>}
+          {!proprio && <Button variant="plain" size="none" className="hover:text-foreground" onClick={() => setModal("denunciar")}>Denunciar</Button>}
           {gestao && (r.oculta
-            ? <button className="hover:text-foreground" onClick={() => run(() => ocultarConteudo("resposta", r.id, "", false))}>Restaurar</button>
-            : <button className="hover:text-foreground" onClick={() => setModal("ocultar")}>Ocultar</button>)}
+            ? <Button variant="plain" size="none" className="hover:text-foreground" onClick={() => run(() => ocultarConteudo("resposta", r.id, "", false))}>Restaurar</Button>
+            : <Button variant="plain" size="none" className="hover:text-foreground" onClick={() => setModal("ocultar")}>Ocultar</Button>)}
         </div>
         {erro && <p role="alert" className="text-xs text-destructive">{erro}</p>}
       </div>
@@ -452,12 +460,12 @@ export function CompositorResposta({ onEnviar }: { onEnviar: (texto: string, ima
   };
   return (
     <div className="space-y-2 border-t border-border pt-3">
-      <AreaTexto aria-label="Sua resposta" rows={2} placeholder="Escreva uma resposta…" value={texto} onChange={(e) => setTexto(e.target.value)} />
+      <Textarea aria-label="Sua resposta" rows={2} placeholder="Escreva uma resposta…" value={texto} onChange={(e) => setTexto(e.target.value)} />
       <div className="flex flex-wrap items-start justify-between gap-2">
         <SeletorImagens imagens={imagens} setImagens={setImagens} max={1} onErro={setErro} />
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs text-muted-foreground">{LIMITE_TEXTO - texto.length}</span>
-          <Botao onClick={enviar}>Responder</Botao>
+          <Button onClick={enviar}>Responder</Button>
         </div>
       </div>
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
@@ -473,13 +481,13 @@ function ModalEditar({ titulo, textoInicial, imagensIniciais, maxImagens, onFech
   return (
     <Modal aberto titulo={titulo} onFechar={onFechar}>
       <div className="space-y-3">
-        <AreaTexto aria-label="Texto" value={texto} onChange={(e) => setTexto(e.target.value)} />
+        <Textarea aria-label="Texto" value={texto} onChange={(e) => setTexto(e.target.value)} />
         <p className="text-right font-mono text-xs text-muted-foreground">{LIMITE_TEXTO - texto.length}</p>
         <SeletorImagens imagens={imagens} setImagens={setImagens} max={maxImagens} onErro={setErro} />
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex justify-end gap-2">
-          <Botao variante="contorno" onClick={onFechar}>Cancelar</Botao>
-          <Botao onClick={async () => { try { await onSalvar(texto, imagens); onFechar(); } catch (e) { setErro(msg(e)); } }}>Salvar</Botao>
+          <Button variant="outline" onClick={onFechar}>Cancelar</Button>
+          <Button onClick={async () => { try { await onSalvar(texto, imagens); onFechar(); } catch (e) { setErro(msg(e)); } }}>Salvar</Button>
         </div>
       </div>
     </Modal>
@@ -495,22 +503,22 @@ function ModalDenuncia({ onFechar, onEnviar }: { onFechar: () => void; onEnviar:
       {estado === "ok" ? (
         <div className="space-y-3">
           <p className="text-sm">Denúncia enviada. Ela é privada e será analisada pela organização.</p>
-          <Botao onClick={onFechar}>Fechar</Botao>
+          <Button onClick={onFechar}>Fechar</Button>
         </div>
       ) : (
         <div className="space-y-3">
           <Campo rotulo="Motivo" htmlFor="motivo-den">
-            <Selecao id="motivo-den" value={motivo} onChange={(e) => setMotivo(e.target.value as MotivoDenuncia)}>
+            <NativeSelect id="motivo-den" value={motivo} onChange={(e) => setMotivo(e.target.value as MotivoDenuncia)}>
               {Object.entries(MOTIVOS_DENUNCIA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </Selecao>
+            </NativeSelect>
           </Campo>
           <Campo rotulo="Descrição (opcional)" htmlFor="desc-den">
-            <AreaTexto id="desc-den" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+            <Textarea id="desc-den" value={descricao} onChange={(e) => setDescricao(e.target.value)} />
           </Campo>
           {estado && <p role="alert" className="text-sm text-destructive">{estado}</p>}
           <div className="flex justify-end gap-2">
-            <Botao variante="contorno" onClick={onFechar}>Cancelar</Botao>
-            <Botao onClick={async () => { try { await onEnviar(motivo, descricao); setEstado("ok"); } catch (e) { setEstado(msg(e)); } }}>Enviar denúncia</Botao>
+            <Button variant="outline" onClick={onFechar}>Cancelar</Button>
+            <Button onClick={async () => { try { await onEnviar(motivo, descricao); setEstado("ok"); } catch (e) { setEstado(msg(e)); } }}>Enviar denúncia</Button>
           </div>
         </div>
       )}
@@ -525,12 +533,12 @@ export function ModalJustificativa({ titulo, onFechar, onConfirmar }: { titulo: 
     <Modal aberto titulo={titulo} onFechar={onFechar}>
       <div className="space-y-3">
         <Campo rotulo="Justificativa (registrada na auditoria)" htmlFor="just">
-          <AreaTexto id="just" value={j} onChange={(e) => setJ(e.target.value)} />
+          <Textarea id="just" value={j} onChange={(e) => setJ(e.target.value)} />
         </Campo>
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex justify-end gap-2">
-          <Botao variante="contorno" onClick={onFechar}>Cancelar</Botao>
-          <Botao variante="perigo" onClick={async () => { try { await onConfirmar(j); onFechar(); } catch (e) { setErro(msg(e)); } }}>Confirmar</Botao>
+          <Button variant="outline" onClick={onFechar}>Cancelar</Button>
+          <Button variant="destructive" onClick={async () => { try { await onConfirmar(j); onFechar(); } catch (e) { setErro(msg(e)); } }}>Confirmar</Button>
         </div>
       </div>
     </Modal>
@@ -548,14 +556,14 @@ function ModalMover({ origem, foruns, onFechar, onMover }: { origem: Forum; foru
         {opcoes.length === 0 ? (
           <p className="text-sm">Nenhum fórum compatível.</p>
         ) : (
-          <Selecao aria-label="Fórum de destino" value={destino} onChange={(e) => setDestino(e.target.value)}>
+          <NativeSelect aria-label="Fórum de destino" value={destino} onChange={(e) => setDestino(e.target.value)}>
             {opcoes.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
-          </Selecao>
+          </NativeSelect>
         )}
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex justify-end gap-2">
-          <Botao variante="contorno" onClick={onFechar}>Cancelar</Botao>
-          <Botao disabled={!destino} onClick={async () => { try { await onMover(destino); onFechar(); } catch (e) { setErro(msg(e)); } }}>Mover</Botao>
+          <Button variant="outline" onClick={onFechar}>Cancelar</Button>
+          <Button disabled={!destino} onClick={async () => { try { await onMover(destino); onFechar(); } catch (e) { setErro(msg(e)); } }}>Mover</Button>
         </div>
       </div>
     </Modal>

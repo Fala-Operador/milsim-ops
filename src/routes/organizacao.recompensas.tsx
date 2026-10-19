@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { carregarBase } from "@/services/db";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { FormCampanha, ListaCampanhas } from "@/components/perfil/campanhas";
-import { Botao } from "@/components/ui";
+import { Button } from "@/components/ui/button";
 import type { CampanhaRecompensa } from "@/lib/domain/types";
 
 export const Route = createFileRoute("/organizacao/recompensas")({
@@ -33,7 +33,7 @@ function RecompensasOrganizacao() {
           <h1 className="font-display text-2xl font-semibold uppercase">Recompensas</h1>
           <p className="text-sm text-muted-foreground">Benefícios valem só para eventos da sua organização. Um benefício não reserva vaga e não acumula com cupom.</p>
         </div>
-        <Botao onClick={() => setEditando("nova")}>Nova campanha</Botao>
+        <Button onClick={() => setEditando("nova")}>Nova campanha</Button>
       </div>
       <ListaCampanhas base={base} campanhas={minhas} onEditar={setEditando} />
       {editando && (

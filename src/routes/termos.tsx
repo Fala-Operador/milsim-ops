@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Cartao } from "@/components/ui";
+import { Card } from "@/components/ui/card";
 import { VERSAO_TERMOS } from "@/data/termos";
 
 export const Route = createFileRoute("/termos")({
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/termos")({
   }),
   component: () => (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <Cartao>
+      <Card>
         <h1 className="font-display text-2xl font-semibold uppercase">Termos de uso</h1>
         <p className="mt-2 text-sm text-muted-foreground">Versão {VERSAO_TERMOS}</p>
         <div className="mt-4 space-y-3 text-sm leading-relaxed">
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/termos")({
           <p>4. Na comunidade dos eventos, é proibido publicar ofensas, spam, dados pessoais de terceiros ou conteúdo inadequado. A organização e a administração podem ocultar conteúdos e suspender a participação, com registro da justificativa.</p>
           <p>5. Participantes de 15 a 17 anos dependem de autorização do responsável, aprovada pela administração, antes de se inscrever.</p>
         </div>
-      </Cartao>
+      </Card>
     </div>
   ),
 });

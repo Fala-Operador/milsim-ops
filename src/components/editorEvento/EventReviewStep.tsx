@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Botao } from "@/components/ui";
+import { Button } from "@/components/ui/button";
 import type { Evento } from "@/lib/domain/types";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { nomeModalidade } from "@/lib/modalidades";
@@ -10,7 +10,7 @@ function Bloco({ titulo, etapa, irPara, children }: { titulo: string; etapa: num
     <section className="rounded-md border border-border bg-elevated p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
         <h3 className="font-display text-sm font-semibold uppercase tracking-wide">{titulo}</h3>
-        <Botao type="button" variante="fantasma" onClick={() => irPara(etapa)} aria-label={`Editar ${titulo}`}>Editar</Botao>
+        <Button type="button" variant="ghost" onClick={() => irPara(etapa)} aria-label={`Editar ${titulo}`}>Editar</Button>
       </div>
       <div className="space-y-1 text-sm">{children}</div>
     </section>
@@ -25,9 +25,9 @@ function ListaProblemas({ titulo, itens, tom, irPara }: { titulo: string; itens:
       <ul className="mt-1 space-y-1">
         {itens.map((p, i) => (
           <li key={i}>
-            <button type="button" className="text-left underline-offset-2 hover:underline focus-visible:underline" onClick={() => irPara(p.etapa, p.campo)}>
+            <Button variant="plain" size="none" type="button" className="text-left underline-offset-2 hover:underline focus-visible:underline" onClick={() => irPara(p.etapa, p.campo)}>
               <span className="text-muted-foreground">{ETAPAS[p.etapa]?.titulo}:</span> {p.mensagem}
-            </button>
+            </Button>
           </li>
         ))}
       </ul>

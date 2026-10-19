@@ -7,7 +7,10 @@ import { carregarBase } from "@/services/db";
 import { marcarNotificacaoLida, marcarNotificacoesLidas } from "@/api/conta.functions";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { formatarDataHoraBR } from "@/lib/domain/money";
-import { Botao, Cartao, EstadoVazio, Badge } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EstadoVazio } from "@/components/ui";
 
 export const Route = createFileRoute("/admin/notificacoes")({
   head: () => ({
@@ -60,12 +63,12 @@ function NotificacoesAdmin() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Botao variante="contorno" onClick={() => setSoNaoLidas((v) => !v)}>
+          <Button variant="outline" onClick={() => setSoNaoLidas((v) => !v)}>
             {soNaoLidas ? "Mostrar todas" : `Somente não lidas (${naoLidas})`}
-          </Botao>
-          <Botao variante="fantasma" onClick={marcarTodasLidas} disabled={naoLidas === 0}>
+          </Button>
+          <Button variant="ghost" onClick={marcarTodasLidas} disabled={naoLidas === 0}>
             Marcar todas como lidas
-          </Botao>
+          </Button>
         </div>
       </div>
 
@@ -77,7 +80,7 @@ function NotificacoesAdmin() {
         <ul className="mt-4 space-y-2">
           {lista.map((n) => (
             <li key={n.id}>
-              <Cartao className={n.lida ? "opacity-70" : ""}>
+              <Card className={n.lida ? "opacity-70" : ""}>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                   <div className="min-w-0">
                     <p className="font-medium">
@@ -102,12 +105,12 @@ function NotificacoesAdmin() {
                     )}
                   </div>
                   {!n.lida && (
-                    <Botao variante="fantasma" className="-ml-4 self-start sm:ml-0 sm:shrink-0" onClick={() => marcarLida(n.id)}>
+                    <Button variant="ghost" className="-ml-4 self-start sm:ml-0 sm:shrink-0" onClick={() => marcarLida(n.id)}>
                       Marcar como lida
-                    </Botao>
+                    </Button>
                   )}
                 </div>
-              </Cartao>
+              </Card>
             </li>
           ))}
         </ul>

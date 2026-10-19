@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { Landmark, RefreshCw } from "lucide-react";
 import { saldoRecebimento } from "@/api/repasses.functions";
-import { Badge, Botao } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { ROTULO_SAQUE, type SaldoRecebimento as Saldo, type StatusSaque } from "@/lib/repasses";
 
-const TOM_SAQUE: Record<StatusSaque, "sucesso" | "aviso" | "perigo" | "padrao"> = {
-  paid: "sucesso", pending: "padrao", in_transit: "aviso", canceled: "padrao", failed: "perigo",
+const TOM_SAQUE: Record<StatusSaque, "success" | "warning" | "destructive" | "secondary"> = {
+  paid: "success", pending: "secondary", in_transit: "warning", canceled: "secondary", failed: "destructive",
 };
 
 export function SaldoRecebimento({ organizacaoId }: { organizacaoId: string }) {
@@ -38,9 +39,9 @@ export function SaldoRecebimento({ organizacaoId }: { organizacaoId: string }) {
     <div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="flex items-center gap-2 font-medium"><Landmark className="h-4 w-4 shrink-0" aria-hidden="true" />Saldo e saques</h3>
-        <Botao type="button" variante="fantasma" className="w-full sm:w-auto" onClick={() => carregar(true)} disabled={ocupado}>
+        <Button type="button" variant="ghost" className="w-full sm:w-auto" onClick={() => carregar(true)} disabled={ocupado}>
           <RefreshCw className={`h-4 w-4 ${ocupado ? "animate-spin" : ""}`} aria-hidden="true" />Atualizar
-        </Botao>
+        </Button>
       </div>
       {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
       {saldo === undefined && !erro && <p className="mt-2 text-sm text-muted-foreground">Consultando o Stripe...</p>}
@@ -69,7 +70,7 @@ export function SaldoRecebimento({ organizacaoId }: { organizacaoId: string }) {
                   <span className="text-muted-foreground">{formatarDataBR(s.chegada)}</span>
                   <span className="flex items-center gap-2">
                     <span className="font-mono">{formatarBRL(s.valorCentavos)}</span>
-                    <Badge tom={TOM_SAQUE[s.status]}>{ROTULO_SAQUE[s.status]}</Badge>
+                    <Badge variant={TOM_SAQUE[s.status]}>{ROTULO_SAQUE[s.status]}</Badge>
                   </span>
                   {s.falha && <span className="w-full break-words text-xs text-destructive">{s.falha}</span>}
                 </li>

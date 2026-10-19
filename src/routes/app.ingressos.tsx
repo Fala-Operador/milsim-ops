@@ -9,7 +9,10 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { ROTULO_PAGAMENTO, reservaVigente } from "@/lib/pagamentos";
-import { Botao, Cartao, EstadoVazio, Modal, AreaTexto } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { EstadoVazio, Modal } from "@/components/ui";
 import { StatusInscricao } from "@/components/StatusInscricao";
 import type { Inscricao } from "@/lib/domain/types";
 import { IngressoQr } from "@/components/IngressoQr";
@@ -204,7 +207,7 @@ function MeusIngressos() {
             const aguardandoPagamento =
               ins.pagamento?.status === "aguardando" && reservaVigente(ins);
             return (
-              <Cartao key={ins.id}>
+              <Card key={ins.id}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <h2 className="font-medium">{evento?.nome ?? "Evento"}</h2>
@@ -241,29 +244,29 @@ function MeusIngressos() {
                 </div>
                 {aguardandoPagamento && (
                   <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                    <Botao
+                    <Button
                       className="w-full sm:w-auto"
                       onClick={() => concluirPagamento(ins)}
                       disabled={abrindoPagamento === ins.id}
                     >
                       <CreditCard className="h-4 w-4" />
                       {abrindoPagamento === ins.id ? "Abrindo pagamento..." : "Concluir pagamento"}
-                    </Botao>
-                    <Botao
+                    </Button>
+                    <Button
                       className="w-full sm:w-auto"
-                      variante="contorno"
+                      variant="outline"
                       onClick={() => cancelarReserva(ins)}
                     >
                       Cancelar reserva
-                    </Botao>
+                    </Button>
                   </div>
                 )}
                 {ins.status === "confirmada" && (
                   <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                    <Botao className="w-full sm:w-auto" onClick={() => setQrDe(ins)}>
+                    <Button className="w-full sm:w-auto" onClick={() => setQrDe(ins)}>
                       <QrCode className="h-4 w-4" />
                       Abrir QR Code de entrada
-                    </Botao>
+                    </Button>
                     {evento?.whatsappGrupoUrl && (
                       <a
                         href={evento.whatsappGrupoUrl}
@@ -275,16 +278,16 @@ function MeusIngressos() {
                         Entrar no grupo do WhatsApp
                       </a>
                     )}
-                    <Botao
+                    <Button
                       className="w-full sm:w-auto"
-                      variante="contorno"
+                      variant="outline"
                       onClick={() => setCancelando(ins)}
                     >
                       Cancelar inscrição
-                    </Botao>
+                    </Button>
                   </div>
                 )}
-              </Cartao>
+              </Card>
             );
           })}
         </div>
@@ -310,7 +313,7 @@ function MeusIngressos() {
           O histórico é preservado.
         </p>
         <div className="mt-3">
-          <AreaTexto
+          <Textarea
             placeholder="Justificativa do cancelamento (obrigatória)"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
@@ -322,12 +325,12 @@ function MeusIngressos() {
           </p>
         )}
         <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Botao variante="fantasma" onClick={() => setCancelando(null)}>
+          <Button variant="ghost" onClick={() => setCancelando(null)}>
             Voltar
-          </Botao>
-          <Botao variante="perigo" onClick={aoCancelar}>
+          </Button>
+          <Button variant="destructive" onClick={aoCancelar}>
             Confirmar cancelamento
-          </Botao>
+          </Button>
         </div>
       </Modal>
     </div>

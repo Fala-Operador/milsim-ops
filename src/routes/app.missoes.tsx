@@ -4,7 +4,11 @@ import { carregarBase } from "@/services/db";
 import { enviarEntregaMissao } from "@/api/conta.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarDataBR } from "@/lib/domain/money";
-import { AreaTexto, Badge, Botao, Cartao, EstadoVazio } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { EstadoVazio } from "@/components/ui";
 import type { StatusMissao } from "@/lib/domain/types";
 
 export const Route = createFileRoute("/app/missoes")({
@@ -75,13 +79,13 @@ function PaginaMissoes() {
             const status: StatusMissao = entrega?.status ?? (prazoEncerrado ? "prazo_encerrado" : "disponivel");
             const evento = base.eventos.find((e) => e.id === m.eventoId);
             return (
-              <Cartao key={m.id}>
+              <Card key={m.id}>
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <h2 className="font-medium">{m.titulo}</h2>
                     <p className="text-xs text-muted-foreground">{evento?.nome} · prazo {formatarDataBR(m.prazo)}</p>
                   </div>
-                  <Badge tom={status === "concluida" ? "sucesso" : status === "ajustes_solicitados" ? "aviso" : "padrao"}>
+                  <Badge variant={status === "concluida" ? "success" : status === "ajustes_solicitados" ? "warning" : "secondary"}>
                     {rotuloStatus[status]}
                   </Badge>
                 </div>
@@ -94,7 +98,7 @@ function PaginaMissoes() {
                 {(status === "disponivel" || status === "ajustes_solicitados") && (
                   <div className="mt-3 space-y-2">
                     {m.tipoEntrega === "texto" && (
-                      <AreaTexto
+                      <Textarea
                         placeholder="Sua resposta"
                         value={texto[m.id] ?? ""}
                         onChange={(e) => setTexto((p) => ({ ...p, [m.id]: e.target.value }))}
@@ -103,12 +107,12 @@ function PaginaMissoes() {
                     {m.tipoEntrega === "imagem" && (
                       <input type="file" accept="image/*" aria-label="Enviar imagem da missão" className="text-sm" />
                     )}
-                    <Botao onClick={() => enviar(m.id, m.tipoEntrega)}>
+                    <Button onClick={() => enviar(m.id, m.tipoEntrega)}>
                       {m.tipoEntrega === "confirmacao" ? "Confirmar" : "Enviar entrega"}
-                    </Botao>
+                    </Button>
                   </div>
                 )}
-              </Cartao>
+              </Card>
             );
           })}
         </div>

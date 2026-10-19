@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { flushSync } from "react-dom";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { Evento } from "@/lib/domain/types";
 
 export interface PropsEtapa {
@@ -22,18 +24,33 @@ export function MsgErro({ erros, id }: { erros: Record<string, string>; id: stri
   return erros[id] ? <p id={`${id}-erro`} className="mt-1 text-xs text-destructive">{erros[id]}</p> : null;
 }
 
-export function Secao({ titulo, children, acao, aberta = true }: { titulo: string; children: ReactNode; acao?: ReactNode; aberta?: boolean }) {
+/** Evento DOM que abre a seção que contém um campo (ex.: ao levar o foco a um erro). */
+export const ABRIR_SECAO = "abrir-secao";
+
+export function Secao({ titulo, children, acao, aberta: abertaInicial = true }: { titulo: string; children: ReactNode; acao?: ReactNode; aberta?: boolean }) {
+  const [aberta, setAberta] = useState(abertaInicial);
+  const raiz = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = raiz.current;
+    // Síncrono para que o campo já esteja visível quando receber o foco logo em seguida.
+    const abrir = () => flushSync(() => setAberta(true));
+    el?.addEventListener(ABRIR_SECAO, abrir);
+    return () => el?.removeEventListener(ABRIR_SECAO, abrir);
+  }, []);
   return (
-    <details open={aberta} className="group rounded-md border border-border bg-elevated">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">
-        <h3 className="font-display text-sm font-semibold uppercase tracking-wide">{titulo}</h3>
-        <span aria-hidden className="text-xs text-muted-foreground group-open:rotate-180">▾</span>
-      </summary>
-      <div className="space-y-3 border-t border-border px-4 py-3">
+    <Collapsible ref={raiz} data-secao open={aberta} onOpenChange={setAberta} className="group rounded-md border border-border bg-elevated">
+      <h3 className="font-display text-sm font-semibold uppercase tracking-wide">
+        <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-2 px-4 py-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">
+          {titulo}
+          <span aria-hidden className="font-sans text-xs font-normal text-muted-foreground group-data-[state=open]:rotate-180">▾</span>
+        </CollapsibleTrigger>
+      </h3>
+      {/* Sempre montado (oculto quando recolhido) para que os campos existam ao validar e focar. */}
+      <CollapsibleContent forceMount className="space-y-3 border-t border-border px-4 py-3">
         {acao && <div className="flex justify-end">{acao}</div>}
         {children}
-      </div>
-    </details>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 

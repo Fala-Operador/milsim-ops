@@ -4,7 +4,12 @@ import { carregarBase } from "@/services/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { papelNoEvento } from "@/services/comunidade";
 import { formatarDataBR } from "@/lib/domain/money";
-import { Badge, Botao, Cartao, EstadoVazio } from "@/components/ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EstadoVazio } from "@/components/ui";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/app/comunidades")({
   head: () => ({
@@ -74,16 +79,16 @@ function MinhasComunidades() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <label className="flex-1">
+        <Label className="flex-1 text-[length:inherit] font-normal text-inherit">
           <span className="sr-only">Buscar comunidade</span>
-          <input
+          <Input
             type="search"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar por nome do evento, cidade ou exército…"
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
           />
-        </label>
+        </Label>
         <div className="flex gap-1" role="group" aria-label="Filtrar por período">
           {(
             [
@@ -92,14 +97,14 @@ function MinhasComunidades() {
               ["encerrados", "Encerrados"],
             ] as const
           ).map(([valor, rotulo]) => (
-            <Botao
+            <Button
               key={valor}
-              variante={filtroStatus === valor ? "primario" : "secundario"}
+              variant={filtroStatus === valor ? "default" : "secondary"}
               onClick={() => setFiltroStatus(valor)}
               aria-pressed={filtroStatus === valor}
             >
               {rotulo}
-            </Botao>
+            </Button>
           ))}
         </div>
       </div>
@@ -116,12 +121,12 @@ function MinhasComunidades() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {filtradas.map(({ evento, papel, exercito, totalForuns, totalPublicacoes, futuro }) => (
-            <Cartao key={evento.id}>
+            <Card key={evento.id}>
               <div className="flex items-start justify-between gap-2">
                 <h2 className="font-medium">{evento.nome}</h2>
                 <div className="flex shrink-0 gap-1">
-                  {papel === "gestao" && <Badge tom="aviso">Gestão</Badge>}
-                  <Badge tom={futuro ? "sucesso" : "padrao"}>{futuro ? "Próximo" : "Encerrado"}</Badge>
+                  {papel === "gestao" && <Badge variant="warning">Gestão</Badge>}
+                  <Badge variant={futuro ? "success" : "secondary"}>{futuro ? "Próximo" : "Encerrado"}</Badge>
                 </div>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -138,7 +143,7 @@ function MinhasComunidades() {
               >
                 Acessar comunidade →
               </Link>
-            </Cartao>
+            </Card>
           ))}
         </div>
       )}
