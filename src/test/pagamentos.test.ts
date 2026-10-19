@@ -17,7 +17,7 @@ import {
 import { cancelarEvento } from "@/services/organizador";
 import { ocupaVaga, reservaVigente } from "@/lib/pagamentos";
 import { visaoParaUsuario } from "@/lib/visao";
-import { acaoDaSessao, acaoDoEvento, assinarPayload, assinaturaValida, codificarFormulario, disputaDoStripe, statusDaDisputa } from "@/lib/stripe";
+import { acaoDaSessao, acaoDoEvento, assinarPayload, assinaturaValida, codificarFormulario, disputaDoStripe, problemaDasChaves, statusDaDisputa } from "@/lib/stripe";
 import type { BaseDados, Evento, Inscricao } from "@/lib/domain/types";
 
 let base: BaseDados;
@@ -261,5 +261,21 @@ describe("contestação (chargeback)", () => {
     expect(statusDaDisputa("under_review")).toBe("em_analise");
     expect(statusDaDisputa("lost")).toBe("perdida");
     expect(statusDaDisputa("warning_closed")).toBe("encerrada");
+  });
+});
+
+describe("chaves do Stripe", () => {
+  const conta = "51NxYzAbCdEfGhIj";
+  it("aceita chaves da mesma conta e do mesmo modo", () => {
+    expect(problemaDasChaves(`sk_test_${conta}aaa`, `pk_test_${conta}bbb`)).toBe("");
+    expect(problemaDasChaves(`rk_live_${conta}aaa`, `pk_live_${conta}bbb`)).toBe("");
+    expect(problemaDasChaves(`sk_test_${conta}aaa`, undefined)).toBe("");
+  });
+
+  it("aponta modo trocado, conta diferente e chave no lugar errado", () => {
+    expect(problemaDasChaves(`sk_live_${conta}a`, `pk_test_${conta}b`)).toMatch(/produção.*teste/);
+    expect(problemaDasChaves(`sk_test_${conta}a`, "pk_test_51OutraContaQualquer")).toMatch(/contas Stripe diferentes/);
+    expect(problemaDasChaves(`sk_test_${conta}a`, `sk_test_${conta}b`)).toMatch(/pk_test_/);
+    expect(problemaDasChaves(`pk_test_${conta}a`, `pk_test_${conta}b`)).toMatch(/STRIPE_SECRET_KEY/);
   });
 });
