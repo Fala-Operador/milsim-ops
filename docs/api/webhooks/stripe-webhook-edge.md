@@ -18,10 +18,10 @@ regra de negócio roda aqui.
 
 | Segredo | Valor |
 |---|---|
-| `STRIPE_WEBHOOK_SECRET` | `whsec_…` do endpoint "Events on your account" |
-| `STRIPE_CONNECT_WEBHOOK_SECRET` | `whsec_…` do endpoint "Events on Connected accounts" |
-| `MILSIM_WEBHOOK_URL` | `https://<site>/api/stripe/webhook` |
-| `MILSIM_WEBHOOK_SECRET` | segredo aleatório, igual ao configurado no site |
+| `STRIPE_PAYMENTS_WEBHOOK_SIGNING_SECRET` | `whsec_…` do endpoint "Events on your account" |
+| `STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET` | `whsec_…` do endpoint "Events on Connected accounts" |
+| `STRIPE_WEBHOOK_FORWARD_URL` | `https://<site>/api/stripe/webhook` |
+| `STRIPE_WEBHOOK_FORWARD_SECRET` | segredo aleatório, igual ao configurado no site |
 
 Eventos que precisam estar marcados no Stripe: `checkout.session.completed`,
 `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`,
@@ -34,7 +34,7 @@ Eventos que precisam estar marcados no Stripe: `checkout.session.completed`,
 - Assinatura no formato do Stripe (`t=…,v1=…` sobre `"<t>.<corpo>"`), com tolerância de 5 minutos
   contra replay e comparação em tempo constante. Vale qualquer um dos dois segredos.
 - Repassa com o cabeçalho `x-milsim-assinatura` no mesmo formato, calculado com
-  `MILSIM_WEBHOOK_SECRET`, e espera até 25 s pela resposta do site.
+  `STRIPE_WEBHOOK_FORWARD_SECRET`, e espera até 25 s pela resposta do site.
 - Qualquer falha devolve erro ao Stripe, que **tenta de novo** mais tarde; o tratamento no site é idempotente.
 
 ## Respostas

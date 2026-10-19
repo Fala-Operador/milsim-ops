@@ -1,30 +1,38 @@
 // Cliente mínimo da API do Stripe (REST + fetch, sem SDK). Nunca importar no navegador.
-// Segredos do site: STRIPE_SECRET_KEY (sk_...) e MILSIM_WEBHOOK_SECRET (compartilhado com a
-// Edge Function stripe-webhook, que guarda os segredos de assinatura do Stripe).
-// Sem STRIPE_SECRET_KEY a plataforma confirma inscrições sem cobrança, como antes.
+// Variáveis do site: STRIPE_SERVER_API_KEY (sk_...), STRIPE_BROWSER_PUBLIC_KEY (pk_..., opcional)
+// e STRIPE_WEBHOOK_FORWARD_SECRET (compartilhado com a Edge Function stripe-webhook, que guarda
+// os segredos de assinatura do Stripe). Sem a chave da API, inscrições confirmam sem cobrança.
 import "@tanstack/react-start/server-only";
 import { codificarFormulario, problemaDasChaves, type CobrancaStripe, type SessaoCheckout } from "@/lib/stripe";
 import type { ContaStripe, SaldoStripe, SaqueStripe } from "@/lib/repasses";
 
 const API = "https://api.stripe.com/v1";
 
+/** Lê a variável pelo nome novo ou, enquanto não for recadastrada, pelo nome antigo. */
+function variavel(nome: string, nomeAntigo: string): string | undefined {
+  return process.env[nome]?.trim() || process.env[nomeAntigo]?.trim() || undefined;
+}
+
+/** Chave secreta (sk_... ou rk_...) com que o servidor chama a API do Stripe. */
+const chaveApi = () => variavel("STRIPE_SERVER_API_KEY", "STRIPE_SECRET_KEY");
+
 export function stripeConfigurado(): boolean {
-  return !!process.env["STRIPE_SECRET_KEY"];
+  return !!chaveApi();
 }
 
 /** Chave publicável (pk_...), só para os componentes embutidos do Stripe Connect. */
 export function chavePublicavel(): string | undefined {
-  return process.env["STRIPE_PUBLISHABLE_KEY"]?.trim() || undefined;
+  return variavel("STRIPE_BROWSER_PUBLIC_KEY", "STRIPE_PUBLISHABLE_KEY");
 }
 
 /** Chave publicável que não combina com a secreta (modo ou conta diferentes); "" quando ok. */
 export function problemaChavesStripe(): string {
-  return problemaDasChaves(process.env["STRIPE_SECRET_KEY"], chavePublicavel());
+  return problemaDasChaves(chaveApi(), chavePublicavel());
 }
 
 /** Segredo com que a Edge Function stripe-webhook assina os eventos repassados ao site. */
 export function segredoWebhookInterno(): string {
-  return process.env["MILSIM_WEBHOOK_SECRET"] ?? "";
+  return variavel("STRIPE_WEBHOOK_FORWARD_SECRET", "MILSIM_WEBHOOK_SECRET") ?? "";
 }
 
 export class ErroStripe extends Error {
@@ -41,7 +49,7 @@ async function chamarStripe<T>(
   /** Conta conectada (acct_...): a chamada age em nome dela (cabeçalho Stripe-Account). */
   contaConectada?: string,
 ): Promise<T> {
-  const chave = process.env["STRIPE_SECRET_KEY"];
+  const chave = chaveApi();
   if (!chave) throw new ErroStripe(0, "nao_configurado", "Stripe não configurado.");
   const cabecalhos: Record<string, string> = { Authorization: `Bearer ${chave}` };
   if (dados) cabecalhos["Content-Type"] = "application/x-www-form-urlencoded";
