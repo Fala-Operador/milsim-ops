@@ -48,6 +48,30 @@ export interface Organizacao {
   responsavelId: string;
   status: "ativa" | "suspensa";
   criadoEm: string;
+  /** Conta conectada (Stripe Connect Express) que recebe o repasse das vendas. */
+  recebimento?: RecebimentoOrganizacao | undefined;
+}
+
+/**
+ * Situação da conta de recebimento, espelhada do Stripe (accounts.retrieve / account.updated):
+ *  - pendente: cadastro iniciado, ainda faltam dados no Stripe;
+ *  - em_analise: dados enviados, Stripe verificando;
+ *  - ativa: pode receber transferências e sacar para a conta bancária;
+ *  - restrita: o Stripe pediu mais informações ou bloqueou repasses.
+ */
+export type StatusRecebimento = "pendente" | "em_analise" | "ativa" | "restrita";
+
+export interface RecebimentoOrganizacao {
+  provedor: "stripe";
+  contaId: string; // acct_...
+  status: StatusRecebimento;
+  /** Transferências habilitadas: as vendas já podem ser repassadas para a conta. */
+  transferenciasAtivas: boolean;
+  /** Saques para a conta bancária habilitados. */
+  saquesAtivos: boolean;
+  /** Pendências que o Stripe pede (requirements.currently_due), para orientar o organizador. */
+  pendencias: string[];
+  atualizadoEm: string;
 }
 
 export type StatusSolicitacao =
@@ -207,6 +231,10 @@ export interface PagamentoInscricao {
   pagoEm?: string | undefined;
   reembolsoId?: string | undefined; // Refund (re_...)
   erro?: string | undefined; // última falha ao falar com o Stripe (ex.: estorno recusado)
+  /** Conta da organização que recebe o repasse (cobrança com destino); ausente = fica na plataforma. */
+  contaDestino?: string | undefined;
+  /** Taxa da plataforma retida no repasse, em centavos. */
+  taxaCentavos?: number | undefined;
 }
 
 export interface Inscricao {

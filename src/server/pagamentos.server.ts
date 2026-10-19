@@ -27,10 +27,24 @@ import {
   type SessaoCheckout,
 } from "@/lib/stripe";
 import { contextoSomenteLeitura, ler, mutar, type RespostaApi } from "@/server/unidade.server";
-import { criarReembolso, criarSessaoCheckout, ErroStripe, expirarSessaoCheckout, obterSessaoCheckout, stripeConfigurado } from "@/server/stripe.server";
+import {
+  criarContaConectada,
+  criarReembolso,
+  criarSessaoCheckout,
+  ErroStripe,
+  expirarSessaoCheckout,
+  linkDeCadastro,
+  linkDoPainel,
+  obterContaConectada,
+  obterSessaoCheckout,
+  stripeConfigurado,
+  taxaPlataformaPercentual,
+} from "@/server/stripe.server";
+import { contaParaRepasse, gereRecebimento, type ContaStripe } from "@/lib/repasses";
+import { organizacaoDaConta, registrarRecebimentoNaBase } from "@/services/repasses";
 import type { Inscricao } from "@/lib/domain/types";
 
-export { stripeConfigurado };
+export { stripeConfigurado, taxaPlataformaPercentual };
 
 const MSG_FALHA_STRIPE = "Não foi possível abrir o pagamento agora. Tente novamente em instantes.";
 
@@ -58,6 +72,9 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
       eventoId: ins.eventoId,
       email: usuario.email,
       descricao: `${evento?.nome ?? "Evento"} — ${tipo?.nome ?? "Ingresso"}`,
+      // Destino decidido na reserva; só vale se a conta continuar apta agora.
+      contaDestino: ins.pagamento.contaDestino && contaParaRepasse(base.organizacoes.find((o) => o.id === evento?.organizacaoId)) === ins.pagamento.contaDestino
+        ? ins.pagamento.contaDestino : undefined,
     };
   });
   if (new Date(d.pagamento.expiraEm) <= new Date()) throw new Error("O prazo desta reserva terminou. Faça uma nova inscrição.");
@@ -77,6 +94,8 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
       valorCentavos: d.pagamento.valorCentavos,
       expiraEm: d.pagamento.expiraEm,
       email: d.email,
+      contaDestino: d.contaDestino,
+      taxaCentavos: d.contaDestino ? d.pagamento.taxaCentavos : undefined,
       urlSucesso: `${origem}/app/ingressos?pagamento=sucesso&sessao={CHECKOUT_SESSION_ID}`,
       urlCancelamento: `${origem}/inscricao/${d.eventoId}?pagamento=cancelado`,
     });
@@ -89,7 +108,10 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
   const url = sessao.url;
   return mutar(({ base }) => {
     const ins = base.inscricoes.find((i) => i.id === inscricaoId)!;
-    if (ins.pagamento && !ins.pagamento.sessaoId) ins.pagamento = { ...ins.pagamento, sessaoId: sessao.id };
+    if (ins.pagamento && !ins.pagamento.sessaoId) {
+      // Registra o destino efetivo da cobrança (a conta pode ter deixado de estar apta).
+      ins.pagamento = { ...ins.pagamento, sessaoId: sessao.id, contaDestino: d.contaDestino, taxaCentavos: d.contaDestino ? ins.pagamento.taxaCentavos : undefined };
+    }
     return { inscricao: ins, urlPagamento: url };
   });
 }
@@ -178,7 +200,7 @@ export async function processarEstornos(): Promise<RespostaApi<string> | undefin
       continue;
     }
     try {
-      const re = await criarReembolso(ins.id, intencao);
+      const re = await criarReembolso(ins.id, intencao, !!ins.pagamento?.contaDestino);
       resultados.push({ id: ins.id, r: { reembolsoId: re.id } });
     } catch (e) {
       console.error("Stripe: falha no reembolso", ins.id, e);
@@ -206,7 +228,82 @@ export async function tratarEventoStripe(evento: EventoStripe): Promise<void> {
       );
       if (ins) registrarReembolsoNaBase(base, ins.id, integral);
     }, { exigirLogin: false });
+  } else if (evento.type === "account.updated") {
+    await aplicarContaAtualizada(evento.data.object as ContaStripe);
+    return;
   }
   // Reembolsos que falharam antes são tentados de novo a cada evento recebido.
   await processarEstornos();
+}
+
+// ---------- Repasse às organizações (Stripe Connect Express) ----------
+
+const MSG_FALHA_CONTA = "Não foi possível falar com o Stripe agora. Tente novamente em instantes.";
+
+/** Dados da organização para as operações de recebimento; exige quem a gere. */
+async function organizacaoGerida(organizacaoId: string) {
+  const { resultado } = await ler(({ base, usuario }) => {
+    const org = base.organizacoes.find((o) => o.id === organizacaoId);
+    if (!org || !gereRecebimento(usuario, organizacaoId)) throw new ErroDominio("permissao", "Você só pode configurar os recebimentos da sua organização.");
+    const responsavel = base.usuarios.find((u) => u.id === org.responsavelId);
+    return { nome: org.nome, contaId: org.recebimento?.contaId, email: responsavel?.email };
+  });
+  return resultado;
+}
+
+async function comStripe<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (e) {
+    if (!(e instanceof ErroStripe || e instanceof TypeError)) throw e;
+    console.error("Stripe Connect", e);
+    throw new Error(e instanceof ErroStripe && e.status === 400 ? `Stripe: ${e.message}` : MSG_FALHA_CONTA);
+  }
+}
+
+const gravarConta = (organizacaoId: string, conta: ContaStripe) =>
+  mutar(({ base }) => {
+    registrarRecebimentoNaBase(base, organizacaoId, conta);
+    return base.organizacoes.find((o) => o.id === organizacaoId)?.recebimento;
+  });
+
+/**
+ * Inicia ou continua o cadastro da conta de recebimento: cria a conta Express na primeira
+ * vez e devolve o link do cadastro hospedado pelo Stripe.
+ */
+export async function iniciarCadastroRecebimento(organizacaoId: string): Promise<RespostaApi<{ url: string }>> {
+  if (!stripeConfigurado()) throw new Error("Os pagamentos online ainda não estão ativados na plataforma.");
+  const org = await organizacaoGerida(organizacaoId);
+  const origem = new URL(getRequestUrl()).origin;
+  const { contaId, url } = await comStripe(async () => {
+    const conta = org.contaId ? await obterContaConectada(org.contaId) : await criarContaConectada({ organizacaoId, nome: org.nome, email: org.email });
+    if (!org.contaId) await gravarConta(organizacaoId, conta); // guarda a conta antes de sair para o Stripe
+    const link = await linkDeCadastro(conta.id, `${origem}/organizacao/financeiro?recebimento=retorno`, `${origem}/organizacao/financeiro?recebimento=renovar`);
+    return { contaId: conta.id, url: link.url };
+  });
+  const r = await mutar(({ base }) => base.organizacoes.find((o) => o.id === organizacaoId)?.recebimento?.contaId === contaId);
+  return { resultado: { url }, visao: r.visao };
+}
+
+/** Consulta a conta no Stripe e atualiza a situação (retorno do cadastro, abertura da página). */
+export async function sincronizarRecebimento(organizacaoId: string) {
+  const org = await organizacaoGerida(organizacaoId);
+  if (!org.contaId || !stripeConfigurado()) return ler(({ base }) => base.organizacoes.find((o) => o.id === organizacaoId)?.recebimento);
+  const conta = await comStripe(() => obterContaConectada(org.contaId!));
+  return gravarConta(organizacaoId, conta);
+}
+
+/** Link para o painel Express: saldo, calendário de repasses e conta bancária. */
+export async function abrirPainelRecebimento(organizacaoId: string): Promise<{ url: string }> {
+  const org = await organizacaoGerida(organizacaoId);
+  if (!org.contaId) throw new Error("A organização ainda não tem conta de recebimento.");
+  return comStripe(() => linkDoPainel(org.contaId!));
+}
+
+/** Webhook de Connect (account.updated): mantém a situação da conta em dia. */
+export async function aplicarContaAtualizada(conta: ContaStripe): Promise<void> {
+  await mutar(({ base }) => {
+    const org = organizacaoDaConta(base, conta.id);
+    if (org) registrarRecebimentoNaBase(base, org.id, conta);
+  }, { exigirLogin: false });
 }

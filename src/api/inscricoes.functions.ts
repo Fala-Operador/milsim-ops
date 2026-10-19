@@ -6,7 +6,7 @@ import { cancelarInscricao as cancelar, confirmarInscricao as confirmar, validar
 import { registrarConfirmacao } from "@/services/analytics";
 import { gereEvento } from "@/lib/visao";
 import { exigirUsuario, ler, mutar } from "@/server/unidade.server";
-import { abrirCheckout, checkoutDaNovaReserva, expirarSessoes, processarEstornos, sincronizarSessao, stripeConfigurado, type ResultadoCompra } from "@/server/pagamentos.server";
+import { abrirCheckout, checkoutDaNovaReserva, expirarSessoes, processarEstornos, sincronizarSessao, stripeConfigurado, taxaPlataformaPercentual, type ResultadoCompra } from "@/server/pagamentos.server";
 import { chamar } from "@/api/cliente";
 
 const id = z.string().min(1).max(100);
@@ -21,8 +21,9 @@ export const confirmarInscricaoFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const online = stripeConfigurado();
+    const taxaPercentual = taxaPlataformaPercentual();
     // A pessoa só se inscreve a si mesma; a origem é decidida pelo servidor.
-    const r = await mutar(({ usuario }) => confirmar({ ...data, usuarioId: exigirUsuario(usuario).id }, { pagamentoOnline: online }));
+    const r = await mutar(({ usuario }) => confirmar({ ...data, usuarioId: exigirUsuario(usuario).id }, { pagamentoOnline: online, taxaPercentual }));
     if (r.resultado.status !== "pendente") return { ...r, resultado: { inscricao: r.resultado } as ResultadoCompra };
     return checkoutDaNovaReserva(r.resultado.id);
   });

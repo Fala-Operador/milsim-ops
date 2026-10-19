@@ -93,8 +93,9 @@ bun run db:seed -- --limpar-contas              # idem, removendo também as con
 - **E-mails do Auth**: o SMTP embutido do Supabase só entrega para membros da organização e tem
   limite baixo. Configure um SMTP próprio para a recuperação de senha funcionar para todos.
 - **Pagamentos**: Stripe Checkout em BRL (cartão e os meios ativados no painel do Stripe), com
-  reembolso integral automático no cancelamento. O dinheiro cai na conta Stripe da plataforma; o
-  repasse aos organizadores (Stripe Connect) ainda não existe.
+  reembolso integral automático no cancelamento. Com a conta Stripe Connect da organização ativa
+  (Financeiro → Recebimentos), cada venda é repassada automaticamente a ela, descontada a taxa da
+  plataforma (`STRIPE_TAXA_PLATAFORMA_PERCENTUAL`); antes disso, o valor fica na plataforma.
 - **Mensagens externas**: simuladas (sem e-mail transacional ou WhatsApp).
 - **Storage**: arquivos substituídos ou removidos não são apagados do bucket (sem limpeza de órfãos).
 - **LGPD**: retenção, exclusão e validação jurídica (incl. adolescentes de 15–17 anos) ainda pendentes.

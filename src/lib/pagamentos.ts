@@ -53,9 +53,12 @@ export function pagamentoAnonimo(p: PagamentoInscricao | undefined): PagamentoIn
   return p && { provedor: p.provedor, status: p.status, valorCentavos: 0, expiraEm: p.expiraEm };
 }
 
-/** Titular e organização veem situação e valores, nunca os identificadores do Stripe. */
-export function pagamentoSemIds(p: PagamentoInscricao | undefined): PagamentoInscricao | undefined {
+/**
+ * Titular e organização veem situação e valores, nunca os identificadores da transação.
+ * Destino e taxa do repasse só aparecem para a organização do evento.
+ */
+export function pagamentoSemIds(p: PagamentoInscricao | undefined, manterDestino = false): PagamentoInscricao | undefined {
   if (!p) return p;
-  const { sessaoId: _s, intencaoId: _i, reembolsoId: _r, ...resto } = p;
-  return resto;
+  const { sessaoId: _s, intencaoId: _i, reembolsoId: _r, contaDestino, taxaCentavos, ...resto } = p;
+  return manterDestino ? { ...resto, contaDestino, taxaCentavos } : resto;
 }

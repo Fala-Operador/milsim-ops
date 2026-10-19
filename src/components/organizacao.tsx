@@ -3,6 +3,7 @@ import { useEventoOrganizacao } from "@/contexts/OrganizationEventContext";
 import { carregarBase } from "@/services/db";
 import { disponibilidadeNaBase, resumoFinanceiro } from "@/services/inscricoes";
 import { TEXTO_MOTIVO } from "@/lib/vendas";
+import { resumoRepasse } from "@/lib/repasses";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { mascararCpf } from "@/lib/domain/validators";
 import { Badge, Botao, Selecao } from "@/components/ui";
@@ -134,6 +135,16 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
     ["Integralmente descontadas", String(r.integralmenteDescontadas)],
     ["Reservas aguardando pagamento", String(r.reservasAguardando)],
   ];
+  // Vendas pagas online: quanto foi cobrado, a taxa retida e para onde foi o dinheiro.
+  const rep = resumoRepasse(carregarBase(), eventoId);
+  if (rep.cobrado > 0) {
+    itens.push(
+      ["Pago online (Stripe)", formatarBRL(rep.cobrado)],
+      ["Taxa da plataforma", formatarBRL(rep.taxas)],
+      ["Repassado à organização", formatarBRL(rep.repassado)],
+    );
+    if (rep.naPlataforma > 0) itens.push(["Com a plataforma (repasse à parte)", formatarBRL(rep.naPlataforma)]);
+  }
   return (
     <div>
       <p className="text-xs text-muted-foreground">

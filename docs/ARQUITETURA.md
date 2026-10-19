@@ -246,6 +246,15 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   reembolso no Stripe (chave de idempotência por inscrição) e registra `estornado` ou o erro,
   que é tentado de novo a cada webhook. Sem a chave, tudo continua como antes (confirmação
   direta, sem cobrança).
+- **Repasse às organizações (Stripe Connect Express)**: cada organização cria pelo Financeiro
+  uma conta Express (cadastro hospedado pelo Stripe, `account_links`); a situação fica em
+  `organizacao.recebimento` (`lib/repasses.ts`, gravada por `services/repasses.ts`, atualizada no
+  retorno do cadastro e pelo webhook de Connect `account.updated`) e só aparece na visão de quem
+  gere a organização. Na reserva, se a conta tem transferências ativas, o pagamento guarda
+  `contaDestino` e `taxaCentavos` (`STRIPE_TAXA_PLATAFORMA_PERCENTUAL`); o checkout vira cobrança
+  com destino (`transfer_data.destination` + `application_fee_amount`). Sem conta ativa, o valor
+  fica na plataforma e aparece no financeiro como "repasse à parte". O reembolso de venda
+  repassada usa `reverse_transfer` e `refund_application_fee`.
 - **Organizador** (`services/organizador.ts`): validação de publicação, capacidade nunca abaixo
   da ocupação (confirmadas + reservas vigentes), auditoria de modalidade, cancelamento com
   estorno em massa (e reembolso no Stripe do que foi pago online).

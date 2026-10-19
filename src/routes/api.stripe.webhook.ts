@@ -1,10 +1,12 @@
 // Webhook do Stripe (POST /api/stripe/webhook). Cadastre no painel do Stripe com os eventos:
 // checkout.session.completed, checkout.session.async_payment_succeeded,
 // checkout.session.async_payment_failed, checkout.session.expired e charge.refunded.
-// A assinatura (STRIPE_WEBHOOK_SECRET) é conferida sobre o corpo bruto antes de qualquer leitura.
+// Para o repasse às organizações, cadastre também um endpoint de Connect (mesma URL) com
+// account.updated; o segredo dele vai em STRIPE_CONNECT_WEBHOOK_SECRET.
+// A assinatura é conferida sobre o corpo bruto antes de qualquer leitura.
 import { createFileRoute } from "@tanstack/react-router";
 import { assinaturaValida, type EventoStripe } from "@/lib/stripe";
-import { segredoWebhook } from "@/server/stripe.server";
+import { segredosWebhook } from "@/server/stripe.server";
 import { tratarEventoStripe } from "@/server/pagamentos.server";
 
 export const Route = createFileRoute("/api/stripe/webhook")({
@@ -12,7 +14,9 @@ export const Route = createFileRoute("/api/stripe/webhook")({
     handlers: {
       POST: async ({ request }) => {
         const corpo = await request.text();
-        if (!(await assinaturaValida(corpo, request.headers.get("stripe-signature"), segredoWebhook()))) {
+        const assinatura = request.headers.get("stripe-signature");
+        const valida = (await Promise.all(segredosWebhook().map((s) => assinaturaValida(corpo, assinatura, s)))).some(Boolean);
+        if (!valida) {
           return new Response("Assinatura inválida.", { status: 400 });
         }
         let evento: EventoStripe;

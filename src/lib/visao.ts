@@ -5,6 +5,7 @@
 import { vistaDoChamado } from "@/lib/suporte";
 import { baseVazia } from "@/lib/persistencia";
 import { pagamentoAnonimo, pagamentoSemIds } from "@/lib/pagamentos";
+import { organizacaoVisivel } from "@/lib/repasses";
 import { forunsVisiveis, nomeExibicao, papelNoEvento, publicacaoVisivel } from "@/services/comunidade";
 import type { BaseDados, Evento, Inscricao, Usuario } from "@/lib/domain/types";
 
@@ -41,8 +42,8 @@ export function perfilPublico(u: Usuario): Usuario {
 
 /** Inscrição de terceiros: mantém só o que as contagens de vagas e ocupação precisam. */
 /** Titular e organização veem a situação do pagamento; os ids do Stripe só a administração. */
-function comPagamentoVisivel(i: Inscricao, admin: boolean): Inscricao {
-  return admin || !i.pagamento ? i : { ...i, pagamento: pagamentoSemIds(i.pagamento) };
+function comPagamentoVisivel(i: Inscricao, admin: boolean, gestor: boolean): Inscricao {
+  return admin || !i.pagamento ? i : { ...i, pagamento: pagamentoSemIds(i.pagamento, gestor) };
 }
 
 function inscricaoAnonima(i: Inscricao): Inscricao {
@@ -82,10 +83,11 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
   // ----- Eventos e vendas -----
   v.eventos = base.eventos.filter((e) => STATUS_PUBLICOS.has(e.status) || geridos.has(e.id) || participo.has(e.id));
   const visiveis = new Set(v.eventos.map((e) => e.id));
-  v.organizacoes = base.organizacoes;
+  // Conta de recebimento (Stripe Connect) só para quem gere a organização.
+  v.organizacoes = base.organizacoes.map((o) => organizacaoVisivel(o, eu));
   v.inscricoes = base.inscricoes
     .filter((i) => visiveis.has(i.eventoId))
-    .map((i) => (i.usuarioId === meuId || geridos.has(i.eventoId) ? comPagamentoVisivel(i, admin) : inscricaoAnonima(i)));
+    .map((i) => (i.usuarioId === meuId || geridos.has(i.eventoId) ? comPagamentoVisivel(i, admin, geridos.has(i.eventoId)) : inscricaoAnonima(i)));
   v.cupons = base.cupons.filter((c) => geridos.has(c.eventoId));
   v.cortesias = base.cortesias.filter((c) => geridos.has(c.eventoId) || (!!eu && c.emailConvidado === eu.email));
   v.movimentacoes = base.movimentacoes.filter((m) => geridos.has(m.eventoId));
