@@ -50,6 +50,7 @@ bun run start                # servidor Node gerado pelo build (.output/server/i
 | `STRIPE_SECRET_KEY` | opcional, **somente servidor**: liga a venda pelo Stripe Checkout e o Stripe Connect (sem ela, inscrição confirmada sem cobrança) |
 | `MILSIM_WEBHOOK_SECRET` | segredo compartilhado entre a Edge Function `stripe-webhook` e o site (mesmo valor nos dois lados) |
 | `STRIPE_PUBLISHABLE_KEY` | opcional (`pk_...`): o cadastro e a gestão do recebimento da organização acontecem dentro do site (componentes embutidos do Stripe) |
+| `RESEND_API_KEY` | chave do Resend (Sending access) usada pelo SMTP do Supabase Auth; só para o `config push`, não é lida pelo app |
 | `LOVABLE_API_KEY` | opcional, habilita Admin › Insights IA |
 
 Na publicação, configure as variáveis do Supabase (e as do Stripe, se usar) como **segredos** do
@@ -132,8 +133,9 @@ backup completo como artefato da execução (30 dias). Detalhes em
   ao navegador. Funciona bem no volume atual; para crescer, troque por consultas por página/agregado
   (ver `docs/ARQUITETURA.md`, seção 9).
 - **Cadastro**: a conta é criada já com o e-mail confirmado. Em produção, exija confirmação.
-- **E-mails do Auth**: o SMTP embutido do Supabase só entrega para membros da organização e tem
-  limite baixo. Configure um SMTP próprio para a recuperação de senha funcionar para todos.
+- **E-mails do Auth**: enviados pelo **Resend** (`nao-responda@milsimops.falaoperador.com.br`,
+  DKIM e SPF no Cloudflare), até 30 por hora. A chave `RESEND_API_KEY` fica só no `.env` local e é
+  enviada ao Supabase com `env $(grep '^RESEND_API_KEY=' .env | xargs) npx supabase config push`.
 - **Pagamentos**: Stripe Checkout em BRL (cartão e os meios ativados no painel do Stripe), com
   reembolso integral automático no cancelamento. Com a conta Stripe Connect da organização ativa
   (Financeiro → Recebimentos), cada venda é repassada automaticamente a ela, descontada a taxa da

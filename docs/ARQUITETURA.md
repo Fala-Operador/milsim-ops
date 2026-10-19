@@ -361,7 +361,7 @@ Regras detalhadas de cada área: [regras-de-negocio.md](regras-de-negocio.md).
 | Concorrência | versão global: escritas simultâneas viram nova tentativa | travas por evento (`select … for update`) dentro de RPCs |
 | SSR | as páginas renderizam o esqueleto no servidor (só o `head` do evento usa dados reais) | carregadores por rota com `consultar()` |
 | Storage | sem limpeza de arquivos órfãos; a seed reenvia as imagens a cada execução | caminhos determinísticos + rotina de limpeza |
-| E-mail | SMTP embutido do Supabase (limitado) | SMTP próprio e confirmação de e-mail no cadastro |
+| E-mail | Resend como SMTP do Supabase Auth (30/h), só redefinição de senha | confirmação de e-mail no cadastro e e-mails transacionais do app |
 
 ---
 
