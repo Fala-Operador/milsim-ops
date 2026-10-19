@@ -63,8 +63,8 @@ flowchart LR
 ```
 
 - Login: [`entrar`](api/sessao/entrar.md); a sessão fica em cookies. Conta desativada é deslogada.
-- Senha esquecida: [`recuperarSenha`](api/sessao/recuperarSenha.md) → e-mail →
-  `/recuperar-senha` → [`trocarCodigoRecuperacao`](api/sessao/trocarCodigoRecuperacao.md) →
+- Senha esquecida: [`recuperarSenha`](api/sessao/recuperarSenha.md) → e-mail em português →
+  `/recuperar-senha?token_hash=…` → [`validarTokenRecuperacao`](api/sessao/validarTokenRecuperacao.md) →
   [`definirNovaSenha`](api/sessao/definirNovaSenha.md).
 
 ## 3. Inscrição com pagamento (Stripe)

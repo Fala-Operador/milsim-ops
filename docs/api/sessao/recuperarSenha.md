@@ -9,7 +9,7 @@
 | Método | `POST` |
 | Acesso | Pública |
 
-Envia o e-mail de recuperação de senha (`resetPasswordForEmail`) com retorno para `/recuperar-senha`.
+Envia o e-mail de recuperação de senha (`resetPasswordForEmail`) com o template em português `supabase/templates/recuperar-senha.html`. O link leva a `/recuperar-senha?token_hash=…&type=recovery` e vale por 1 hora.
 
 ## Entrada
 
@@ -20,7 +20,8 @@ Envia o e-mail de recuperação de senha (`resetPasswordForEmail`) com retorno p
 ## Regras
 
 - A resposta é a mesma exista ou não a conta (não revela e-mails cadastrados).
-- Depende do SMTP do Supabase Auth e das URLs de retorno configuradas (ver README).
+- O endereço de volta é o do próprio site que recebeu o pedido; ele precisa estar em `additional_redirect_urls` do Supabase Auth.
+- Depende do SMTP do Supabase Auth: o embutido só entrega para membros da organização no Supabase, 2 por hora.
 
 ## Resposta
 

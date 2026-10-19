@@ -126,13 +126,18 @@ registrado no log do servidor e vira "Não foi possível concluir a operação".
 | Entrar | `signInWithPassword` no cliente de sessão (cookies). Conta com perfil inativo é deslogada na hora. |
 | Cadastrar | `validarCadastro` (CPF, idade ≥ 15, termos...) → `auth.admin.createUser` (e-mail já confirmado) → `registrarPerfil` na unidade de trabalho (CPF/e-mail únicos). Se o perfil falhar, a conta do Auth é apagada. Depois faz login. |
 | Sair | `signOut`, que limpa os cookies. |
-| Recuperar senha | `resetPasswordForEmail` com retorno para `/recuperar-senha`; a página troca o `code` por sessão (`exchangeCodeForSession`, PKCE) e define a nova senha (`updateUser`). |
+| Recuperar senha | `resetPasswordForEmail` com retorno para `/recuperar-senha`. O e-mail usa o template em português `supabase/templates/recuperar-senha.html` (publicado com `npx supabase config push`), com link `?token_hash=…&type=recovery`: a página valida com `verifyOtp` (funciona em qualquer aparelho) e define a nova senha (`updateUser`). Links antigos com `?code=` (PKCE, mesmo navegador) continuam aceitos. |
 
 - `usuarios.id` é o mesmo `id` de `auth.users`. Perfil, papel (`admin`/`organizador`/`participante`)
   e organização ficam na tabela `usuarios`, **nunca** em `user_metadata`.
 - A identidade é sempre a da sessão. As APIs ignoram qualquer `usuarioId`/`perfil` vindo do navegador.
 - Supabase Auth: `site_url` e URLs de retorno configurados para `http://localhost:8080`
-  (`supabase/config.toml`). **Inclua a URL publicada** antes de usar a recuperação de senha em produção.
+  (`supabase/config.toml`). **Inclua a URL publicada** em `additional_redirect_urls` antes de usar a
+  recuperação de senha em produção. O `config.toml` não é enviado pelo deploy do GitHub Actions:
+  publique com `npx supabase config push` (ele mostra a diferença e pede confirmação).
+- O cadastro cria a conta já confirmada (`auth.admin.createUser`): não há e-mail de confirmação.
+- Áreas `/app`, `/organizacao` e `/admin` exigem conta por `useExigirLogin` (`src/hooks/`): só
+  redireciona com a visão carregada e enquanto o endereço é da área, com `replace`.
 
 ---
 
@@ -230,7 +235,7 @@ O número de WhatsApp do organizador (`evento.whatsappContato`) é público.
 ## 7. APIs — `src/api/*.functions.ts`
 
 Cada arquivo exporta as server functions (`...Fn`) e wrappers de mesmo nome para o navegador.
-São 103 server functions em 14 módulos, mais o webhook do Stripe. A referência completa, com
+São 104 server functions em 14 módulos, mais o webhook do Stripe. A referência completa, com
 entrada, regras, erros e exemplo de cada uma, está em **[docs/api/](api/README.md)**.
 
 | Arquivo | Operações |
@@ -349,7 +354,7 @@ Regras detalhadas de cada área: [regras-de-negocio.md](regras-de-negocio.md).
 
 ## 10. Testes
 
-`bun run test`: 29 arquivos, 268 testes (os serviços rodam sobre uma base em memória).
+`bun run test`: 30 arquivos, 273 testes (os serviços rodam sobre uma base em memória).
 
 | Arquivo | Cobre |
 |---|---|

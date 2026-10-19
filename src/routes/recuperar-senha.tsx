@@ -1,15 +1,20 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { definirNovaSenha, recuperarSenha, trocarCodigoRecuperacao } from "@/api/sessao.functions";
+import { definirNovaSenha, recuperarSenha, trocarCodigoRecuperacao, validarTokenRecuperacao } from "@/api/sessao.functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Campo, Spinner } from "@/components/ui";
 
 export const Route = createFileRoute("/recuperar-senha")({
-  // O link do e-mail do Supabase Auth volta para esta página com ?code=...
-  validateSearch: (s: Record<string, unknown>): { code?: string | undefined; error_description?: string | undefined } => ({
+  // O e-mail de recuperação (supabase/templates/recuperar-senha.html) volta para esta página com
+  // ?token_hash=…&type=recovery; links antigos (template padrão do Supabase) chegam com ?code=….
+  validateSearch: (s: Record<string, unknown>): {
+    code?: string | undefined; token_hash?: string | undefined; type?: string | undefined; error_description?: string | undefined;
+  } => ({
     code: typeof s["code"] === "string" ? s["code"] : undefined,
+    token_hash: typeof s["token_hash"] === "string" ? s["token_hash"] : undefined,
+    type: typeof s["type"] === "string" ? s["type"] : undefined,
     error_description: typeof s["error_description"] === "string" ? s["error_description"] : undefined,
   }),
   head: () => ({
@@ -24,12 +29,13 @@ export const Route = createFileRoute("/recuperar-senha")({
 });
 
 function PaginaRecuperar() {
-  const { code, error_description } = Route.useSearch();
+  const { code, token_hash, type, error_description } = Route.useSearch();
+  const link = token_hash && (!type || type === "recovery") ? { tokenHash: token_hash } : code ? { codigo: code } : null;
   return (
     <div className="mx-auto max-w-md px-4 py-12">
       <Card>
         <h1 className="font-display text-2xl font-semibold uppercase tracking-wide">Recuperar senha</h1>
-        {code ? <NovaSenha codigo={code} /> : <PedirLink erroLink={error_description} />}
+        {link ? <NovaSenha link={link} /> : <PedirLink erroLink={error_description} />}
         <p className="mt-4 text-sm">
           <Link to="/login" search={{ redirect: undefined }} className="text-accent hover:underline">Voltar ao login</Link>
         </p>
@@ -75,7 +81,23 @@ function PedirLink({ erroLink }: { erroLink?: string | undefined }) {
   );
 }
 
-function NovaSenha({ codigo }: { codigo: string }) {
+/** Link do e-mail: token_hash (template atual, qualquer aparelho) ou code (PKCE, links antigos). */
+type LinkRecuperacao = { tokenHash: string } | { codigo: string };
+
+// O link é de uso único: se a página montar de novo, reaproveita a mesma validação em vez de
+// gastar o token uma segunda vez (o que daria "link inválido" mesmo com a sessão já aberta).
+const validacoes = new Map<string, Promise<void>>();
+function validarLink(link: LinkRecuperacao): Promise<void> {
+  const chave = "tokenHash" in link ? `t:${link.tokenHash}` : `c:${link.codigo}`;
+  let p = validacoes.get(chave);
+  if (!p) {
+    p = "tokenHash" in link ? validarTokenRecuperacao(link.tokenHash) : trocarCodigoRecuperacao(link.codigo);
+    validacoes.set(chave, p);
+  }
+  return p;
+}
+
+function NovaSenha({ link }: { link: LinkRecuperacao }) {
   const navigate = useNavigate();
   const [estado, setEstado] = useState<"validando" | "pronto" | "invalido">("validando");
   const [senha, setSenha] = useState("");
@@ -83,14 +105,16 @@ function NovaSenha({ codigo }: { codigo: string }) {
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
 
+  const chave = "tokenHash" in link ? link.tokenHash : link.codigo;
   useEffect(() => {
-    trocarCodigoRecuperacao(codigo)
+    validarLink(link)
       .then(() => setEstado("pronto"))
       .catch((e) => {
         setErro(e instanceof Error ? e.message : "Link inválido.");
         setEstado("invalido");
       });
-  }, [codigo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chave]);
 
   const aoSalvar = async (e: React.FormEvent) => {
     e.preventDefault();

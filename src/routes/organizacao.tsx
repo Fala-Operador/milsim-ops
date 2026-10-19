@@ -2,6 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tan
 import { useEffect, useRef, useState } from "react";
 import { useAbaAtivaVisivel } from "@/hooks/useAbaAtivaVisivel";
 import { useAuth } from "@/contexts/AuthContext";
+import { useExigirLogin } from "@/hooks/useExigirLogin";
 import { useSuporte } from "@/contexts/SuporteContext";
 import { ErroSecao, SkeletonPagina } from "@/components/ui";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
@@ -56,9 +57,7 @@ function LayoutOrganizacao() {
   const navRef = useRef<HTMLElement>(null);
   useAbaAtivaVisivel(navRef, `${endereco}|${montado && !!usuario}`);
   // Sem sessão: pede login e volta ao mesmo endereço (permissão revalidada depois).
-  useEffect(() => {
-    if (montado && !usuario) navigate({ to: "/login", search: { redirect: endereco } });
-  }, [montado, usuario, navigate, endereco]);
+  useExigirLogin("/organizacao");
   useEffect(() => {
     if (usuario && usuario.perfil !== "organizador" && usuario.perfil !== "admin") {
       navigate({ to: "/app" });

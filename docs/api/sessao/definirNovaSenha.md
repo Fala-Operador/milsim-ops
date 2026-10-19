@@ -7,7 +7,7 @@
 | Server function | `definirNovaSenhaFn` em [`src/api/sessao.functions.ts`](../../../src/api/sessao.functions.ts) |
 | Uso no navegador | `definirNovaSenha(…)` |
 | Método | `POST` |
-| Acesso | Sessão de recuperação (depois de `trocarCodigoRecuperacao`) |
+| Acesso | Sessão de recuperação (depois de `validarTokenRecuperacao` ou `trocarCodigoRecuperacao`) |
 
 Define a nova senha da conta (`updateUser`) e devolve a visão da pessoa logada.
 

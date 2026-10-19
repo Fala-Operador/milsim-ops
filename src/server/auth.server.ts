@@ -73,6 +73,16 @@ export async function trocarCodigoRecuperacao(codigo: string): Promise<void> {
   if (error) throw new Error("Link de recuperação inválido ou expirado. Solicite um novo.");
 }
 
+/**
+ * Valida o link do template de e-mail (`?token_hash=…&type=recovery`) e abre a sessão de
+ * recuperação. Diferente do `code` (PKCE), funciona em qualquer aparelho: não depende de um
+ * cookie criado no navegador que pediu a troca de senha.
+ */
+export async function validarTokenRecuperacao(tokenHash: string): Promise<void> {
+  const { error } = await supabaseSessao().auth.verifyOtp({ type: "recovery", token_hash: tokenHash });
+  if (error) throw new Error("Link de recuperação inválido ou expirado. Solicite um novo.");
+}
+
 export async function definirNovaSenha(senha: string): Promise<RespostaApi<null>> {
   if (senha.length < SENHA_MINIMA) throw new Error(`A senha deve ter ao menos ${SENHA_MINIMA} caracteres.`);
   const { data, error } = await supabaseSessao().auth.updateUser({ password: senha });

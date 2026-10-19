@@ -1,7 +1,8 @@
-import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useAbaAtivaVisivel } from "@/hooks/useAbaAtivaVisivel";
 import { useAuth } from "@/contexts/AuthContext";
+import { useExigirLogin } from "@/hooks/useExigirLogin";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useSuporte } from "@/contexts/SuporteContext";
 import { ErroSecao, SkeletonPagina } from "@/components/ui";
@@ -33,10 +34,9 @@ const ITENS = [
 ] as const;
 
 function LayoutApp() {
-  const { usuario, autenticado } = useAuth();
+  const { usuario } = useAuth();
   const { naoLidas } = useNotifications();
   const { naoLidasParticipante } = useSuporte();
-  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.href });
   // O servidor não conhece a sessão guardada no navegador: mantém o esqueleto até
   // montar, para que o primeiro desenho do navegador coincida com o HTML recebido.
@@ -45,11 +45,7 @@ function LayoutApp() {
   const navRef = useRef<HTMLElement>(null);
   useAbaAtivaVisivel(navRef, `${pathname}|${montado && !!usuario}`);
 
-  useEffect(() => {
-    if (!autenticado) {
-      navigate({ to: "/login", search: { redirect: pathname } });
-    }
-  }, [autenticado, navigate, pathname]);
+  useExigirLogin("/app");
 
   if (!montado || !usuario) return <SkeletonPagina />;
 
