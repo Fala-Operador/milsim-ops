@@ -30,7 +30,7 @@ function Usuarios() {
       <h2 className="font-display text-lg font-semibold uppercase">Usuários</h2>
       {erro && <p role="alert" className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
       <div className="mt-3 overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="tabela-cards w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
               <th className="py-2 pr-3">Nome</th>
@@ -44,16 +44,16 @@ function Usuarios() {
           <tbody>
             {base.usuarios.map((u) => (
               <tr key={u.id} className="border-b border-border/50">
-                <td className="py-2 pr-3">{u.nomeCompleto}</td>
-                <td className="py-2 pr-3">{u.email}</td>
-                <td className="py-2 pr-3 font-mono text-xs">{mascararCpf(u.cpf)}</td>
-                <td className="py-2 pr-3">{u.perfil}</td>
-                <td className="py-2 pr-3">
+                <td className="py-2 pr-3 font-medium md:font-normal">{u.nomeCompleto}</td>
+                <td data-rotulo="E-mail" className="py-2 pr-3 break-all">{u.email}</td>
+                <td data-rotulo="CPF" className="py-2 pr-3 font-mono text-xs">{mascararCpf(u.cpf)}</td>
+                <td data-rotulo="Perfil" className="py-2 pr-3">{u.perfil}</td>
+                <td data-rotulo="Status" className="py-2 pr-3">
                   <Badge tom={u.ativo ? "sucesso" : "perigo"}>{u.ativo ? "Ativo" : "Inativo"}</Badge>
                   {u.autorizacaoResponsavel === "pendente" && <Badge tom="aviso">Autorização pendente</Badge>}
                 </td>
-                <td className="py-2">
-                  <div className="flex gap-1">
+                <td className="celula-acoes py-2">
+                  <div className="flex flex-wrap gap-1">
                     {u.autorizacaoResponsavel === "pendente" && (
                       <Botao variante="contorno" onClick={() => aprovarAutorizacaoResponsavel(u.id).then(() => setVersao((v) => v + 1))}>
                         Aprovar autorização

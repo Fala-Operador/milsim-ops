@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useAbaAtivaVisivel } from "@/hooks/useAbaAtivaVisivel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSuporte } from "@/contexts/SuporteContext";
 import { ErroSecao, SkeletonPagina } from "@/components/ui";
@@ -52,6 +53,8 @@ function LayoutOrganizacao() {
 
   useEffect(() => setMontado(true), []);
   const endereco = useRouterState({ select: (s) => s.location.href });
+  const navRef = useRef<HTMLElement>(null);
+  useAbaAtivaVisivel(navRef, `${endereco}|${montado && !!usuario}`);
   // Sem sessão: pede login e volta ao mesmo endereço (permissão revalidada depois).
   useEffect(() => {
     if (montado && !usuario) navigate({ to: "/login", search: { redirect: endereco } });
@@ -70,15 +73,16 @@ function LayoutOrganizacao() {
       <h1 className="font-display text-2xl font-semibold uppercase">Minha organização</h1>
       <div className="mt-4 flex flex-col gap-6 md:flex-row">
         <nav
+          ref={navRef}
           aria-label="Seções da organização"
-          className="flex gap-1 overflow-x-auto border-b border-border md:w-48 md:shrink-0 md:flex-col md:border-b-0 md:border-r md:pr-3"
+          className="abas-rolaveis relative -mx-4 flex gap-1 border-b border-border px-4 md:mx-0 md:w-48 md:shrink-0 md:flex-col md:overflow-visible md:border-b-0 md:border-r md:px-0 md:pr-3"
         >
           {itens.map((item) => (
             <Link
               key={item.to}
               to={item.to}
               activeOptions={{ exact: "exato" in item }}
-              className="flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
+              className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
               activeProps={{ className: "bg-secondary !text-foreground shadow-[inset_3px_0_0_var(--color-primary)]", "aria-current": "page" }}
             >
               <item.icone className="h-4 w-4" />

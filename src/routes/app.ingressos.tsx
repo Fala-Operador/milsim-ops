@@ -70,8 +70,8 @@ function MeusIngressos() {
             const exercito = evento?.exercitos.find((e) => e.id === ins.exercitoId);
             return (
               <Cartao key={ins.id}>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
                     <h2 className="font-medium">{evento?.nome ?? "Evento"}</h2>
                     <p className="text-sm text-muted-foreground">
                       {evento && `${formatarDataBR(evento.inicioEm)} · ${evento.cidade}/${evento.uf}`}
@@ -87,18 +87,18 @@ function MeusIngressos() {
                           : `Valor: ${formatarBRL(ins.valorCentavos - ins.descontoCentavos)}`}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:block sm:shrink-0 sm:text-right">
                     <Badge tom={tomStatus[ins.status]}>
                       {ins.status === "confirmada" ? "Confirmada" : ins.status === "estornada" ? "Estornada" : "Cancelada"}
                     </Badge>
-                    <p className="mt-2 font-mono text-sm text-accent">{ins.codigo}</p>
-                    <p className="text-[11px] text-muted-foreground">Código do ingresso — sem dados pessoais</p>
+                    <p className="font-mono text-sm text-accent sm:mt-2">{ins.codigo}</p>
+                    <p className="w-full text-[11px] text-muted-foreground">Código do ingresso — sem dados pessoais</p>
                   </div>
                 </div>
                 {ins.status === "confirmada" && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Botao onClick={() => setQrDe(ins)}><QrCode className="h-4 w-4" />Abrir QR Code de entrada</Botao>
-                    <Botao variante="contorno" onClick={() => setCancelando(ins)}>
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    <Botao className="w-full sm:w-auto" onClick={() => setQrDe(ins)}><QrCode className="h-4 w-4" />Abrir QR Code de entrada</Botao>
+                    <Botao className="w-full sm:w-auto" variante="contorno" onClick={() => setCancelando(ins)}>
                       Cancelar inscrição
                     </Botao>
                   </div>
@@ -123,7 +123,7 @@ function MeusIngressos() {
           />
         </div>
         {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
-        <div className="mt-4 flex justify-end gap-2">
+        <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Botao variante="fantasma" onClick={() => setCancelando(null)}>Voltar</Botao>
           <Botao variante="perigo" onClick={aoCancelar}>Confirmar cancelamento</Botao>
         </div>

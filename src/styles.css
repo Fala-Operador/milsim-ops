@@ -33,6 +33,103 @@
   background: transparent;
 }
 
+/* Rolagem horizontal das abas de navegação no celular (sem barra visível). */
+.abas-rolaveis {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.abas-rolaveis::-webkit-scrollbar {
+  display: none;
+}
+
+/*
+ * Tabela mobile first: no celular cada linha vira um cartão e cada célula mostra
+ * o rótulo de `data-rotulo`; a partir de md (48rem) volta a ser tabela.
+ * Em @layer components para que utilitários das células (alinhamento, cores) continuem valendo.
+ */
+@layer components {
+  .tabela-cards thead {
+    display: none;
+  }
+  .tabela-cards,
+  .tabela-cards tbody,
+  .tabela-cards tr,
+  .tabela-cards td {
+    display: block;
+    width: 100%;
+  }
+  .tabela-cards tr {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg, 0.5rem);
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .tabela-cards td {
+    padding: 0.25rem 0;
+    text-align: left;
+  }
+  .tabela-cards td[data-rotulo] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem 0.5rem;
+  }
+  .tabela-cards td[data-rotulo]::before {
+    content: attr(data-rotulo);
+    margin-right: auto;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+  .tabela-cards td[data-rotulo] > * {
+    text-align: right;
+  }
+  .tabela-cards td.celula-acoes > * {
+    justify-content: flex-start;
+  }
+  .tabela-cards td.celula-acoes {
+    padding-top: 0.5rem;
+  }
+
+  @media (min-width: 48rem) {
+    .tabela-cards {
+      display: table;
+    }
+    .tabela-cards thead {
+      display: table-header-group;
+    }
+    .tabela-cards tbody {
+      display: table-row-group;
+    }
+    .tabela-cards tr {
+      display: table-row;
+      border-width: 0 0 1px;
+      border-radius: 0;
+      padding: 0;
+      margin: 0;
+    }
+    .tabela-cards td,
+    .tabela-cards td[data-rotulo] {
+      display: table-cell;
+      width: auto;
+      padding: 0.5rem 0.75rem 0.5rem 0;
+    }
+    .tabela-cards td[data-rotulo]::before {
+      content: none;
+    }
+    .tabela-cards td[data-rotulo] > * {
+      text-align: inherit;
+    }
+    .tabela-cards td.celula-acoes > * {
+      justify-content: inherit;
+    }
+  }
+}
+
 /*
  * Sistema de design — identidade militar.
  * Dark: verde-oliva militar. Light: TAN militar.
@@ -150,6 +247,24 @@
   :focus-visible {
     outline: 2px solid var(--color-ring);
     outline-offset: 2px;
+  }
+
+  /* Seletor de arquivo nativo com a cara dos botões do app (o rótulo segue o idioma do aparelho). */
+  input[type="file"] {
+    max-width: 100%;
+    font-size: 0.875rem;
+    color: var(--color-muted-foreground);
+  }
+  input[type="file"]::file-selector-button {
+    margin-right: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: calc(var(--radius) - 2px);
+    background-color: var(--color-secondary);
+    color: var(--color-foreground);
+    padding: 0.375rem 0.75rem;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
   }
 }
 

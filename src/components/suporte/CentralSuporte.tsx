@@ -245,7 +245,7 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                 )}
               </div>
               {modo === "equipe" && (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <Selecao
                     aria-label="Filtrar por evento"
                     value={filtro.evento}
