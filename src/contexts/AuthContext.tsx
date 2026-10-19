@@ -5,6 +5,7 @@ import { carregarBase } from "@/services/db";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { usuarioIdDaVisao } from "@/api/cliente";
 import { cadastrar, entrar, recarregarVisao, sair } from "@/api/sessao.functions";
+import { encerrarStripeConnect } from "@/components/PaineisStripe";
 
 /** Estado da carga inicial da visão (dados do servidor). */
 export type EstadoCarga = "carregando" | "pronto" | "erro";
@@ -69,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    await encerrarStripeConnect();
     await sair();
   }, []);
 

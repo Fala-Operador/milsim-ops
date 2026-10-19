@@ -7,7 +7,7 @@ import { Banknote, Check, Clock, ExternalLink, TriangleAlert } from "lucide-reac
 import { abrirPainelStripe, atualizarRecebimento, cadastrarRecebimento, configuracaoRepasse } from "@/api/repasses.functions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AvisosStripe, CadastroStripeEmbutido, PaineisStripe } from "@/components/PaineisStripe";
+import { CadastroStripeEmbutido, PaineisStripe } from "@/components/PaineisStripe";
 import { SaldoRecebimento } from "@/components/SaldoRecebimento";
 import { ROTULO_RECEBIMENTO, taxaDaPlataforma } from "@/lib/repasses";
 import { carregarBase } from "@/services/db";
@@ -119,7 +119,6 @@ export function RecebimentosOrganizacao({ organizacao, retorno }: { organizacao:
         )}
       </div>
       {cadastrando && <CadastroStripeEmbutido organizacaoId={organizacao.id} aoSair={aoSairDoCadastro} />}
-      {embutido && rec && !cadastrando && <AvisosStripe organizacaoId={organizacao.id} />}
       {config && rec?.status === "ativa" && (
         <>
           <div className="mt-4 border-t border-border pt-4">
