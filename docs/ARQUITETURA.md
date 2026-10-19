@@ -25,7 +25,7 @@ recorte da base que essa pessoa pode ver.
 ```
  Navegador                                     Servidor (TanStack Start / Nitro)                  Supabase
 ┌──────────────────────────┐   server fn    ┌──────────────────────────────────────────┐   RPC   ┌───────────────┐
-│ páginas (src/routes)     │ ─────────────▶ │ src/api/*.functions.ts  (zod, identidade) │ ──────▶ │ exportar_base │
+│ páginas (src/routes)     │ ─────────────▶ │ src/api/*.functions.ts  (zod, identidade) │ ──────▶ │ export_base   │
 │ carregarBase() = visão   │                │ src/server/unidade.server.ts              │         │ aplicar_      │
 │ (somente leitura)        │ ◀───────────── │  ├ lê base → roda serviço → envia mídia   │ ◀────── │  mudancas     │
 │ src/api/cliente.ts       │ {resultado,    │  └ grava diferenças (1 transação)         │         │ Auth · Storage│
@@ -80,14 +80,14 @@ LimiteErroRaiz
 2. A server function valida a entrada com **zod** e chama `mutar(fn)`.
 3. `mutar` (`src/server/unidade.server.ts`):
    1. lê o `sub` do JWT da sessão (`supabase.auth.getClaims()`; nunca `getSession`);
-   2. carrega a base inteira com a RPC `exportar_base` (uma ida ao banco) e a versão atual;
+   2. carrega a base inteira com a RPC `export_base` (uma ida ao banco) e a versão atual;
    3. identifica o usuário **ativo**; desativado = visitante;
    4. executa `fn` dentro de um `AsyncLocalStorage`, de modo que `carregarBase()`/`mutarBase()`
       dos serviços passam a apontar para a base desta requisição;
    5. envia ao Storage os data URLs base64 encontrados nos registros alterados
       (`src/server/midia.ts`) e os troca pela URL pública;
    6. calcula o lote mínimo de mudanças (`calcularMudancas`, em `src/lib/persistencia.ts`) e grava
-      com a RPC `aplicar_mudancas(lote, versão)`, numa **única transação**;
+      com a RPC `apply_changes(lote, versão)`, numa **única transação**;
    7. se outra escrita entrou no meio, a RPC falha com o código próprio `MS409` e o ciclo
       recomeça (até 4 vezes, com espera crescente e aleatória). **Nunca use `40001`** em
       funções chamadas pela API: o PostgREST repete transações com esse código sem limite,
@@ -97,9 +97,9 @@ LimiteErroRaiz
 4. O wrapper (`chamar` em `src/api/cliente.ts`) aplica a visão nova ao snapshot do navegador, e as
    telas re-renderizam via `useVersaoBase()`.
 
-O controle de concorrência é **otimista e global** (tabela `controle_base`): escritas são
+O controle de concorrência é **otimista e global** (tabela `base_control`): escritas são
 serializadas, e regras como "vagas restantes" e "uma inscrição ativa" são verificadas sobre
-dados atuais. O índice único parcial `inscricoes_uma_ativa_por_evento` reforça essa última
+dados atuais. O índice único parcial `inscricoes_uma_ativa_por_evento` (em `registrations`) reforça essa última
 regra no próprio banco.
 
 ### 3.2 Leitura
@@ -128,7 +128,7 @@ registrado no log do servidor e vira "Não foi possível concluir a operação".
 | Sair | `signOut`, que limpa os cookies. |
 | Recuperar senha | `resetPasswordForEmail` com retorno para `/recuperar-senha`. O e-mail usa o template em português `supabase/templates/recuperar-senha.html` (publicado com `npx supabase config push`), com link `?token_hash=…&type=recovery`: a página valida com `verifyOtp` (funciona em qualquer aparelho) e define a nova senha (`updateUser`). Links antigos com `?code=` (PKCE, mesmo navegador) continuam aceitos. |
 
-- `usuarios.id` é o mesmo `id` de `auth.users`. Perfil, papel (`admin`/`organizador`/`participante`)
+- `users.id` é o mesmo `id` de `auth.users`. Perfil, papel (`admin`/`organizador`/`participante`)
   e organização ficam na tabela `usuarios`, **nunca** em `user_metadata`.
 - A identidade é sempre a da sessão. As APIs ignoram qualquer `usuarioId`/`perfil` vindo do navegador.
 - Supabase Auth: `site_url` e URLs de retorno configurados para `http://localhost:8080`
@@ -148,7 +148,7 @@ registrado no log do servidor e vira "Não foi possível concluir a operação".
 - **RLS ativo em todas as tabelas, sem policies**: `anon` e `authenticated` não leem nem gravam
   nada (verificado: a chave publicável recebe `42501`).
 - Privilégios só para `service_role`, usado pelo servidor com `SUPABASE_SECRET_KEY`.
-- RPCs `exportar_base`, `aplicar_mudancas` e `tabelas_base`: `EXECUTE` só para `service_role`,
+- RPCs `export_base`, `apply_changes` e `base_tables`: `EXECUTE` só para `service_role`,
   `search_path` vazio, `SECURITY INVOKER`.
 - Bucket `midia`: leitura pública por URL; upload só pelo servidor. Tipos permitidos: jpeg,
   png, webp, gif e pdf; tamanho máximo de 10 MB (PDF até 5 MB, validado no servidor).
@@ -158,33 +158,40 @@ registrado no log do servidor e vira "Não foi possível concluir a operação".
 
 ### 5.2 Convenções
 
-- Uma coluna por campo de primeiro nível dos tipos de `src/lib/domain/types.ts`, em snake_case;
-  listas e objetos aninhados ficam em `jsonb` (exércitos, tipos, lotes, cronograma, regras,
-  links, destaques...).
-- Ids em texto gerados pela aplicação (prefixo + tempo + aleatório). A exceção é `usuarios.id`,
+- Tabelas e colunas em **inglês** (snake_case); o código de domínio continua em português. A
+  correspondência campo → coluna fica só em `src/lib/esquemaBanco.ts`, usada pelo mapeador de
+  `src/lib/persistencia.ts` na leitura e na gravação.
+- **Sem `jsonb`**: cada lista ou objeto aninhado dos tipos é uma tabela filha com a chave do pai
+  (listas também com `position`, a ordem do item), ex.: `event_factions`, `event_ticket_types`,
+  `event_ticket_batches` → `event_ticket_batch_items`, `registration_payments` →
+  `registration_payment_disputes`. Objetos pequenos dentro de uma filha (recortes da imagem,
+  anexo e ação de uma mensagem, destino do banner) são colunas dela. Um teste pgTAP garante que
+  não há coluna json/jsonb.
+- Valores enumerados (status, tipos, origens) continuam em português: são dados, não nomes.
+- Ids em texto gerados pela aplicação (prefixo + tempo + aleatório). A exceção é `users.id`,
   que é `uuid`.
 - Datas em `timestamptz`. O mapeador devolve no formato de `toISOString()`.
 - Chaves estrangeiras `DEFERRABLE INITIALLY DEFERRED`, para que o lote seja aplicado em qualquer
-  ordem. Filhos de `eventos` usam `on delete cascade`. `auditoria.autor_id` e
-  `moderacao.autor_id` são texto livre, para a trilha sobreviver à remoção do alvo.
+  ordem. Filhos de `events` e as tabelas filhas usam `on delete cascade`. `audit_logs.author_id` e
+  `moderation_logs.author_id` são texto livre, para a trilha sobreviver à remoção do alvo.
 - Índices em todas as chaves estrangeiras.
 
 ### 5.3 Tabelas
 
-| Grupo | Tabelas |
+| Grupo | Tabelas (filhas entre parênteses) |
 |---|---|
-| Contas | `usuarios`, `organizacoes`, `solicitacoes` |
-| Eventos e vendas | `eventos`, `inscricoes`, `cupons`, `cortesias`, `movimentacoes` |
-| Engajamento | `missoes`, `entregas`, `comunicados`, `comentarios` |
-| Suporte e governança | `chamados`, `notificacoes`, `auditoria`, `privacidade` |
-| Comunidade | `foruns`, `publicacoes`, `respostas`, `curtidas`, `denuncias`, `preferencias_forum`, `restricoes_comunidade`, `moderacao`, `visitas_comunidade` |
-| Divulgação | `parceiros`, `secoes_inicio`, `impulsionamentos` |
-| Check-in | `checkins` (base de referência da portaria) |
-| Perfil e gamificação | `perfis_operador`, `equipamentos`, `fotos_perfil`, `insignias`, `concessoes_insignia`, `campanhas_recompensa`, `vouchers`, `correcoes_participacao` |
-| Pagamentos | `configuracoes_plataforma` (taxa); os dados do Stripe ficam em `inscricoes.pagamento` e `organizacoes.recebimento` (jsonb) |
-| Documentos privados (fora da base transacional) | `documentos_privados` (metadados das notas fiscais; nunca na visão) |
-| Métricas (fora da base transacional) | `analytics_registros` (append-only), `campanhas` |
-| Controle | `controle_base` (versão global) |
+| Contas | `users` (`user_addresses`, `user_notification_settings` → `user_support_reads`, `user_modality_preferences` → `user_preferred_modalities`), `organizations` (`organization_payout_accounts` → `organization_payout_requirements`), `organizer_requests` |
+| Eventos e vendas | `events` (`event_images`, `event_factions`, `event_ticket_types`, `event_ticket_batches` → `event_ticket_batch_items`, `event_schedule_items`, `event_rules_documents`), `registrations` (`registration_payments` → `registration_payment_disputes`), `coupons` (`coupon_eligible_ticket_types`), `complimentary_tickets`, `financial_transactions` |
+| Engajamento | `missions`, `mission_submissions`, `announcements`, `announcement_comments` |
+| Suporte e governança | `support_tickets` (`support_ticket_messages` → `support_message_shared_attachments`), `notifications`, `audit_logs`, `privacy_requests` |
+| Comunidade | `forums`, `forum_posts` (`forum_post_images`), `forum_replies` (`forum_reply_images`), `forum_post_likes`, `community_reports`, `forum_preferences`, `community_restrictions`, `moderation_logs`, `community_visits` |
+| Divulgação | `partners` (`partner_links`), `home_sections` (`home_section_geo_scopes`, `home_section_schedules`, `home_section_highlights`, `home_section_auto_selections`, `home_section_partners`, `home_section_banners`), `event_boosts` (`event_boost_placements`, `event_boost_geo_scopes`) |
+| Check-in | `check_ins` (base de referência da portaria) |
+| Perfil e gamificação | `operator_profiles` (`operator_profile_privacy`, `operator_profile_hidden_events`), `equipment` (`equipment_photos`, `equipment_invoices`), `profile_photos`, `badges` (`badge_criteria`), `badge_awards` (`badge_award_criteria`), `reward_campaigns` (`reward_campaign_eligible_events`, `reward_campaign_eligible_ticket_types`), `vouchers` (`voucher_benefits` → `voucher_benefit_eligible_events`, `voucher_benefit_eligible_ticket_types`), `attendance_corrections` |
+| Pagamentos | `platform_settings` (taxa); os dados do Stripe ficam em `registration_payments` e `organization_payout_accounts` |
+| Documentos privados (fora da base transacional) | `private_documents` (metadados das notas fiscais; nunca na visão) |
+| Métricas (fora da base transacional) | `analytics_events` (append-only), `marketing_campaigns` |
+| Controle | `base_control` (versão global) |
 
 ### 5.4 Mudando o schema
 
@@ -194,8 +201,9 @@ As migrations ficam em `supabase/migrations/` e são aplicadas pelo **GitHub Act
 
 1. `npx supabase migration new <nome>`: RLS ligado, sem policies, `grant` só para `service_role`.
    O carimbo de data precisa ser **posterior** à última migration aplicada.
-2. Atualize o tipo em `src/lib/domain/types.ts`, `TABELAS` em `src/lib/persistencia.ts` e,
-   se for uma tabela transacional nova, a lista em `tabelas_base()` (SQL).
+2. Atualize o tipo em `src/lib/domain/types.ts`, o mapeamento em `src/lib/esquemaBanco.ts` (nome
+   em inglês de cada coluna; lista ou objeto aninhado = tabela filha) e, se for uma tabela
+   transacional nova, a lista em `base_tables()` (SQL); o teste de `persistencia` compara as duas.
 3. Filtre a nova coleção em `visaoParaUsuario` e cubra com teste.
 4. Aplique com `npx supabase db push --linked` (ou deixe o deploy aplicar) e rode
    `npx supabase db advisors --linked`. **Nunca** aplique uma migration à mão (`db query -f`, psql):
@@ -290,7 +298,7 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   `organizacao.recebimento` (`lib/repasses.ts`, gravada por `services/repasses.ts`, atualizada no
   retorno do cadastro e pelo webhook de Connect `account.updated`) e só aparece na visão de quem
   gere a organização. Na reserva, se a conta tem transferências ativas, o pagamento guarda
-  `contaDestino` e `taxaCentavos` (taxa da tabela `configuracoes_plataforma`, editada em
+  `contaDestino` e `taxaCentavos` (taxa da tabela `platform_settings`, editada em
   Administração → Pagamentos); o checkout vira cobrança
   com destino (`transfer_data.destination` + `application_fee_amount`). Sem conta ativa, o valor
   fica na plataforma e aparece no financeiro como "repasse à parte". O reembolso de venda

@@ -21,7 +21,7 @@ Server functions (zod + identidade da sessão)
    │  mutar / ler  (src/server/unidade.server.ts)
    ▼
 Regras: src/lib (puras) + src/services (aplicam na base)  ── docs/regras-de-negocio.md
-   │  1 transação por escrita (aplicar_mudancas)
+   │  1 transação por escrita (apply_changes)
    ▼
 Supabase: Postgres (RLS fechado), Auth, Storage (midia público, documentos privado)
 Stripe: Checkout, reembolsos e Connect (webhook via Edge Function)
