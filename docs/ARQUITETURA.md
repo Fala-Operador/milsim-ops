@@ -292,10 +292,15 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   repassada usa `reverse_transfer` e `refund_application_fee`. Com a conta ativa, Financeiro lê
   do Stripe (cabeçalho `Stripe-Account`, cache de 60 s no servidor, nada vai para a base nem
   para a visão) saldo, saques, cronograma e banco (`consultarSaldoRecebimento`, resumo puro em
-  `resumoSaldo`). Com `STRIPE_PUBLISHABLE_KEY`, mostra também os componentes embutidos do
-  Stripe (`components/PaineisStripe.tsx`, `connect.js` carregado do Stripe, Account Session
-  criada em `sessaoComponentesStripe` com reembolso e disputa desligados, porque o estorno passa
-  pelo cancelamento da inscrição). Contestações (`charge.dispute.*`) ficam em
+  `resumoSaldo`). Com `STRIPE_PUBLISHABLE_KEY`, o recebimento todo fica no site com os
+  componentes embutidos do Stripe (`components/PaineisStripe.tsx`, `connect.js` carregado do
+  Stripe): `account-onboarding` no cadastro (a conta Express é criada na primeira sessão),
+  `notification-banner` para pendências e, no painel, `payouts`, `payments` e
+  `account-management`. A Account Session (`sessaoComponentesStripe`) tem reembolso e disputa
+  desligados, porque o estorno passa pelo cancelamento da inscrição. Contas Express exigem a
+  autenticação do Stripe numa janela própria; sem ela só com contas em que a plataforma coleta
+  os requisitos (`controller.requirement_collection = application`), assumindo o risco de saldo
+  negativo. Contestações (`charge.dispute.*`) ficam em
   `pagamento.disputa` (`registrarDisputaNaBase`) e aparecem como aviso no Financeiro.
 - **Organizador** (`services/organizador.ts`): validação de publicação, capacidade nunca abaixo
   da ocupação (confirmadas + reservas vigentes), auditoria de modalidade, cancelamento com

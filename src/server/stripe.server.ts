@@ -161,21 +161,25 @@ export async function saquesDaConta(contaId: string, limite = 10): Promise<Saque
 }
 
 /**
- * Account Session para os componentes embutidos (saques e pagamentos). Reembolso, disputa
- * e captura ficam desligados: o estorno precisa passar pelo cancelamento da inscrição.
+ * Account Session para os componentes embutidos: cadastro, avisos e dados da conta sempre;
+ * saques e pagamentos só com a conta ativa. Reembolso, disputa e captura ficam desligados:
+ * o estorno precisa passar pelo cancelamento da inscrição.
  */
-export function criarSessaoDeConta(contaId: string): Promise<{ client_secret: string; expires_at?: number }> {
+export function criarSessaoDeConta(contaId: string, ativa: boolean): Promise<{ client_secret: string; expires_at?: number }> {
   return chamarStripe("POST", "/account_sessions", {
     account: contaId,
     components: {
-      payouts: {
+      account_onboarding: { enabled: true, features: { external_account_collection: true } },
+      account_management: { enabled: true, features: { external_account_collection: true } },
+      notification_banner: { enabled: true, features: { external_account_collection: true } },
+      payouts: ativa ? {
         enabled: true,
         features: { instant_payouts: false, standard_payouts: false, edit_payout_schedule: false, external_account_collection: true },
-      },
-      payments: {
+      } : undefined,
+      payments: ativa ? {
         enabled: true,
         features: { refund_management: false, dispute_management: false, capture_payments: false },
-      },
+      } : undefined,
     },
   });
 }

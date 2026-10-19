@@ -49,7 +49,7 @@ bun run start                # servidor Node gerado pelo build (.output/server/i
 | `SUPABASE_DB_PASSWORD` | só para `supabase link` / `db push` |
 | `STRIPE_SECRET_KEY` | opcional, **somente servidor**: liga a venda pelo Stripe Checkout e o Stripe Connect (sem ela, inscrição confirmada sem cobrança) |
 | `MILSIM_WEBHOOK_SECRET` | segredo compartilhado entre a Edge Function `stripe-webhook` e o site (mesmo valor nos dois lados) |
-| `STRIPE_PUBLISHABLE_KEY` | opcional (`pk_...`), mostra os painéis embutidos do Stripe (saques e pagamentos) em Financeiro |
+| `STRIPE_PUBLISHABLE_KEY` | opcional (`pk_...`): o cadastro e a gestão do recebimento da organização acontecem dentro do site (componentes embutidos do Stripe) |
 | `LOVABLE_API_KEY` | opcional, habilita Admin › Insights IA |
 
 Na publicação, configure as variáveis do Supabase (e as do Stripe, se usar) como **segredos** do
@@ -141,7 +141,8 @@ backup completo como artefato da execução (30 dias). Detalhes em
   Os webhooks do Stripe chegam pela Edge Function `supabase/functions/stripe-webhook`, que confere
   a assinatura e repassa o evento à API do site (lista de eventos no cabeçalho da função).
   Com a conta ativa, Financeiro mostra saldo, próximos saques e banco lidos do Stripe e, com
-  `STRIPE_PUBLISHABLE_KEY`, os painéis embutidos do Stripe. Se o site ganhar uma CSP, libere
+  `STRIPE_PUBLISHABLE_KEY`, o cadastro da conta, os avisos, os dados bancários, os saques e os
+  pagamentos ficam embutidos no site. Se o site ganhar uma CSP, libere
   `https://connect-js.stripe.com` e `https://js.stripe.com` em `script-src` e `frame-src`.
   Contestações (chargebacks) ficam registradas no pagamento e aparecem em Financeiro.
 - **Mensagens externas**: sem e-mail transacional nem WhatsApp automático (o WhatsApp do evento
