@@ -68,11 +68,8 @@ bun run db:seed -- --limpar-contas              # idem, removendo também as con
   `SUPABASE_PROJECT_REF` (padrão: `fezrmoyjsffufdjptamp`).
 - Toda mudança de esquema é uma migration nova em `supabase/migrations/`, que precisa aplicar
   num banco vazio. Não altere o banco à mão: o histórico da CLI deixaria de bater.
-- **Uma vez só**, antes do primeiro deploy: as migrations que já foram aplicadas à mão (psql)
-  precisam ser marcadas no histórico, senão o deploy tenta recriar as tabelas. As que usam
-  `if not exists` podem rodar de novo; as duas abaixo não:
-  `npx supabase migration repair --status applied 20261013150728 20261013200000 --linked`
-  (`npx supabase migration list --linked` mostra o que já está registrado).
+- As migrations anteriores ao deploy automático foram aplicadas à mão (psql) e são idempotentes:
+  o primeiro deploy as reaplica sem efeito. Migrations novas não precisam ser idempotentes.
 
 ## Contas criadas pela seed
 
