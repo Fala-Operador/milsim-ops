@@ -9,7 +9,7 @@
 | Método | `POST` |
 | Acesso | Pública (quem tem o link do e-mail) |
 
-Valida o link do e-mail de recuperação (`?token_hash=…&type=recovery`) e abre a sessão de recuperação (`verifyOtp`). Usada pela página `/recuperar-senha` antes de mostrar o formulário de nova senha.
+Valida o link do e-mail de recuperação (`?token_hash=…&type=recovery`) e abre a sessão de recuperação (`verifyOtp`). Usada pela tela "Criar nova senha" (`/recuperar-senha`) antes de mostrar o formulário: nova senha com mostrar/ocultar, confirmação, requisitos ao vivo e tela de sucesso. Link vencido ou já usado mostra a explicação e o botão "Pedir um novo link".
 
 ## Entrada
 

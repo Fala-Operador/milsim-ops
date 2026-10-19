@@ -33,7 +33,7 @@ os avisos ficam nas notificações do app.
 bun install
 cp .env.example .env.local   # preencha as chaves do Supabase
 bun run dev                  # http://localhost:8080
-bun run test                 # 273 testes (regras, pagamentos, persistência, visão por perfil)
+bun run test                 # 277 testes (regras, pagamentos, persistência, visão por perfil)
 bun run typecheck
 bun run build
 bun run start                # servidor Node gerado pelo build (.output/server/index.mjs)

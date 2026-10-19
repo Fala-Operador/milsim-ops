@@ -126,7 +126,7 @@ registrado no log do servidor e vira "Não foi possível concluir a operação".
 | Entrar | `signInWithPassword` no cliente de sessão (cookies). Conta com perfil inativo é deslogada na hora. |
 | Cadastrar | `validarCadastro` (CPF, idade ≥ 15, termos...) → `auth.admin.createUser` (e-mail já confirmado) → `registrarPerfil` na unidade de trabalho (CPF/e-mail únicos). Se o perfil falhar, a conta do Auth é apagada. Depois faz login. |
 | Sair | `signOut`, que limpa os cookies. |
-| Recuperar senha | `resetPasswordForEmail` com retorno para `/recuperar-senha`. O e-mail usa o template em português `supabase/templates/recuperar-senha.html` (publicado com `npx supabase config push`), com link `?token_hash=…&type=recovery`: a página valida com `verifyOtp` (funciona em qualquer aparelho) e define a nova senha (`updateUser`). Links antigos com `?code=` (PKCE, mesmo navegador) continuam aceitos. |
+| Recuperar senha | `resetPasswordForEmail` com retorno para `/recuperar-senha`. O e-mail usa o template em português `supabase/templates/recuperar-senha.html` (publicado com `npx supabase config push`), com link `{{ .SiteURL }}/recuperar-senha?token_hash=…&type=recovery` (endereço do site, não o que o servidor vê atrás do proxy; se cair na página inicial, ela encaminha): a tela "Criar nova senha" valida com `verifyOtp` (funciona em qualquer aparelho) e define a nova senha (`updateUser`). Links antigos com `?code=` (PKCE, mesmo navegador) continuam aceitos. |
 
 - `users.id` é o mesmo `id` de `auth.users`. Perfil, papel (`admin`/`organizador`/`participante`)
   e organização ficam na tabela `usuarios`, **nunca** em `user_metadata`.
@@ -367,7 +367,7 @@ Regras detalhadas de cada área: [regras-de-negocio.md](regras-de-negocio.md).
 
 ## 10. Testes
 
-`bun run test`: 30 arquivos, 273 testes (os serviços rodam sobre uma base em memória).
+`bun run test`: 30 arquivos, 277 testes (os serviços rodam sobre uma base em memória).
 
 | Arquivo | Cobre |
 |---|---|

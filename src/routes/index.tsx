@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Crosshair, MapPin, Search } from "lucide-react";
 import { carregarBase } from "@/services/db";
@@ -29,6 +29,15 @@ import { Label } from "@/components/ui/label";
 interface BuscaInicio { q?: string | undefined; periodo?: "30d" | "90d" | undefined; mod?: string | undefined; ordem?: Ordenacao | undefined }
 
 export const Route = createFileRoute("/")({
+  // Link de recuperação de senha que caiu na página inicial (o Supabase usa o endereço do site
+  // quando o destino pedido não está na lista permitida): segue para a tela de nova senha.
+  beforeLoad: ({ location }) => {
+    const s = location.search as Record<string, unknown>;
+    if (typeof s["token_hash"] === "string" && (s["type"] === "recovery" || s["type"] === undefined)) {
+      throw redirect({ to: "/recuperar-senha", search: { token_hash: s["token_hash"], type: "recovery" } });
+    }
+    if (typeof s["code"] === "string") throw redirect({ to: "/recuperar-senha", search: { code: s["code"] } });
+  },
   head: () => ({
     meta: [
       { title: "MilSim Ops — Encontre sua próxima operação" },
