@@ -89,7 +89,7 @@ LimiteErroRaiz
       recomeça (até 4 vezes, com espera crescente e aleatória). **Nunca use `40001`** em
       funções chamadas pela API: o PostgREST repete transações com esse código sem limite,
       o que prende conexões do pool e derruba a API (ver
-      `docs/migracoes/20261014193000_conflito_sem_retentativa.sql`);
+      `supabase/migrations/20261014193000_conflito_sem_retentativa.sql`);
    8. devolve `{ resultado, visão }`.
 4. O wrapper (`chamar` em `src/api/cliente.ts`) aplica a visão nova ao snapshot do navegador, e as
    telas re-renderizam via `useVersaoBase()`.
@@ -232,8 +232,35 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   exército, tipo, lote), cortesia **ou** lote + cupom. Gera o **token do QR** e grava as
   movimentações e a notificação. O cancelamento estorna, notifica e audita. O evento de métrica da
   confirmação é registrado pelo navegador depois do sucesso, porque depende da atribuição local.
+- **Pagamento de ingressos (Stripe Checkout)**: regras puras em `lib/pagamentos.ts` (reserva
+  vigente, o que ocupa vaga, o que a visão mostra) e `lib/stripe.ts` (assinatura do webhook,
+  eventos → ações); estados na base em `services/inscricoes.ts`; chamadas ao Stripe por `fetch`
+  em `server/stripe.server.ts` e a orquestração em `server/pagamentos.server.ts`, **sempre fora
+  de `mutar`** (que pode repetir a função). Com `STRIPE_SECRET_KEY` configurada, inscrição com
+  valor a pagar nasce `pendente` com `pagamento.status = "aguardando"` e reserva a vaga (e o uso
+  do cupom/benefício) por 32 min, o mesmo prazo da Checkout Session. Confirmam a inscrição o
+  webhook (Stripe → Edge Function `supabase/functions/stripe-webhook`, que confere a assinatura
+  do Stripe com os `whsec_` guardados no Supabase e repassa o evento assinado com
+  `MILSIM_WEBHOOK_SECRET` → `POST /api/stripe/webhook`, `routes/api.stripe.webhook.ts`) e o retorno do checkout
+  (`sincronizarPagamentoFn`), ambos idempotentes. Reserva expirada, pagamento recusado ou
+  cancelado liberam a vaga; pagamento que chega sem vaga possível é reembolsado. Cancelar uma
+  inscrição paga (ou o evento) marca `estorno_pendente`; depois de gravar, a API cria o
+  reembolso no Stripe (chave de idempotência por inscrição) e registra `estornado` ou o erro,
+  que é tentado de novo a cada webhook. Sem a chave, tudo continua como antes (confirmação
+  direta, sem cobrança).
+- **Repasse às organizações (Stripe Connect Express)**: cada organização cria pelo Financeiro
+  uma conta Express (cadastro hospedado pelo Stripe, `account_links`); a situação fica em
+  `organizacao.recebimento` (`lib/repasses.ts`, gravada por `services/repasses.ts`, atualizada no
+  retorno do cadastro e pelo webhook de Connect `account.updated`) e só aparece na visão de quem
+  gere a organização. Na reserva, se a conta tem transferências ativas, o pagamento guarda
+  `contaDestino` e `taxaCentavos` (taxa da tabela `configuracoes_plataforma`, editada em
+  Administração → Pagamentos); o checkout vira cobrança
+  com destino (`transfer_data.destination` + `application_fee_amount`). Sem conta ativa, o valor
+  fica na plataforma e aparece no financeiro como "repasse à parte". O reembolso de venda
+  repassada usa `reverse_transfer` e `refund_application_fee`.
 - **Organizador** (`services/organizador.ts`): validação de publicação, capacidade nunca abaixo
-  da ocupação, auditoria de modalidade, cancelamento com estorno em massa.
+  da ocupação (confirmadas + reservas vigentes), auditoria de modalidade, cancelamento com
+  estorno em massa (e reembolso no Stripe do que foi pago online).
 - **Check-in**: regras puras em `lib/checkin.ts`. A portaria valida e registra **no aparelho**
   (IndexedDB, funciona offline) e envia a fila por `sincronizarCheckins`. O servidor
   (`aplicarSincronizacao`) é idempotente por id, marca como conflito a segunda entrada ou

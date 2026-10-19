@@ -44,7 +44,7 @@ function NotificacoesOrganizacao() {
             Acompanhe solicitações, inscrições e novidades dos seus eventos.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Botao variante="contorno" onClick={() => setSoNaoLidas((v) => !v)}>
             {soNaoLidas ? "Mostrar todas" : `Somente não lidas (${naoLidas})`}
           </Botao>
@@ -64,8 +64,8 @@ function NotificacoesOrganizacao() {
           {lista.map((n) => (
             <li key={n.id}>
               <Cartao className={n.lida ? "opacity-70" : ""}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                  <div className="min-w-0">
                     <p className="font-medium">
                       {!n.lida && <span className="mr-2 inline-block h-2 w-2 rounded-full bg-accent" aria-label="Não lida" />}
                       {n.titulo}
@@ -83,7 +83,7 @@ function NotificacoesOrganizacao() {
                     )}
                   </div>
                   {!n.lida && (
-                    <Botao variante="fantasma" onClick={() => marcarLida(n.id)}>
+                    <Botao variante="fantasma" className="-ml-4 self-start sm:ml-0 sm:shrink-0" onClick={() => marcarLida(n.id)}>
                       Marcar como lida
                     </Botao>
                   )}

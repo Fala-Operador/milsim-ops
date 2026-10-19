@@ -1,12 +1,13 @@
-import { Check, Circle, UserCheck, X } from "lucide-react";
+import { Check, Circle, Clock, UserCheck, X } from "lucide-react";
 import { Badge } from "@/components/ui";
 import { ROTULO_STATUS_INSCRICAO } from "@/lib/inscritos";
 import type { Inscricao } from "@/lib/domain/types";
 import type { RegistroCheckin } from "@/lib/checkin";
 
 export function StatusInscricao({ status }: { status: Inscricao["status"] }) {
-  const Icone = status === "confirmada" ? Check : X;
-  return <Badge tom={status === "confirmada" ? "sucesso" : "perigo"} aria-label={`Inscrição: ${ROTULO_STATUS_INSCRICAO[status]}`}><Icone aria-hidden="true" />{ROTULO_STATUS_INSCRICAO[status]}</Badge>;
+  const Icone = status === "confirmada" ? Check : status === "pendente" ? Clock : X;
+  const tom = status === "confirmada" ? "sucesso" : status === "pendente" ? "aviso" : "perigo";
+  return <Badge tom={tom} aria-label={`Inscrição: ${ROTULO_STATUS_INSCRICAO[status]}`}><Icone aria-hidden="true" />{ROTULO_STATUS_INSCRICAO[status]}</Badge>;
 }
 
 export function StatusCheckin({ presenca }: { presenca: RegistroCheckin | undefined }) {

@@ -180,7 +180,7 @@ export async function mutar<T>(
       if (Object.keys(lote).length > 0) {
         const { error } = await supabaseAdmin().rpc("aplicar_mudancas", { p_mudancas: lote, p_versao: versao });
         invalidarCache(); // gravou (ou outra escrita entrou antes): a base em memória ficou velha
-        // MS409 = conflito de versão (docs/migracoes/20261014193000_conflito_sem_retentativa.sql).
+        // MS409 = conflito de versão (supabase/migrations/20261014193000_conflito_sem_retentativa.sql).
         // 40001 só em bancos sem essa migração — e lá o PostgREST repete sozinho, sem limite.
         if (error?.code === "MS409" || error?.code === "40001") {
           await esperarConflito(tentativa); // outra escrita entrou antes: refaz com a base nova

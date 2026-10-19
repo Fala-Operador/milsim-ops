@@ -1,6 +1,6 @@
 -- Cupons: "sem limite de utilizações" e "sem data de término" passam a ser opções
 -- explícitas (null), em vez de valores ambíguos como zero.
--- Aplicar com psql no banco do projeto.
+-- Aplicada pelo workflow de deploy (antes, à mão com psql).
 alter table public.cupons alter column limite_usos drop not null;
 alter table public.cupons alter column valido_ate drop not null;
 alter table public.cupons drop constraint if exists cupons_limite_usos_check;

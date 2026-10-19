@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import * as auth from "@/server/auth.server";
 import { consultar, ler } from "@/server/unidade.server";
+import { stripeConfigurado } from "@/server/stripe.server";
 import { chamar } from "@/api/cliente";
 import type { DadosCadastro } from "@/services/auth";
 
@@ -15,7 +16,8 @@ export const obterEventoFn = createServerFn({ method: "GET" })
     consultar((base) => {
       const evento = base.eventos.find((e) => e.id === data.eventoId) ?? null;
       const organizacao = evento ? base.organizacoes.find((o) => o.id === evento.organizacaoId) ?? null : null;
-      return { evento, organizacao };
+      // Com o Stripe configurado, inscrições pagas passam pelo checkout.
+      return { evento, organizacao, pagamentoOnline: stripeConfigurado() };
     }),
   );
 

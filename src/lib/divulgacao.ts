@@ -12,6 +12,7 @@ import type {
   SecaoInicial,
 } from "@/lib/domain/types";
 import { campanhasNaPosicao } from "@/lib/impulsionamento";
+import { ocupaVaga } from "@/lib/pagamentos";
 
 export const REGIOES: RegiaoBR[] = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
 
@@ -69,7 +70,7 @@ export function vigente(ag: Agendamento | undefined, agora: Date): boolean {
 }
 
 function vagas(base: BaseDados, e: Evento): number {
-  const ativas = base.inscricoes.filter((i) => i.eventoId === e.id && i.status === "confirmada").length;
+  const ativas = base.inscricoes.filter((i) => i.eventoId === e.id && ocupaVaga(i)).length;
   return e.capacidadeTotal - ativas;
 }
 

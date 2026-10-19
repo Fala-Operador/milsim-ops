@@ -18,7 +18,7 @@ export const Route = createFileRoute("/termos")({
         <p className="mt-2 text-sm text-muted-foreground">Versão {VERSAO_TERMOS}</p>
         <div className="mt-4 space-y-3 text-sm leading-relaxed">
           <p>1. O MilSim Ops é uma plataforma de divulgação e gestão de eventos de simulação militar. Cada evento é organizado e conduzido pela organização responsável indicada na página do evento.</p>
-          <p>2. A inscrição reserva a vaga no evento. Pagamentos não são processados pela plataforma; cancelamentos e estornos ficam registrados no histórico da inscrição.</p>
+          <p>2. A inscrição confirmada garante a vaga no evento. Quando há valor a pagar, a vaga fica reservada por cerca de 30 minutos enquanto o pagamento é concluído no ambiente do Stripe; a plataforma não recebe nem guarda dados de cartão. Cancelamentos geram reembolso integral no mesmo meio de pagamento e ficam registrados no histórico da inscrição.</p>
           <p>3. Ao se cadastrar, você declara que os dados informados são verdadeiros e se compromete a manter sua senha em sigilo.</p>
           <p>4. Na comunidade dos eventos, é proibido publicar ofensas, spam, dados pessoais de terceiros ou conteúdo inadequado. A organização e a administração podem ocultar conteúdos e suspender a participação, com registro da justificativa.</p>
           <p>5. Participantes de 15 a 17 anos dependem de autorização do responsável, aprovada pela administração, antes de se inscrever.</p>

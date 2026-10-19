@@ -1,6 +1,6 @@
 -- Perfil do operador, equipamentos, galeria, insígnias, campanhas e vouchers.
 -- Mesma convenção do esquema inicial: RLS ligado, sem políticas, acesso só pelo servidor.
--- Aplicada diretamente no banco do projeto (psql).
+-- Aplicada pelo workflow de deploy (antes, à mão com psql).
 
 create table public.perfis_operador (
   usuario_id uuid primary key references public.usuarios (id) on delete cascade deferrable initially deferred,
@@ -179,9 +179,13 @@ insert into public.insignias (id, nome, descricao, icone, criterio) values
 on conflict (id) do nothing;
 
 -- ===================== Dados demonstrativos =====================
+-- Só entram onde a seed já criou a organização demonstrativa (num banco novo, como o dos
+-- testes pgTAP, os eventos ficam de fora).
 insert into public.eventos (id, organizacao_id, nome, descricao_resumida, enredo, inicio_em, fim_em, fuso, local, endereco,
   cidade, uf, capacidade_total, exercitos, tipos, lotes, cronograma, modalidade, status)
-values
+select v.id, v.org, v.nome, v.resumo, v.enredo, v.inicio::timestamptz, v.fim::timestamptz, v.fuso, v.local, v.endereco,
+  v.cidade, v.uf, v.cap, v.exercitos::jsonb, v.tipos::jsonb, v.lotes::jsonb, v.cronograma::jsonb, v.modalidade, v.status
+from (values
   ('evt-pantanal', 'org-bravo', 'Operação Pantanal', 'Real action nas matas ciliares de Bonito.', 'Patrulhas ribeirinhas e resgate de suprimentos.',
    '2026-05-09 11:00:00+00', '2026-05-10 20:00:00+00', 'America/Campo_Grande', 'Fazenda Rio Formoso', 'Rodovia MS-178, km 12',
    'Bonito', 'MS', 60, '[{"id":"ex-p1","nome":"Onça","capacidade":30},{"id":"ex-p2","nome":"Tuiuiú","capacidade":30}]',
@@ -190,6 +194,8 @@ values
    '2026-03-14 12:00:00+00', '2026-03-14 21:00:00+00', 'America/Recife', 'Arena Velho Chico', 'Av. Cardoso de Sá, 900',
    'Petrolina', 'PE', 40, '[{"id":"ex-s1","nome":"Mandacaru","capacidade":20},{"id":"ex-s2","nome":"Carcará","capacidade":20}]',
    '[{"id":"tp-s1","nome":"Ingresso Padrão","precoBaseCentavos":8000,"quantidadeMaxima":40}]', '[]', '[]', 'speedsoft', 'concluido')
+) as v(id, org, nome, resumo, enredo, inicio, fim, fuso, local, endereco, cidade, uf, cap, exercitos, tipos, lotes, cronograma, modalidade, status)
+where exists (select 1 from public.organizacoes o where o.id = v.org)
 on conflict (id) do nothing;
 
 insert into public.inscricoes (id, evento_id, usuario_id, tipo_id, exercito_id, codigo, status, origem, valor_centavos, desconto_centavos, criado_em)

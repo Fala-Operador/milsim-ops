@@ -3,9 +3,11 @@ import { useEventoOrganizacao } from "@/contexts/OrganizationEventContext";
 import { carregarBase } from "@/services/db";
 import { disponibilidadeNaBase, resumoFinanceiro } from "@/services/inscricoes";
 import { TEXTO_MOTIVO } from "@/lib/vendas";
+import { resumoRepasse } from "@/lib/repasses";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { mascararCpf } from "@/lib/domain/validators";
 import { Badge, Botao, Selecao } from "@/components/ui";
+import { StatusInscricao } from "@/components/StatusInscricao";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import type { Evento } from "@/lib/domain/types";
@@ -81,7 +83,7 @@ export function TabelaInscritos({ eventoId }: { eventoId: string }) {
                   <td className="py-2 pr-3">{evento.exercitos.find((e) => e.id === i.exercitoId)?.nome}</td>
                   <td className="py-2 pr-3">{i.origem}</td>
                   <td className="py-2">
-                    <Badge tom={i.status === "confirmada" ? "sucesso" : "perigo"}>{i.status}</Badge>
+                    <StatusInscricao status={i.status} />
                   </td>
                 </tr>
               );
@@ -131,12 +133,36 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
     ["Cortesias emitidas / resgatadas", `${r.cortesiasEmitidas} / ${r.cortesiasResgatadas}`],
     ["Cupons utilizados", String(r.cuponsUtilizados)],
     ["Integralmente descontadas", String(r.integralmenteDescontadas)],
+    ["Reservas aguardando pagamento", String(r.reservasAguardando)],
   ];
+  // Vendas pagas online: quanto foi cobrado, a taxa retida e para onde foi o dinheiro.
+  const rep = resumoRepasse(carregarBase(), eventoId);
+  if (rep.cobrado > 0) {
+    itens.push(
+      ["Pago online (Stripe)", formatarBRL(rep.cobrado)],
+      ["Taxa da plataforma", formatarBRL(rep.taxas)],
+      ["Repassado à organização", formatarBRL(rep.repassado)],
+    );
+    if (rep.naPlataforma > 0) itens.push(["Com a plataforma (repasse à parte)", formatarBRL(rep.naPlataforma)]);
+  }
   return (
     <div>
       <p className="text-xs text-muted-foreground">
-        Valores derivados das inscrições, descontos e estornos registrados. Pagamentos não são processados pela plataforma.
+        Valores derivados das inscrições confirmadas, descontos e estornos registrados. Pagamentos online são
+        processados pelo Stripe; reservas aguardando pagamento ainda não entram nos valores.
       </p>
+      {r.reembolsosPendentes.length > 0 && (
+        <div role="status" className="mt-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">
+          <p className="font-medium">{r.reembolsosPendentes.length} reembolso(s) em andamento no Stripe</p>
+          <ul className="mt-1 space-y-0.5 text-xs">
+            {r.reembolsosPendentes.map((i) => (
+              <li key={i.id} className="break-words">
+                {i.codigo}: {i.pagamento?.erro ? `falha — ${i.pagamento.erro} (nova tentativa automática)` : "aguardando confirmação do Stripe"}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
         {itens.map(([rotulo, valor]) => (
           <div key={rotulo} className="rounded-md border border-border bg-elevated p-3">
@@ -148,9 +174,9 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
       <h3 className="mt-4 text-sm font-medium">Movimentações</h3>
       <ul className="mt-1 space-y-1 text-sm">
         {r.movimentacoes.map((m) => (
-          <li key={m.id} className="flex justify-between rounded border border-border/50 px-3 py-1.5">
-            <span className="text-muted-foreground">{m.descricao}</span>
-            <span className={`font-mono ${m.valorCentavos < 0 ? "text-destructive" : "text-success"}`}>
+          <li key={m.id} className="flex justify-between gap-3 rounded border border-border/50 px-3 py-1.5">
+            <span className="min-w-0 break-words text-muted-foreground">{m.descricao}</span>
+            <span className={`shrink-0 font-mono ${m.valorCentavos < 0 ? "text-destructive" : "text-success"}`}>
               {formatarBRL(m.valorCentavos)}
             </span>
           </li>

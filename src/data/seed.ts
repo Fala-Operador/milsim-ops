@@ -70,6 +70,7 @@ function criarBaseLegada(): BaseSemComunidade {
   return {
     versao: VERSAO_BASE,
     impulsionamentos: [],
+    configuracoes: [],
     usuarios: [
       {
         id: adminId,

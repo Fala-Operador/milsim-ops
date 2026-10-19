@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useAbaAtivaVisivel } from "@/hooks/useAbaAtivaVisivel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useSuporte } from "@/contexts/SuporteContext";
@@ -41,6 +42,8 @@ function LayoutApp() {
   // montar, para que o primeiro desenho do navegador coincida com o HTML recebido.
   const [montado, setMontado] = useState(false);
   useEffect(() => setMontado(true), []);
+  const navRef = useRef<HTMLElement>(null);
+  useAbaAtivaVisivel(navRef, `${pathname}|${montado && !!usuario}`);
 
   useEffect(() => {
     if (!autenticado) {
@@ -52,13 +55,17 @@ function LayoutApp() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 lg:flex-row">
-      <aside className="lg:w-56">
-        <nav aria-label="Área do participante" className="flex flex-wrap gap-1 lg:flex-col">
+      <aside className="min-w-0 lg:w-56 lg:shrink-0">
+        <nav
+          ref={navRef}
+          aria-label="Área do participante"
+          className="abas-rolaveis relative -mx-4 flex gap-1 border-b border-border px-4 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:border-b-0 lg:px-0 lg:pb-0"
+        >
           {ITENS.map((item) => (
             <Link
               key={item.to}
               to={item.to}
-              className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
+              className="inline-flex shrink-0 items-center whitespace-nowrap rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
               activeOptions={{ exact: item.to === "/app" }}
               activeProps={{ className: "bg-secondary text-foreground font-medium" }}
             >

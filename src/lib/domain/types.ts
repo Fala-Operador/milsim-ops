@@ -48,6 +48,30 @@ export interface Organizacao {
   responsavelId: string;
   status: "ativa" | "suspensa";
   criadoEm: string;
+  /** Conta conectada (Stripe Connect Express) que recebe o repasse das vendas. */
+  recebimento?: RecebimentoOrganizacao | undefined;
+}
+
+/**
+ * Situação da conta de recebimento, espelhada do Stripe (accounts.retrieve / account.updated):
+ *  - pendente: cadastro iniciado, ainda faltam dados no Stripe;
+ *  - em_analise: dados enviados, Stripe verificando;
+ *  - ativa: pode receber transferências e sacar para a conta bancária;
+ *  - restrita: o Stripe pediu mais informações ou bloqueou repasses.
+ */
+export type StatusRecebimento = "pendente" | "em_analise" | "ativa" | "restrita";
+
+export interface RecebimentoOrganizacao {
+  provedor: "stripe";
+  contaId: string; // acct_...
+  status: StatusRecebimento;
+  /** Transferências habilitadas: as vendas já podem ser repassadas para a conta. */
+  transferenciasAtivas: boolean;
+  /** Saques para a conta bancária habilitados. */
+  saquesAtivos: boolean;
+  /** Pendências que o Stripe pede (requirements.currently_due), para orientar o organizador. */
+  pendencias: string[];
+  atualizadoEm: string;
 }
 
 export type StatusSolicitacao =
@@ -178,9 +202,40 @@ export interface Evento {
 }
 
 export type StatusInscricao =
+  | "pendente" // vaga reservada aguardando o pagamento (Stripe)
   | "confirmada"
   | "cancelada"
   | "estornada";
+
+/**
+ * Pagamento online de uma inscrição (Stripe Checkout). Só existe em inscrições pagas
+ * criadas com o Stripe configurado; cortesias e valores zerados não passam por aqui.
+ *  - aguardando: sessão de checkout aberta, vaga reservada até `expiraEm`;
+ *  - processando: pagamento assíncrono (ex.: boleto) enviado, aguardando compensação;
+ *  - pago: confirmado pelo Stripe;
+ *  - expirado / falhou / cancelado: reserva liberada sem cobrança (prazo, recusa ou desistência);
+ *  - estorno_pendente: inscrição cancelada, reembolso ainda não confirmado pelo Stripe;
+ *  - estornado: reembolso criado no Stripe.
+ */
+export type StatusPagamento = "aguardando" | "processando" | "pago" | "expirado" | "falhou" | "cancelado" | "estorno_pendente" | "estornado";
+
+export interface PagamentoInscricao {
+  provedor: "stripe";
+  status: StatusPagamento;
+  /** Valor cobrado (valor do ingresso menos descontos), em centavos. */
+  valorCentavos: number;
+  /** Fim da reserva da vaga enquanto o pagamento não é concluído. */
+  expiraEm: string;
+  sessaoId?: string | undefined; // Checkout Session (cs_...)
+  intencaoId?: string | undefined; // PaymentIntent (pi_...)
+  pagoEm?: string | undefined;
+  reembolsoId?: string | undefined; // Refund (re_...)
+  erro?: string | undefined; // última falha ao falar com o Stripe (ex.: estorno recusado)
+  /** Conta da organização que recebe o repasse (cobrança com destino); ausente = fica na plataforma. */
+  contaDestino?: string | undefined;
+  /** Taxa da plataforma retida no repasse, em centavos. */
+  taxaCentavos?: number | undefined;
+}
 
 export interface Inscricao {
   id: string;
@@ -198,6 +253,7 @@ export interface Inscricao {
   cupomId?: string | undefined;
   cortesiaId?: string | undefined;
   voucherId?: string | undefined;
+  pagamento?: PagamentoInscricao | undefined;
   criadoEm: string;
   canceladoEm?: string | undefined;
   motivoCancelamento?: string | undefined;
@@ -414,6 +470,16 @@ export interface BaseDados {
   campanhasRecompensa: CampanhaRecompensa[];
   vouchers: Voucher[];
   correcoesParticipacao: CorrecaoParticipacao[];
+  /** Configurações da plataforma editadas pela administração (registro único "plataforma"). */
+  configuracoes: ConfiguracaoPlataforma[];
+}
+
+export interface ConfiguracaoPlataforma {
+  id: "plataforma";
+  /** Taxa retida nas vendas repassadas às organizações (Stripe Connect), em % (ex.: 8.5). */
+  taxaPlataformaPercentual: number;
+  atualizadoEm: string;
+  atualizadoPor: string;
 }
 
 // ===== Perfil do operador =====

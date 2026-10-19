@@ -26,6 +26,7 @@ import { Route as AdminGamificacaoRouteImport } from './routes/admin.gamificacao
 import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
 import { Route as AdminMetricasRouteImport } from './routes/admin.metricas'
 import { Route as AdminNotificacoesRouteImport } from './routes/admin.notificacoes'
+import { Route as AdminPagamentosRouteImport } from './routes/admin.pagamentos'
 import { Route as AdminPrivacidadeRouteImport } from './routes/admin.privacidade'
 import { Route as AdminSolicitacoesRouteImport } from './routes/admin.solicitacoes'
 import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
@@ -52,6 +53,7 @@ import { Route as OrganizacaoMetricasRouteImport } from './routes/organizacao.me
 import { Route as OrganizacaoNotificacoesRouteImport } from './routes/organizacao.notificacoes'
 import { Route as OrganizacaoRecompensasRouteImport } from './routes/organizacao.recompensas'
 import { Route as OrganizacaoSuporteRouteImport } from './routes/organizacao.suporte'
+import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as ComunidadeEventoIdIndexRouteImport } from './routes/comunidade.$eventoId.index'
 import { Route as ComunidadeEventoIdGerenciarRouteImport } from './routes/comunidade.$eventoId.gerenciar'
 import { Route as ComunidadeEventoIdPPostIdRouteImport } from './routes/comunidade.$eventoId.p.$postId'
@@ -139,6 +141,11 @@ const AdminMetricasRoute = AdminMetricasRouteImport.update({
 const AdminNotificacoesRoute = AdminNotificacoesRouteImport.update({
   id: '/notificacoes',
   path: '/notificacoes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPagamentosRoute = AdminPagamentosRouteImport.update({
+  id: '/pagamentos',
+  path: '/pagamentos',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPrivacidadeRoute = AdminPrivacidadeRouteImport.update({
@@ -271,6 +278,11 @@ const OrganizacaoSuporteRoute = OrganizacaoSuporteRouteImport.update({
   path: '/suporte',
   getParentRoute: () => OrganizacaoRoute,
 } as any)
+const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+  id: '/api/stripe/webhook',
+  path: '/api/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ComunidadeEventoIdIndexRoute = ComunidadeEventoIdIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -306,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
+  '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
   '/admin/suporte': typeof AdminSuporteRoute
@@ -333,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/organizacao/': typeof OrganizacaoIndexRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
   '/comunidade/$eventoId/': typeof ComunidadeEventoIdIndexRoute
   '/comunidade/$eventoId/p/$postId': typeof ComunidadeEventoIdPPostIdRoute
@@ -351,6 +365,7 @@ export interface FileRoutesByTo {
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
+  '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
   '/admin/suporte': typeof AdminSuporteRoute
@@ -377,6 +392,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/organizacao': typeof OrganizacaoIndexRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
   '/comunidade/$eventoId': typeof ComunidadeEventoIdIndexRoute
   '/comunidade/$eventoId/p/$postId': typeof ComunidadeEventoIdPPostIdRoute
@@ -399,6 +415,7 @@ export interface FileRoutesById {
   '/admin/insights': typeof AdminInsightsRoute
   '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
+  '/admin/pagamentos': typeof AdminPagamentosRoute
   '/admin/privacidade': typeof AdminPrivacidadeRoute
   '/admin/solicitacoes': typeof AdminSolicitacoesRoute
   '/admin/suporte': typeof AdminSuporteRoute
@@ -426,6 +443,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/organizacao/': typeof OrganizacaoIndexRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
   '/comunidade/$eventoId/': typeof ComunidadeEventoIdIndexRoute
   '/comunidade/$eventoId/p/$postId': typeof ComunidadeEventoIdPPostIdRoute
@@ -449,6 +467,7 @@ export interface FileRouteTypes {
     | '/admin/insights'
     | '/admin/metricas'
     | '/admin/notificacoes'
+    | '/admin/pagamentos'
     | '/admin/privacidade'
     | '/admin/solicitacoes'
     | '/admin/suporte'
@@ -476,6 +495,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/app/'
     | '/organizacao/'
+    | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
     | '/comunidade/$eventoId/'
     | '/comunidade/$eventoId/p/$postId'
@@ -494,6 +514,7 @@ export interface FileRouteTypes {
     | '/admin/insights'
     | '/admin/metricas'
     | '/admin/notificacoes'
+    | '/admin/pagamentos'
     | '/admin/privacidade'
     | '/admin/solicitacoes'
     | '/admin/suporte'
@@ -520,6 +541,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/organizacao'
+    | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
     | '/comunidade/$eventoId'
     | '/comunidade/$eventoId/p/$postId'
@@ -541,6 +563,7 @@ export interface FileRouteTypes {
     | '/admin/insights'
     | '/admin/metricas'
     | '/admin/notificacoes'
+    | '/admin/pagamentos'
     | '/admin/privacidade'
     | '/admin/solicitacoes'
     | '/admin/suporte'
@@ -568,6 +591,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/app/'
     | '/organizacao/'
+    | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
     | '/comunidade/$eventoId/'
     | '/comunidade/$eventoId/p/$postId'
@@ -588,6 +612,7 @@ export interface RootRouteChildren {
   EventosEventoIdRoute: typeof EventosEventoIdRoute
   InscricaoEventoIdRoute: typeof InscricaoEventoIdRoute
   OperadorUsuarioIdRoute: typeof OperadorUsuarioIdRoute
+  ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -709,6 +734,13 @@ declare module '@tanstack/react-router' {
       path: '/notificacoes'
       fullPath: '/admin/notificacoes'
       preLoaderRoute: typeof AdminNotificacoesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pagamentos': {
+      id: '/admin/pagamentos'
+      path: '/pagamentos'
+      fullPath: '/admin/pagamentos'
+      preLoaderRoute: typeof AdminPagamentosRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/privacidade': {
@@ -893,6 +925,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizacaoSuporteRouteImport
       parentRoute: typeof OrganizacaoRoute
     }
+    '/api/stripe/webhook': {
+      id: '/api/stripe/webhook'
+      path: '/api/stripe/webhook'
+      fullPath: '/api/stripe/webhook'
+      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/comunidade/$eventoId/': {
       id: '/comunidade/$eventoId/'
       path: '/'
@@ -924,6 +963,7 @@ interface AdminRouteChildren {
   AdminInsightsRoute: typeof AdminInsightsRoute
   AdminMetricasRoute: typeof AdminMetricasRoute
   AdminNotificacoesRoute: typeof AdminNotificacoesRoute
+  AdminPagamentosRoute: typeof AdminPagamentosRoute
   AdminPrivacidadeRoute: typeof AdminPrivacidadeRoute
   AdminSolicitacoesRoute: typeof AdminSolicitacoesRoute
   AdminSuporteRoute: typeof AdminSuporteRoute
@@ -938,6 +978,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminInsightsRoute: AdminInsightsRoute,
   AdminMetricasRoute: AdminMetricasRoute,
   AdminNotificacoesRoute: AdminNotificacoesRoute,
+  AdminPagamentosRoute: AdminPagamentosRoute,
   AdminPrivacidadeRoute: AdminPrivacidadeRoute,
   AdminSolicitacoesRoute: AdminSolicitacoesRoute,
   AdminSuporteRoute: AdminSuporteRoute,
@@ -1031,6 +1072,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventosEventoIdRoute: EventosEventoIdRoute,
   InscricaoEventoIdRoute: InscricaoEventoIdRoute,
   OperadorUsuarioIdRoute: OperadorUsuarioIdRoute,
+  ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
