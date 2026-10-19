@@ -88,6 +88,24 @@ describe("reserva", () => {
     expect(base.cupons.find((c) => c.id === "cup-s")!.usos).toBe(1);
   });
 
+  it("reenvio com a mesma chave devolve a mesma reserva, sem gastar cupom de novo", async () => {
+    base.cupons.push({ id: "cup-i", eventoId: EVT, codigo: "IDEM", descontoPercentual: 10, limiteUsos: 5, usos: 0, validoDe: iso(-dia), validoAte: iso(dia), tiposElegiveis: ["tp-a"], ativo: true } as BaseDados["cupons"][number]);
+    const chave = "0f8c7a1e-5b2d-4c3e-9a11-7d6e5f4a3b2c";
+    const a = await confirmarInscricao({ eventoId: EVT, usuarioId: PART, tipoId: "tp-a", exercitoId: "ex-a", codigoCupom: "IDEM", clienteId: chave }, { pagamentoOnline: true });
+    const b = await confirmarInscricao({ eventoId: EVT, usuarioId: PART, tipoId: "tp-a", exercitoId: "ex-a", codigoCupom: "IDEM", clienteId: chave }, { pagamentoOnline: true });
+    expect(b.id).toBe(a.id);
+    expect(ins(a.id).status).toBe("pendente");
+    expect(base.inscricoes.filter((i) => i.eventoId === EVT)).toHaveLength(1);
+    expect(base.cupons.find((c) => c.id === "cup-i")!.usos).toBe(1);
+  });
+
+  it("chave de outra pessoa ou malformada é recusada", async () => {
+    const chave = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+    await confirmarInscricao({ eventoId: EVT, usuarioId: PART, tipoId: "tp-a", exercitoId: "ex-a", clienteId: chave }, { pagamentoOnline: true });
+    await expect(confirmarInscricao({ eventoId: EVT, usuarioId: OUTRO, tipoId: "tp-a", exercitoId: "ex-a", clienteId: chave }, { pagamentoOnline: true })).rejects.toThrow(/chave/i);
+    await expect(confirmarInscricao({ eventoId: EVT, usuarioId: OUTRO, tipoId: "tp-a", exercitoId: "ex-a", clienteId: "x;drop" }, { pagamentoOnline: true })).rejects.toThrow(/chave/i);
+  });
+
   it("reservas vencidas são liberadas com folga e devolvem a sessão a expirar", async () => {
     const i = await reservar();
     ins(i.id).pagamento = { ...ins(i.id).pagamento!, sessaoId: "cs_1", expiraEm: iso(-11 * 60_000) };

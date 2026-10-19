@@ -22,8 +22,9 @@ import {
   TEXTO_MOTIVO,
 } from "@/lib/vendas";
 
+/** Inscrições confirmadas (financeiro, presença). Para vagas, use inscricoesQueOcupamVaga. */
 export function inscricoesAtivasDoEvento(base: ReturnType<typeof carregarBase>, eventoId: string) {
-  return base.inscricoes.filter((i) => i.eventoId === eventoId && ocupaVaga(i));
+  return base.inscricoes.filter((i) => i.eventoId === eventoId && i.status === "confirmada");
 }
 
 /** Inscrições que consomem vaga: confirmadas e reservas de pagamento vigentes. */
@@ -41,7 +42,8 @@ export function inscricaoAtivaDoUsuario(
   usuarioId: string,
 ): Inscricao | undefined {
   return base.inscricoes.find(
-    (i) => i.eventoId === eventoId && i.usuarioId === usuarioId && ocupaVaga(i),
+    // Só confirmada: a reserva pendente da própria pessoa é substituída numa nova tentativa.
+    (i) => i.eventoId === eventoId && i.usuarioId === usuarioId && i.status === "confirmada",
   );
 }
 
@@ -142,97 +144,6 @@ export interface DadosInscricao {
 }
 
 const CHAVE_CLIENTE = /^[A-Za-z0-9-]{8,64}$/;
-const agoraIso = () => new Date().toISOString();
-
-function notificar(
-  base: ReturnType<typeof carregarBase>,
-  usuarioId: string,
-  titulo: string,
-  corpo: string,
-  link: string,
-) {
-  base.notificacoes.push({
-    id: gerarId("not"),
-    usuarioId,
-    titulo,
-    corpo,
-    link,
-    lida: false,
-    criadoEm: agoraIso(),
-  });
-}
-
-/** Devolve o que a reserva prendia: um uso do cupom e o benefício de recompensa. */
-function liberarReserva(
-  base: ReturnType<typeof carregarBase>,
-  inscricao: Inscricao,
-  motivo: string,
-) {
-  if (inscricao.cupomId) {
-    const cupom = base.cupons.find((c) => c.id === inscricao.cupomId);
-    if (cupom) cupom.usos = Math.max(0, cupom.usos - 1);
-  }
-  restaurarVoucherDaInscricao(base, inscricao.id, motivo);
-}
-
-/**
- * Varre reservas cujo prazo passou: viram "expirada" e devolvem vaga, cupom e benefício.
- * Idempotente; roda dentro de toda transação que cria reservas ou decide pagamentos.
- */
-export function expirarReservas(base: ReturnType<typeof carregarBase>, agora = new Date()): number {
-  let n = 0;
-  for (const i of base.inscricoes) {
-    if (!reservaVencida(i, agora)) continue;
-    i.status = "expirada";
-    i.canceladoEm = agora.toISOString();
-    i.motivoCancelamento = "Prazo para envio do comprovante encerrado.";
-    liberarReserva(base, i, "reserva expirada");
-    const evento = base.eventos.find((e) => e.id === i.eventoId);
-    notificar(
-      base,
-      i.usuarioId,
-      "Reserva expirada",
-      `O prazo para enviar o comprovante de ${evento?.nome ?? "o evento"} terminou e a vaga foi liberada.`,
-      "/app/ingressos",
-    );
-    n++;
-  }
-  return n;
-}
-
-/** Lançamentos financeiros da inscrição paga (na confirmação direta ou na aprovação do PIX). */
-function lancarPagamento(
-  base: ReturnType<typeof carregarBase>,
-  inscricao: Inscricao,
-  descricao: string,
-) {
-  const valorFinal = Math.max(0, inscricao.valorCentavos - inscricao.descontoCentavos);
-  if (valorFinal > 0) {
-    base.movimentacoes.push({
-      id: gerarId("mov"),
-      eventoId: inscricao.eventoId,
-      inscricaoId: inscricao.id,
-      tipo: "inscricao",
-      valorCentavos: valorFinal,
-      descricao,
-      criadoEm: agoraIso(),
-    });
-  }
-  if (inscricao.descontoCentavos > 0) {
-    base.movimentacoes.push({
-      id: gerarId("mov"),
-      eventoId: inscricao.eventoId,
-      inscricaoId: inscricao.id,
-      tipo: "desconto_cupom",
-      valorCentavos: 0,
-      descricao: inscricao.voucherId
-        ? `Benefício de recompensa aplicado (${inscricao.descontoCentavos / 100} reais)`
-        : `Desconto de cupom aplicado (${inscricao.descontoCentavos / 100} reais)`,
-      criadoEm: agoraIso(),
-    });
-  }
-}
-
 export interface OpcoesInscricao {
   /**
    * Cobrança online (Stripe) disponível: inscrições com valor a pagar nascem "pendente",
@@ -366,6 +277,20 @@ export async function confirmarInscricao(
   await latencia(500);
   return mutarBase((base) => {
     const agora = new Date();
+    let id = gerarId("ins");
+    if (dados.clienteId !== undefined) {
+      if (!CHAVE_CLIENTE.test(dados.clienteId)) throw new ErroDominio("chave", "Chave de operação inválida.");
+      id = `ins-${dados.clienteId}`;
+      const repetida = base.inscricoes.find((i) => i.id === id);
+      if (repetida) {
+        // Mesma tentativa reenviada (rede caiu, duplo clique): devolve o resultado original.
+        // Se for uma reserva aberta, a API reabre a mesma sessão de checkout.
+        if (repetida.usuarioId !== dados.usuarioId || repetida.eventoId !== dados.eventoId) {
+          throw new ErroDominio("chave", "Chave de operação inválida.");
+        }
+        return repetida;
+      }
+    }
     const evento = base.eventos.find((e) => e.id === dados.eventoId);
     if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
     if (evento.status !== "publicado") {
@@ -808,134 +733,6 @@ export function registrarReembolsoNaBase(
     lida: false,
     criadoEm: iso,
   });
-}
-
-// ---------- Pagamento por PIX manual ----------
-
-/**
- * Registra o comprovante já gravado no bucket privado. Reenviar enquanto está em análise
- * troca o arquivo (o anterior é devolvido para o chamador apagar do Storage).
- */
-export function registrarComprovante(
-  base: ReturnType<typeof carregarBase>,
-  inscricaoId: string,
-  usuarioId: string,
-  comprovante: NonNullable<Inscricao["comprovante"]>,
-): { anterior?: string } {
-  expirarReservas(base);
-  const inscricao = base.inscricoes.find((i) => i.id === inscricaoId && i.usuarioId === usuarioId);
-  if (!inscricao) throw new ErroDominio("inscricao", "Inscrição não encontrada.");
-  if (!podeEnviarComprovante(inscricao)) {
-    throw new ErroDominio(
-      "comprovante_prazo",
-      inscricao.status === "expirada"
-        ? "O prazo desta reserva terminou. Faça uma nova inscrição."
-        : "Esta inscrição não aceita comprovante.",
-    );
-  }
-  const anterior = inscricao.comprovante?.caminho;
-  inscricao.comprovante = comprovante;
-  inscricao.status = "em_analise";
-  const evento = base.eventos.find((e) => e.id === inscricao.eventoId);
-  if (evento) {
-    for (const u of base.usuarios.filter(
-      (x) => x.organizacaoId === evento.organizacaoId && x.ativo,
-    )) {
-      notificar(
-        base,
-        u.id,
-        "Comprovante para analisar",
-        `Novo comprovante de PIX em ${evento.nome}.`,
-        "/organizacao/inscritos",
-      );
-    }
-  }
-  return anterior ? { anterior } : {};
-}
-
-/** Aprova o pagamento: a reserva vira inscrição confirmada. Repetir não tem efeito novo. */
-export function aprovarPagamento(
-  base: ReturnType<typeof carregarBase>,
-  inscricaoId: string,
-  autorId: string,
-): Inscricao {
-  expirarReservas(base);
-  const inscricao = base.inscricoes.find((i) => i.id === inscricaoId);
-  if (!inscricao) throw new ErroDominio("inscricao", "Inscrição não encontrada.");
-  if (inscricao.status === "confirmada" && inscricao.decididoEm) return inscricao;
-  if (!podeDecidirPagamento(inscricao)) {
-    throw new ErroDominio("pagamento_decidido", "Este pagamento não está mais aguardando análise.");
-  }
-  const tipo = base.eventos
-    .find((e) => e.id === inscricao.eventoId)
-    ?.tipos.find((t) => t.id === inscricao.tipoId);
-  inscricao.status = "confirmada";
-  inscricao.decididoPor = autorId;
-  inscricao.decididoEm = agoraIso();
-  lancarPagamento(
-    base,
-    inscricao,
-    `Inscrição confirmada (PIX aprovado) — ${tipo?.nome ?? "ingresso"}`,
-  );
-  const evento = base.eventos.find((e) => e.id === inscricao.eventoId);
-  notificar(
-    base,
-    inscricao.usuarioId,
-    "Pagamento aprovado",
-    `Sua inscrição em ${evento?.nome ?? "o evento"} foi confirmada.`,
-    "/app/ingressos",
-  );
-  base.auditoria.push({
-    id: gerarId("aud"),
-    autorId,
-    acao: "aprovacao_pagamento",
-    entidade: "inscricao",
-    entidadeId: inscricao.id,
-    justificativa: "Comprovante de PIX aprovado",
-    criadoEm: agoraIso(),
-  });
-  return inscricao;
-}
-
-/** Recusa o pagamento: libera vaga, cupom e benefício. Repetir não tem efeito novo. */
-export function recusarPagamento(
-  base: ReturnType<typeof carregarBase>,
-  inscricaoId: string,
-  motivo: string,
-  autorId: string,
-): Inscricao {
-  if (!motivo.trim()) throw new ErroDominio("motivo", "Informe o motivo da recusa.");
-  expirarReservas(base);
-  const inscricao = base.inscricoes.find((i) => i.id === inscricaoId);
-  if (!inscricao) throw new ErroDominio("inscricao", "Inscrição não encontrada.");
-  if (inscricao.status === "recusada") return inscricao;
-  if (!podeDecidirPagamento(inscricao)) {
-    throw new ErroDominio("pagamento_decidido", "Este pagamento não está mais aguardando análise.");
-  }
-  inscricao.status = "recusada";
-  inscricao.decididoPor = autorId;
-  inscricao.decididoEm = agoraIso();
-  inscricao.canceladoEm = inscricao.decididoEm;
-  inscricao.motivoCancelamento = motivo.trim();
-  liberarReserva(base, inscricao, "pagamento recusado");
-  const evento = base.eventos.find((e) => e.id === inscricao.eventoId);
-  notificar(
-    base,
-    inscricao.usuarioId,
-    "Pagamento recusado",
-    `O comprovante de ${evento?.nome ?? "o evento"} foi recusado: ${motivo.trim()}`,
-    "/app/ingressos",
-  );
-  base.auditoria.push({
-    id: gerarId("aud"),
-    autorId,
-    acao: "recusa_pagamento",
-    entidade: "inscricao",
-    entidadeId: inscricao.id,
-    justificativa: motivo.trim(),
-    criadoEm: agoraIso(),
-  });
-  return inscricao;
 }
 
 /** Resumo financeiro derivado dos registros de origem (sem números fixos). */

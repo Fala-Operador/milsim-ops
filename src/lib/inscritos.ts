@@ -1,6 +1,5 @@
 // Regras puras da página de inscritos: indicadores, filtros e ordenação de eventos.
 import type { Evento, Inscricao } from "@/lib/domain/types";
-import { ocupaVaga } from "@/lib/reservas";
 
 export const ROTULO_ORIGEM: Record<Inscricao["origem"], string> = {
   plataforma: "Plataforma",
@@ -17,7 +16,7 @@ export const ROTULO_STATUS_INSCRICAO: Record<Inscricao["status"], string> = {
 };
 
 export function indicadoresInscritos(evento: Evento, inscricoes: Inscricao[]) {
-  const ativas = inscricoes.filter((i) => i.eventoId === evento.id && ocupaVaga(i)).length;
+  const ativas = inscricoes.filter((i) => i.eventoId === evento.id && i.status === "confirmada").length;
   const capacidade = evento.capacidadeTotal;
   return {
     ativas,

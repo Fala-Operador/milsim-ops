@@ -1,7 +1,7 @@
 import { Check, Circle, Clock, UserCheck, X } from "lucide-react";
 import { Badge } from "@/components/ui";
-import { ROTULO_STATUS_INSCRICAO, statusEfetivo } from "@/lib/reservas";
-import type { Inscricao, StatusInscricao as Status } from "@/lib/domain/types";
+import { ROTULO_STATUS_INSCRICAO } from "@/lib/inscritos";
+import type { Inscricao } from "@/lib/domain/types";
 import type { RegistroCheckin } from "@/lib/checkin";
 
 export function StatusInscricao({ status }: { status: Inscricao["status"] }) {

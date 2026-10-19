@@ -289,7 +289,7 @@ function MeusIngressos() {
       )}
       <Modal
         aberto={!!cancelando}
-        titulo={cancelando && pendente(cancelando) ? "Cancelar reserva" : "Cancelar inscrição"}
+        titulo={cancelando?.status === "pendente" ? "Cancelar reserva" : "Cancelar inscrição"}
         onFechar={() => setCancelando(null)}
       >
         <p className="text-sm text-muted-foreground">

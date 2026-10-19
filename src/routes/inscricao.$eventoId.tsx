@@ -13,6 +13,8 @@ import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { descontoDoBeneficio, descreverBeneficio, statusVoucher } from "@/lib/participacao";
 import { Botao, Campo, Cartao, Entrada, Selecao, SkeletonPagina } from "@/components/ui";
 
+const novoId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
+
 export const Route = createFileRoute("/inscricao/$eventoId")({
   validateSearch: (s: Record<string, unknown>): { cortesia: string | undefined; voucher: string | undefined; pagamento?: string | undefined } => ({
     cortesia: typeof s["cortesia"] === "string" ? s["cortesia"] : undefined,
@@ -72,6 +74,9 @@ function PaginaInscricao() {
   const [erro, setErro] = useState("");
   const [confirmando, setConfirmando] = useState(false);
   const emAndamento = useRef(false); // impede duplicidade por cliques repetidos
+  // Chave de idempotência da tentativa: se a resposta se perder e a pessoa reenviar, o
+  // servidor devolve a mesma inscrição (e o mesmo checkout) em vez de criar outra.
+  const clienteId = useRef(novoId());
   // O servidor não conhece a sessão guardada no navegador: só após montar decidimos
   // se mostramos o formulário ou o convite para entrar (evita divergência na hidratação).
   const [montado, setMontado] = useState(false);
@@ -192,6 +197,7 @@ function PaginaInscricao() {
         codigoCupom: !voucherId && cupomAplicado ? cupomAplicado.codigo : undefined,
         cortesiaId: cortesia?.id,
         voucherId: voucherId || undefined,
+        clienteId: clienteId.current,
       });
       // Reserva criada: segue para a página de pagamento do Stripe.
       if (r.urlPagamento) window.location.assign(r.urlPagamento);
