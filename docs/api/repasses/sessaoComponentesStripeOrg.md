@@ -9,7 +9,7 @@
 | Método | `POST` |
 | Acesso | Quem gere a organização |
 
-Cria a sessão dos componentes embutidos do Stripe (painéis de saques e de pagamentos dentro de Financeiro) para a conta da organização.
+Cria a sessão dos componentes embutidos do Stripe para a conta da organização: cadastro (`account-onboarding`), avisos (`notification-banner`), dados da conta (`account-management`) e, com a conta ativa, saques (`payouts`) e pagamentos (`payments`).
 
 ## Entrada
 
@@ -19,7 +19,9 @@ Cria a sessão dos componentes embutidos do Stripe (painéis de saques e de paga
 
 ## Regras
 
-- Exige `STRIPE_PUBLISHABLE_KEY` configurada e a conta de recebimento ativa.
+- Exige `STRIPE_PUBLISHABLE_KEY` configurada.
+- Sem conta de recebimento, cria a conta Express da organização (como `cadastrarRecebimento`) antes da sessão.
+- Saques e pagamentos só entram na sessão com a conta ativa.
 - O `clientSecret` é de uso curto e só serve para a conta da organização.
 - Se o site ganhar uma CSP, libere `https://connect-js.stripe.com` e `https://js.stripe.com` em `script-src` e `frame-src`.
 
@@ -33,7 +35,6 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 
 - Você só pode configurar os recebimentos da sua organização.
 - Os painéis do Stripe ainda não foram ativados na plataforma.
-- Conclua o cadastro de recebimentos para ver os painéis do Stripe.
 - Entre na sua conta para continuar.
 
 ## Exemplo
@@ -48,7 +49,7 @@ const connect = window.StripeConnect!.init!({
   fetchClientSecret: async () => clientSecret, // sessões seguintes: chame a API de novo
   locale: "pt-BR",
 });
-container.append(connect.create("payouts"));
+container.append(connect.create("account-onboarding")); // ou "payouts", "account-management"...
 ```
 
 `data` enviado à server function (`sessaoComponentesStripeFn({ data })`):

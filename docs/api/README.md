@@ -184,7 +184,7 @@ Conta de recebimento das organizações e taxa da plataforma. Arquivo: [`src/api
 | [`atualizarRecebimento`](repasses/atualizarRecebimento.md) | POST | Quem gere a organização | Consulta a conta Connect no Stripe e atualiza a situação do recebimento (`organizacao.recebimento`). |
 | [`abrirPainelStripe`](repasses/abrirPainelStripe.md) | POST | Quem gere a organização | Gera um link de acesso ao painel Express do Stripe (saldo, saques, dados bancários). |
 | [`saldoRecebimento`](repasses/saldoRecebimento.md) | POST | Quem gere a organização | Lê do Stripe o saldo da conta de recebimento da organização: disponível, a liberar, próximo saque, últimos saques, cronograma de saques e banco de destino (só os últimos dígitos). |
-| [`sessaoComponentesStripeOrg`](repasses/sessaoComponentesStripeOrg.md) | POST | Quem gere a organização | Cria a sessão dos componentes embutidos do Stripe (painéis de saques e de pagamentos dentro de Financeiro) para a conta da organização. |
+| [`sessaoComponentesStripeOrg`](repasses/sessaoComponentesStripeOrg.md) | POST | Quem gere a organização | Cria a sessão dos componentes embutidos do Stripe (cadastro, avisos, dados da conta, saques e pagamentos dentro de Financeiro) para a conta da organização. |
 
 ### Comunidade
 <a id="comunidade"></a>

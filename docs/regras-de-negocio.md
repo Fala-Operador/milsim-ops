@@ -190,7 +190,10 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
 - Reembolso de venda repassada desfaz a transferência e devolve a taxa.
 - Com a conta ativa, o Financeiro mostra **saldo** disponível e a liberar, próximo saque, últimos
   saques, cronograma e banco (só os últimos dígitos), lidos do Stripe com cache de 60 s.
-  Com `STRIPE_PUBLISHABLE_KEY`, mostra também os painéis embutidos do Stripe (saques e pagamentos).
+  Com `STRIPE_PUBLISHABLE_KEY`, tudo acontece dentro do site: o cadastro da conta (inclusive o
+  inicial), os avisos de pendência, os dados da conta e banco, os saques e os pagamentos usam os
+  componentes embutidos do Stripe. Contas Express ainda passam por uma confirmação de e-mail ou
+  celular numa janela do Stripe. Sem a chave, cadastro e painel abrem no site do Stripe.
   → [`saldoRecebimento`](api/repasses/saldoRecebimento.md), [`sessaoComponentesStripeOrg`](api/repasses/sessaoComponentesStripeOrg.md)
 
 ## 10. Financeiro do evento

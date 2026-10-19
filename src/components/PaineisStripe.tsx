@@ -1,6 +1,8 @@
-// Componentes embutidos do Stripe Connect (saques e pagamentos) dentro de Financeiro.
-// O connect.js vem direto do Stripe (sem pacote npm); o servidor só cria a Account Session.
-// Reembolso e disputa ficam desligados na sessão: o estorno passa pelo cancelamento da inscrição.
+// Componentes embutidos do Stripe Connect dentro de Financeiro: cadastro da conta, avisos de
+// pendência, dados da conta, saques e pagamentos. A organização não sai do site; o Stripe só
+// abre uma janela própria para confirmar quem é (código por e-mail ou SMS), exigência dele para
+// contas Express. O connect.js vem direto do Stripe (sem pacote npm); o servidor só cria a
+// Account Session. Reembolso e disputa ficam desligados: o estorno passa pelo cancelamento.
 import { useEffect, useRef, useState } from "react";
 import { LayoutDashboard } from "lucide-react";
 import { sessaoComponentesStripeOrg } from "@/api/repasses.functions";
@@ -11,14 +13,20 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const SCRIPT_CONNECT = "https://connect-js.stripe.com/v1.0/connect.js";
 
-type Componente = "payouts" | "payments";
-const ABAS: { id: Componente; rotulo: string }[] = [
+type Componente = "payouts" | "payments" | "account-management" | "account-onboarding" | "notification-banner";
+type Aba = "payouts" | "payments" | "account-management";
+const ABAS: { id: Aba; rotulo: string }[] = [
   { id: "payouts", rotulo: "Saques" },
   { id: "payments", rotulo: "Pagamentos" },
+  { id: "account-management", rotulo: "Dados da conta" },
 ];
 
+interface ElementoConnect extends HTMLElement {
+  setOnExit?(fn: () => void): void;
+  setPrivacyPolicyUrl?(url: string): void;
+}
 interface InstanciaConnect {
-  create(componente: Componente): HTMLElement;
+  create(componente: Componente): ElementoConnect;
   update(opcoes: { appearance?: unknown; locale?: string }): void;
   logout?(): Promise<void>;
 }
@@ -67,67 +75,103 @@ function aparencia(tema: Tema) {
   };
 }
 
-export function PaineisStripe({ organizacaoId }: { organizacaoId: string }) {
+/**
+ * Instância do Connect para a organização enquanto `ligado`. A sessão é pedida ao servidor
+ * sempre que o Stripe precisar (a primeira traz também a chave publicável).
+ */
+function useInstanciaStripe(organizacaoId: string, ligado: boolean) {
   const { tema } = useTheme();
-  const [aberto, setAberto] = useState(false);
-  const [aba, setAba] = useState<Componente>("payouts");
+  const [instancia, setInstancia] = useState<InstanciaConnect | null>(null);
   const [erro, setErro] = useState("");
-  const [carregando, setCarregando] = useState(false);
-  const instancia = useRef<InstanciaConnect | null>(null);
-  const area = useRef<HTMLDivElement | null>(null);
 
-  // Cria a instância ao abrir; a sessão é pedida ao servidor sempre que o Stripe precisar.
   useEffect(() => {
-    if (!aberto) return;
+    if (!ligado) return;
     let ativo = true;
+    let criada: InstanciaConnect | null = null;
     setErro("");
-    setCarregando(true);
-    carregarConnect()
-      .then((sc) => {
+    const buscarSessao = () => sessaoComponentesStripeOrg(organizacaoId);
+    Promise.all([carregarConnect(), buscarSessao()])
+      .then(([sc, primeira]) => {
         if (!ativo || !sc.init) return;
-        let chave = "";
-        const buscarSegredo = async () => {
-          const s = await sessaoComponentesStripeOrg(organizacaoId);
-          chave = s.chavePublicavel;
-          return s.clientSecret;
-        };
-        // A chave publicável vem junto da primeira sessão.
-        return buscarSegredo().then((primeiro) => {
-          if (!ativo) return;
-          let usado = false;
-          instancia.current = sc.init!({
-            publishableKey: chave,
-            fetchClientSecret: () => (usado ? buscarSegredo() : ((usado = true), Promise.resolve(primeiro))),
-            locale: "pt-BR",
-            appearance: aparencia(tema),
-          });
-          setCarregando(false);
+        let usada = false;
+        criada = sc.init({
+          publishableKey: primeira.chavePublicavel,
+          fetchClientSecret: async () => (usada ? (await buscarSessao()).clientSecret : ((usada = true), primeira.clientSecret)),
+          locale: "pt-BR",
+          appearance: aparencia(tema),
         });
+        setInstancia(criada);
       })
       .catch((err) => {
-        if (!ativo) return;
-        setErro(err instanceof Error ? err.message : "Não foi possível abrir os painéis do Stripe.");
-        setCarregando(false);
+        if (ativo) setErro(err instanceof Error ? err.message : "Não foi possível abrir o Stripe.");
       });
     return () => {
       ativo = false;
-      void instancia.current?.logout?.().catch(() => undefined);
-      instancia.current = null;
+      void criada?.logout?.().catch(() => undefined);
+      setInstancia(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aberto, organizacaoId]);
+  }, [ligado, organizacaoId]);
 
-  // Monta o componente da aba escolhida.
+  useEffect(() => {
+    instancia?.update({ appearance: aparencia(tema) });
+  }, [instancia, tema]);
+
+  return { instancia, erro, carregando: ligado && !instancia && !erro };
+}
+
+/** Monta um componente do Stripe num contêiner do site. */
+function ElementoStripe({ instancia, componente, aoSair, className = "" }: {
+  instancia: InstanciaConnect;
+  componente: Componente;
+  aoSair?: (() => void) | undefined;
+  className?: string;
+}) {
+  const area = useRef<HTMLDivElement | null>(null);
+  const saida = useRef(aoSair);
+  saida.current = aoSair;
   useEffect(() => {
     const alvo = area.current;
-    if (!aberto || carregando || !alvo || !instancia.current) return;
-    alvo.replaceChildren(instancia.current.create(aba));
+    if (!alvo) return;
+    const el = instancia.create(componente);
+    if (componente === "account-onboarding") {
+      el.setOnExit?.(() => saida.current?.());
+      el.setPrivacyPolicyUrl?.(`${window.location.origin}/privacidade`);
+    }
+    alvo.replaceChildren(el);
     return () => alvo.replaceChildren();
-  }, [aberto, carregando, aba]);
+  }, [instancia, componente]);
+  return <div ref={area} className={`w-full min-w-0 overflow-x-auto ${className}`} />;
+}
 
-  useEffect(() => {
-    instancia.current?.update({ appearance: aparencia(tema) });
-  }, [tema]);
+/**
+ * Cadastro da conta de recebimento dentro do site (componente account-onboarding). Ao sair,
+ * `aoSair` atualiza a situação da conta pelo servidor.
+ */
+export function CadastroStripeEmbutido({ organizacaoId, aoSair }: { organizacaoId: string; aoSair: () => void }) {
+  const { instancia, erro, carregando } = useInstanciaStripe(organizacaoId, true);
+  return (
+    <div className="mt-3 rounded-md border border-border p-3">
+      <p className="text-xs text-muted-foreground">
+        Preencha os dados da organização e a conta bancária. O Stripe pode abrir uma janela para confirmar seu e-mail ou celular.
+      </p>
+      {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
+      {carregando && <p className="mt-2 text-sm text-muted-foreground">Carregando o cadastro do Stripe...</p>}
+      {instancia && <ElementoStripe instancia={instancia} componente="account-onboarding" aoSair={aoSair} className="mt-3 min-h-24" />}
+    </div>
+  );
+}
+
+/** Avisos do Stripe sobre pendências da conta (aparecem só quando há algo a resolver). */
+export function AvisosStripe({ organizacaoId }: { organizacaoId: string }) {
+  const { instancia } = useInstanciaStripe(organizacaoId, true);
+  return instancia ? <ElementoStripe instancia={instancia} componente="notification-banner" className="mt-3" /> : null;
+}
+
+export function PaineisStripe({ organizacaoId }: { organizacaoId: string }) {
+  const [aberto, setAberto] = useState(false);
+  const [aba, setAba] = useState<Aba>("payouts");
+  const { instancia, erro, carregando } = useInstanciaStripe(organizacaoId, aberto);
 
   return (
     <div>
@@ -135,8 +179,8 @@ export function PaineisStripe({ organizacaoId }: { organizacaoId: string }) {
         <div className="min-w-0">
           <h3 className="flex items-center gap-2 font-medium"><LayoutDashboard className="h-4 w-4 shrink-0" aria-hidden="true" />Painéis do Stripe</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Saques e pagamentos direto do Stripe. Em alguns casos o Stripe pede para entrar na conta numa janela própria.
-            Reembolsos são feitos pelo cancelamento da inscrição, aqui no site.
+            Saques, pagamentos e dados da conta (inclusive a conta bancária), sem sair do site. Em alguns casos o Stripe
+            pede para confirmar seu e-mail ou celular numa janela própria. Reembolsos são feitos pelo cancelamento da inscrição.
           </p>
         </div>
         {!aberto && (
@@ -146,7 +190,7 @@ export function PaineisStripe({ organizacaoId }: { organizacaoId: string }) {
       {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
       {aberto && !erro && (
         <>
-          <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)}>
+          <Tabs value={aba} onValueChange={(v) => setAba(v as Aba)}>
             <TabsList aria-label="Painéis do Stripe" className="mt-3 gap-1 overflow-x-auto">
               {ABAS.map((a) => (
                 <TabsTrigger key={a.id} value={a.id} asChild>
@@ -158,7 +202,11 @@ export function PaineisStripe({ organizacaoId }: { organizacaoId: string }) {
             </TabsList>
           </Tabs>
           {carregando && <p className="mt-2 text-sm text-muted-foreground">Carregando o Stripe...</p>}
-          <div ref={area} role="tabpanel" className="mt-3 min-h-24 w-full min-w-0 overflow-x-auto" />
+          {instancia && (
+            <div role="tabpanel">
+              <ElementoStripe instancia={instancia} componente={aba} className="mt-3 min-h-24" />
+            </div>
+          )}
         </>
       )}
     </div>

@@ -344,13 +344,21 @@ export async function consultarSaldoRecebimento(organizacaoId: string, atualizar
   return saldo;
 }
 
-/** Componentes embutidos do Stripe (saques e pagamentos): chave publicável + segredo da sessão. */
+/**
+ * Componentes embutidos do Stripe (cadastro, avisos, dados da conta e, com a conta ativa,
+ * saques e pagamentos): chave publicável + segredo da sessão. Na primeira vez cria a conta
+ * Express da organização, como o cadastro hospedado.
+ */
 export async function sessaoComponentesStripe(organizacaoId: string): Promise<{ chavePublicavel: string; clientSecret: string }> {
   const org = await organizacaoGerida(organizacaoId);
   const chave = chavePublicavel();
   if (!chave || !stripeConfigurado()) throw new Error("Os painéis do Stripe ainda não foram ativados na plataforma.");
-  if (!org.contaId || !org.ativa) throw new Error("Conclua o cadastro de recebimentos para ver os painéis do Stripe.");
-  const sessao = await comStripe(() => criarSessaoDeConta(org.contaId!));
+  const contaId = org.contaId ?? (await comStripe(async () => {
+    const conta = await criarContaConectada({ organizacaoId, nome: org.nome, email: org.email });
+    await gravarConta(organizacaoId, conta);
+    return conta.id;
+  }));
+  const sessao = await comStripe(() => criarSessaoDeConta(contaId, org.ativa));
   return { chavePublicavel: chave, clientSecret: sessao.client_secret };
 }
 
