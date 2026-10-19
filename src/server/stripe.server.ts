@@ -4,12 +4,17 @@
 // Sem STRIPE_SECRET_KEY a plataforma confirma inscrições sem cobrança, como antes.
 import "@tanstack/react-start/server-only";
 import { codificarFormulario, type CobrancaStripe, type SessaoCheckout } from "@/lib/stripe";
-import type { ContaStripe } from "@/lib/repasses";
+import type { ContaStripe, SaldoStripe, SaqueStripe } from "@/lib/repasses";
 
 const API = "https://api.stripe.com/v1";
 
 export function stripeConfigurado(): boolean {
   return !!process.env["STRIPE_SECRET_KEY"];
+}
+
+/** Chave publicável (pk_...), só para os componentes embutidos do Stripe Connect. */
+export function chavePublicavel(): string | undefined {
+  return process.env["STRIPE_PUBLISHABLE_KEY"] || undefined;
 }
 
 /** Segredo com que a Edge Function stripe-webhook assina os eventos repassados ao site. */
@@ -28,12 +33,15 @@ async function chamarStripe<T>(
   caminho: string,
   dados?: Parameters<typeof codificarFormulario>[0],
   idempotencia?: string,
+  /** Conta conectada (acct_...): a chamada age em nome dela (cabeçalho Stripe-Account). */
+  contaConectada?: string,
 ): Promise<T> {
   const chave = process.env["STRIPE_SECRET_KEY"];
   if (!chave) throw new ErroStripe(0, "nao_configurado", "Stripe não configurado.");
   const cabecalhos: Record<string, string> = { Authorization: `Bearer ${chave}` };
   if (dados) cabecalhos["Content-Type"] = "application/x-www-form-urlencoded";
   if (idempotencia) cabecalhos["Idempotency-Key"] = idempotencia;
+  if (contaConectada) cabecalhos["Stripe-Account"] = contaConectada;
   const r = await fetch(`${API}${caminho}`, { method: metodo, headers: cabecalhos, body: dados ? codificarFormulario(dados) : null });
   const corpo = (await r.json().catch(() => ({}))) as { error?: { code?: string; message?: string } } & T;
   if (!r.ok) throw new ErroStripe(r.status, corpo.error?.code, corpo.error?.message ?? `Stripe respondeu ${r.status}.`);
@@ -139,6 +147,37 @@ export function linkDeCadastro(contaId: string, urlRetorno: string, urlRenovar: 
 /** Link de acesso ao painel Express (saldo, repasses e conta bancária da organização). */
 export function linkDoPainel(contaId: string): Promise<{ url: string }> {
   return chamarStripe("POST", `/accounts/${encodeURIComponent(contaId)}/login_links`, {});
+}
+
+/** Saldo da conta conectada (disponível e a liberar, por moeda). */
+export function saldoDaConta(contaId: string): Promise<SaldoStripe> {
+  return chamarStripe<SaldoStripe>("GET", "/balance", undefined, undefined, contaId);
+}
+
+/** Últimos saques da conta conectada para o banco dela. */
+export async function saquesDaConta(contaId: string, limite = 10): Promise<SaqueStripe[]> {
+  const r = await chamarStripe<{ data?: SaqueStripe[] }>("GET", `/payouts?limit=${limite}`, undefined, undefined, contaId);
+  return r.data ?? [];
+}
+
+/**
+ * Account Session para os componentes embutidos (saques e pagamentos). Reembolso, disputa
+ * e captura ficam desligados: o estorno precisa passar pelo cancelamento da inscrição.
+ */
+export function criarSessaoDeConta(contaId: string): Promise<{ client_secret: string; expires_at?: number }> {
+  return chamarStripe("POST", "/account_sessions", {
+    account: contaId,
+    components: {
+      payouts: {
+        enabled: true,
+        features: { instant_payouts: false, standard_payouts: false, edit_payout_schedule: false, external_account_collection: true },
+      },
+      payments: {
+        enabled: true,
+        features: { refund_management: false, dispute_management: false, capture_payments: false },
+      },
+    },
+  });
 }
 
 export type { CobrancaStripe };

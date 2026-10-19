@@ -2,6 +2,8 @@
 // parâmetros da API, verificação da assinatura do webhook e leitura dos eventos.
 // Chamadas HTTP ficam em src/server/stripe.server.ts.
 
+import type { DisputaPagamento, StatusDisputa } from "@/lib/domain/types";
+
 type Valor = string | number | boolean | undefined | null | Valor[] | { [k: string]: Valor };
 
 /** Codifica objetos aninhados no formato da API do Stripe: a[b][0][c]=valor. */
@@ -87,6 +89,17 @@ export interface CobrancaStripe {
   metadata?: Record<string, string> | null;
 }
 
+/** Contestação (charge.dispute.*): só os campos usados aqui. */
+export interface DisputaStripe {
+  id: string;
+  amount: number;
+  status: string;
+  reason?: string | null;
+  created: number;
+  charge?: string | { id: string } | null;
+  payment_intent?: string | { id: string } | null;
+}
+
 export interface EventoStripe {
   id: string;
   type: string;
@@ -98,6 +111,46 @@ const idDe = (x: string | { id: string } | null | undefined) => (typeof x === "s
 export const inscricaoDaSessao = (s: SessaoCheckout) => s.metadata?.["inscricaoId"] || s.client_reference_id || undefined;
 export const intencaoDaSessao = (s: SessaoCheckout) => idDe(s.payment_intent);
 export const intencaoDaCobranca = (c: CobrancaStripe) => idDe(c.payment_intent);
+export const intencaoDaDisputa = (d: DisputaStripe) => idDe(d.payment_intent);
+
+/** Situação da contestação no Stripe → situação guardada no pagamento. */
+export function statusDaDisputa(status: string): StatusDisputa {
+  switch (status) {
+    case "won":
+      return "ganha";
+    case "lost":
+      return "perdida";
+    case "warning_closed":
+    case "prevented":
+      return "encerrada";
+    case "under_review":
+    case "warning_under_review":
+      return "em_analise";
+    default:
+      return "aberta"; // needs_response, warning_needs_response
+  }
+}
+
+export function disputaDoStripe(d: DisputaStripe, agora = new Date()): DisputaPagamento {
+  return {
+    status: statusDaDisputa(d.status),
+    valorCentavos: d.amount,
+    motivo: d.reason ?? undefined,
+    abertaEm: new Date(d.created * 1000).toISOString(),
+    atualizadaEm: agora.toISOString(),
+  };
+}
+
+export const ROTULO_DISPUTA: Record<StatusDisputa, string> = {
+  aberta: "Aguardando resposta",
+  em_analise: "Em análise pelo banco",
+  ganha: "Ganha",
+  perdida: "Perdida",
+  encerrada: "Encerrada",
+};
+
+/** Contestação ainda sem decisão. */
+export const disputaEmAberto = (d: DisputaPagamento | undefined) => d?.status === "aberta" || d?.status === "em_analise";
 
 /** O que fazer com a inscrição a partir do estado de uma Checkout Session. */
 export type AcaoSessao = "confirmar" | "processando" | "liberar_expirada" | "liberar_falha" | "nada";

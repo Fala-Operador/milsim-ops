@@ -4,6 +4,7 @@ import { carregarBase } from "@/services/db";
 import { disponibilidadeNaBase, resumoFinanceiro } from "@/services/inscricoes";
 import { TEXTO_MOTIVO } from "@/lib/vendas";
 import { resumoRepasse } from "@/lib/repasses";
+import { disputaEmAberto, ROTULO_DISPUTA } from "@/lib/stripe";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { mascararCpf } from "@/lib/domain/validators";
 import { Badge, Botao, Selecao } from "@/components/ui";
@@ -160,6 +161,19 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
             {r.reembolsosPendentes.map((i) => (
               <li key={i.id} className="break-words">
                 {i.codigo}: {i.pagamento?.erro ? `falha — ${i.pagamento.erro} (nova tentativa automática)` : "aguardando confirmação do Stripe"}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {r.disputas.length > 0 && (
+        <div role="status" className={`mt-3 rounded-md border px-3 py-2 text-sm ${r.disputas.some((i) => disputaEmAberto(i.pagamento?.disputa)) ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-border bg-elevated"}`}>
+          <p className="font-medium">{r.disputas.length} pagamento(s) contestado(s) no banco do cartão</p>
+          <p className="mt-0.5 text-xs">A resposta à contestação é feita pela plataforma com o Stripe. Guarde comprovantes de participação, como o check-in.</p>
+          <ul className="mt-1 space-y-0.5 text-xs">
+            {r.disputas.map((i) => (
+              <li key={i.id} className="break-words">
+                {i.codigo}: {formatarBRL(i.pagamento!.disputa!.valorCentavos)} — {ROTULO_DISPUTA[i.pagamento!.disputa!.status]} (desde {formatarDataBR(i.pagamento!.disputa!.abertaEm)})
               </li>
             ))}
           </ul>

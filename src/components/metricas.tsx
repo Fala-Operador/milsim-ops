@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { BaseDados, Evento } from "@/lib/domain/types";
 import {
-  ROTULO_ORIGEM, ROTULO_ORIGEM_CAMPANHA, agrupar, chaveOrigem, filtrar, indicadores, serieDiaria, variacao,
+  ROTULO_ORIGEM, ROTULO_ORIGEM_CAMPANHA, agrupar, chaveOrigem, filtrar, indicadores, resumoVendas, serieDiaria, variacao,
   type Campanha, type Filtro, type Indicadores, type OrigemAcesso, type OrigemCampanha, type RegistroAnalytics,
 } from "@/lib/analytics";
 import { regiaoDaUf, rotuloAbrangencia } from "@/lib/divulgacao";
@@ -13,7 +13,7 @@ import { StatusImpulsionamento } from "@/components/impulsionamentos";
 import { linkCampanha } from "@/services/analytics";
 import { criarCampanha, listarMetricas } from "@/api/analytics.functions";
 import { inscricoesAtivasDoEvento } from "@/services/inscricoes";
-import { formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
+import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
 import { Badge, Botao, Cartao, Entrada, EstadoVazio, Selecao, Skeleton } from "@/components/ui";
 import { baixarCsv, baixarPdf, montarRelatorio, nomeArquivo } from "@/lib/relatorioMetricas";
 
@@ -109,6 +109,8 @@ export function PainelMetricas({ base, eventos, modo }: { base: BaseDados; event
   const ind = indicadores(regs, todos);
   const indAnt = indicadores(anteriores, todos);
   const comp = comparar && periodo.tipo !== "tudo";
+  const vendas = resumoVendas(base.inscricoes, { eventoIds, desde, ate });
+  const vendasAnt = resumoVendas(base.inscricoes, { eventoIds, desde: desde - duracao, ate: desde - 1 });
   const ativasAgora = [...eventoIds].reduce((t, id) => t + inscricoesAtivasDoEvento(base, id).length, 0);
   const campanhasVisiveis = dados.campanhas.filter((c) => eventoIds.has(c.eventoId));
   const nomeEvento = (id: string) => base.eventos.find((e) => e.id === id)?.nome ?? id;
@@ -191,6 +193,9 @@ export function PainelMetricas({ base, eventos, modo }: { base: BaseDados; event
         <Indicador rotulo="CTR dos cards" valor={fmtP(ind.ctr)} ajuda="Cliques nos cards ÷ exibições dos cards × 100." />
         <Indicador rotulo="Conversão de visitantes" valor={fmtP(ind.conversao)} ajuda="Visitantes com inscrição confirmada ÷ visitantes únicos estimados × 100." />
         <Indicador rotulo="Conclusão da inscrição" valor={fmtP(ind.conclusao)} ajuda="Fluxos concluídos ÷ fluxos iniciados no período × 100." />
+        <Indicador rotulo="Receita confirmada" valor={formatarBRL(vendas.receitaCentavos)} ajuda="Valor das inscrições confirmadas no período, já com descontos. Cancelamentos e estornos não entram." anterior={<Comparacao ativo={comp} atual={vendas.receitaCentavos} anterior={vendasAnt.receitaCentavos} />} />
+        <Indicador rotulo="Ticket médio" valor={vendas.ticketMedioCentavos === null ? "—" : formatarBRL(vendas.ticketMedioCentavos)} ajuda={`Receita confirmada ÷ ${fmtN(vendas.pedidos)} pedido(s) pago(s) no período. Cortesias e descontos integrais não contam.`} />
+        <Indicador rotulo="Pago online (Stripe)" valor={formatarBRL(vendas.pagoOnlineCentavos)} ajuda="Parte da receita confirmada paga pelo Stripe no período." />
       </div>
 
       <Bloco titulo="Visitas e cliques ao longo do tempo">

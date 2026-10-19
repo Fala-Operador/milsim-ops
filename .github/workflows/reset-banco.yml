@@ -1,0 +1,63 @@
+# Reset dos dados de teste do banco, só manual (Actions → Reset do banco → Run workflow).
+# Primeiro salva um backup completo (esquema + dados) como artefato desta execução, por 30
+# dias, e só então roda supabase/scripts/reset_mantendo_contas_e_vendas_stripe.sql, que
+# mantém contas, organizações (com a conta Stripe vinculada), configurações do site e as
+# vendas pagas pelo Stripe, e apaga o resto. Nada é apagado no Stripe nem no Storage.
+#
+# Usa os mesmos segredos do deploy.yml (SUPABASE_ACCESS_TOKEN e SUPABASE_DB_PASSWORD).
+name: Reset do banco
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmacao:
+        description: 'Digite RESETAR para confirmar (o backup é salvo antes)'
+        required: true
+
+permissions:
+  contents: read
+
+# Nunca junto de um deploy de migrations.
+concurrency:
+  group: supabase-deploy
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    name: Backup e reset
+    if: ${{ inputs.confirmacao == 'RESETAR' }}
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_CLI_VERSION: 2.119.0
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'fezrmoyjsffufdjptamp' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar a Supabase CLI
+        run: |
+          curl -fsSL "https://github.com/supabase/cli/releases/download/v${SUPABASE_CLI_VERSION}/supabase_linux_amd64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin supabase supabase-go
+          supabase --version
+
+      - name: Vincular o projeto
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Backup do banco
+        run: |
+          mkdir -p backup
+          supabase db dump --linked -f backup/esquema.sql
+          supabase db dump --linked --data-only --use-copy -f backup/dados.sql
+          test -s backup/dados.sql
+
+      - name: Guardar o backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-banco-${{ github.run_id }}
+          path: backup/
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Reset mantendo contas e vendas Stripe
+        run: supabase db query --linked -f supabase/scripts/reset_mantendo_contas_e_vendas_stripe.sql

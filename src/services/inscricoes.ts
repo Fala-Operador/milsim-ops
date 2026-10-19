@@ -9,6 +9,7 @@ import { contaParaRepasse, taxaDaPlataforma, taxaPlataforma } from "@/lib/repass
 import type {
   BaseDados,
   Cupom,
+  DisputaPagamento,
   Evento,
   Inscricao,
   PagamentoInscricao,
@@ -735,6 +736,34 @@ export function registrarReembolsoNaBase(
   });
 }
 
+/**
+ * Contestação (chargeback) de um pagamento, vinda do webhook charge.dispute.*. Guarda a
+ * situação no pagamento e, na abertura, avisa o responsável pela organização do evento.
+ * Devolve a inscrição afetada (ou undefined quando o pagamento não é deste site).
+ */
+export function registrarDisputaNaBase(base: BaseDados, intencaoId: string, disputa: DisputaPagamento): Inscricao | undefined {
+  const ins = base.inscricoes.find((i) => i.pagamento?.intencaoId === intencaoId);
+  if (!ins?.pagamento) return undefined;
+  const anterior = ins.pagamento.disputa;
+  ins.pagamento = { ...ins.pagamento, disputa: { ...disputa, abertaEm: anterior?.abertaEm ?? disputa.abertaEm } };
+  if (!anterior) {
+    const evento = base.eventos.find((e) => e.id === ins.eventoId);
+    const responsavel = base.organizacoes.find((o) => o.id === evento?.organizacaoId)?.responsavelId;
+    if (responsavel) {
+      base.notificacoes.push({
+        id: gerarId("not"),
+        usuarioId: responsavel,
+        titulo: "Pagamento contestado",
+        corpo: `O comprador da inscrição ${ins.codigo} contestou o pagamento no banco do cartão${evento ? ` (${evento.nome})` : ""}.`,
+        link: "/organizacao/financeiro",
+        lida: false,
+        criadoEm: disputa.atualizadaEm,
+      });
+    }
+  }
+  return ins;
+}
+
 /** Resumo financeiro derivado dos registros de origem (sem números fixos). */
 export function resumoFinanceiro(eventoId: string) {
   const base = carregarBase();
@@ -772,6 +801,10 @@ export function resumoFinanceiro(eventoId: string) {
     reembolsosPendentes: base.inscricoes.filter(
       (i) => i.eventoId === eventoId && i.pagamento?.status === "estorno_pendente",
     ),
+    // Contestações (chargebacks) registradas pelo webhook, das mais recentes para as antigas.
+    disputas: base.inscricoes
+      .filter((i) => i.eventoId === eventoId && i.pagamento?.disputa)
+      .sort((a, b) => b.pagamento!.disputa!.abertaEm.localeCompare(a.pagamento!.disputa!.abertaEm)),
     movimentacoes: movs,
   };
 }

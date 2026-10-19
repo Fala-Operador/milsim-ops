@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { restaurarBase } from "@/test/baseTeste";
 import { confirmarInscricao, confirmarPagamentoNaBase } from "@/services/inscricoes";
 import { definirTaxaPlataformaNaBase, registrarRecebimentoNaBase } from "@/services/repasses";
-import { contaParaRepasse, recebimentoDaConta, resumoRepasse, taxaDaPlataforma, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
+import { contaParaRepasse, descreverCronograma, recebimentoDaConta, resumoRepasse, resumoSaldo, taxaDaPlataforma, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
 import { visaoParaUsuario } from "@/lib/visao";
 import type { BaseDados, Evento } from "@/lib/domain/types";
 
@@ -117,5 +117,42 @@ describe("taxa configurada pela administração", () => {
     expect(visaoParaUsuario(base, usuario("usr-organizador")).configuracoes).toHaveLength(1);
     expect(visaoParaUsuario(base, usuario("usr-participante")).configuracoes).toHaveLength(0);
     expect(visaoParaUsuario(base, null).configuracoes).toHaveLength(0);
+  });
+});
+
+describe("saldo e saques da conta conectada", () => {
+  const conta: ContaStripe = {
+    id: "acct_1",
+    settings: { payouts: { schedule: { interval: "weekly", weekly_anchor: "monday", delay_days: 2 } } },
+    external_accounts: { data: [{ object: "bank_account", bank_name: "Banco X", last4: "1234", default_for_currency: true }] },
+  };
+
+  it("soma só o saldo em reais e escolhe o próximo saque pela chegada", () => {
+    const r = resumoSaldo(
+      { available: [{ amount: 5000, currency: "brl" }, { amount: 900, currency: "usd" }], pending: [{ amount: 1200, currency: "brl" }] },
+      [
+        { id: "po_3", amount: 300, currency: "brl", arrival_date: 1_800_000_000, status: "pending" },
+        { id: "po_2", amount: 200, currency: "brl", arrival_date: 1_700_000_000, status: "in_transit" },
+        { id: "po_1", amount: 100, currency: "brl", arrival_date: 1_600_000_000, status: "failed", failure_message: "Conta encerrada" },
+      ],
+      conta,
+    );
+    expect(r.disponivelCentavos).toBe(5000);
+    expect(r.aLiberarCentavos).toBe(1200);
+    expect(r.proximoSaque?.id).toBe("po_2");
+    expect(r.saques.map((s) => s.status)).toEqual(["pending", "in_transit", "failed"]);
+    expect(r.saques[2]?.falha).toBe("Conta encerrada");
+    expect(r.banco).toBe("Banco X •••• 1234");
+  });
+
+  it("descreve o cronograma em português", () => {
+    expect(descreverCronograma(conta.settings?.payouts?.schedule)).toBe("Semanal, toda segunda-feira (cada venda fica disponível 2 dias depois)");
+    expect(descreverCronograma({ interval: "daily" })).toBe("Diário");
+    expect(descreverCronograma(undefined)).toBe("Definido pelo Stripe");
+  });
+
+  it("sem saques nem banco, o resumo fica vazio", () => {
+    const r = resumoSaldo({}, [], { id: "acct_2" });
+    expect(r).toMatchObject({ disponivelCentavos: 0, aLiberarCentavos: 0, saques: [], proximoSaque: undefined, banco: undefined });
   });
 });

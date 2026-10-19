@@ -1,9 +1,12 @@
-// Conta de recebimento da organização (Stripe Connect Express): cadastro, situação e painel.
+// Conta de recebimento da organização (Stripe Connect Express): cadastro, situação, painel,
+// saldo e saques e, com a chave publicável configurada, os componentes embutidos do Stripe.
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Banknote, Check, Clock, ExternalLink, TriangleAlert } from "lucide-react";
 import { abrirPainelStripe, atualizarRecebimento, cadastrarRecebimento, configuracaoRepasse } from "@/api/repasses.functions";
 import { Badge, Botao } from "@/components/ui";
+import { PaineisStripe } from "@/components/PaineisStripe";
+import { SaldoRecebimento } from "@/components/SaldoRecebimento";
 import { ROTULO_RECEBIMENTO, taxaDaPlataforma } from "@/lib/repasses";
 import { carregarBase } from "@/services/db";
 import type { Organizacao, StatusRecebimento } from "@/lib/domain/types";
@@ -13,7 +16,7 @@ const ICONE: Record<StatusRecebimento, typeof Check> = { ativa: Check, em_analis
 
 export function RecebimentosOrganizacao({ organizacao, retorno }: { organizacao: Organizacao; retorno?: string | undefined }) {
   const navigate = useNavigate();
-  const [config, setConfig] = useState<{ pagamentoOnline: boolean } | null>(null);
+  const [config, setConfig] = useState<{ pagamentoOnline: boolean; componentesStripe?: boolean } | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState("");
   const rec = organizacao.recebimento;
@@ -95,6 +98,18 @@ export function RecebimentosOrganizacao({ organizacao, retorno }: { organizacao:
           </Botao>
         )}
       </div>
+      {config && rec?.status === "ativa" && (
+        <>
+          <div className="mt-4 border-t border-border pt-4">
+            <SaldoRecebimento organizacaoId={organizacao.id} />
+          </div>
+          {config.componentesStripe && (
+            <div className="mt-4 border-t border-border pt-4">
+              <PaineisStripe organizacaoId={organizacao.id} />
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
