@@ -64,7 +64,7 @@ try {
 ## Escritas: atomicidade e idempotência
 
 - Toda escrita roda em `mutar` (`src/server/unidade.server.ts`): lê a base, executa a regra e
-  grava todas as mudanças numa **única transação** (`aplicar_mudancas`). Ou tudo é gravado, ou nada.
+  grava todas as mudanças numa **única transação** (`apply_changes`). Ou tudo é gravado, ou nada.
 - Efeitos externos (Stripe, Storage de documentos privados) acontecem **fora** da transação,
   antes ou depois dela, nunca dentro (a regra pode ser repetida num conflito).
 - APIs que recebem `clienteId` são **idempotentes**: gere o id uma vez no navegador

@@ -34,9 +34,9 @@ sequenceDiagram
     F->>F: valida a entrada (zod)
     F->>U: mutar(regra)
     U->>U: identidade pela sessão (JWT)
-    U->>DB: versão atual (e exportar_base se mudou)
+    U->>DB: versão atual (e export_base se mudou)
     U->>U: executa a regra sobre a base
-    U->>DB: aplicar_mudancas(lote, versão) — 1 transação
+    U->>DB: apply_changes(lote, versão) — 1 transação
     alt outra escrita entrou antes (MS409)
         U->>U: espera e refaz (até 4 vezes)
     end

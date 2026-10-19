@@ -18,8 +18,8 @@ export async function entrar(email: string, senha: string): Promise<RespostaApi<
   const sessao = supabaseSessao();
   const { data, error } = await sessao.auth.signInWithPassword({ email: normalizarEmail(email), password: senha });
   if (error || !data.user) throw new Error("E-mail ou senha incorretos.");
-  const { data: perfil } = await supabaseAdmin().from("usuarios").select("ativo").eq("id", data.user.id).maybeSingle();
-  if (!perfil?.ativo) {
+  const { data: perfil } = await supabaseAdmin().from("users").select("active").eq("id", data.user.id).maybeSingle();
+  if (!perfil?.active) {
     await sessao.auth.signOut();
     throw new Error("Conta inativa.");
   }
