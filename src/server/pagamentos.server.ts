@@ -34,6 +34,7 @@ import { contextoSomenteLeitura, ler, mutar, type RespostaApi } from "@/server/u
 import {
   chavePublicavel,
   problemaChavesStripe,
+  completarPerfilComercial,
   criarContaConectada,
   criarReembolso,
   criarSessaoCheckout,
@@ -48,7 +49,7 @@ import {
   saquesDaConta,
   stripeConfigurado,
 } from "@/server/stripe.server";
-import { contaParaRepasse, gereRecebimento, resumoSaldo, type ContaStripe, type SaldoRecebimento } from "@/lib/repasses";
+import { contaParaRepasse, gereRecebimento, perfilComercialPadrao, precisaPerfilComercial, resumoSaldo, type ContaStripe, type PerfilComercial, type SaldoRecebimento } from "@/lib/repasses";
 import { organizacaoDaConta, registrarRecebimentoNaBase } from "@/services/repasses";
 import type { Inscricao } from "@/lib/domain/types";
 
@@ -274,6 +275,16 @@ async function comStripe<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
+/**
+ * Contas criadas antes do preenchimento automático: envia site, ramo e descrição enquanto o
+ * cadastro não foi enviado. Uma recusa do Stripe não impede o cadastro (a organização ainda
+ * pode preencher o campo).
+ */
+async function completarPerfil(conta: ContaStripe, perfil: PerfilComercial): Promise<void> {
+  if (!precisaPerfilComercial(conta)) return;
+  await completarPerfilComercial(conta.id, perfil).catch((e) => console.error("Stripe: perfil comercial", e));
+}
+
 const gravarConta = (organizacaoId: string, conta: ContaStripe) =>
   mutar(({ base }) => {
     registrarRecebimentoNaBase(base, organizacaoId, conta);
@@ -289,8 +300,10 @@ export async function iniciarCadastroRecebimento(organizacaoId: string): Promise
   const org = await organizacaoGerida(organizacaoId);
   const origem = new URL(getRequestUrl()).origin;
   const { contaId, url } = await comStripe(async () => {
-    const conta = org.contaId ? await obterContaConectada(org.contaId) : await criarContaConectada({ organizacaoId, nome: org.nome, email: org.email });
+    const perfil = perfilComercialPadrao(org.nome, origem);
+    const conta = org.contaId ? await obterContaConectada(org.contaId) : await criarContaConectada({ organizacaoId, perfil, email: org.email });
     if (!org.contaId) await gravarConta(organizacaoId, conta); // guarda a conta antes de sair para o Stripe
+    else await completarPerfil(conta, perfil);
     const link = await linkDeCadastro(conta.id, `${origem}/organizacao/financeiro?recebimento=retorno`, `${origem}/organizacao/financeiro?recebimento=renovar`);
     return { contaId: conta.id, url: link.url };
   });
@@ -356,11 +369,13 @@ export async function sessaoComponentesStripe(organizacaoId: string): Promise<{ 
   if (!chave || !stripeConfigurado()) throw new Error("Os painéis do Stripe ainda não foram ativados na plataforma.");
   const problema = problemaChavesStripe();
   if (problema) throw new Error(`Os painéis do Stripe estão mal configurados: ${problema}`);
+  const perfil = perfilComercialPadrao(org.nome, new URL(getRequestUrl()).origin);
   const contaId = org.contaId ?? (await comStripe(async () => {
-    const conta = await criarContaConectada({ organizacaoId, nome: org.nome, email: org.email });
+    const conta = await criarContaConectada({ organizacaoId, perfil, email: org.email });
     await gravarConta(organizacaoId, conta);
     return conta.id;
   }));
+  if (org.contaId && !org.ativa) await completarPerfil(await comStripe(() => obterContaConectada(contaId)), perfil);
   const sessao = await comStripe(() => criarSessaoDeConta(contaId, org.ativa));
   return { chavePublicavel: chave, clientSecret: sessao.client_secret };
 }

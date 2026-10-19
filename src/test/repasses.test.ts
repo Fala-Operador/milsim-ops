@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { restaurarBase } from "@/test/baseTeste";
 import { confirmarInscricao, confirmarPagamentoNaBase } from "@/services/inscricoes";
 import { definirTaxaPlataformaNaBase, registrarRecebimentoNaBase } from "@/services/repasses";
-import { contaParaRepasse, descreverCronograma, recebimentoDaConta, resumoRepasse, resumoSaldo, taxaDaPlataforma, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
+import { contaParaRepasse, descreverCronograma, MCC_EVENTOS, perfilComercialPadrao, precisaPerfilComercial, recebimentoDaConta, resumoRepasse, resumoSaldo, taxaDaPlataforma, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
 import { visaoParaUsuario } from "@/lib/visao";
 import type { BaseDados, Evento } from "@/lib/domain/types";
 
@@ -154,5 +154,29 @@ describe("saldo e saques da conta conectada", () => {
   it("sem saques nem banco, o resumo fica vazio", () => {
     const r = resumoSaldo({}, [], { id: "acct_2" });
     expect(r).toMatchObject({ disponivelCentavos: 0, aLiberarCentavos: 0, saques: [], proximoSaque: undefined, banco: undefined });
+  });
+});
+
+describe("perfil comercial enviado ao Stripe", () => {
+  it("usa o endereço público do site, o ramo de recreação e uma descrição com o nome", () => {
+    const p = perfilComercialPadrao("Fala Operador", "https://milsimops.falaoperador.com.br");
+    expect(p).toEqual({
+      name: "Fala Operador",
+      mcc: MCC_EVENTOS,
+      product_description: "Ingressos para eventos de airsoft organizados por Fala Operador, vendidos pelo Milsim Ops.",
+      url: "https://milsimops.falaoperador.com.br",
+    });
+  });
+
+  it("vai sem site em endereço local, que o Stripe recusa", () => {
+    expect(perfilComercialPadrao("Org", "http://localhost:3000").url).toBeUndefined();
+    expect(perfilComercialPadrao("Org", "https://localhost").url).toBeUndefined();
+  });
+
+  it("completa só contas em cadastro que ainda não têm site nem descrição", () => {
+    expect(precisaPerfilComercial({ id: "acct_1" })).toBe(true);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { url: "https://x.com" } })).toBe(false);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { product_description: "Eventos" } })).toBe(false);
+    expect(precisaPerfilComercial({ id: "acct_1", details_submitted: true })).toBe(false);
   });
 });

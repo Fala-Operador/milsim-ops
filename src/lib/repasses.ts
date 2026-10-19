@@ -13,6 +13,44 @@ export interface ContaStripe {
   requirements?: { currently_due?: string[] | null; disabled_reason?: string | null } | null;
   settings?: { payouts?: { schedule?: CronogramaStripe | null } | null } | null;
   external_accounts?: { data?: ContaExternaStripe[] | null } | null;
+  business_profile?: { url?: string | null; product_description?: string | null; mcc?: string | null } | null;
+}
+
+/** Perfil comercial que a plataforma envia ao Stripe para a organização não precisar digitar. */
+export type PerfilComercial = {
+  name: string;
+  mcc: string;
+  product_description: string;
+  url?: string | undefined;
+};
+
+/** Serviços de recreação (MCC 7999), onde o Stripe classifica eventos de airsoft. */
+export const MCC_EVENTOS = "7999";
+
+/**
+ * Site, ramo e descrição da organização para o cadastro do Stripe, que senão pede "Seu site" à
+ * organização. O site é o endereço público do Milsim Ops, onde os ingressos são vendidos; fora
+ * de https (desenvolvimento local) vai sem site, porque o Stripe recusa endereços locais.
+ */
+export function perfilComercialPadrao(nome: string, origem: string): PerfilComercial {
+  let url: string | undefined;
+  try {
+    const u = new URL(origem);
+    if (u.protocol === "https:" && u.hostname !== "localhost") url = u.origin;
+  } catch {
+    url = undefined;
+  }
+  return {
+    name: nome,
+    mcc: MCC_EVENTOS,
+    product_description: `Ingressos para eventos de airsoft organizados por ${nome}, vendidos pelo Milsim Ops.`,
+    url,
+  };
+}
+
+/** Conta ainda em cadastro e sem site nem descrição: a plataforma completa o perfil comercial. */
+export function precisaPerfilComercial(conta: ContaStripe): boolean {
+  return !conta.details_submitted && !conta.business_profile?.url && !conta.business_profile?.product_description;
 }
 
 export interface CronogramaStripe {

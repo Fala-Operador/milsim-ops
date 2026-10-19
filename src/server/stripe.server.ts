@@ -4,7 +4,7 @@
 // os segredos de assinatura do Stripe). Sem a chave da API, inscrições confirmam sem cobrança.
 import "@tanstack/react-start/server-only";
 import { codificarFormulario, problemaDasChaves, type CobrancaStripe, type SessaoCheckout } from "@/lib/stripe";
-import type { ContaStripe, SaldoStripe, SaqueStripe } from "@/lib/repasses";
+import type { ContaStripe, PerfilComercial, SaldoStripe, SaqueStripe } from "@/lib/repasses";
 
 const API = "https://api.stripe.com/v1";
 
@@ -132,7 +132,7 @@ export function criarReembolso(inscricaoId: string, intencaoId: string, repassad
 // ---------- Stripe Connect (contas Express das organizações) ----------
 
 /** Cria a conta Express da organização (uma por organização, pela chave de idempotência). */
-export function criarContaConectada(d: { organizacaoId: string; nome: string; email?: string | undefined }): Promise<ContaStripe> {
+export function criarContaConectada(d: { organizacaoId: string; perfil: PerfilComercial; email?: string | undefined }): Promise<ContaStripe> {
   return chamarStripe<ContaStripe>(
     "POST",
     "/accounts",
@@ -140,12 +140,17 @@ export function criarContaConectada(d: { organizacaoId: string; nome: string; em
       type: "express",
       country: "BR",
       email: d.email,
-      business_profile: { name: d.nome },
+      business_profile: d.perfil,
       capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
       metadata: { organizacaoId: d.organizacaoId },
     },
     `conta-${d.organizacaoId}`,
   );
+}
+
+/** Preenche site, ramo e descrição de uma conta criada antes desse preenchimento automático. */
+export function completarPerfilComercial(contaId: string, perfil: PerfilComercial): Promise<ContaStripe> {
+  return chamarStripe<ContaStripe>("POST", `/accounts/${encodeURIComponent(contaId)}`, { business_profile: perfil });
 }
 
 export function obterContaConectada(id: string): Promise<ContaStripe> {
