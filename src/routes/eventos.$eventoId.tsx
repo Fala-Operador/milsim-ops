@@ -9,6 +9,7 @@ import { registrarCliqueInscrever, registrarVisita } from "@/services/analytics"
 import { vagasRestantes, loteVigente } from "@/services/inscricoes";
 import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
 import { Badge, Botao, Cartao, Modal, SkeletonPagina } from "@/components/ui";
+import { ContatoWhatsapp } from "@/components/ContatoWhatsapp";
 
 export const Route = createFileRoute("/eventos/$eventoId")({
   loader: async ({ params }) => {
@@ -118,6 +119,7 @@ function PaginaEvento() {
               {evento.status === "cancelado" ? "Evento cancelado" : restantes <= 0 ? "Esgotado" : "Inscrições encerradas"}
             </Badge>
           )}
+          {evento.status !== "cancelado" && <ContatoWhatsapp evento={evento} className="mt-3 md:justify-end" />}
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import { vistaDoChamado } from "@/lib/suporte";
 import { baseVazia } from "@/lib/persistencia";
 import { pagamentoAnonimo, pagamentoSemIds } from "@/lib/pagamentos";
 import { organizacaoVisivel } from "@/lib/repasses";
+import { podeVerGrupo } from "@/lib/contatoEvento";
 import {
   forunsVisiveis,
   nomeExibicao,
@@ -98,9 +99,10 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
   );
 
   // ----- Eventos e vendas -----
-  v.eventos = base.eventos.filter(
-    (e) => STATUS_PUBLICOS.has(e.status) || geridos.has(e.id) || participo.has(e.id),
-  );
+  v.eventos = base.eventos
+    .filter((e) => STATUS_PUBLICOS.has(e.status) || geridos.has(e.id) || participo.has(e.id))
+    // Link do grupo do WhatsApp: só inscritos confirmados e quem gere o evento.
+    .map((e) => (e.whatsappGrupoUrl && !podeVerGrupo(base, eu, e.id, geridos.has(e.id)) ? { ...e, whatsappGrupoUrl: undefined } : e));
   const visiveis = new Set(v.eventos.map((e) => e.id));
   // Conta de recebimento (Stripe Connect) só para quem gere a organização.
   v.organizacoes = base.organizacoes.map((o) => organizacaoVisivel(o, eu));

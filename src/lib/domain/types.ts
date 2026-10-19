@@ -196,6 +196,9 @@ export interface Evento {
   regras?: DocumentoRegras | undefined;
   /** Modalidade principal; ausente em eventos antigos ("Modalidade não informada"). */
   modalidade?: ModalidadeId | undefined;
+  /** WhatsApp do organizador para dúvidas (dígitos com DDI). Público na página do evento. */
+  whatsappContato?: string | undefined;
+  /** Convite do grupo (chat.whatsapp.com). Só inscritos confirmados e a organização veem (visão). */
   whatsappGrupoUrl?: string | undefined;
   status: StatusEvento;
   criadoEm: string;

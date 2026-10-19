@@ -3,6 +3,7 @@ import { normalizarCodigoCupom, validarDadosCupom, type DadosCupom } from "@/lib
 import { ehModalidade, erroModalidadeParaPublicar, nomeModalidade } from "@/lib/modalidades";
 import { estornarEventoNaBase } from "@/services/inscricoes";
 import { ocupaVaga } from "@/lib/pagamentos";
+import { contatoParaGravar, errosContatoEvento } from "@/lib/contatoEvento";
 import { carregarBase, mutarBase, latencia, ErroDominio, gerarId, gerarCodigo } from "./db";
 import { silenciado } from "./notificacoes";
 import { cnpjValido, normalizarEmail, somenteDigitos, telefoneValido } from "@/lib/domain/validators";
@@ -88,6 +89,9 @@ export async function salvarEvento(
   perfil: string,
 ): Promise<Evento> {
   await latencia();
+  const erroContato = errosContatoEvento(evento)[0];
+  if (erroContato) throw new ErroDominio("contato", erroContato.mensagem);
+  evento = contatoParaGravar(evento);
   return mutarBase((base) => {
     const idx = base.eventos.findIndex((e) => e.id === evento.id);
     if (idx >= 0) {

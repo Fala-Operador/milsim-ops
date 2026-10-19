@@ -13,7 +13,7 @@ import { Botao, Cartao, EstadoVazio, Modal, AreaTexto } from "@/components/ui";
 import { StatusInscricao } from "@/components/StatusInscricao";
 import type { Inscricao } from "@/lib/domain/types";
 import { IngressoQr } from "@/components/IngressoQr";
-import { CreditCard, QrCode } from "lucide-react";
+import { CreditCard, QrCode, Users } from "lucide-react";
 
 export const Route = createFileRoute("/app/ingressos")({
   // Retorno do checkout do Stripe: ?pagamento=sucesso&sessao=cs_...
@@ -264,6 +264,17 @@ function MeusIngressos() {
                       <QrCode className="h-4 w-4" />
                       Abrir QR Code de entrada
                     </Botao>
+                    {evento?.whatsappGrupoUrl && (
+                      <a
+                        href={evento.whatsappGrupoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring sm:w-auto"
+                      >
+                        <Users className="h-4 w-4" aria-hidden="true" />
+                        Entrar no grupo do WhatsApp
+                      </a>
+                    )}
                     <Botao
                       className="w-full sm:w-auto"
                       variante="contorno"

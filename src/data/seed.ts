@@ -279,7 +279,7 @@ function criarBaseLegada(): BaseSemComunidade {
           conteudoHtml:
             "<h2>1. Segurança</h2><p>Uso obrigatório de óculos de proteção balística em todas as áreas de jogo. Cronagem máxima de 400 FPS com BBs de 0,20g.</p><h2>2. Conduta</h2><p>Respeito absoluto a participantes, staff e propriedade. Acertos devem ser declarados imediatamente.</p><h2>3. Uniformes</h2><p>Cada exército possui padrão de uniforme definido no briefing. Faixas de identificação são obrigatórias.</p><h2>4. Estrutura</h2><p>Área de camping, alimentação e segurança 24h durante o evento.</p>",
         },
-        whatsappGrupoUrl: "https://chat.whatsapp.com/grupo-ficticio-serra",
+        whatsappGrupoUrl: "https://chat.whatsapp.com/GrupoFicticioSerra01",
         status: "publicado",
         criadoEm: iso(dias(-40)),
       },

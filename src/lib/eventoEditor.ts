@@ -5,6 +5,7 @@ import type { Evento } from "@/lib/domain/types";
 import { ehModalidade } from "@/lib/modalidades";
 import { disponibilidadeTipo, type OcupacaoLote } from "@/lib/vendas";
 import { validarParaPublicacao } from "@/services/organizador";
+import { errosContatoEvento } from "@/lib/contatoEvento";
 
 export const ETAPAS = [
   { id: "geral", titulo: "Informações gerais" },
@@ -46,6 +47,7 @@ function schemaEtapa(i: number, oc: Ocupacao) {
         if (vazio(ev.descricaoResumida)) erro(ctx, "ev-desc", "Escreva uma descrição resumida.");
         else if (ev.descricaoResumida.length > 200) erro(ctx, "ev-desc", "Use no máximo 200 caracteres.");
         if (vazio(ev.enredo)) erro(ctx, "ev-enredo", "Descreva o enredo da operação.");
+        for (const p of errosContatoEvento(ev)) erro(ctx, p.campo, p.mensagem);
         break;
       case "local":
         if (!dataValida(ev.inicioEm)) erro(ctx, "ev-ini", "Informe data e horário de início.");

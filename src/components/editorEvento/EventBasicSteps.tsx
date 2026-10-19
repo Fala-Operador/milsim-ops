@@ -3,6 +3,7 @@ import { AreaTexto, Botao, Campo, Entrada, Selecao } from "@/components/ui";
 import { ehModalidade, MODALIDADES } from "@/lib/modalidades";
 import { dataUrlParaBlobUrl, pdfParaDataUrl } from "@/lib/imagens";
 import type { Ocupacao } from "@/lib/eventoEditor";
+import { formatarContatoWhatsapp, normalizarContatoWhatsapp } from "@/lib/contatoEvento";
 import { Ajuda, inval, MsgErro, paraLocal, Secao, type PropsEtapa } from "./comum";
 
 const UFS = "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" ");
@@ -48,6 +49,27 @@ export function EtapaGeral({ ev, set, erros, organizacoes, podeEscolherOrg }: Pr
           <Entrada id="ev-org" readOnly value={organizacoes.find((o) => o.id === ev.organizacaoId)?.nome ?? "—"} />
         )}
       </Campo>
+      <Secao titulo="Contato no WhatsApp">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Campo rotulo="WhatsApp do organizador (opcional)" htmlFor="ev-whats">
+            <Entrada id="ev-whats" inputMode="tel" autoComplete="tel" placeholder="(11) 99999-9999" maxLength={25}
+              value={ev.whatsappContato ?? ""}
+              onChange={(e) => set("whatsappContato", e.target.value || undefined)}
+              onBlur={(e) => { const n = normalizarContatoWhatsapp(e.target.value); if (n) set("whatsappContato", formatarContatoWhatsapp(n)); }}
+              {...inval(erros, "ev-whats")} />
+            <MsgErro erros={erros} id="ev-whats" />
+            <Ajuda>Público: vira o botão “Falar no WhatsApp” na página do evento.</Ajuda>
+          </Campo>
+          <Campo rotulo="Link do grupo (opcional)" htmlFor="ev-grupo">
+            <Entrada id="ev-grupo" type="url" inputMode="url" placeholder="https://chat.whatsapp.com/…" maxLength={200}
+              value={ev.whatsappGrupoUrl ?? ""}
+              onChange={(e) => set("whatsappGrupoUrl", e.target.value.trim() || undefined)}
+              {...inval(erros, "ev-grupo")} />
+            <MsgErro erros={erros} id="ev-grupo" />
+            <Ajuda>Só quem tem inscrição confirmada vê o link, em “Meus ingressos” e na página do evento.</Ajuda>
+          </Campo>
+        </div>
+      </Secao>
     </div>
   );
 }

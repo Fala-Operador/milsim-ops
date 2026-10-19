@@ -11,6 +11,8 @@ import { StatusInscricao } from "@/components/StatusInscricao";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import type { Evento } from "@/lib/domain/types";
+import { Movimentacoes } from "@/components/financeiro/Movimentacoes";
+import { linhasDeMovimentacao } from "@/lib/movimentacoes";
 
 /** Eventos visíveis para o organizador logado (admin vê todos). */
 export function useEventosOrg() {
@@ -171,20 +173,11 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
           </div>
         ))}
       </div>
-      <h3 className="mt-4 text-sm font-medium">Movimentações</h3>
-      <ul className="mt-1 space-y-1 text-sm">
-        {r.movimentacoes.map((m) => (
-          <li key={m.id} className="flex justify-between gap-3 rounded border border-border/50 px-3 py-1.5">
-            <span className="min-w-0 break-words text-muted-foreground">{m.descricao}</span>
-            <span className={`shrink-0 font-mono ${m.valorCentavos < 0 ? "text-destructive" : "text-success"}`}>
-              {formatarBRL(m.valorCentavos)}
-            </span>
-          </li>
-        ))}
-        {r.movimentacoes.length === 0 && (
-          <li className="text-sm text-muted-foreground">Nenhuma movimentação registrada.</li>
-        )}
-      </ul>
+      {/* key: trocar de evento recomeça abas e filtros */}
+      <Movimentacoes
+        key={eventoId}
+        linhas={linhasDeMovimentacao(r.movimentacoes, carregarBase().inscricoes.filter((i) => i.eventoId === eventoId))}
+      />
     </div>
   );
 }

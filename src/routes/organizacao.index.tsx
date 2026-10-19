@@ -141,7 +141,7 @@ function PainelEventos() {
             </p>
           ) : null;
         })()}
-        <Botao onClick={() => { setFocarLotes(false); setFormEstado({ evento: eventoVazio(orgId ?? base.organizacoes[0]?.id ?? ""), existente: false }); }}>+ Criar evento</Botao>
+        <Botao onClick={() => { setFocarLotes(false); const idOrg = orgId ?? base.organizacoes[0]?.id ?? ""; setFormEstado({ evento: eventoVazio(idOrg, base.organizacoes.find((o) => o.id === idOrg)?.telefone), existente: false }); }}>+ Criar evento</Botao>
       </div>
 
       {aviso && <p role="status" className="mt-3 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm">{aviso}</p>}
