@@ -176,10 +176,10 @@ describe("perfil comercial enviado ao Stripe", () => {
 
   it("completa só contas em cadastro sem ramo ou sem site e descrição", () => {
     expect(precisaPerfilComercial({ id: "acct_1" })).toBe(true);
-    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { url: "https://milsimops.falaoperador.com.br/" } })).toBe(true);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { url: "https://milsimops.falaoperador.com.br" } })).toBe(true);
     expect(precisaPerfilComercial({ id: "acct_1", business_profile: { mcc: MCC_EVENTOS } })).toBe(true);
-    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { mcc: "7999", url: "https://milsimops.falaoperador.com.br/" } })).toBe(true);
-    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { mcc: MCC_EVENTOS, url: "https://milsimops.falaoperador.com.br/" } })).toBe(false);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { mcc: "7999", url: "https://milsimops.falaoperador.com.br" } })).toBe(true);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { mcc: MCC_EVENTOS, url: "https://milsimops.falaoperador.com.br" } })).toBe(false);
     expect(precisaPerfilComercial({ id: "acct_1", business_profile: { mcc: MCC_EVENTOS, product_description: "Eventos" } })).toBe(false);
     expect(precisaPerfilComercial({ id: "acct_1", details_submitted: true })).toBe(false);
   });
