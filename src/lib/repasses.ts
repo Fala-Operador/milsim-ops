@@ -24,8 +24,8 @@ export type PerfilComercial = {
   url?: string | undefined;
 };
 
-/** Serviços de recreação (MCC 7999), onde o Stripe classifica eventos de airsoft. */
-export const MCC_EVENTOS = "7999";
+/** Setor "Ingressos para eventos" do cadastro do Stripe (MCC 7922, venda de ingressos). */
+export const MCC_EVENTOS = "7922";
 
 /**
  * Site, ramo e descrição da organização para o cadastro do Stripe, que senão pede "Seu site" à
@@ -50,7 +50,10 @@ export function perfilComercialPadrao(nome: string, origem: string): PerfilComer
 
 /** Conta ainda em cadastro e sem site nem descrição: a plataforma completa o perfil comercial. */
 export function precisaPerfilComercial(conta: ContaStripe): boolean {
-  return !conta.details_submitted && !conta.business_profile?.url && !conta.business_profile?.product_description;
+  const p = conta.business_profile;
+  // Sem o ramo (MCC) o cadastro do Stripe pede o "Setor"; contas criadas antes do envio pela v2
+  // podem ter site e descrição mas não o ramo, ou um ramo antigo.
+  return !conta.details_submitted && (p?.mcc !== MCC_EVENTOS || (!p.url && !p.product_description));
 }
 
 export interface CronogramaStripe {
