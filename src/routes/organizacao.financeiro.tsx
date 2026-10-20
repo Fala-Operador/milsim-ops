@@ -73,73 +73,77 @@ function PaginaFinanceiro() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold uppercase">Financeiro</h2>
       </div>
+      <OperacaoSelecionada eventos={eventos} evento={eventos.find((e) => e.id === eventoId)} invalido={invalido} onSelecionar={setEventoId} />
+
+      {erro && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
+
+      {/* Resumo e movimentações do evento primeiro; a conta de recebimento e os painéis do Stripe logo abaixo. */}
+      {eventos.length === 0 ? (
+        <Card><p className="text-sm text-muted-foreground">Nenhum evento criado ainda. Crie um evento no Painel.</p></Card>
+      ) : (
+        evento && (
+          <Card>
+            <Financeiro eventoId={evento.id} />
+          </Card>
+        )
+      )}
+
       {organizacao && (
         <Card>
           <RecebimentosOrganizacao organizacao={organizacao} retorno={retornoRecebimento} />
         </Card>
       )}
-      <OperacaoSelecionada eventos={eventos} evento={eventos.find((e) => e.id === eventoId)} invalido={invalido} onSelecionar={setEventoId} />
 
-      {erro && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
+      {evento && (
+        <>
+          <Card>
+            <AvisoLotes evento={evento} onConfigurar={() => navigate({ to: "/organizacao", search: { lotes: evento.id } })} />
+          </Card>
 
-      {eventos.length === 0 ? (
-        <Card><p className="text-sm text-muted-foreground">Nenhum evento criado ainda. Crie um evento no Painel.</p></Card>
-      ) : (
-        evento && (
-          <>
-            <Card>
-              <Financeiro eventoId={evento.id} />
-            </Card>
+          <Card>
+            <CuponsEvento evento={evento} cupons={base.cupons.filter((c) => c.eventoId === evento.id)} />
+          </Card>
 
-            <Card>
-              <AvisoLotes evento={evento} onConfigurar={() => navigate({ to: "/organizacao", search: { lotes: evento.id } })} />
-            </Card>
-
-            <Card>
-              <CuponsEvento evento={evento} cupons={base.cupons.filter((c) => c.eventoId === evento.id)} />
-            </Card>
-
-            <Card>
-              <h3 className="font-display text-base font-semibold uppercase">Cortesias</h3>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <Campo rotulo="Nome do convidado" htmlFor="ct-nome">
-                  <Input id="ct-nome" value={cortesiaForm.nome} onChange={(e) => setCortesiaForm((p) => ({ ...p, nome: e.target.value }))} />
-                </Campo>
-                <Campo rotulo="E-mail do convidado" htmlFor="ct-email">
-                  <Input id="ct-email" type="email" value={cortesiaForm.email} onChange={(e) => setCortesiaForm((p) => ({ ...p, email: e.target.value }))} />
-                </Campo>
-                <Campo rotulo="Tipo de ingresso" htmlFor="ct-tipo">
-                  <NativeSelect id="ct-tipo" value={cortesiaForm.tipoId} onChange={(e) => setCortesiaForm((p) => ({ ...p, tipoId: e.target.value }))}>
-                    <option value="">Selecione</option>
-                    {evento.tipos.filter((t) => !t.arquivado).map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
-                  </NativeSelect>
-                </Campo>
-                <Campo rotulo="Validade do convite" htmlFor="ct-val">
-                  <Input id="ct-val" type="date" value={cortesiaForm.validade} onChange={(e) => setCortesiaForm((p) => ({ ...p, validade: e.target.value }))} />
-                </Campo>
-                <div className="sm:col-span-2 flex justify-end">
-                  <Button onClick={aoCriarCortesia} disabled={!cortesiaForm.tipoId}>Emitir cortesia</Button>
-                </div>
+          <Card>
+            <h3 className="font-display text-base font-semibold uppercase">Cortesias</h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <Campo rotulo="Nome do convidado" htmlFor="ct-nome">
+                <Input id="ct-nome" value={cortesiaForm.nome} onChange={(e) => setCortesiaForm((p) => ({ ...p, nome: e.target.value }))} />
+              </Campo>
+              <Campo rotulo="E-mail do convidado" htmlFor="ct-email">
+                <Input id="ct-email" type="email" value={cortesiaForm.email} onChange={(e) => setCortesiaForm((p) => ({ ...p, email: e.target.value }))} />
+              </Campo>
+              <Campo rotulo="Tipo de ingresso" htmlFor="ct-tipo">
+                <NativeSelect id="ct-tipo" value={cortesiaForm.tipoId} onChange={(e) => setCortesiaForm((p) => ({ ...p, tipoId: e.target.value }))}>
+                  <option value="">Selecione</option>
+                  {evento.tipos.filter((t) => !t.arquivado).map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
+                </NativeSelect>
+              </Campo>
+              <Campo rotulo="Validade do convite" htmlFor="ct-val">
+                <Input id="ct-val" type="date" value={cortesiaForm.validade} onChange={(e) => setCortesiaForm((p) => ({ ...p, validade: e.target.value }))} />
+              </Campo>
+              <div className="sm:col-span-2 flex justify-end">
+                <Button onClick={aoCriarCortesia} disabled={!cortesiaForm.tipoId}>Emitir cortesia</Button>
               </div>
-              <ul className="mt-3 space-y-1 text-sm">
-                {base.cortesias.filter((c) => c.eventoId === evento.id).map((c) => (
-                  <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-elevated px-3 py-2">
-                    <span>{c.nomeConvidado} — {c.emailConvidado}</span>
-                    <span className="flex items-center gap-2">
-                      <Badge variant={c.status === "resgatada" ? "success" : c.status === "pendente" ? "warning" : "destructive"}>{c.status}</Badge>
-                      <Button
-                        variant="ghost"
-                        onClick={() => navigator.clipboard?.writeText(`${location.origin}/inscricao/${evento.id}?cortesia=${c.codigo}`)}
-                      >
-                        Copiar link
-                      </Button>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          </>
-        )
+            </div>
+            <ul className="mt-3 space-y-1 text-sm">
+              {base.cortesias.filter((c) => c.eventoId === evento.id).map((c) => (
+                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-elevated px-3 py-2">
+                  <span>{c.nomeConvidado} — {c.emailConvidado}</span>
+                  <span className="flex items-center gap-2">
+                    <Badge variant={c.status === "resgatada" ? "success" : c.status === "pendente" ? "warning" : "destructive"}>{c.status}</Badge>
+                    <Button
+                      variant="ghost"
+                      onClick={() => navigator.clipboard?.writeText(`${location.origin}/inscricao/${evento.id}?cortesia=${c.codigo}`)}
+                    >
+                      Copiar link
+                    </Button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </>
       )}
     </div>
   );
