@@ -376,7 +376,7 @@ export async function sessaoComponentesStripe(organizacaoId: string): Promise<{ 
     return conta.id;
   }));
   if (org.contaId && !org.ativa) await completarPerfil(await comStripe(() => obterContaConectada(contaId)), perfil);
-  const sessao = await comStripe(() => criarSessaoDeConta(contaId, org.ativa));
+  const sessao = await comStripe(() => criarSessaoDeConta(contaId));
   return { chavePublicavel: chave, clientSecret: sessao.client_secret };
 }
 
