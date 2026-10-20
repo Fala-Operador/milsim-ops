@@ -2,13 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   AlertTriangle, Ban, CheckCircle2, CloudOff, CloudUpload, Download, HelpCircle, Keyboard, QrCode, RefreshCw,
-  Search, ShieldCheck, Undo2, UserCheck, Users, Wifi, WifiOff, XCircle, Clock,
+  Search, ShieldCheck, Undo2, UserCheck, Users, Wifi, WifiOff, XCircle, Clock, Trophy,
 } from "lucide-react";
 import { OperacaoSelecionada } from "@/components/OperacaoSelecionada";
 import { useEventosOrg } from "@/components/organizacao";
 import { useEventoOrganizacao } from "@/contexts/OrganizationEventContext";
 import { CheckinProvider, useCheckin } from "@/contexts/CheckinContext";
 import { LeitorQr } from "@/components/LeitorQr";
+import { carregarBase } from "@/services/db";
+import { premioDoExercito } from "@/lib/missoes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -223,6 +225,19 @@ const VISUAL: Record<ResultadoValidacao["tipo"], { icone: typeof CheckCircle2; t
   nao_encontrado: { icone: HelpCircle, titulo: "Código não encontrado", classe: "border-destructive bg-destructive/15" },
 };
 
+/** Prêmio das missões pré-evento do exército da pessoa (depois de encerrada a campanha). */
+function PremioDoExercito({ ingresso }: { ingresso: IngressoCredenciamento }) {
+  const base = carregarBase();
+  const exercitoId = base.inscricoes.find((i) => i.id === ingresso.inscricaoId)?.exercitoId;
+  const r = premioDoExercito(base.campanhasMissoes.find((c) => c.eventoId === ingresso.eventoId), exercitoId);
+  if (!r?.premio) return null;
+  return (
+    <p className="mt-2 flex items-center gap-2 rounded-md bg-background/60 px-3 py-2 text-base font-semibold">
+      <Trophy className="size-5 shrink-0" aria-hidden="true" />{r.colocacao}º nas missões pré-evento: {r.premio}
+    </p>
+  );
+}
+
 function CartaoResultado({ r, offline }: { r: ResultadoValidacao; offline: boolean }) {
   const v = VISUAL[r.tipo];
   return (
@@ -233,6 +248,7 @@ function CartaoResultado({ r, offline }: { r: ResultadoValidacao; offline: boole
       )}
       {r.tipo === "ja_realizado" && <p className="mt-1 text-base">Entrada registrada às <strong>{hora(r.em)}</strong> ({dataHora(r.em)}).</p>}
       {r.tipo === "valido" && offline && <p className="mt-2 font-semibold">Entrada registrada neste aparelho — sincronização pendente.</p>}
+      {(r.tipo === "valido" || r.tipo === "ja_realizado") && <PremioDoExercito ingresso={r.ingresso} />}
     </div>
   );
 }
@@ -296,6 +312,7 @@ function ConferenciaManual({ ingresso, validacao, ocupado, onCancelar, onConfirm
         <div><dt className="text-xs text-muted-foreground">Ingresso</dt><dd>{ingresso.tipo}</dd></div>
         <div><dt className="text-xs text-muted-foreground">Exército</dt><dd>{ingresso.exercito}</dd></div>
       </dl>
+      <PremioDoExercito ingresso={ingresso} />
       {validacao && !valido ? <CartaoResultado r={validacao} offline={false} /> : (
         <>
           <Textarea placeholder="Motivo do check-in manual (obrigatório) — ex.: celular sem bateria" value={motivo} onChange={(e) => setMotivo(e.target.value)} aria-label="Motivo do check-in manual" />

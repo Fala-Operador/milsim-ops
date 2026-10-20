@@ -7,6 +7,7 @@ import { baseVazia } from "@/lib/persistencia";
 import { pagamentoAnonimo, pagamentoSemIds } from "@/lib/pagamentos";
 import { organizacaoVisivel } from "@/lib/repasses";
 import { podeVerGrupo } from "@/lib/contatoEvento";
+import { destinadaA, exercitoDaPessoa } from "@/lib/missoes";
 import {
   forunsVisiveis,
   nomeExibicao,
@@ -122,7 +123,15 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
 
   // ----- Engajamento -----
   const doEvento = (eventoId: string) => geridos.has(eventoId) || participo.has(eventoId);
-  v.missoes = base.missoes.filter((m) => doEvento(m.eventoId));
+  // Missões: a gestão vê todas; o participante, só as publicadas para o exército dele — e nunca
+  // a resposta do código secreto.
+  v.missoes = base.missoes.flatMap((m) => {
+    if (geridos.has(m.eventoId)) return [m];
+    if (!participo.has(m.eventoId) || m.rascunho || !destinadaA(m, exercitoDaPessoa(base, meuId, m.eventoId))) return [];
+    const { codigoResposta: _segredo, ...publica } = m;
+    return [publica];
+  });
+  v.campanhasMissoes = base.campanhasMissoes.filter((c) => doEvento(c.eventoId));
   const missoesGeridas = new Set(
     base.missoes.filter((m) => geridos.has(m.eventoId)).map((m) => m.id),
   );

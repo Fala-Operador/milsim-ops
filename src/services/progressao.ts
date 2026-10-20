@@ -7,6 +7,7 @@ import { aleatorioSeguro } from "@/lib/checkin";
 import {
   atende, concessaoAtiva, dataDaConquista, participacoesDoUsuario, resumir,
 } from "@/lib/participacao";
+import { missoesConcluidas } from "@/lib/missoes";
 import type { BaseDados, CampanhaRecompensa, ConcessaoInsignia, Voucher } from "@/lib/domain/types";
 
 const MOTIVO_REVOGACAO = "Participação invalidada ou presença revertida.";
@@ -31,11 +32,13 @@ export function recalcularProgressao(base: BaseDados, agora = new Date()): void 
   const pessoas = new Set<string>();
   for (const i of base.inscricoes) pessoas.add(i.usuarioId);
   for (const c of base.concessoesInsignia) pessoas.add(c.usuarioId);
+  for (const e of base.entregas) if (e.status === "concluida") pessoas.add(e.usuarioId);
 
   // ----- Insígnias -----
   for (const uid of pessoas) {
     const ps = participacoesDoUsuario(base, uid, agora);
-    const r = resumir(ps);
+    const missoes = missoesConcluidas(base, uid);
+    const r = { ...resumir(ps), missoes: missoes.length };
     for (const ins of base.insignias) {
       const id = `${uid}:${ins.id}`;
       const existente = base.concessoesInsignia.find((c) => c.id === id);
@@ -48,7 +51,9 @@ export function recalcularProgressao(base: BaseDados, agora = new Date()): void 
         continue;
       }
       if (!ins.ativa || !atende(ins.criterio, r)) continue;
-      const conquistadaEm = dataDaConquista(ins.criterio, ps) ?? agora.toISOString();
+      const conquistadaEm = (ins.criterio.tipo === "missoes"
+        ? missoes[ins.criterio.meta - 1]?.avaliadoEm ?? missoes[ins.criterio.meta - 1]?.enviadoEm
+        : dataDaConquista(ins.criterio, ps)) ?? agora.toISOString();
       if (existente) {
         existente.revogadaEm = undefined;
         existente.motivoRevogacao = undefined;

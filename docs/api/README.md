@@ -92,7 +92,7 @@ try {
 
 ## Índice
 
-106 server functions em 14 módulos, mais os [webhooks do Stripe](#webhooks).
+116 server functions em 15 módulos, mais os [webhooks do Stripe](#webhooks).
 
 ### Sessão e leitura
 <a id="sessao"></a>
@@ -118,7 +118,7 @@ Missões, privacidade, notificações, foto, tema e preferências. Arquivo: [`sr
 
 | API | Método | Acesso | O que faz |
 |---|---|---|---|
-| [`enviarEntregaMissao`](conta/enviarEntregaMissao.md) | POST | Qualquer pessoa autenticada e ativa | Envia a entrega de uma missão do evento (texto livre). |
+| [`enviarEntregaMissao`](conta/enviarEntregaMissao.md) | POST | Qualquer pessoa autenticada e ativa | Envia a entrega de uma missão de texto ou confirmação (mantida por compatibilidade). |
 | [`solicitarPrivacidade`](conta/solicitarPrivacidade.md) | POST | Qualquer pessoa autenticada e ativa | Abre uma solicitação de privacidade (LGPD) para a administração. |
 | [`abrirChamado`](conta/abrirChamado.md) (legada) | POST | Qualquer pessoa autenticada e ativa | Legada. |
 | [`responderChamado`](conta/responderChamado.md) (legada) | POST | Qualquer pessoa autenticada e ativa | Legada. |
@@ -281,6 +281,24 @@ Coleta anônima, leitura e campanhas de rastreio. Arquivo: [`src/api/analytics.f
 | [`enviarRegistros`](analytics/enviarRegistros.md) | POST | Pública (sem login) | Recebe em lote os registros anônimos de métricas (exibição, clique, visita, início e conclusão de inscrição…). |
 | [`listarMetricas`](analytics/listarMetricas.md) | GET | Organizador (eventos da organização) ou admin (todos) | Devolve os registros de métricas e as campanhas dos eventos que a pessoa gere. |
 | [`criarCampanha`](analytics/criarCampanha.md) | POST | Organização dona do evento ou admin | Cria uma campanha de rastreio (link com `?cmp=<id>`) para medir de onde vêm visitas e inscrições. |
+
+### Missões pré-evento
+<a id="missoes"></a>
+
+Missões, entregas, avaliação, placar por exército, prêmios e temporada. Arquivo: [`src/api/missoes.functions.ts`](../../src/api/missoes.functions.ts).
+
+| API | Método | Acesso | O que faz |
+|---|---|---|---|
+| [`salvarMissao`](missoes/salvarMissao.md) | POST | Organização dona do evento ou admin | Cria ou edita uma missão pré-evento. |
+| [`publicarMissao`](missoes/publicarMissao.md) | POST | Organização dona do evento ou admin | Publica a missão (sai do rascunho) e avisa os destinatários uma única vez: post importante em "Avisos oficiais" (missão para todos) ou no fórum do exército; sem fórum do exército, notificação direta. |
+| [`excluirMissao`](missoes/excluirMissao.md) | POST | Organização dona do evento ou admin | Exclui uma missão sem entregas. |
+| [`enviarEntrega`](missoes/enviarEntrega.md) | POST | Inscrito confirmado no evento, no exército de destino da missão | Envia a entrega da missão: confirmação, texto/link, foto ou código secreto. |
+| [`avaliarEntrega`](missoes/avaliarEntrega.md) | POST | Organização dona do evento ou admin | Aprova (dá os pontos), pede ajustes (libera reenvio) ou recusa uma entrega. |
+| [`destacarEntrega`](missoes/destacarEntrega.md) | POST | Organização dona do evento ou admin | Publica uma entrega aprovada em "Avisos oficiais" da comunidade do evento (com o nome de exibição e o exército). |
+| [`salvarPremios`](missoes/salvarPremios.md) | POST | Organização dona do evento ou admin | Declara os prêmios do dia do evento por colocação do exército (ex.: "Começa com a base norte"). |
+| [`encerrarCampanha`](missoes/encerrarCampanha.md) | POST | Organização dona do evento ou admin | Congela o placar, aplica os prêmios e publica o resultado na comunidade. |
+| [`placarMissoes`](missoes/placarMissoes.md) | POST | Inscrito confirmado no evento ou a gestão | Placar dos exércitos (ao vivo ou congelado) e top 10 individual, calculados no servidor: o navegador não recebe as entregas dos outros. |
+| [`temporadaMissoes`](missoes/temporadaMissoes.md) | POST | Gestão da organização, admin ou quem já se inscreveu num evento dela | Ranking da temporada: pontos de missões somados em todos os eventos da organização que começam no ano. |
 
 ### Check-in
 <a id="checkin"></a>

@@ -4,7 +4,7 @@ import { ErroDominio, gerarId } from "@/services/db";
 import { recalcularProgressao } from "@/services/progressao";
 import type { BaseDados, CampanhaRecompensa, CriterioInsignia, TipoBeneficio, Usuario } from "@/lib/domain/types";
 
-const TIPOS_CRITERIO = new Set<CriterioInsignia["tipo"]>(["operacoes", "estados", "modalidades"]);
+const TIPOS_CRITERIO = new Set<CriterioInsignia["tipo"]>(["operacoes", "estados", "modalidades", "missoes"]);
 
 function auditar(base: BaseDados, autor: Usuario, acao: string, entidade: string, entidadeId: string, justificativa?: string) {
   base.auditoria.push({ id: gerarId("aud"), autorId: autor.id, acao, entidade, entidadeId, justificativa, criadoEm: new Date().toISOString() });

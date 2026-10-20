@@ -33,7 +33,7 @@ os avisos ficam nas notificações do app.
 bun install
 cp .env.example .env.local   # preencha as chaves do Supabase
 bun run dev                  # http://localhost:8080
-bun run test                 # 293 testes (regras, pagamentos, persistência, visão por perfil)
+bun run test                 # 306 testes (regras, pagamentos, persistência, visão por perfil)
 bun run typecheck
 bun run build
 bun run start                # servidor Node gerado pelo build (.output/server/index.mjs)
@@ -125,9 +125,9 @@ backup completo como artefato da execução (30 dias). Detalhes em
 | Área | Rotas | O que faz |
 |---|---|---|
 | Pública | `/`, `/eventos/$id`, `/inscricao/$id`, `/operador/$id`, `/login`, `/cadastro`, `/recuperar-senha` | Página inicial com seções por região e campanhas de destaque, busca por cidade, preferências de modalidade, página do evento (com "Falar com o organizador no WhatsApp"), inscrição com lotes, cupons (validados no servidor), cortesias e pagamento pelo Stripe, perfil público do operador |
-| Participante | `/app/*` | Ingressos com QR Code, pagamento pendente ("Concluir pagamento"), grupo do WhatsApp do evento, comunidades, missões, notificações, Central de Suporte, perfil do operador (arsenal, galeria, notas fiscais privadas, insígnias e recompensas) e privacidade (LGPD) |
+| Participante | `/app/*` | Ingressos com QR Code, missões pré-evento com placar, pagamento pendente ("Concluir pagamento"), grupo do WhatsApp do evento, comunidades, missões, notificações, Central de Suporte, perfil do operador (arsenal, galeria, notas fiscais privadas, insígnias e recompensas) e privacidade (LGPD) |
 | Comunidade | `/comunidade/$eventoId/*` | Fóruns com feed social, imagens no Storage, curtidas, denúncias, moderação e gestão de fóruns |
-| Organizador | `/organizacao/*`, `/app/organizador` | Eventos (editor em etapas, contato no WhatsApp), inscritos, check-in (QR/manual/offline com sincronização), comunidade, financeiro (resumo, movimentações com abas e filtros, recebimentos pelo Stripe Connect), cupons e cortesias, métricas e campanhas, recompensas, suporte encaminhado |
+| Organizador | `/organizacao/*`, `/app/organizador` | Eventos (editor em etapas, contato no WhatsApp), missões pré-evento (avaliação, placar por exército, prêmios no check-in, temporada), inscritos, check-in (QR/manual/offline com sincronização), comunidade, financeiro (resumo, movimentações com abas e filtros, recebimentos pelo Stripe Connect), cupons e cortesias, métricas e campanhas, recompensas, suporte encaminhado |
 | Admin | `/admin/*` | Dashboard, Insights IA, métricas, divulgação e impulsionamento, solicitações, usuários, pagamentos (taxa da plataforma), gamificação, Central de Suporte (triagem), privacidade e auditoria |
 
 ## Documentação
@@ -135,7 +135,7 @@ backup completo como artefato da execução (30 dias). Detalhes em
 - [docs/README.md](docs/README.md): índice da documentação
 - [docs/regras-de-negocio.md](docs/regras-de-negocio.md): o que o sistema decide em cada área, e as lacunas conhecidas
 - [docs/fluxos.md](docs/fluxos.md): fluxos ponta a ponta com diagramas (inscrição com Stripe, check-in, suporte, repasse…)
-- [docs/api/](docs/api/README.md): uma página por API (106 server functions + webhook do Stripe), com entrada, regras, erros e exemplo
+- [docs/api/](docs/api/README.md): uma página por API (116 server functions + webhook do Stripe), com entrada, regras, erros e exemplo
 - [docs/ARQUITETURA.md](docs/ARQUITETURA.md): camadas, unidade de trabalho, visão por perfil, banco, deploy, segurança e mapa de arquivos
 - [AGENTS.md](AGENTS.md): regras técnicas obrigatórias
 - [roadmap.md](roadmap.md): status das entregas

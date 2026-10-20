@@ -10,7 +10,7 @@ const id = z.string().min(1).max(120);
 export const salvarInsigniaFn = createServerFn({ method: "POST" })
   .validator(z.object({
     id: id.optional(), nome: z.string().max(100), descricao: z.string().max(400), icone: z.string().max(16),
-    criterio: z.object({ tipo: z.enum(["operacoes", "estados", "modalidades"]), meta: z.number().int() }), ativa: z.boolean(),
+    criterio: z.object({ tipo: z.enum(["operacoes", "estados", "modalidades", "missoes"]), meta: z.number().int() }), ativa: z.boolean(),
   }).parse)
   .handler(({ data }) => mutar(({ base, usuario }) => gam.salvarInsignia(base, exigirUsuario(usuario), data)));
 

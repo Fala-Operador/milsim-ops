@@ -2,6 +2,7 @@
 // aparência e preferências). Antes ficavam espalhadas nas páginas; agora rodam no
 // servidor, sempre com a pessoa autenticada recebida da unidade de trabalho.
 import { mutarBase, gerarId, ErroDominio } from "@/services/db";
+import { enviarEntrega } from "@/services/missoes";
 import { normalizarPreferencia, type PreferenciaModalidades } from "@/lib/modalidades";
 import type { Chamado, SolicitacaoPrivacidade, Usuario } from "@/lib/domain/types";
 import type { Tema } from "@/lib/localizacao";
@@ -9,32 +10,9 @@ import type { Tema } from "@/lib/localizacao";
 const agoraIso = () => new Date().toISOString();
 
 // ---------- Missões ----------
+/** Entrega simples (texto/confirmação). A regra completa fica em services/missoes.ts. */
 export function enviarEntregaMissao(usuario: Usuario, missaoId: string, texto?: string): void {
-  mutarBase((b) => {
-    const missao = b.missoes.find((m) => m.id === missaoId);
-    if (!missao) throw new ErroDominio("missao", "Missão não encontrada.");
-    // Só quem tem inscrição confirmada no evento (e no exército da missão, se segmentada).
-    const destinatario = b.inscricoes.some(
-      (i) =>
-        i.usuarioId === usuario.id &&
-        i.eventoId === missao.eventoId &&
-        i.status === "confirmada" &&
-        (missao.publico === "todos" || missao.publico === i.exercitoId),
-    );
-    if (!destinatario) throw new ErroDominio("sem_permissao", "Esta missão não é destinada a você.");
-    if (new Date(missao.prazo).getTime() < Date.now()) throw new ErroDominio("prazo", "O prazo desta missão terminou.");
-    const conteudo = missao.tipoEntrega === "texto" ? texto?.trim() : undefined;
-    if (missao.tipoEntrega === "texto" && !conteudo) throw new ErroDominio("conteudo", "Escreva a sua entrega.");
-    const status = missao.exigeAprovacao ? "enviada" : "concluida";
-    const existente = b.entregas.find((e) => e.missaoId === missaoId && e.usuarioId === usuario.id);
-    if (existente) {
-      existente.status = status;
-      existente.conteudo = conteudo;
-      existente.enviadoEm = agoraIso();
-    } else {
-      b.entregas.push({ id: gerarId("ent"), missaoId, usuarioId: usuario.id, status, conteudo, enviadoEm: agoraIso() });
-    }
-  });
+  mutarBase((b) => { enviarEntrega(b, usuario, { missaoId, texto }); });
 }
 
 // ---------- Privacidade ----------

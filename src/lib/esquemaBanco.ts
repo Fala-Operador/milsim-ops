@@ -182,13 +182,28 @@ export const ESQUEMA = {
     campos: {
       id: "id", eventoId: "event_id", titulo: "title", descricao: "description", imagemUrl: "image_url",
       prazo: "deadline", publico: "audience", tipoEntrega: "submission_type", exigeAprovacao: "requires_approval",
+      pontos: "points", abreEm: "opens_at", rascunho: "draft", codigoResposta: "answer_code",
+      metaPercentual: "team_goal_percent", metaBonus: "team_goal_bonus", anunciadaEm: "announced_at", criadoEm: "created_at",
     },
   },
   entregas: {
     tabela: "mission_submissions", chave: ["id"],
     campos: {
       id: "id", missaoId: "mission_id", usuarioId: "user_id", status: "status", conteudo: "content",
-      enviadoEm: "submitted_at", avaliacao: "review",
+      enviadoEm: "submitted_at", avaliacao: "review", anexoUrl: "attachment_url", exercitoId: "faction_id",
+      pontos: "awarded_points", avaliadoPor: "reviewed_by", avaliadoEm: "reviewed_at", permiteDestaque: "allow_highlight",
+      destacadaEm: "highlighted_at",
+    },
+  },
+  campanhasMissoes: {
+    tabela: "mission_campaigns", chave: ["eventoId"],
+    campos: {
+      eventoId: "event_id", encerradaEm: "closed_at", encerradaPor: "closed_by", atualizadoEm: "updated_at",
+      premios: lista("mission_campaign_prizes", ["event_id"], { colocacao: "place", descricao: "description" }),
+      resultado: lista("mission_campaign_results", ["event_id"], {
+        exercitoId: "faction_id", colocacao: "place", pontos: "points", inscritos: "members", media: "average",
+        bonus: "team_bonus", total: "total", premio: "prize",
+      }),
     },
   },
   comunicados: {

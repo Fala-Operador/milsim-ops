@@ -3,9 +3,10 @@
 // endereço, telefone, e-mail, notas fiscais ou exército das inscrições.
 import { nomeExibicao } from "@/services/comunidade";
 import {
-  concessaoAtiva, confirmadas, participacoesDoUsuario, progressoInsignias, resumir, statusVoucher, atende,
+  ROTULO_CRITERIO, concessaoAtiva, confirmadas, participacoesDoUsuario, progressoInsignias, resumir, statusVoucher, atende,
   type EstadoParticipacao, type ProgressoInsignia, type ResumoProgressao,
 } from "@/lib/participacao";
+import { missoesConcluidas } from "@/lib/missoes";
 import type {
   BaseDados, BeneficioVoucher, PerfilOperador, PrivacidadePerfil, TipoEquipamento, Usuario, VisibilidadeBloco,
 } from "@/lib/domain/types";
@@ -157,8 +158,10 @@ export function montarPerfil(base: BaseDados, alvoId: string, quem: Usuario | nu
     };
   };
   const historico = visiveis.filter((p) => p.estado === "participou");
-  const resumoPublico: ResumoProgressao = resumir(historico.filter((p) => proprio || !ocultas.has(p.eventoId)));
-  const resumoReal = resumir(todas);
+  // Missões concluídas contam para o critério "missoes" (público: o número não revela eventos ocultos).
+  const nMissoes = missoesConcluidas(base, alvo.id).length;
+  const resumoPublico: ResumoProgressao = { ...resumir(historico.filter((p) => proprio || !ocultas.has(p.eventoId))), missoes: nMissoes };
+  const resumoReal = { ...resumir(todas), missoes: nMissoes };
 
   // Insígnias: para terceiros, só as que as participações visíveis sustentam
   // (uma insígnia não pode revelar uma operação ocultada).
@@ -170,7 +173,7 @@ export function montarPerfil(base: BaseDados, alvoId: string, quem: Usuario | nu
   const descr = (id: string) => {
     const i = base.insignias.find((x) => x.id === id)!;
     const meta = i.criterio.meta;
-    return `${meta} ${i.criterio.tipo === "operacoes" ? "operações concluídas" : i.criterio.tipo === "estados" ? "estados diferentes" : "modalidades diferentes"}`;
+    return `${meta} ${ROTULO_CRITERIO[i.criterio.tipo]}`;
   };
 
   const verHist = pode(priv.historico, proprio, autenticado);

@@ -59,7 +59,7 @@ function FormInsignia({ inicial, onFechar }: { inicial: Insignia | null; onFecha
         <div className="grid grid-cols-2 gap-3">
           <Campo rotulo="Critério" htmlFor="in-tipo">
             <NativeSelect id="in-tipo" value={d.tipo} onChange={(e) => setD({ ...d, tipo: e.target.value as CriterioInsignia["tipo"] })}>
-              <option value="operacoes">Operações concluídas</option><option value="estados">Estados diferentes</option><option value="modalidades">Modalidades diferentes</option>
+              <option value="operacoes">Operações concluídas</option><option value="estados">Estados diferentes</option><option value="modalidades">Modalidades diferentes</option><option value="missoes">Missões pré-evento concluídas</option>
             </NativeSelect>
           </Campo>
           <Campo rotulo="Meta" htmlFor="in-meta"><Input id="in-meta" type="number" min={1} value={d.meta} onChange={(e) => setD({ ...d, meta: Number(e.target.value) })} /></Campo>

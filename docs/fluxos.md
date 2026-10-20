@@ -16,6 +16,7 @@ Os nomes nas setas são as APIs; cada uma tem sua página em [`docs/api/`](api/R
 7. [Suporte com encaminhamento](#7-suporte-com-encaminhamento)
 8. [Repasse à organização (Stripe Connect)](#8-repasse-à-organização-stripe-connect)
 9. [Comunidade e moderação](#9-comunidade-e-moderação)
+10. [Missões pré-evento](#10-missões-pré-evento)
 
 ---
 
@@ -233,4 +234,31 @@ flowchart LR
     G[Gestão] -->|fixar, fechar respostas, mover| F
     G -->|suspenderUsuario| S[Membro só lê]
     G -->|reativarUsuario| P
+```
+
+## 10. Missões pré-evento
+
+```mermaid
+sequenceDiagram
+    actor Or as Organização
+    participant App as Site
+    actor P as Inscrito (exército Alfa)
+    Or->>App: salvarMissao (rascunho: briefing, tipo, pontos, prazo, meta coletiva)
+    Or->>App: salvarPremios (1º: base norte, 2º: briefing primeiro)
+    Or->>App: publicarMissao
+    App-->>P: post em Avisos oficiais (ou no fórum do exército) + notificação
+    P->>App: enviarEntrega (foto, texto/link, confirmação ou código)
+    alt código secreto ou sem aprovação
+        App->>App: concluída na hora, pontos para o exército de quem enviou
+    else exige aprovação
+        App-->>Or: entrega em análise
+        Or->>App: avaliarEntrega (aprovar, ajustes ou recusar)
+        App-->>P: notificação (e reenvio, se pediram ajustes)
+    end
+    Or->>App: destacarEntrega (se o inscrito autorizou)
+    P->>App: placarMissoes (média por inscrito + bônus das metas)
+    Or->>App: encerrarCampanha (sem pendências)
+    App->>App: congela o placar e aplica os prêmios por colocação
+    App-->>P: resultado em Avisos oficiais
+    Note over Or,P: No dia do evento, o check-in mostra o prêmio do exército de quem chega
 ```

@@ -9,7 +9,7 @@
 | Método | `POST` |
 | Acesso | Qualquer pessoa autenticada e ativa |
 
-Envia a entrega de uma missão do evento (texto livre).
+Envia a entrega de uma missão de texto ou confirmação (mantida por compatibilidade). Usa a mesma regra de [`enviarEntrega`](../missoes/enviarEntrega.md), que também aceita foto e código secreto.
 
 ## Entrada
 
@@ -31,10 +31,6 @@ Envia a entrega de uma missão do evento (texto livre).
 
 Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 
-- Missão não encontrada.
-- Esta missão não é destinada a você.
-- O prazo desta missão terminou.
-- Escreva a sua entrega.
 - Entre na sua conta para continuar.
 
 ## Exemplo

@@ -86,6 +86,8 @@ export interface ResumoProgressao {
   operacoes: number;
   estados: string[];
   modalidades: string[];
+  /** Missões pré-evento concluídas (entregas aprovadas); só para o critério "missoes". */
+  missoes?: number | undefined;
 }
 
 export function resumir(ps: Participacao[]): ResumoProgressao {
@@ -100,6 +102,7 @@ export function resumir(ps: Participacao[]): ResumoProgressao {
 export function valorCriterio(criterio: CriterioInsignia, r: ResumoProgressao): number {
   if (criterio.tipo === "operacoes") return r.operacoes;
   if (criterio.tipo === "estados") return r.estados.length;
+  if (criterio.tipo === "missoes") return r.missoes ?? 0;
   return r.modalidades.length;
 }
 
@@ -118,6 +121,7 @@ export const ROTULO_CRITERIO: Record<CriterioInsignia["tipo"], string> = {
   operacoes: "operações concluídas",
   estados: "estados diferentes",
   modalidades: "modalidades diferentes",
+  missoes: "missões pré-evento concluídas",
 };
 
 export function descreverCriterio(c: CriterioInsignia): string {

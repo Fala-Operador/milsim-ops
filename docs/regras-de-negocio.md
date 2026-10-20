@@ -236,7 +236,7 @@ Código: `src/lib/participacao.ts`, `src/services/progressao.ts`, `src/services/
   **participou** (evento **concluído** + presença válida: check-in ou correção do admin).
   Evento concluído sem presença válida não conta.
 - O admin pode **validar** ou **invalidar** a participação de alguém (nunca a própria), com justificativa auditada.
-- **Insígnias** (admin): critério por número de operações, de estados (UF) ou de modalidades,
+- **Insígnias** (admin): critério por número de operações, de estados (UF), de modalidades ou de missões pré-evento concluídas,
   com meta de 1 a 1000. Concedidas automaticamente.
 - **Campanhas de recompensa**: quem conquista a insígnia ganha um benefício (percentual, valor fixo
   ou gratuidade) em eventos da organização que concede. Limite total e por participante, prazos
@@ -250,6 +250,30 @@ Código: `src/lib/participacao.ts`, `src/services/progressao.ts`, `src/services/
   seguem a privacidade do mapa e podem ser ocultadas uma a uma. **Nunca contam para insígnias,
   recompensas nem participação.** No resumo, "Estados na plataforma" fica separado de "N no total".
   → [`salvarOperacaoExterna`](api/perfil/salvarOperacaoExterna.md)
+
+### Missões pré-evento
+
+Código: `src/lib/missoes.ts` (regras puras), `src/services/missoes.ts`. → [APIs](api/README.md#missoes) · [Fluxo](fluxos.md#10-missões-pré-evento)
+
+- A gestão do evento cria missões (rascunho), publica e avalia. Cada missão tem briefing e imagem,
+  público (todos ou um exército), tipo de entrega (confirmação, texto/link, **foto** ou **código
+  secreto**), pontos (0–10000), abertura opcional, prazo (até o fim do evento) e se exige aprovação.
+- **Publicar** avisa uma única vez: post importante em "Avisos oficiais" (missão para todos) ou no
+  fórum do exército; missão de um exército nunca é anunciada para o outro.
+- **Envio**: só inscrito confirmado do exército de destino, dentro da janela, com a campanha aberta.
+  Uma entrega por pessoa por missão; reenvio só com "ajustes solicitados". Código secreto é
+  normalizado (sem acentos/maiúsculas), aprova na hora e nunca chega ao navegador do participante.
+  O exército da pessoa no envio fica gravado: **os pontos ficam com esse exército**, mesmo se ela trocar.
+- **Avaliação**: aprovar (dá os pontos), pedir ajustes ou recusar (com comentário obrigatório).
+- **Destaque**: entrega aprovada vai para "Avisos oficiais" **só com autorização do participante**.
+- **Placar**: média de pontos por inscrito confirmado do exército (o tamanho do exército não decide)
+  + bônus das **metas coletivas** (X% dos inscritos do exército concluíram a missão). Desempate:
+  pontos, depois nome. Calculado no servidor; o navegador não recebe as entregas dos outros.
+- **Prêmios** por colocação são declarados antes. **Encerrar** exige avaliar as entregas pendentes,
+  congela o placar (empate divide a colocação e o prêmio), publica o resultado na comunidade e trava
+  tudo. No dia, o **check-in mostra o prêmio** do exército de quem chega.
+- **Ranking individual** (top 10 do evento) e **temporada** (soma dos eventos da organização no ano).
+- Insígnias podem usar o critério **"missões pré-evento concluídas"**.
 
 ## 13. Comunidade
 

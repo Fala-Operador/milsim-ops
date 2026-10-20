@@ -748,5 +748,6 @@ function criarBaseLegada(): BaseSemComunidade {
     vouchers: [],
     correcoesParticipacao: [],
     operacoesExternas: [],
+    campanhasMissoes: [],
   };
 }

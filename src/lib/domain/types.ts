@@ -304,8 +304,9 @@ export interface Cortesia {
   criadoEm: string;
 }
 
-export type TipoEntregaMissao = "confirmacao" | "texto" | "imagem";
-export type StatusMissao = "disponivel" | "enviada" | "concluida" | "ajustes_solicitados" | "prazo_encerrado";
+/** "codigo": código secreto divulgado pela organização (acertou, ganhou; sem aprovação). */
+export type TipoEntregaMissao = "confirmacao" | "texto" | "imagem" | "codigo";
+export type StatusMissao = "disponivel" | "enviada" | "concluida" | "ajustes_solicitados" | "prazo_encerrado" | "recusada";
 
 export interface Missao {
   id: string;
@@ -317,6 +318,20 @@ export interface Missao {
   publico: "todos" | string; // "todos" ou exercitoId
   tipoEntrega: TipoEntregaMissao;
   exigeAprovacao: boolean;
+  /** Pontos da entrega aprovada para o placar do exército (missões antigas: 0). */
+  pontos?: number | undefined;
+  /** Abre para entregas a partir deste instante (ausente = já aberta). */
+  abreEm?: string | undefined;
+  /** Rascunho não aparece para participantes (ausente = publicada). */
+  rascunho?: boolean | undefined;
+  /** Resposta da missão "código secreto", já normalizada. Nunca vai para participantes (visão). */
+  codigoResposta?: string | undefined;
+  /** Meta coletiva: com ao menos X% dos inscritos do exército concluindo, o exército ganha o bônus. */
+  metaPercentual?: number | undefined;
+  metaBonus?: number | undefined;
+  /** Quando o lançamento foi avisado (notificação + post na comunidade): evita avisar duas vezes. */
+  anunciadaEm?: string | undefined;
+  criadoEm?: string | undefined;
 }
 
 export interface EntregaMissao {
@@ -327,6 +342,49 @@ export interface EntregaMissao {
   conteudo?: string | undefined;
   enviadoEm: string;
   avaliacao?: string | undefined;
+  /** Foto da entrega (bucket público midia). */
+  anexoUrl?: string | undefined;
+  /** Exército de quem enviou, no momento do envio: os pontos ficam com ele. */
+  exercitoId?: string | undefined;
+  /** Pontos concedidos na aprovação. */
+  pontos?: number | undefined;
+  avaliadoPor?: string | undefined;
+  avaliadoEm?: string | undefined;
+  /** O participante autorizou a organização a destacar a entrega na comunidade do evento. */
+  permiteDestaque?: boolean | undefined;
+  destacadaEm?: string | undefined;
+}
+
+/** Prêmio da campanha de missões pré-evento, por colocação do exército no placar. */
+export interface PremioMissoes {
+  colocacao: number;
+  descricao: string;
+}
+
+/** Placar congelado de um exército no encerramento da campanha. */
+export interface ResultadoExercito {
+  exercitoId: string;
+  colocacao: number;
+  /** Soma dos pontos individuais aprovados. */
+  pontos: number;
+  inscritos: number;
+  /** pontos ÷ inscritos (o tamanho do exército não decide o placar). */
+  media: number;
+  /** Bônus das metas coletivas atingidas. */
+  bonus: number;
+  /** media + bonus: o que ordena o placar. */
+  total: number;
+  premio?: string | undefined;
+}
+
+/** Campanha de missões pré-evento de um evento: prêmios e, depois do encerramento, o resultado. */
+export interface CampanhaMissoes {
+  eventoId: string;
+  premios: PremioMissoes[];
+  encerradaEm?: string | undefined;
+  encerradaPor?: string | undefined;
+  resultado: ResultadoExercito[];
+  atualizadoEm: string;
 }
 
 export interface Comunicado {
@@ -456,6 +514,7 @@ export interface BaseDados {
   cortesias: Cortesia[];
   missoes: Missao[];
   entregas: EntregaMissao[];
+  campanhasMissoes: CampanhaMissoes[];
   comunicados: Comunicado[];
   comentarios: Comentario[];
   chamados: Chamado[];
@@ -582,7 +641,7 @@ export interface FotoGaleria {
 }
 
 // ===== Insígnias e recompensas =====
-export type TipoCriterio = "operacoes" | "estados" | "modalidades";
+export type TipoCriterio = "operacoes" | "estados" | "modalidades" | "missoes";
 export interface CriterioInsignia {
   tipo: TipoCriterio;
   meta: number;

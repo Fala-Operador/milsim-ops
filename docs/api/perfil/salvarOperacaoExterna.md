@@ -42,7 +42,7 @@ O id da operação.
 Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 
 - Operação não encontrada.
-- Limite de ${MAX_OPERACOES_EXTERNAS} operações registradas.
+- Limite de 200 operações registradas.
 - Informe o nome da operação.
 - Nome da operação: no máximo 120 caracteres.
 - Informe a data da operação.

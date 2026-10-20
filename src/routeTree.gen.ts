@@ -50,6 +50,7 @@ import { Route as OrganizacaoComunidadeRouteImport } from './routes/organizacao.
 import { Route as OrganizacaoFinanceiroRouteImport } from './routes/organizacao.financeiro'
 import { Route as OrganizacaoInscritosRouteImport } from './routes/organizacao.inscritos'
 import { Route as OrganizacaoMetricasRouteImport } from './routes/organizacao.metricas'
+import { Route as OrganizacaoMissoesRouteImport } from './routes/organizacao.missoes'
 import { Route as OrganizacaoNotificacoesRouteImport } from './routes/organizacao.notificacoes'
 import { Route as OrganizacaoRecompensasRouteImport } from './routes/organizacao.recompensas'
 import { Route as OrganizacaoSuporteRouteImport } from './routes/organizacao.suporte'
@@ -263,6 +264,11 @@ const OrganizacaoMetricasRoute = OrganizacaoMetricasRouteImport.update({
   path: '/metricas',
   getParentRoute: () => OrganizacaoRoute,
 } as any)
+const OrganizacaoMissoesRoute = OrganizacaoMissoesRouteImport.update({
+  id: '/missoes',
+  path: '/missoes',
+  getParentRoute: () => OrganizacaoRoute,
+} as any)
 const OrganizacaoNotificacoesRoute = OrganizacaoNotificacoesRouteImport.update({
   id: '/notificacoes',
   path: '/notificacoes',
@@ -340,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
+  '/organizacao/missoes': typeof OrganizacaoMissoesRoute
   '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
   '/organizacao/recompensas': typeof OrganizacaoRecompensasRoute
   '/organizacao/suporte': typeof OrganizacaoSuporteRoute
@@ -386,6 +393,7 @@ export interface FileRoutesByTo {
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
+  '/organizacao/missoes': typeof OrganizacaoMissoesRoute
   '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
   '/organizacao/recompensas': typeof OrganizacaoRecompensasRoute
   '/organizacao/suporte': typeof OrganizacaoSuporteRoute
@@ -437,6 +445,7 @@ export interface FileRoutesById {
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
+  '/organizacao/missoes': typeof OrganizacaoMissoesRoute
   '/organizacao/notificacoes': typeof OrganizacaoNotificacoesRoute
   '/organizacao/recompensas': typeof OrganizacaoRecompensasRoute
   '/organizacao/suporte': typeof OrganizacaoSuporteRoute
@@ -489,6 +498,7 @@ export interface FileRouteTypes {
     | '/organizacao/financeiro'
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
+    | '/organizacao/missoes'
     | '/organizacao/notificacoes'
     | '/organizacao/recompensas'
     | '/organizacao/suporte'
@@ -535,6 +545,7 @@ export interface FileRouteTypes {
     | '/organizacao/financeiro'
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
+    | '/organizacao/missoes'
     | '/organizacao/notificacoes'
     | '/organizacao/recompensas'
     | '/organizacao/suporte'
@@ -585,6 +596,7 @@ export interface FileRouteTypes {
     | '/organizacao/financeiro'
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
+    | '/organizacao/missoes'
     | '/organizacao/notificacoes'
     | '/organizacao/recompensas'
     | '/organizacao/suporte'
@@ -904,6 +916,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizacaoMetricasRouteImport
       parentRoute: typeof OrganizacaoRoute
     }
+    '/organizacao/missoes': {
+      id: '/organizacao/missoes'
+      path: '/missoes'
+      fullPath: '/organizacao/missoes'
+      preLoaderRoute: typeof OrganizacaoMissoesRouteImport
+      parentRoute: typeof OrganizacaoRoute
+    }
     '/organizacao/notificacoes': {
       id: '/organizacao/notificacoes'
       path: '/notificacoes'
@@ -1020,6 +1039,7 @@ interface OrganizacaoRouteChildren {
   OrganizacaoFinanceiroRoute: typeof OrganizacaoFinanceiroRoute
   OrganizacaoInscritosRoute: typeof OrganizacaoInscritosRoute
   OrganizacaoMetricasRoute: typeof OrganizacaoMetricasRoute
+  OrganizacaoMissoesRoute: typeof OrganizacaoMissoesRoute
   OrganizacaoNotificacoesRoute: typeof OrganizacaoNotificacoesRoute
   OrganizacaoRecompensasRoute: typeof OrganizacaoRecompensasRoute
   OrganizacaoSuporteRoute: typeof OrganizacaoSuporteRoute
@@ -1032,6 +1052,7 @@ const OrganizacaoRouteChildren: OrganizacaoRouteChildren = {
   OrganizacaoFinanceiroRoute: OrganizacaoFinanceiroRoute,
   OrganizacaoInscritosRoute: OrganizacaoInscritosRoute,
   OrganizacaoMetricasRoute: OrganizacaoMetricasRoute,
+  OrganizacaoMissoesRoute: OrganizacaoMissoesRoute,
   OrganizacaoNotificacoesRoute: OrganizacaoNotificacoesRoute,
   OrganizacaoRecompensasRoute: OrganizacaoRecompensasRoute,
   OrganizacaoSuporteRoute: OrganizacaoSuporteRoute,

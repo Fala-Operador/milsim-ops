@@ -182,7 +182,7 @@ registrado no log do servidor e vira "Não foi possível concluir a operação".
 |---|---|
 | Contas | `users` (`user_addresses`, `user_notification_settings` → `user_support_reads`, `user_modality_preferences` → `user_preferred_modalities`), `organizations` (`organization_payout_accounts` → `organization_payout_requirements`), `organizer_requests` |
 | Eventos e vendas | `events` (`event_images`, `event_factions`, `event_ticket_types`, `event_ticket_batches` → `event_ticket_batch_items`, `event_schedule_items`, `event_rules_documents`), `registrations` (`registration_payments` → `registration_payment_disputes`), `coupons` (`coupon_eligible_ticket_types`), `complimentary_tickets`, `financial_transactions` |
-| Engajamento | `missions`, `mission_submissions`, `announcements`, `announcement_comments` |
+| Engajamento | `missions`, `mission_submissions`, `mission_campaigns` (`mission_campaign_prizes`, `mission_campaign_results`), `announcements`, `announcement_comments` |
 | Suporte e governança | `support_tickets` (`support_ticket_messages` → `support_message_shared_attachments`), `notifications`, `audit_logs`, `privacy_requests` |
 | Comunidade | `forums`, `forum_posts` (`forum_post_images`), `forum_replies` (`forum_reply_images`), `forum_post_likes`, `community_reports`, `forum_preferences`, `community_restrictions`, `moderation_logs`, `community_visits` |
 | Divulgação | `partners` (`partner_links`), `home_sections` (`home_section_geo_scopes`, `home_section_schedules`, `home_section_highlights`, `home_section_auto_selections`, `home_section_partners`, `home_section_banners`), `event_boosts` (`event_boost_placements`, `event_boost_geo_scopes`) |
@@ -243,7 +243,7 @@ O número de WhatsApp do organizador (`evento.whatsappContato`) é público.
 ## 7. APIs — `src/api/*.functions.ts`
 
 Cada arquivo exporta as server functions (`...Fn`) e wrappers de mesmo nome para o navegador.
-São 106 server functions em 14 módulos, mais o webhook do Stripe. A referência completa, com
+São 116 server functions em 15 módulos, mais o webhook do Stripe. A referência completa, com
 entrada, regras, erros e exemplo de cada uma, está em **[docs/api/](api/README.md)**.
 
 | Arquivo | Operações |
@@ -262,6 +262,7 @@ entrada, regras, erros e exemplo de cada uma, está em **[docs/api/](api/README.
 | `gamificacao` | insígnias, campanhas de recompensa, correção de participação |
 | `checkin` | sincronização da fila da portaria |
 | `analytics` | coleta anônima, leitura, campanhas de rastreio |
+| `missoes` | missões pré-evento: criar, publicar, entregar, avaliar, destacar, prêmios, encerrar, placar e temporada |
 
 Todas as server functions passam pelo middleware de CSRF de `src/start.ts`. O único endpoint
 HTTP público é `POST /api/stripe/webhook`, chamado pela Edge Function `stripe-webhook`.
@@ -352,6 +353,11 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
 - **Central de Suporte** (`lib/suporte.ts`, `services/suporte.ts`): triagem só da administração,
   encaminhamento à organização, canal interno, status derivados do histórico imutável.
 
+- **Missões pré-evento** (`lib/missoes.ts`, `services/missoes.ts`): placar por média por inscrito +
+  metas coletivas, código secreto que nunca vai ao navegador do participante, pontos presos ao
+  exército de quem enviou, encerramento que congela o placar e prêmio exibido no check-in.
+  Placar e temporada são leituras calculadas no servidor (o navegador não recebe entregas alheias).
+
 Regras detalhadas de cada área: [regras-de-negocio.md](regras-de-negocio.md).
 
 ---
@@ -371,7 +377,7 @@ Regras detalhadas de cada área: [regras-de-negocio.md](regras-de-negocio.md).
 
 ## 10. Testes
 
-`bun run test`: 31 arquivos, 293 testes (os serviços rodam sobre uma base em memória).
+`bun run test`: 32 arquivos, 306 testes (os serviços rodam sobre uma base em memória).
 
 | Arquivo | Cobre |
 |---|---|
