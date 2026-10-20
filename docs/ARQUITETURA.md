@@ -196,8 +196,9 @@ registrado no log do servidor e vira "Não foi possível concluir a operação".
 ### 5.4 Mudando o schema
 
 As migrations ficam em `supabase/migrations/` e são aplicadas pelo **GitHub Actions**
-(`.github/workflows/deploy.yml`, `supabase db push` a cada push no `main`). O
-`check.yml` simula o push e roda os testes pgTAP em todo PR que mexe em `supabase/`.
+(`.github/workflows/deploy.yml`, `supabase db push` a cada push no `main` → produção, ou no
+`hml` → homologação, cada um no seu projeto Supabase). O `check.yml` simula o push contra o projeto
+do branch de destino e roda os testes pgTAP em todo PR que mexe em `supabase/`.
 
 1. `npx supabase migration new <nome>`: RLS ligado, sem policies, `grant` só para `service_role`.
    O carimbo de data precisa ser **posterior** à última migration aplicada.
@@ -408,7 +409,10 @@ docs/
   api/                             uma página por API (entrada, regras, erros, exemplo)
 .github/workflows/
   check.yml                        PR: carimbos únicos, simulação do db push, testes pgTAP
-  deploy.yml                       main: aplica migrations e publica Edge Functions
+  deploy.yml                       main/hml: aplica migrations e publica Edge Functions (prod/hml)
+  reset-banco.yml                  manual: backup e reset do banco do ambiente escolhido
+.github/scripts/
+  conferir-ambiente.sh             barra segredos faltando e hml apontando para produção
 supabase/
   config.toml                      configuração do projeto (Auth: site_url e redirects)
   migrations/                      esquema versionado (aplicado pelo deploy)
