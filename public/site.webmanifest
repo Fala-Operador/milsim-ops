@@ -1,0 +1,12 @@
+{
+  "name": "MilSim Ops",
+  "short_name": "MilSim Ops",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#121a13",
+  "background_color": "#121a13",
+  "display": "standalone",
+  "start_url": "/"
+}
