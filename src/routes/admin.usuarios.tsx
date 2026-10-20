@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { mascararCpf } from "@/lib/domain/validators";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ModalTexto } from "@/components/ui";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/admin/usuarios")({
@@ -24,6 +25,7 @@ function Usuarios() {
   const { usuario } = useAuth();
   const [, setVersao] = useState(0);
   const [erro, setErro] = useState("");
+  const [desativando, setDesativando] = useState<{ id: string; nome: string } | null>(null);
   if (!usuario) return null;
   const base = carregarBase();
 
@@ -65,8 +67,8 @@ function Usuarios() {
                       <Button
                         variant="destructive"
                         onClick={() => {
-                          const j = prompt("Justificativa para desativar (obrigatória):");
-                          if (j) desativarUsuario(u.id, j).then(() => setVersao((v) => v + 1)).catch((e) => setErro(e.message));
+                          setErro("");
+                          setDesativando({ id: u.id, nome: u.nomeCompleto });
                         }}
                       >
                         Desativar
@@ -79,6 +81,17 @@ function Usuarios() {
           </TableBody>
         </Table>
       </div>
+      <ModalTexto
+        aberto={!!desativando}
+        titulo="Desativar usuário"
+        rotulo="Justificativa (obrigatória)"
+        descricao={desativando ? `A conta de ${desativando.nome} será desativada e perderá o acesso à plataforma.` : undefined}
+        confirmar="Desativar"
+        destrutivo
+        maximo={1000}
+        onFechar={() => setDesativando(null)}
+        onConfirmar={(j) => desativarUsuario(desativando!.id, j).then(() => setVersao((v) => v + 1))}
+      />
     </section>
   );
 }

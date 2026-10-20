@@ -54,6 +54,7 @@ import { Route as OrganizacaoMissoesRouteImport } from './routes/organizacao.mis
 import { Route as OrganizacaoNotificacoesRouteImport } from './routes/organizacao.notificacoes'
 import { Route as OrganizacaoRecompensasRouteImport } from './routes/organizacao.recompensas'
 import { Route as OrganizacaoSuporteRouteImport } from './routes/organizacao.suporte'
+import { Route as AdminEventosEventoIdRouteImport } from './routes/admin.eventos.$eventoId'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as ComunidadeEventoIdIndexRouteImport } from './routes/comunidade.$eventoId.index'
 import { Route as ComunidadeEventoIdGerenciarRouteImport } from './routes/comunidade.$eventoId.gerenciar'
@@ -284,6 +285,11 @@ const OrganizacaoSuporteRoute = OrganizacaoSuporteRouteImport.update({
   path: '/suporte',
   getParentRoute: () => OrganizacaoRoute,
 } as any)
+const AdminEventosEventoIdRoute = AdminEventosEventoIdRouteImport.update({
+  id: '/eventos/$eventoId',
+  path: '/eventos/$eventoId',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
@@ -353,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/organizacao/': typeof OrganizacaoIndexRoute
+  '/admin/eventos/$eventoId': typeof AdminEventosEventoIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
   '/comunidade/$eventoId/': typeof ComunidadeEventoIdIndexRoute
@@ -400,6 +407,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/organizacao': typeof OrganizacaoIndexRoute
+  '/admin/eventos/$eventoId': typeof AdminEventosEventoIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
   '/comunidade/$eventoId': typeof ComunidadeEventoIdIndexRoute
@@ -452,6 +460,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/organizacao/': typeof OrganizacaoIndexRoute
+  '/admin/eventos/$eventoId': typeof AdminEventosEventoIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
   '/comunidade/$eventoId/': typeof ComunidadeEventoIdIndexRoute
@@ -505,6 +514,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/app/'
     | '/organizacao/'
+    | '/admin/eventos/$eventoId'
     | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
     | '/comunidade/$eventoId/'
@@ -552,6 +562,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/organizacao'
+    | '/admin/eventos/$eventoId'
     | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
     | '/comunidade/$eventoId'
@@ -603,6 +614,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/app/'
     | '/organizacao/'
+    | '/admin/eventos/$eventoId'
     | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
     | '/comunidade/$eventoId/'
@@ -944,6 +956,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizacaoSuporteRouteImport
       parentRoute: typeof OrganizacaoRoute
     }
+    '/admin/eventos/$eventoId': {
+      id: '/admin/eventos/$eventoId'
+      path: '/eventos/$eventoId'
+      fullPath: '/admin/eventos/$eventoId'
+      preLoaderRoute: typeof AdminEventosEventoIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/api/stripe/webhook': {
       id: '/api/stripe/webhook'
       path: '/api/stripe/webhook'
@@ -988,6 +1007,7 @@ interface AdminRouteChildren {
   AdminSuporteRoute: typeof AdminSuporteRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminEventosEventoIdRoute: typeof AdminEventosEventoIdRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -1003,6 +1023,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSuporteRoute: AdminSuporteRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminEventosEventoIdRoute: AdminEventosEventoIdRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

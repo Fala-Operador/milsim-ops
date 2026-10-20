@@ -54,9 +54,24 @@ const VALIDADE_CACHE_MS = 60_000;
 let cache: { versao: number; base: BaseDados; lidoEm: number } | null = null;
 let exportando: Promise<{ base: BaseDados; versao: number }> | null = null;
 
+// Respostas que não são JSON (ex.: 521/525 da Cloudflare quando a API do Supabase oscila)
+// chegam sem `message`; o status HTTP diz o que houve.
+const descreverErro = (error: { message?: string; code?: string }, status: number) =>
+  error.message || error.code || `HTTP ${status || "sem resposta"}`;
+
+/** Leituras são idempotentes: uma falha transitória (5xx ou rede) ganha uma nova tentativa. */
+async function lerComRetentativa<R extends { error: unknown; status: number }>(ler: () => PromiseLike<R>): Promise<R> {
+  const r = await ler();
+  if (!r.error || (r.status > 0 && r.status < 500)) return r;
+  await new Promise((ok) => setTimeout(ok, 400));
+  return ler();
+}
+
 async function versaoAtual(): Promise<number> {
-  const { data, error } = await supabaseAdmin().from("base_control").select("version").eq("id", 1).single();
-  if (error) throw new Error(`Falha ao ler a versão da base: ${error.message}`);
+  const { data, error, status } = await lerComRetentativa(() =>
+    supabaseAdmin().from("base_control").select("version").eq("id", 1).single(),
+  );
+  if (error) throw new Error(`Falha ao ler a versão da base: ${descreverErro(error, status)}`);
   return Number(data.version);
 }
 
@@ -64,8 +79,8 @@ async function exportarBase(): Promise<{ base: BaseDados; versao: number }> {
   // Requisições simultâneas na mesma instância compartilham uma única exportação.
   exportando ??= (async () => {
     try {
-      const { data, error } = await supabaseAdmin().rpc("export_base");
-      if (error) throw new Error(`Falha ao ler a base: ${error.message}`);
+      const { data, error, status } = await lerComRetentativa(() => supabaseAdmin().rpc("export_base"));
+      if (error) throw new Error(`Falha ao ler a base: ${descreverErro(error, status)}`);
       const r = data as { version: number; tables: TabelasExportadas };
       const base = baseDasTabelas(r.tables);
       cache = { versao: r.version, base, lidoEm: Date.now() };
@@ -178,7 +193,7 @@ export async function mutar<T>(
       await enviarMidia(supabaseAdmin(), objetosAlterados(antes, base));
       const lote = calcularMudancas(antes, base);
       if (Object.keys(lote).length > 0) {
-        const { error } = await supabaseAdmin().rpc("apply_changes", { p_changes: lote, p_version: versao });
+        const { error, status } = await supabaseAdmin().rpc("apply_changes", { p_changes: lote, p_version: versao });
         invalidarCache(); // gravou (ou outra escrita entrou antes): a base em memória ficou velha
         // MS409 = conflito de versão (supabase/migrations/20261014193000_conflito_sem_retentativa.sql).
         // 40001 só em bancos sem essa migração — e lá o PostgREST repete sozinho, sem limite.
@@ -186,7 +201,7 @@ export async function mutar<T>(
           await esperarConflito(tentativa); // outra escrita entrou antes: refaz com a base nova
           continue;
         }
-        if (error) throw new Error(`Falha ao gravar: ${error.message}`);
+        if (error) throw new Error(`Falha ao gravar: ${descreverErro(error, status)}`);
       }
       const depois = usuarioAtivo(base, id);
       return { resultado, visao: { base: visaoParaUsuario(base, depois), usuarioId: depois?.id ?? null } };
