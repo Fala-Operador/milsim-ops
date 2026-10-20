@@ -102,6 +102,16 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
   const area = useRef<HTMLDivElement>(null);
   const botaoDetalhes = useRef<HTMLButtonElement>(null);
   const altura = useAlturaDisponivel(area);
+  // Altura fixa só faz sentido com lista + conversa lado a lado ou com a conversa aberta;
+  // no celular a lista sozinha flui com a página (sem caixa vazia até o fim da tela).
+  const [duasColunas, setDuasColunas] = useState(false);
+  useEffect(() => {
+    const el = area.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const obs = new ResizeObserver(([e]) => setDuasColunas((e?.contentRect.width ?? 0) >= 760));
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => acompanhar(), [acompanhar]);
   useEffect(() => setDetalhes(false), [selecionado]);
@@ -216,7 +226,7 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
 
       <div
         ref={area}
-        style={altura ? { height: altura } : undefined}
+        style={altura && (duasColunas || mostrandoPainel) ? { height: altura } : undefined}
         className="@container min-h-[280px] rounded-lg border border-border bg-card"
       >
         <div className="grid h-full min-h-0 grid-cols-1 @min-[760px]:grid-cols-[300px_minmax(0,1fr)]">

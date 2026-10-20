@@ -84,10 +84,10 @@ export function PreferenciasModal() {
         <p className="mt-3 text-xs text-muted-foreground">
           {p.daConta ? "Salvo na sua conta." : "Salvo neste aparelho — não é necessário criar conta."}
         </p>
-        <div className="sticky bottom-0 mt-4 flex flex-wrap gap-2 bg-popover pt-2">
-          <Button disabled={!sel.length} onClick={() => p.salvar(sel)}>Salvar preferências</Button>
+        <div className="sticky bottom-0 mt-4 grid grid-cols-2 gap-2 bg-popover pb-[env(safe-area-inset-bottom)] pt-2 sm:flex sm:flex-wrap sm:pb-0">
+          <Button className="col-span-2" disabled={!sel.length} onClick={() => p.salvar(sel)}>Salvar preferências</Button>
           <Button variant="secondary" onClick={p.explorarTodas}>Explorar todas</Button>
-          <Button variant="ghost" onClick={p.agoraNao}>Agora não</Button>
+          <Button variant="outline" onClick={p.agoraNao}>Agora não</Button>
         </div>
       </DialogContent>
     </Dialog>

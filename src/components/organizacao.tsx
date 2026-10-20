@@ -183,11 +183,11 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
           </ul>
         </div>
       )}
-      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {itens.map(([rotulo, valor]) => (
-          <div key={rotulo} className="rounded-md border border-border bg-elevated p-3">
-            <p className="text-xs text-muted-foreground">{rotulo}</p>
-            <p className="font-mono text-lg font-semibold">{valor}</p>
+          <div key={rotulo} className="min-w-0 rounded-md border border-border bg-elevated p-3">
+            <p className="text-xs leading-tight text-muted-foreground">{rotulo}</p>
+            <p className="mt-1 break-words font-mono text-base font-semibold sm:text-lg">{valor}</p>
           </div>
         ))}
       </div>

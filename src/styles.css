@@ -46,7 +46,8 @@
 
 /*
  * Tabela mobile first: no celular cada linha vira um cartão e cada célula mostra
- * o rótulo de `data-rotulo`; a partir de md (48rem) volta a ser tabela.
+ * o rótulo de `data-rotulo`; a partir de lg (64rem) volta a ser tabela (em md o
+ * conteúdo ainda divide a tela com o menu lateral e as colunas ficam espremidas).
  * Em @layer components para que utilitários das células (alinhamento, cores) continuem valendo.
  */
 @layer components {
@@ -95,7 +96,7 @@
     padding-top: 0.5rem;
   }
 
-  @media (min-width: 48rem) {
+  @media (min-width: 64rem) {
     .tabela-cards {
       display: table;
     }

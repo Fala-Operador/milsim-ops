@@ -103,8 +103,8 @@ export function Movimentacoes({ linhas }: { linhas: LinhaMovimentacao[] }) {
       </Tabs>
 
       <div id="painel-movimentacoes" role="tabpanel" aria-labelledby={`aba-mov-${f.aba}`}>
-        <div className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))]">
-          <Label className="col-span-2 lg:col-span-1 lg:self-end text-[length:inherit] font-normal text-inherit">
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))]">
+          <Label className="sm:col-span-2 lg:col-span-1 lg:self-end text-[length:inherit] font-normal text-inherit">
             <span className="sr-only">Buscar por descrição ou código da inscrição</span>
             <Input type="search" placeholder="Buscar descrição ou código (OP-…)" value={f.busca} onChange={(e) => mudar({ busca: e.target.value })} />
           </Label>
@@ -167,15 +167,15 @@ export function Movimentacoes({ linhas }: { linhas: LinhaMovimentacao[] }) {
             </TableHeader>
             <TableBody>
               {visiveis.slice(0, limite).map((l) => (
-                <TableRow key={l.id} className="md:border-b md:border-border/50">
-                  <TableCell data-rotulo="Data" className="py-2 pr-3 whitespace-nowrap text-muted-foreground md:align-top">{formatarDataHoraBR(l.criadoEm)}</TableCell>
-                  <TableCell data-rotulo="Tipo" className="py-2 pr-3 md:align-top"><TipoBadge tipo={l.tipo} /></TableCell>
-                  <TableCell className="py-2 pr-3 break-words md:align-top">
+                <TableRow key={l.id} className="lg:border-b lg:border-border/50">
+                  <TableCell data-rotulo="Data" className="py-2 pr-3 whitespace-nowrap text-muted-foreground lg:align-top">{formatarDataHoraBR(l.criadoEm)}</TableCell>
+                  <TableCell data-rotulo="Tipo" className="py-2 pr-3 lg:align-top"><TipoBadge tipo={l.tipo} /></TableCell>
+                  <TableCell className="py-2 pr-3 break-words lg:align-top">
                     {l.descricao}
                     {l.online && !/stripe/i.test(l.descricao) && <span className="ml-2 text-xs text-muted-foreground">· Stripe</span>}
                   </TableCell>
-                  <TableCell data-rotulo="Inscrição" className="py-2 pr-3 font-mono text-xs md:align-top">{l.codigoInscricao ?? "—"}</TableCell>
-                  <TableCell data-rotulo="Valor" className="py-2 md:text-right md:align-top"><Valor l={l} /></TableCell>
+                  <TableCell data-rotulo="Inscrição" className="py-2 pr-3 font-mono text-xs lg:align-top">{l.codigoInscricao ?? "—"}</TableCell>
+                  <TableCell data-rotulo="Valor" className="py-2 lg:text-right lg:align-top"><Valor l={l} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>

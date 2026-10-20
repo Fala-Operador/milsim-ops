@@ -46,7 +46,7 @@ function Usuarios() {
           <TableBody>
             {base.usuarios.map((u) => (
               <TableRow key={u.id} className="border-b border-border/50">
-                <TableCell className="py-2 pr-3 font-medium md:font-normal">{u.nomeCompleto}</TableCell>
+                <TableCell className="py-2 pr-3 font-medium lg:font-normal">{u.nomeCompleto}</TableCell>
                 <TableCell data-rotulo="E-mail" className="py-2 pr-3 break-all">{u.email}</TableCell>
                 <TableCell data-rotulo="CPF" className="py-2 pr-3 font-mono text-xs">{mascararCpf(u.cpf)}</TableCell>
                 <TableCell data-rotulo="Perfil" className="py-2 pr-3">{u.perfil}</TableCell>

@@ -60,8 +60,9 @@ export function EncaminhamentosOrganizacao({ usuario, selecionado, onSelecionar 
   };
 
   return (
-    <div className="flex h-[calc(100dvh-12rem)] min-h-[520px] overflow-hidden rounded-lg border border-border bg-card">
-      <section aria-label="Demandas encaminhadas" className={`${selecionado ? "hidden md:flex" : "flex"} w-full flex-col border-r border-border md:w-80 md:shrink-0`}>
+    // No celular, a lista sozinha flui com a página; a altura fixa vale para a conversa e para lista + conversa lado a lado.
+    <div className={`flex overflow-hidden rounded-lg border border-border bg-card ${selecionado ? "h-[calc(100dvh-12rem)] min-h-[520px]" : "md:h-[calc(100dvh-12rem)] md:min-h-[520px]"}`}>
+      <section aria-label="Demandas encaminhadas" className={`${selecionado ? "hidden md:flex" : "flex"} w-full flex-col border-border md:w-80 md:shrink-0 md:border-r`}>
         <ul className="min-h-0 flex-1 overflow-y-auto">
           {itens.length === 0 && <li className="p-4"><EstadoVazio titulo="Nenhuma demanda" descricao="Quando a administração precisar da organização, a demanda aparece aqui." /></li>}
           {itens.map(({ c, e }) => {
