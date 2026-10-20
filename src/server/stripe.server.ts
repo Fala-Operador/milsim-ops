@@ -190,6 +190,17 @@ export function completarPerfilComercial(contaId: string, perfil: PerfilComercia
   return chamarStripe<ContaStripe>("POST", `/accounts/${encodeURIComponent(contaId)}`, { business_profile: perfil });
 }
 
+/** Conta da própria plataforma (dona da chave secreta): usada para diagnosticar erros de Connect. */
+export function obterContaDaPlataforma(): Promise<{
+  id: string;
+  charges_enabled?: boolean;
+  payouts_enabled?: boolean;
+  business_profile?: { name?: string | null };
+  settings?: { dashboard?: { display_name?: string | null } };
+}> {
+  return chamarStripe("GET", "/account");
+}
+
 export function obterContaConectada(id: string): Promise<ContaStripe> {
   return chamarStripe<ContaStripe>("GET", `/accounts/${encodeURIComponent(id)}`);
 }

@@ -39,6 +39,7 @@ import {
   problemaChavesStripe,
   completarPerfilComercial,
   criarContaConectada,
+  obterContaDaPlataforma,
   criarReembolso,
   criarSessaoCheckout,
   criarSessaoDeConta,
@@ -317,10 +318,30 @@ async function contaDaOrganizacao(
       substituida = org.contaId;
     }
   }
-  const conta = await comStripe(() => criarContaConectada({ organizacaoId, perfil, email: org.email, substituida }));
+  const conta = await comStripe(() => criarContaConectada({ organizacaoId, perfil, email: org.email, substituida }))
+    .catch(async (e: Error) => { throw await comContaDaPlataforma(e); });
   await gravarConta(organizacaoId, conta);
   await completarPerfil(conta, perfil); // site, ramo e descrição, que a criação pela v2 não leva
   return { conta, nova: true };
+}
+
+/**
+ * Quando o Stripe diz que a plataforma não está ativada, acrescenta qual conta a chave do site
+ * usa e se ela recebe pagamentos, para comparar com a conta aberta no painel do Stripe.
+ */
+async function comContaDaPlataforma(e: Error): Promise<Error> {
+  if (!/must be activated in order to create accounts/i.test(e.message)) return e;
+  try {
+    const p = await obterContaDaPlataforma();
+    const nome = p.settings?.dashboard?.display_name || p.business_profile?.name || "sem nome";
+    const sim = (v?: boolean) => (v ? "sim" : "não");
+    return new Error(
+      `${e.message} Conta do Stripe usada pela chave do site: ${p.id} (${nome}; pagamentos ativos: ${sim(p.charges_enabled)}; repasses ativos: ${sim(p.payouts_enabled)}).`,
+      { cause: e.cause },
+    );
+  } catch {
+    return e;
+  }
 }
 
 /**
