@@ -296,7 +296,10 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   que é tentado de novo a cada webhook. Sem a chave, tudo continua como antes (confirmação
   direta, sem cobrança).
 - **Repasse às organizações (Stripe Connect Express)**: cada organização cria pelo Financeiro
-  uma conta Express (cadastro hospedado pelo Stripe, `account_links`); a situação fica em
+  uma conta com painel Express, criada pela Accounts v2 (`POST /v2/core/accounts`, conta recebedora
+  com `stripe_transfers`, perdas e taxas com a plataforma; o Stripe não libera a criação pela v1 em
+  produção para plataformas novas) e usada pela v1 no resto (cadastro hospedado `account_links`,
+  sessões, saldo, saques, cobranças com destino, webhook `account.updated`); a situação fica em
   `organizacao.recebimento` (`lib/repasses.ts`, gravada por `services/repasses.ts`, atualizada no
   retorno do cadastro e pelo webhook de Connect `account.updated`) e só aparece na visão de quem
   gere a organização. Na reserva, se a conta tem transferências ativas, o pagamento guarda

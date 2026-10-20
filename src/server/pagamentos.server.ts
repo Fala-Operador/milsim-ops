@@ -316,6 +316,7 @@ async function contaDaOrganizacao(
   }
   const conta = await comStripe(() => criarContaConectada({ organizacaoId, perfil, email: org.email }));
   await gravarConta(organizacaoId, conta);
+  await completarPerfil(conta, perfil); // site, ramo e descrição, que a criação pela v2 não leva
   return { conta, nova: true };
 }
 

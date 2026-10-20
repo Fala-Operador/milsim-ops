@@ -181,7 +181,8 @@ Código: `cancelarInscricao` (`src/services/inscricoes.ts`), `cancelarEvento` (`
 
 Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
 
-- Cada organização pode ter uma conta **Stripe Connect Express** (cadastro hospedado pelo Stripe).
+- Cada organização pode ter uma conta **Stripe Connect** com painel Express, criada pela Accounts v2
+  como conta recebedora das vendas (a plataforma responde por perdas e taxas, como nas contas Express).
   Situação: `pendente`, `em_analise`, `ativa` ou `restrita`, espelhada do Stripe e visível só para quem gere a organização.
   O site, o ramo (MCC 7999) e a descrição do negócio são enviados pela plataforma (`perfilComercialPadrao`),
   então o organizador não precisa informar um site próprio.

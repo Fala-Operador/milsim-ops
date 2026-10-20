@@ -129,23 +129,50 @@ export function criarReembolso(inscricaoId: string, intencaoId: string, repassad
   );
 }
 
-// ---------- Stripe Connect (contas Express das organizações) ----------
+// ---------- Stripe Connect (contas das organizações, painel Express) ----------
 
-/** Cria a conta Express da organização (uma por organização, pela chave de idempotência). */
-export function criarContaConectada(d: { organizacaoId: string; perfil: PerfilComercial; email?: string | undefined }): Promise<ContaStripe> {
-  return chamarStripe<ContaStripe>(
-    "POST",
-    "/accounts",
+/** Versão da API v2 do Stripe (Accounts v2); a v1 segue a versão padrão da conta. */
+const VERSAO_API_V2 = "2026-09-30.endive";
+
+/** Chamada à API v2 do Stripe (corpo JSON). */
+async function chamarStripeV2<T>(caminho: string, corpo: unknown, idempotencia?: string): Promise<T> {
+  const chave = chaveApi();
+  if (!chave) throw new ErroStripe(0, "nao_configurado", "Stripe não configurado.");
+  const cabecalhos: Record<string, string> = {
+    Authorization: `Bearer ${chave}`,
+    "Stripe-Version": VERSAO_API_V2,
+    "Content-Type": "application/json",
+  };
+  if (idempotencia) cabecalhos["Idempotency-Key"] = idempotencia;
+  const r = await fetch(`https://api.stripe.com/v2${caminho}`, { method: "POST", headers: cabecalhos, body: JSON.stringify(corpo) });
+  const resposta = (await r.json().catch(() => ({}))) as { error?: { code?: string; message?: string } } & T;
+  if (!r.ok) throw new ErroStripe(r.status, resposta.error?.code, resposta.error?.message ?? `Stripe respondeu ${r.status}.`);
+  return resposta;
+}
+
+/**
+ * Cria a conta da organização pela Accounts v2 (o Stripe não libera a criação pela v1 em
+ * produção para plataformas novas): conta recebedora (`recipient` com `stripe_transfers`) para
+ * as cobranças com destino, painel Express e perdas e taxas com a plataforma, como nas contas
+ * Express da v1. Uma por organização, pela chave de idempotência. O resto da integração
+ * (cadastro, sessões, saldo, saques, cobranças com destino) segue na v1, que aceita contas da v2;
+ * por isso a conta criada é relida pela v1.
+ */
+export async function criarContaConectada(d: { organizacaoId: string; perfil: PerfilComercial; email?: string | undefined }): Promise<ContaStripe> {
+  const { id } = await chamarStripeV2<{ id: string }>(
+    "/core/accounts",
     {
-      type: "express",
-      country: "BR",
-      email: d.email,
-      business_profile: d.perfil,
-      capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
+      contact_email: d.email,
+      display_name: d.perfil.name,
+      dashboard: "express",
+      identity: { country: "br" },
+      defaults: { responsibilities: { fees_collector: "application", losses_collector: "application" } },
+      configuration: { recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } } },
       metadata: { organizacaoId: d.organizacaoId },
     },
-    `conta-${d.organizacaoId}`,
+    `conta-v2-${d.organizacaoId}`,
   );
+  return obterContaConectada(id);
 }
 
 /** Preenche site, ramo e descrição de uma conta criada antes desse preenchimento automático. */
