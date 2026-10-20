@@ -176,10 +176,14 @@ export async function criarContaConectada(d: {
       display_name: d.perfil.name,
       dashboard: "express",
       identity: { country: "br" },
-      defaults: { responsibilities: { fees_collector: "application", losses_collector: "application" } },
+      defaults: {
+        responsibilities: { fees_collector: "application", losses_collector: "application" },
+        profile: perfilV2(d.perfil),
+      },
       configuration: {
         // O Stripe exige cartão (merchant.card_payments) para liberar o recebimento de transferências.
-        merchant: { capabilities: { card_payments: { requested: true } } },
+        // Com o ramo (MCC) já definido, o cadastro do Stripe não pergunta o "Setor".
+        merchant: { mcc: d.perfil.mcc, capabilities: { card_payments: { requested: true } } },
         recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } },
       },
       metadata: { organizacaoId: d.organizacaoId },
@@ -189,9 +193,25 @@ export async function criarContaConectada(d: {
   return obterContaConectada(id);
 }
 
-/** Preenche site, ramo e descrição de uma conta criada antes desse preenchimento automático. */
-export function completarPerfilComercial(contaId: string, perfil: PerfilComercial): Promise<ContaStripe> {
-  return chamarStripe<ContaStripe>("POST", `/accounts/${encodeURIComponent(contaId)}`, { business_profile: perfil });
+/** Site, nome e descrição no formato da Accounts v2 (`defaults.profile`). */
+function perfilV2(perfil: PerfilComercial) {
+  return { doing_business_as: perfil.name, product_description: perfil.product_description, business_url: perfil.url };
+}
+
+/**
+ * Preenche site, ramo e descrição de uma conta criada antes desse preenchimento automático.
+ * Contas da v2 só aceitam isso pela v2; contas antigas da v1 seguem pela v1.
+ */
+export async function completarPerfilComercial(contaId: string, perfil: PerfilComercial): Promise<void> {
+  try {
+    await chamarStripeV2(`/core/accounts/${encodeURIComponent(contaId)}`, {
+      defaults: { profile: perfilV2(perfil) },
+      configuration: { merchant: { mcc: perfil.mcc } },
+    });
+  } catch (e) {
+    if (!(e instanceof ErroStripe && e.codigo === "v1_account_instead_of_v2_account")) throw e;
+    await chamarStripe<ContaStripe>("POST", `/accounts/${encodeURIComponent(contaId)}`, { business_profile: perfil });
+  }
 }
 
 /** Conta da própria plataforma (dona da chave secreta): usada para diagnosticar erros de Connect. */
