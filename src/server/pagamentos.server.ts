@@ -19,7 +19,7 @@ import { estornoPendente } from "@/lib/pagamentos";
 import {
   acaoDaSessao,
   acaoDoEvento,
-  contaDeOutroModo,
+  contaInacessivel,
   destinoInvalido,
   mensagemDeFalhaStripe,
   disputaDoStripe,
@@ -287,12 +287,13 @@ async function comStripe<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 /**
- * A conta guardada só existe no outro modo do Stripe (conta de teste com a chave de produção):
- * esquece a conta para a organização cadastrar uma nova. Devolve se descartou.
+ * A conta guardada não é alcançável com a chave atual (conta de teste com a chave de produção,
+ * ou conta de outra plataforma/sandbox): esquece a conta para a organização cadastrar uma nova.
+ * Devolve se descartou.
  */
-async function descartarSeDeOutroModo(organizacaoId: string, contaId: string, e: unknown): Promise<boolean> {
-  if (!(e instanceof ErroStripe && contaDeOutroModo(e.status, e.message))) return false;
-  console.warn("Stripe: conta de recebimento de outro modo descartada", organizacaoId, contaId);
+async function descartarSeInacessivel(organizacaoId: string, contaId: string, e: unknown): Promise<boolean> {
+  if (!(e instanceof ErroStripe && contaInacessivel(e.status, e.message))) return false;
+  console.warn("Stripe: conta de recebimento inacessível descartada", organizacaoId, contaId, e.status);
   await mutar(({ base }) => descartarContaDeOutroModoNaBase(base, organizacaoId, contaId));
   saldosRecentes.delete(contaId);
   return true;
@@ -300,21 +301,23 @@ async function descartarSeDeOutroModo(organizacaoId: string, contaId: string, e:
 
 /**
  * Conta da organização no modo atual do Stripe. Cria (e grava) uma conta Express quando não há
- * nenhuma ou quando a guardada é de outro modo.
+ * nenhuma ou quando a guardada é inacessível (outro modo ou outra plataforma).
  */
 async function contaDaOrganizacao(
   organizacaoId: string,
   org: { contaId?: string | undefined; email?: string | undefined },
   perfil: PerfilComercial,
 ): Promise<{ conta: ContaStripe; nova: boolean }> {
+  let substituida: string | undefined;
   if (org.contaId) {
     try {
       return { conta: await comStripe(() => obterContaConectada(org.contaId!)), nova: false };
     } catch (e) {
-      if (!(await descartarSeDeOutroModo(organizacaoId, org.contaId, (e as Error).cause))) throw e;
+      if (!(await descartarSeInacessivel(organizacaoId, org.contaId, (e as Error).cause))) throw e;
+      substituida = org.contaId;
     }
   }
-  const conta = await comStripe(() => criarContaConectada({ organizacaoId, perfil, email: org.email }));
+  const conta = await comStripe(() => criarContaConectada({ organizacaoId, perfil, email: org.email, substituida }));
   await gravarConta(organizacaoId, conta);
   await completarPerfil(conta, perfil); // site, ramo e descrição, que a criação pela v2 não leva
   return { conta, nova: true };
@@ -365,7 +368,7 @@ export async function sincronizarRecebimento(organizacaoId: string) {
     const conta = await comStripe(() => obterContaConectada(org.contaId!));
     return await gravarConta(organizacaoId, conta);
   } catch (e) {
-    if (await descartarSeDeOutroModo(organizacaoId, org.contaId, (e as Error).cause)) return atual();
+    if (await descartarSeInacessivel(organizacaoId, org.contaId, (e as Error).cause)) return atual();
     throw e;
   }
 }
@@ -408,7 +411,7 @@ export async function consultarSaldoRecebimento(organizacaoId: string, atualizar
       return resumoSaldo(b, p, c);
     });
   } catch (e) {
-    if (await descartarSeDeOutroModo(organizacaoId, contaId, (e as Error).cause)) return undefined;
+    if (await descartarSeInacessivel(organizacaoId, contaId, (e as Error).cause)) return undefined;
     throw e;
   }
   saldosRecentes.set(contaId, { em: Date.now(), saldo });

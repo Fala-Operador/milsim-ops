@@ -192,8 +192,10 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
 - A **taxa** (%) é definida pelo admin e vale para reservas novas; cada venda guarda a taxa do momento.
 - Reembolso de venda repassada desfaz a transferência e devolve a taxa.
 - Ao trocar as chaves do Stripe de teste para produção, a conta de recebimento criada no modo de teste
-  é esquecida na primeira consulta e a organização refaz o cadastro numa conta nova. Enquanto isso,
+  (ou numa sandbox, que é outra conta de plataforma) é esquecida na primeira consulta e a organização
+  refaz o cadastro numa conta nova. O id descartado fica no log do servidor. Enquanto isso,
   um checkout cujo destino o Stripe não reconhece vira venda na plataforma ("repasse à parte").
+- Mensagens de erro do Stripe mostradas no site nunca trazem a chave de API, nem mascarada.
 - Com a conta ativa, o Financeiro mostra **saldo** disponível e a liberar, próximo saque, últimos
   saques, cronograma e banco (só os últimos dígitos), lidos do Stripe com cache de 60 s.
   Com `STRIPE_BROWSER_PUBLIC_KEY`, tudo acontece dentro do site: o cadastro da conta (inclusive o

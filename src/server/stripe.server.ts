@@ -158,7 +158,13 @@ async function chamarStripeV2<T>(caminho: string, corpo: unknown, idempotencia?:
  * (cadastro, sessões, saldo, saques, cobranças com destino) segue na v1, que aceita contas da v2;
  * por isso a conta criada é relida pela v1.
  */
-export async function criarContaConectada(d: { organizacaoId: string; perfil: PerfilComercial; email?: string | undefined }): Promise<ContaStripe> {
+export async function criarContaConectada(d: {
+  organizacaoId: string;
+  perfil: PerfilComercial;
+  email?: string | undefined;
+  /** Conta descartada que esta substitui: muda a chave de idempotência para não repetir a criação anterior. */
+  substituida?: string | undefined;
+}): Promise<ContaStripe> {
   const { id } = await chamarStripeV2<{ id: string }>(
     "/core/accounts",
     {
@@ -170,7 +176,7 @@ export async function criarContaConectada(d: { organizacaoId: string; perfil: Pe
       configuration: { recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } } },
       metadata: { organizacaoId: d.organizacaoId },
     },
-    `conta-v2-${d.organizacaoId}`,
+    `conta-v2-${d.organizacaoId}${d.substituida ? `-${d.substituida}` : ""}`,
   );
   return obterContaConectada(id);
 }

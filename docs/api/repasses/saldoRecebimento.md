@@ -23,7 +23,7 @@ Lê do Stripe o saldo da conta de recebimento da organização: disponível, a l
 - Só com a conta de recebimento ativa; antes disso devolve `undefined`.
 - Cache de 60 s por conta, para não estourar o limite de chamadas do Stripe.
 - Só valores em BRL entram nos totais.
-- Conta guardada que só existe no outro modo do Stripe (conta de teste depois da troca para as chaves de produção) é esquecida e a organização faz um cadastro novo.
+- Conta guardada que a chave atual não alcança (conta de teste depois da troca para as chaves de produção, ou conta de outra plataforma/sandbox, que o Stripe recusa com 403 "does not have access to account") é esquecida e a organização faz um cadastro novo. Mensagens de erro do Stripe nunca mostram a chave de API, nem mascarada.
 
 ## Resposta
 

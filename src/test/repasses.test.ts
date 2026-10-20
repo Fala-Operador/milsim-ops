@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { restaurarBase } from "@/test/baseTeste";
 import { confirmarInscricao, confirmarPagamentoNaBase } from "@/services/inscricoes";
 import { definirTaxaPlataformaNaBase, descartarContaDeOutroModoNaBase, registrarRecebimentoNaBase } from "@/services/repasses";
-import { contaDeOutroModo, destinoInvalido, mensagemDeFalhaStripe, MSG_FALHA_STRIPE } from "@/lib/stripe";
+import { contaDeOutroModo, contaInacessivel, destinoInvalido, mensagemDeFalhaStripe, MSG_FALHA_STRIPE, ocultarChaves } from "@/lib/stripe";
 import { contaParaRepasse, descreverCronograma, MCC_EVENTOS, perfilComercialPadrao, precisaPerfilComercial, recebimentoDaConta, resumoRepasse, resumoSaldo, taxaDaPlataforma, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
 import { visaoParaUsuario } from "@/lib/visao";
 import type { BaseDados, Evento } from "@/lib/domain/types";
@@ -191,6 +191,23 @@ describe("troca do modo do Stripe (teste → produção)", () => {
     expect(contaDeOutroModo(400, msgTeste)).toBe(false);
   });
 
+  const msgSemAcesso = "The provided key 'sk_live_*****************************E4gelA' does not have access to account 'acct_1USP1VCJTy0OtC8n' (or that account does not exist). Application access may have been revoked.";
+
+  it("reconhece a conta que esta chave não alcança (outro modo ou outra plataforma)", () => {
+    expect(contaInacessivel(404, msgTeste)).toBe(true);
+    expect(contaInacessivel(403, msgSemAcesso)).toBe(true);
+    expect(contaInacessivel(403, "Outro motivo")).toBe(false);
+    expect(contaInacessivel(401, "Invalid API Key provided")).toBe(false);
+  });
+
+  it("nunca mostra a chave de API, nem mascarada", () => {
+    expect(ocultarChaves(msgSemAcesso)).toBe("The provided key [chave oculta] does not have access to account 'acct_1USP1VCJTy0OtC8n' (or that account does not exist). Application access may have been revoked.");
+    expect(ocultarChaves("Invalid API Key provided: sk_test_abc123")).toBe("Invalid API Key provided: [chave oculta]");
+    expect(ocultarChaves("rk_live_51Abc... e pk_test_xyz")).toBe("[chave oculta] e [chave oculta]");
+    expect(mensagemDeFalhaStripe(403, msgSemAcesso)).not.toMatch(/sk_live|E4gelA/);
+    expect(mensagemDeFalhaStripe(401, "Invalid API Key provided: sk_live_****gelA")).not.toMatch(/gelA/);
+  });
+
   it("explica erros de configuração em vez de pedir para tentar de novo", () => {
     expect(mensagemDeFalhaStripe(401, "Invalid API Key provided")).toMatch(/STRIPE_SERVER_API_KEY.*Invalid API Key provided/);
     expect(mensagemDeFalhaStripe(403, "Outro motivo")).toBe("O Stripe recusou esta operação de contas conectadas. (Stripe: Outro motivo)");
@@ -205,6 +222,7 @@ describe("troca do modo do Stripe (teste → produção)", () => {
   it("checkout com destino de outro modo cai para a venda na plataforma", () => {
     expect(destinoInvalido(400, "No such destination: 'acct_1'")).toBe(true);
     expect(destinoInvalido(404, msgTeste)).toBe(true);
+    expect(destinoInvalido(403, msgSemAcesso)).toBe(true);
     expect(destinoInvalido(400, "Amount must be at least R$0.50")).toBe(false);
   });
 
