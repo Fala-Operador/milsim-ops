@@ -193,8 +193,8 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
 - Com a conta ativa, o Financeiro mostra **saldo** disponível e a liberar, próximo saque, últimos
   saques, cronograma e banco (só os últimos dígitos), lidos do Stripe com cache de 60 s.
   Com `STRIPE_BROWSER_PUBLIC_KEY`, tudo acontece dentro do site: o cadastro da conta (inclusive o
-  inicial), os avisos de pendência e os dados da conta e banco (abertos pelo botão "Ver dados da
-  conta") usam os componentes embutidos do Stripe. Contas Express ainda passam por uma confirmação de e-mail ou
+  inicial), os avisos de pendência e os dados da conta e banco (num painel lateral aberto pelo
+  botão "Dados da conta") usam os componentes embutidos do Stripe. Contas Express ainda passam por uma confirmação de e-mail ou
   celular numa janela do Stripe, que só abre depois de um clique do organizador (o navegador
   bloqueia janelas abertas sozinhas); por isso os avisos de pendência aparecem junto dos dados da
   conta ou do cadastro, não ao carregar a página. Sem a chave, cadastro e painel abrem no site do Stripe.

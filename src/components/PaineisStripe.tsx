@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { LayoutDashboard } from "lucide-react";
 import { sessaoComponentesStripeOrg } from "@/api/repasses.functions";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { useTheme } from "@/contexts/ThemeContext";
 import type { Tema } from "@/lib/localizacao";
 
@@ -192,11 +193,14 @@ export function CadastroStripeEmbutido({ organizacaoId, aoSair }: { organizacaoI
 
 /**
  * Dados da conta de recebimento (empresa, responsável e conta bancária) pelo componente
- * account-management, aberto por botão. Saldo e saques aparecem no resumo do Financeiro.
+ * account-management, num painel lateral aberto por botão. Saldo e saques aparecem no resumo do
+ * Financeiro. O painel não é modal: o Stripe abre os próprios formulários de edição numa camada
+ * fora dele, que um modal deixaria sem clique, e clicar fora não fecha (só o X ou Esc).
  */
 export function PaineisStripe({ organizacaoId }: { organizacaoId: string }) {
   const [aberto, setAberto] = useState(false);
   const { instancia, erro, carregando } = useInstanciaStripe(organizacaoId, aberto);
+  const manterAberto = (e: Event) => e.preventDefault();
 
   return (
     <div>
@@ -204,22 +208,39 @@ export function PaineisStripe({ organizacaoId }: { organizacaoId: string }) {
         <div className="min-w-0">
           <h3 className="flex items-center gap-2 font-medium"><LayoutDashboard className="h-4 w-4 shrink-0" aria-hidden="true" />Dados da conta</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Dados da organização e conta bancária cadastrados no Stripe, sem sair do site. Em alguns casos o Stripe pede
-            para confirmar seu e-mail ou celular numa janela própria.
+            Dados da organização e conta bancária cadastrados no Stripe, sem sair do site.
           </p>
         </div>
-        {!aberto && (
-          <Button type="button" variant="outline" className="w-full shrink-0 sm:w-auto" onClick={() => setAberto(true)}>Ver dados da conta</Button>
-        )}
+        <Button type="button" variant="outline" className="w-full shrink-0 sm:w-auto" onClick={() => setAberto(true)}>Dados da conta</Button>
       </div>
-      {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
-      {aberto && !erro && (
-        <>
-          {carregando && <p className="mt-2 text-sm text-muted-foreground">Carregando o Stripe...</p>}
-          {instancia && <ElementoStripe instancia={instancia} componente="notification-banner" className="mt-3" />}
-          {instancia && <ElementoStripe instancia={instancia} componente="account-management" className="mt-3 min-h-24" />}
-        </>
-      )}
+      {aberto && <div aria-hidden="true" className="fixed inset-0 z-50 bg-black/60" />}
+      <Sheet open={aberto} onOpenChange={setAberto} modal={false}>
+        <SheetContent
+          side="right"
+          showCloseButton={false}
+          onInteractOutside={manterAberto}
+          className="flex w-full flex-col gap-0 overflow-y-auto border-border p-5 sm:max-w-xl"
+        >
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <SheetTitle>Dados da conta</SheetTitle>
+              <SheetDescription>
+                Empresa, responsável e conta bancária no Stripe. Em alguns casos o Stripe pede para confirmar seu e-mail ou
+                celular numa janela própria.
+              </SheetDescription>
+            </div>
+            <Button type="button" variant="ghost" onClick={() => setAberto(false)} aria-label="Fechar">✕</Button>
+          </div>
+          {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
+          {carregando && <p className="text-sm text-muted-foreground">Carregando o Stripe...</p>}
+          {instancia && !erro && (
+            <>
+              <ElementoStripe instancia={instancia} componente="notification-banner" />
+              <ElementoStripe instancia={instancia} componente="account-management" className="mt-3 min-h-24" />
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
