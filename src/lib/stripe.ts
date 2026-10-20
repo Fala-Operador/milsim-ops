@@ -211,6 +211,22 @@ export function contaDeOutroModo(status: number, mensagem: string): boolean {
   return status === 404 && /similar object exists in (test|live) mode/i.test(mensagem);
 }
 
+/** 403 do Stripe quando a conta guardada não pertence à plataforma desta chave (ex.: criada numa sandbox). */
+const SEM_ACESSO_A_CONTA = /does not have access to account|application access may have been revoked/i;
+
+/**
+ * Conta conectada guardada que esta chave não alcança: de outro modo do Stripe ou de outra
+ * conta de plataforma (sandbox). Nos dois casos a organização precisa de uma conta nova.
+ */
+export function contaInacessivel(status: number, mensagem: string): boolean {
+  return contaDeOutroModo(status, mensagem) || (status === 403 && SEM_ACESSO_A_CONTA.test(mensagem));
+}
+
+/** Tira chaves de API (mesmo mascaradas, como "sk_live_***...gelA") de uma mensagem do Stripe. */
+export function ocultarChaves(mensagem: string): string {
+  return mensagem.replace(/'?\b(?:sk|rk|pk)_(?:test|live)_[\w*.…]+'?/g, "[chave oculta]");
+}
+
 export const MSG_FALHA_STRIPE = "Não foi possível falar com o Stripe agora. Tente novamente em instantes.";
 
 /**
@@ -218,7 +234,8 @@ export const MSG_FALHA_STRIPE = "Não foi possível falar com o Stripe agora. Te
  * configuração da plataforma (chave recusada ou sem permissão, Connect desligado) dizem o que
  * conferir, em vez do genérico "tente novamente", que só vale para falha de rede ou do Stripe.
  */
-export function mensagemDeFalhaStripe(status: number, mensagem: string): string {
+export function mensagemDeFalhaStripe(status: number, original: string): string {
+  const mensagem = ocultarChaves(original);
   const doStripe = mensagem ? ` (Stripe: ${mensagem})` : "";
   if (/accounts v1/i.test(mensagem)) return `O Stripe não libera a criação de contas conectadas pela API Accounts v1 nesta conta. No painel do Stripe (modo de produção), ative "Accounts v1 support" nas configurações do Connect e tente de novo.${doStripe}`;
   if (status === 401) return `O Stripe recusou a chave secreta da plataforma (STRIPE_SERVER_API_KEY). Confira se ela foi copiada inteira e se o site foi publicado de novo depois da troca.${doStripe}`;
@@ -228,7 +245,8 @@ export function mensagemDeFalhaStripe(status: number, mensagem: string): string 
   return MSG_FALHA_STRIPE;
 }
 
-/** Checkout recusado porque a conta de destino não existe neste modo do Stripe. */
+/** Checkout recusado porque a conta de destino não existe neste modo do Stripe ou não é desta plataforma. */
 export function destinoInvalido(status: number, mensagem: string): boolean {
-  return (status === 400 || status === 404) && /no such destination|similar object exists in (test|live) mode/i.test(mensagem);
+  return ((status === 400 || status === 404) && /no such destination|similar object exists in (test|live) mode/i.test(mensagem))
+    || (status === 403 && SEM_ACESSO_A_CONTA.test(mensagem));
 }

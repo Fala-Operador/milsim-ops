@@ -22,7 +22,7 @@ Cria a sessão dos componentes embutidos do Stripe (painéis de saques e de paga
 - Exige `STRIPE_PUBLISHABLE_KEY` configurada e a conta de recebimento ativa.
 - O `clientSecret` é de uso curto e só serve para a conta da organização.
 - Se o site ganhar uma CSP, libere `https://connect-js.stripe.com` e `https://js.stripe.com` em `script-src` e `frame-src`.
-- Conta guardada que só existe no outro modo do Stripe (conta de teste depois da troca para as chaves de produção) é esquecida e a organização faz um cadastro novo.
+- Conta guardada que a chave atual não alcança (conta de teste depois da troca para as chaves de produção, ou conta de outra plataforma/sandbox, que o Stripe recusa com 403 "does not have access to account") é esquecida e a organização faz um cadastro novo. Mensagens de erro do Stripe nunca mostram a chave de API, nem mascarada.
 
 ## Resposta
 
