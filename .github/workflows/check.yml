@@ -7,8 +7,9 @@
 #   - os testes pgTAP de `supabase/tests/` rodam num Postgres local com todas
 #     as migrations aplicadas do zero.
 #
-# Usa os mesmos segredos do deploy (veja deploy.yml); sem eles (PR de fork),
-# a simulação contra o projeto é pulada.
+# A simulação usa o ambiente do branch de destino do PR (veja deploy.yml): PR
+# para o main → `production`, para qualquer outro (hml) → `homologacao`. Sem
+# os segredos (PR de fork), ela é pulada.
 name: Conferir migrations
 
 on:
@@ -18,6 +19,7 @@ on:
       - "supabase/tests/**"
       - "supabase/config.toml"
       - ".github/workflows/**"
+      - ".github/scripts/**"
 
 permissions:
   contents: read
@@ -26,11 +28,13 @@ jobs:
   check:
     name: Migrations
     runs-on: ubuntu-latest
+    environment: ${{ github.base_ref == 'main' && 'production' || 'homologacao' }}
     env:
       SUPABASE_CLI_VERSION: 2.119.0
+      AMBIENTE: ${{ github.base_ref == 'main' && 'production' || 'homologacao' }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'fezrmoyjsffufdjptamp' }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || (github.base_ref == 'main' && 'fezrmoyjsffufdjptamp' || '') }}
     steps:
       - uses: actions/checkout@v4
 
@@ -49,6 +53,10 @@ jobs:
           curl -fsSL "https://github.com/supabase/cli/releases/download/v${SUPABASE_CLI_VERSION}/supabase_linux_amd64.tar.gz" \
             | sudo tar -xz -C /usr/local/bin supabase supabase-go
           supabase --version
+
+      - name: Conferir o ambiente
+        if: env.SUPABASE_ACCESS_TOKEN != ''
+        run: bash .github/scripts/conferir-ambiente.sh
 
       - name: Simular o deploy
         if: env.SUPABASE_ACCESS_TOKEN != ''

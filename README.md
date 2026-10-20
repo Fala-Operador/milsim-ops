@@ -96,18 +96,26 @@ Stripe em modo live.
 
 #### Deploy automático (GitHub Actions)
 
+- Dois ambientes, cada um com o seu projeto Supabase: **produção** (branch `main`, ambiente
+  `production` do GitHub, projeto `fezrmoyjsffufdjptamp`) e **homologação** (branch `hml`, ambiente
+  `homologacao`).
 - `.github/workflows/check.yml` roda em todo PR que mexe em `supabase/`: rejeita carimbos de data
-  repetidos, simula o `db push` contra o projeto (mostra o que o merge vai aplicar) e roda os
-  testes pgTAP de `supabase/tests/` num banco local criado do zero.
-- `.github/workflows/deploy.yml` roda a cada push no `main` que mexe em `supabase/` (ou pela aba
-  Actions): aplica as migrations novas e publica as Edge Functions.
-- Segredos do repositório (Settings → Secrets and variables → Actions): `SUPABASE_ACCESS_TOKEN`
-  (supabase.com/dashboard/account/tokens) e `SUPABASE_DB_PASSWORD`. Variável opcional
-  `SUPABASE_PROJECT_REF` (padrão: `fezrmoyjsffufdjptamp`).
+  repetidos, simula o `db push` contra o projeto do branch de destino (PR para o `main` → produção,
+  para o `hml` → homologação) e roda os testes pgTAP de `supabase/tests/` num banco local criado do zero.
+- `.github/workflows/deploy.yml` roda a cada push no `main` ou no `hml` que mexe em `supabase/` (ou
+  pela aba Actions, a partir de um dos dois): aplica as migrations novas e publica as Edge Functions
+  no projeto daquele ambiente.
+- `.github/workflows/reset-banco.yml` (manual) pergunta qual banco resetar; o padrão é homologação.
+- Segredos por ambiente (Settings → Environments → `production` / `homologacao`):
+  `SUPABASE_ACCESS_TOKEN` (supabase.com/dashboard/account/tokens) e `SUPABASE_DB_PASSWORD`, mais a
+  variável `SUPABASE_PROJECT_REF`. Em `production`, sem eles valem os segredos do repositório e o
+  projeto `fezrmoyjsffufdjptamp`; em `homologacao` a ref é obrigatória e o workflow para se ela for
+  a de produção (`.github/scripts/conferir-ambiente.sh`). Os segredos das Edge Functions (Stripe)
+  são configurados no painel de cada projeto Supabase.
 - Toda mudança de esquema é uma migration nova em `supabase/migrations/`, que precisa aplicar
   num banco vazio e ter data **posterior** à última aplicada. Não altere o banco à mão
   (`db query -f`, psql): a migration fica fora do histórico da CLI e o `db push` do deploy passa a
-  recusar tudo. Se aplicar uma migration localmente com `db push`, envie o arquivo ao `main` em seguida.
+  recusar tudo. Se aplicar uma migration localmente com `db push`, envie o arquivo ao branch daquele ambiente em seguida.
 - As migrations anteriores ao deploy automático foram aplicadas à mão (psql) e são idempotentes:
   o primeiro deploy as reaplica sem efeito. Migrations novas não precisam ser idempotentes.
 
