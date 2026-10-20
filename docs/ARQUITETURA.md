@@ -308,8 +308,9 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   `resumoSaldo`). Com `STRIPE_BROWSER_PUBLIC_KEY`, o recebimento todo fica no site com os
   componentes embutidos do Stripe (`components/PaineisStripe.tsx`, `connect.js` carregado do
   Stripe): `account-onboarding` no cadastro (a conta Express é criada na primeira sessão),
-  e, no painel aberto pelo organizador, `notification-banner` (pendências), `payouts`, `payments`
-  e `account-management`. Uma única instância do Connect por organização serve todos esses
+  e, no painel aberto pelo organizador, `notification-banner` (pendências) e
+  `account-management` (dados da conta e banco, aberto pelo botão "Ver dados da conta"); saldo
+  e saques vêm da leitura do servidor (`consultarSaldoRecebimento`). Uma única instância do Connect por organização serve todos esses
   componentes, nada do Stripe é montado sozinho ao carregar a página (a janela de confirmação
   do Stripe só abre depois de um clique, senão o navegador bloqueia) e o `logout` do Connect só
   roda ao sair da conta do site. A Account Session (`sessaoComponentesStripe`) tem reembolso e disputa
