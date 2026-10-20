@@ -88,6 +88,12 @@ pelo Stripe, rode a ação manual **Reset do banco** (digite `RESETAR`). Ela gua
 backup completo como artefato da execução (30 dias). Detalhes em
 `supabase/scripts/reset_mantendo_contas_e_vendas_stripe.sql`.
 
+A migration `20261020150000_reset_dados_de_usuarios.sql` apaga, uma única vez no deploy, tudo
+que os usuários geraram (eventos com inscrições e vendas, fóruns, comunidade, suporte, missões,
+operações externas, notificações, conquistas e vouchers), mantendo contas, perfis,
+organizações com a conta Stripe e a configuração do site. Ela recusa rodar se houver venda
+Stripe em modo live.
+
 #### Deploy automático (GitHub Actions)
 
 - `.github/workflows/check.yml` roda em todo PR que mexe em `supabase/`: rejeita carimbos de data
