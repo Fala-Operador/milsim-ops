@@ -212,7 +212,7 @@ sequenceDiagram
     participant App as Site
     participant S as Stripe
     Or->>App: cadastrarRecebimento(organização)
-    App->>S: cria conta Express (1ª vez) e link de cadastro
+    App->>S: cria conta (Accounts v2, 1ª vez) e link de cadastro
     App-->>Or: url do cadastro
     Or->>S: preenche dados e conta bancária
     S-->>Or: volta para /organizacao/financeiro?recebimento=retorno

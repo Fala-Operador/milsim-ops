@@ -219,8 +219,10 @@ export const MSG_FALHA_STRIPE = "Não foi possível falar com o Stripe agora. Te
  * conferir, em vez do genérico "tente novamente", que só vale para falha de rede ou do Stripe.
  */
 export function mensagemDeFalhaStripe(status: number, mensagem: string): string {
-  if (status === 401) return "O Stripe recusou a chave secreta da plataforma (STRIPE_SERVER_API_KEY). Confira se ela foi copiada inteira e se o site foi publicado de novo depois da troca.";
-  if (status === 403) return "A chave secreta da plataforma não tem permissão para contas conectadas. Use a chave secreta padrão (sk_live_...) ou dê permissão de Connect à chave restrita.";
+  const doStripe = mensagem ? ` (Stripe: ${mensagem})` : "";
+  if (/accounts v1/i.test(mensagem)) return `O Stripe não libera a criação de contas conectadas pela API Accounts v1 nesta conta. No painel do Stripe (modo de produção), ative "Accounts v1 support" nas configurações do Connect e tente de novo.${doStripe}`;
+  if (status === 401) return `O Stripe recusou a chave secreta da plataforma (STRIPE_SERVER_API_KEY). Confira se ela foi copiada inteira e se o site foi publicado de novo depois da troca.${doStripe}`;
+  if (status === 403) return `O Stripe recusou esta operação de contas conectadas.${doStripe}`;
   if (status === 400 && /signed up for connect/i.test(mensagem)) return "O Stripe Connect ainda não está ativado na conta da plataforma neste modo. Ative o Connect no painel do Stripe (modo de produção) e tente de novo.";
   if (status === 400 || status === 404) return `Stripe: ${mensagem}`;
   return MSG_FALHA_STRIPE;
