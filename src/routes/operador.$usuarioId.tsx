@@ -5,6 +5,7 @@ import { Instagram, Lock, Pencil, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { obterPerfil } from "@/api/perfil.functions";
 import { MapaBrasil } from "@/components/perfil/MapaBrasil";
+import { OperacoesExternas } from "@/components/perfil/OperacoesExternas";
 import { AbaEquipamentos, AbaFotos, AbaInsignias, AbaOperacoes, AbaRecompensas, CartaoOperacao, Restrito } from "@/components/perfil/abas";
 import { EditarPerfil, Privacidade } from "@/components/perfil/edicao";
 import { Button } from "@/components/ui/button";
@@ -100,8 +101,11 @@ function PaginaOperador() {
           <dl className="mt-5 grid grid-cols-3 gap-2 sm:max-w-lg">
             {[["Operações", p.resumo.operacoes], ["Estados", p.resumo.estados], ["Insígnias", p.resumo.insignias]].map(([r, v]) => (
               <div key={r as string} className="rounded-md border border-border bg-card px-3 py-2 text-center">
-                <dt className="text-xs uppercase text-muted-foreground">{r}</dt>
+                <dt className="text-xs uppercase text-muted-foreground">{r === "Estados" ? "Estados na plataforma" : r}</dt>
                 <dd className="font-display text-2xl font-semibold">{v ?? <span aria-label="privado"><Lock className="mx-auto mt-1 h-4 w-4 text-muted-foreground" /></span>}</dd>
+                {r === "Estados" && p.resumo.estadosTotal !== undefined && p.resumo.estadosTotal > (p.resumo.estados ?? 0) && (
+                  <dd className="text-xs text-muted-foreground">{p.resumo.estadosTotal} no total</dd>
+                )}
               </div>
             ))}
           </dl>
@@ -155,7 +159,12 @@ function PaginaOperador() {
               </div>
             )}
             {aba === "operacoes" && <AbaOperacoes operacoes={p.operacoes} futuras={p.futuras} proprio={p.proprio} onMudou={recarregar} />}
-            {aba === "mapa" && (p.mapa ? <MapaBrasil operacoes={p.mapa} /> : <Restrito />)}
+            {aba === "mapa" && (p.mapa ? (
+              <div className="space-y-8">
+                <MapaBrasil operacoes={p.mapa} externas={p.externas} />
+                <OperacoesExternas externas={p.externas} proprio={p.proprio} onMudou={recarregar} />
+              </div>
+            ) : <Restrito />)}
             {aba === "insignias" && <AbaInsignias insignias={p.insignias} />}
             {aba === "equipamentos" && <AbaEquipamentos equipamentos={p.equipamentos} proprio={p.proprio} onMudou={recarregar} />}
             {aba === "fotos" && <AbaFotos fotos={p.fotos} proprio={p.proprio} onMudou={recarregar} />}

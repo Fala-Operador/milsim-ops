@@ -6,7 +6,7 @@
 |---|---|
 | Endpoint | `POST https://<site>/api/stripe/webhook` |
 | Quem chama | Somente a Edge Function [`stripe-webhook`](stripe-webhook-edge.md) |
-| Autenticação | Cabeçalho `x-milsim-assinatura` (HMAC-SHA256 com `STRIPE_WEBHOOK_FORWARD_SECRET`), conferido sobre o corpo bruto antes de qualquer leitura |
+| Autenticação | Cabeçalho `x-milsim-assinatura` (HMAC-SHA256 com `MILSIM_WEBHOOK_SECRET`), conferido sobre o corpo bruto antes de qualquer leitura |
 
 Único endpoint HTTP público do site. Recebe os eventos do Stripe já validados pela Edge
 Function e aplica as regras de pagamento, reembolso e repasse.
@@ -52,7 +52,7 @@ const corpo = JSON.stringify({
   data: { object: { id: "cs_test_a1B2…", status: "expired", payment_status: "unpaid", metadata: { inscricaoId: "ins-0f8c7a1e-…" } } },
 });
 const t = Math.floor(Date.now() / 1000);
-const v1 = createHmac("sha256", process.env.STRIPE_WEBHOOK_FORWARD_SECRET!).update(`${t}.${corpo}`).digest("hex");
+const v1 = createHmac("sha256", process.env.MILSIM_WEBHOOK_SECRET!).update(`${t}.${corpo}`).digest("hex");
 
 const r = await fetch("http://localhost:8080/api/stripe/webhook", {
   method: "POST",

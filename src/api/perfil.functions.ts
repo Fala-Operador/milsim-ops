@@ -78,6 +78,19 @@ export const excluirFotoFn = createServerFn({ method: "POST" })
   .validator(z.object({ id }).parse)
   .handler(({ data }) => mutar(({ base, usuario }) => perfil.excluirFoto(base, exigirUsuario(usuario), data.id)));
 
+// ---------- Operações fora da plataforma (registradas pelo operador, com foto) ----------
+export const salvarOperacaoExternaFn = createServerFn({ method: "POST" })
+  .validator(z.object({
+    id: id.optional(), nome: z.string().max(120), data: z.string().max(10), cidade: z.string().max(80), uf: z.string().max(2),
+    organizacao: z.string().max(120).optional(), modalidade: z.string().max(40).optional(),
+    foto: imagem, fotoAlt: z.string().max(200).optional(), descricao: z.string().max(400).optional(), visivel: z.boolean(),
+  }).parse)
+  .handler(({ data }) => mutar(({ base, usuario }) => perfil.salvarOperacaoExterna(base, exigirUsuario(usuario), data).id));
+
+export const excluirOperacaoExternaFn = createServerFn({ method: "POST" })
+  .validator(z.object({ id }).parse)
+  .handler(({ data }) => mutar(({ base, usuario }) => perfil.excluirOperacaoExterna(base, exigirUsuario(usuario), data.id)));
+
 // ---------- Notas fiscais (armazenamento privado) ----------
 async function exigirDono(equipamentoId: string) {
   const { base, usuario } = await contextoSomenteLeitura();
@@ -142,4 +155,6 @@ export const editarFoto = (d: { id: string; legenda?: string | undefined; alt?: 
 export const excluirFoto = (fid: string) => chamar(excluirFotoFn({ data: { id: fid } }));
 export const enviarNota = (equipamentoId: string, nome: string, dataUrl: string) => chamar(enviarNotaFn({ data: { equipamentoId, nome, dataUrl } }));
 export const linkNota = (equipamentoId: string, baixar: boolean) => linkNotaFn({ data: { equipamentoId, baixar } });
+export const salvarOperacaoExterna = (d: perfil.DadosOperacaoExterna) => chamar(salvarOperacaoExternaFn({ data: d }));
+export const excluirOperacaoExterna = (oid: string) => chamar(excluirOperacaoExternaFn({ data: { id: oid } }));
 export const excluirNota = (equipamentoId: string) => chamar(excluirNotaFn({ data: { equipamentoId } }));

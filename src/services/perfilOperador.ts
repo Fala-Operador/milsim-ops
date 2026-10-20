@@ -2,9 +2,10 @@
 // (a identidade vem da sessão no servidor). Notas fiscais ficam em src/server/documentos.server.ts.
 import { ErroDominio, gerarId } from "@/services/db";
 import { perfilPadrao } from "@/lib/perfilSocial";
-import { concessaoAtiva } from "@/lib/participacao";
+import { concessaoAtiva, UFS_VALIDAS } from "@/lib/participacao";
+import { ehModalidade } from "@/lib/modalidades";
 import type {
-  BaseDados, Equipamento, PerfilOperador, PrivacidadePerfil, TipoEquipamento, Usuario,
+  BaseDados, Equipamento, OperacaoExterna, PerfilOperador, PrivacidadePerfil, TipoEquipamento, Usuario,
 } from "@/lib/domain/types";
 
 export const TIPOS_EQUIPAMENTO: Record<TipoEquipamento, string> = { spring: "Spring", hpa: "HPA", aeg: "AEG", gbbr: "GBBR" };
@@ -142,4 +143,78 @@ export function excluirFoto(base: BaseDados, u: Usuario, id: string): void {
   const i = base.fotosPerfil.findIndex((x) => x.id === id && x.usuarioId === u.id);
   if (i < 0) throw new ErroDominio("foto", "Foto não encontrada.");
   base.fotosPerfil.splice(i, 1);
+}
+
+// ---------- Operações fora da plataforma ----------
+// Registradas pelo próprio operador, com foto obrigatória. Só alimentam o mapa e o perfil
+// ("Registrada pelo operador"); insígnias e recompensas leem apenas inscrições confirmadas.
+export const MAX_OPERACOES_EXTERNAS = 200;
+
+export interface DadosOperacaoExterna {
+  id?: string | undefined;
+  nome: string;
+  data: string; // AAAA-MM-DD
+  cidade: string;
+  uf: string;
+  organizacao?: string | undefined;
+  modalidade?: string | undefined;
+  /** data URL nova ou a URL já salva desta operação. */
+  foto: string;
+  fotoAlt?: string | undefined;
+  descricao?: string | undefined;
+  visivel: boolean;
+}
+
+/** Valida e normaliza (sem gravar). `fotoAtual` é a URL já salva, que pode ser mantida. */
+export function validarOperacaoExterna(d: DadosOperacaoExterna, fotoAtual?: string, hoje = new Date()): Omit<OperacaoExterna, "id" | "usuarioId" | "criadoEm" | "atualizadoEm"> {
+  const nome = (d.nome ?? "").trim();
+  if (nome.length < 2) throw new ErroDominio("nome", "Informe o nome da operação.");
+  if (nome.length > 120) throw new ErroDominio("nome", "Nome da operação: no máximo 120 caracteres.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.data) || Number.isNaN(Date.parse(`${d.data}T12:00:00Z`))) {
+    throw new ErroDominio("data", "Informe a data da operação.");
+  }
+  const ano = Number(d.data.slice(0, 4));
+  const amanha = new Date(hoje.getTime() + 86_400_000).toISOString().slice(0, 10);
+  if (ano < 1990) throw new ErroDominio("data", "Data muito antiga.");
+  if (d.data > amanha) throw new ErroDominio("data", "Registre só operações que já aconteceram.");
+  const cidade = (d.cidade ?? "").trim();
+  if (!cidade) throw new ErroDominio("cidade", "Informe a cidade.");
+  if (cidade.length > 80) throw new ErroDominio("cidade", "Cidade: no máximo 80 caracteres.");
+  const uf = (d.uf ?? "").trim().toUpperCase();
+  if (!UFS_VALIDAS.has(uf)) throw new ErroDominio("uf", "Escolha o estado (UF).");
+  if (d.modalidade && !ehModalidade(d.modalidade)) throw new ErroDominio("modalidade", "Modalidade inválida.");
+  // Foto obrigatória: ou a já salva desta operação, ou uma nova (data URL válida).
+  if (!d.foto) throw new ErroDominio("foto", "Adicione uma foto da operação.");
+  if (d.foto !== fotoAtual) exigirImagem(d.foto);
+  return {
+    nome, data: d.data, cidade, uf,
+    organizacao: limpar(d.organizacao, 120),
+    modalidade: d.modalidade || undefined,
+    fotoUrl: d.foto,
+    fotoAlt: limpar(d.fotoAlt, 200),
+    descricao: limpar(d.descricao, 400),
+    visivel: d.visivel,
+  };
+}
+
+export function salvarOperacaoExterna(base: BaseDados, u: Usuario, d: DadosOperacaoExterna): OperacaoExterna {
+  const agora = new Date().toISOString();
+  if (d.id) {
+    const op = base.operacoesExternas.find((x) => x.id === d.id && x.usuarioId === u.id);
+    if (!op) throw new ErroDominio("operacao", "Operação não encontrada.");
+    Object.assign(op, validarOperacaoExterna(d, op.fotoUrl), { atualizadoEm: agora });
+    return op;
+  }
+  if (base.operacoesExternas.filter((x) => x.usuarioId === u.id).length >= MAX_OPERACOES_EXTERNAS) {
+    throw new ErroDominio("limite", `Limite de ${MAX_OPERACOES_EXTERNAS} operações registradas.`);
+  }
+  const op: OperacaoExterna = { id: gerarId("opx"), usuarioId: u.id, ...validarOperacaoExterna(d), criadoEm: agora, atualizadoEm: agora };
+  base.operacoesExternas.push(op);
+  return op;
+}
+
+export function excluirOperacaoExterna(base: BaseDados, u: Usuario, id: string): void {
+  const i = base.operacoesExternas.findIndex((x) => x.id === id && x.usuarioId === u.id);
+  if (i < 0) throw new ErroDominio("operacao", "Operação não encontrada.");
+  base.operacoesExternas.splice(i, 1);
 }

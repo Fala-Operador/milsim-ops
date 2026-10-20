@@ -244,6 +244,12 @@ Código: `src/lib/participacao.ts`, `src/services/progressao.ts`, `src/services/
   referência da oferta autorizada.
 - A concessão (insígnias e vouchers) é **idempotente** (`recalcularProgressao`) e roda depois de
   inscrições, check-ins, correções e ao abrir o próprio perfil.
+- **Operações fora da plataforma**: o operador pode registrar no perfil eventos de que participou
+  fora do MilSim Ops, com nome, data (já passada), cidade/UF, organização e modalidade opcionais e
+  **foto obrigatória**. Aparecem no mapa (listrado) e na lista como "Registrada pelo operador",
+  seguem a privacidade do mapa e podem ser ocultadas uma a uma. **Nunca contam para insígnias,
+  recompensas nem participação.** No resumo, "Estados na plataforma" fica separado de "N no total".
+  → [`salvarOperacaoExterna`](api/perfil/salvarOperacaoExterna.md)
 
 ## 13. Comunidade
 

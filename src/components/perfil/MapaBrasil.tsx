@@ -5,12 +5,13 @@ import { CONTORNOS_UF, CREDITO_MAPA, MAPA_ALTURA, MAPA_LARGURA } from "@/data/ma
 import { NOMES_UF } from "@/lib/participacao";
 import { nomeModalidade } from "@/lib/modalidades";
 import { formatarDataBR } from "@/lib/domain/money";
-import type { OperacaoDTO } from "@/lib/perfilSocial";
+import type { OperacaoDTO, OperacaoExternaDTO } from "@/lib/perfilSocial";
 import { Button } from "@/components/ui/button";
 import { EstadoVazio } from "@/components/ui";
 import { BadgeParticipacao } from "./abas";
+import { BadgeRegistrada } from "./OperacoesExternas";
 
-type Situacao = "participou" | "participando" | "ambos";
+type Situacao = "participou" | "participando" | "ambos" | "registrada";
 function situacao(ops: OperacaoDTO[] | undefined): Situacao | null {
   if (!ops?.length) return null;
   const sim = ops.some((o) => o.estado === "participou");
@@ -19,20 +20,31 @@ function situacao(ops: OperacaoDTO[] | undefined): Situacao | null {
 }
 const PREENCHIMENTO: Record<Situacao, string> = {
   participou: "fill-success", participando: "fill-warning", ambos: "fill-[url(#padrao-ambos)]",
+  // Só operações registradas pelo operador (fora da plataforma): listras, para não parecer confirmada.
+  registrada: "fill-[url(#padrao-registrada)]",
 };
 
-export function MapaBrasil({ operacoes }: { operacoes: OperacaoDTO[] }) {
+export function MapaBrasil({ operacoes, externas = [] }: { operacoes: OperacaoDTO[]; externas?: OperacaoExternaDTO[] | undefined }) {
   const porUf = useMemo(() => {
     const m = new Map<string, OperacaoDTO[]>();
     for (const o of operacoes) if (o.uf) m.set(o.uf, [...(m.get(o.uf) ?? []), o]);
     return m;
   }, [operacoes]);
+  const externasPorUf = useMemo(() => {
+    const m = new Map<string, OperacaoExternaDTO[]>();
+    for (const o of externas) m.set(o.uf, [...(m.get(o.uf) ?? []), o]);
+    return m;
+  }, [externas]);
+  const total = (uf: string) => (porUf.get(uf)?.length ?? 0) + (externasPorUf.get(uf)?.length ?? 0);
+  const situacaoUf = (uf: string): Situacao | null => situacao(porUf.get(uf)) ?? (externasPorUf.has(uf) ? "registrada" : null);
+  const ufsComAlgo = [...new Set([...porUf.keys(), ...externasPorUf.keys()])];
+  const temRegistrada = ufsComAlgo.some((uf) => situacaoUf(uf) === "registrada");
   const temParticipando = operacoes.some((o) => o.estado === "participando");
   const temAmbos = [...porUf.values()].some((ops) => situacao(ops) === "ambos");
   const [foco, setFoco] = useState<string | null>(null);
   const [aberto, setAberto] = useState<string | null>(null);
   const ufs = Object.keys(CONTORNOS_UF).sort((a, b) => NOMES_UF[a]!.localeCompare(NOMES_UF[b]!));
-  const dica = foco ? `${NOMES_UF[foco]}: ${porUf.get(foco)?.length ?? 0} operação(ões)` : "Passe o cursor ou use Tab para ver cada estado";
+  const dica = foco ? `${NOMES_UF[foco]}: ${total(foco)} operação(ões)` : "Passe o cursor ou use Tab para ver cada estado";
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
@@ -44,10 +56,14 @@ export function MapaBrasil({ operacoes }: { operacoes: OperacaoDTO[] }) {
               <rect width="4" height="8" className="fill-success" />
               <rect x="4" width="4" height="8" className="fill-warning" />
             </pattern>
+            <pattern id="padrao-registrada" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <rect width="6" height="6" className="fill-secondary" />
+              <rect width="2.5" height="6" className="fill-primary" />
+            </pattern>
           </defs>
           {ufs.map((uf) => {
-            const n = porUf.get(uf)?.length ?? 0;
-            const sit = situacao(porUf.get(uf));
+            const n = total(uf);
+            const sit = situacaoUf(uf);
             const ativo = aberto === uf || foco === uf;
             return (
               <path
@@ -78,6 +94,11 @@ export function MapaBrasil({ operacoes }: { operacoes: OperacaoDTO[] }) {
               <svg className="h-3 w-3 rounded-sm" aria-hidden="true"><rect width="12" height="12" fill="url(#padrao-ambos)" /></svg> Participou e participando
             </span>
           )}
+          {temRegistrada && (
+            <span className="flex items-center gap-1">
+              <svg className="h-3 w-3 rounded-sm" aria-hidden="true"><rect width="12" height="12" fill="url(#padrao-registrada)" /></svg> Registrada pelo operador
+            </span>
+          )}
           <span className="flex items-center gap-1"><span className="h-3 w-3 rounded-sm bg-secondary" aria-hidden="true" /> Sem participação</span>
           <span>{CREDITO_MAPA}</span>
         </div>
@@ -90,11 +111,11 @@ export function MapaBrasil({ operacoes }: { operacoes: OperacaoDTO[] }) {
               <h3 className="font-display text-lg font-semibold uppercase">{NOMES_UF[aberto]}</h3>
               <Button variant="ghost" onClick={() => setAberto(null)} aria-label="Fechar detalhes do estado">✕</Button>
             </div>
-            {(porUf.get(aberto) ?? []).length === 0 ? (
+            {total(aberto) === 0 ? (
               <p className="mt-2 text-sm text-muted-foreground">Nenhuma operação neste estado.</p>
             ) : (
               <ul className="mt-2 space-y-2">
-                {[...porUf.get(aberto)!].sort((a, b) => (a.estado === b.estado ? b.inicioEm.localeCompare(a.inicioEm) : a.estado === "participando" ? -1 : 1)).map((o) => (
+                {[...(porUf.get(aberto) ?? [])].sort((a, b) => (a.estado === b.estado ? b.inicioEm.localeCompare(a.inicioEm) : a.estado === "participando" ? -1 : 1)).map((o) => (
                   <li key={o.eventoId} className="rounded-md border border-border p-3 text-sm">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <Link to="/eventos/$eventoId" params={{ eventoId: o.eventoId }} className="font-medium hover:underline">{o.nome}</Link>
@@ -103,20 +124,32 @@ export function MapaBrasil({ operacoes }: { operacoes: OperacaoDTO[] }) {
                     <p className="text-muted-foreground">{formatarDataBR(o.inicioEm)} · {o.cidade}/{o.uf} · {nomeModalidade(o.modalidade)}</p>
                   </li>
                 ))}
+                {(externasPorUf.get(aberto) ?? []).map((o) => (
+                  <li key={o.id} className="flex gap-3 rounded-md border border-dashed border-border p-3 text-sm">
+                    <img src={o.fotoUrl} alt={o.fotoAlt ?? ""} className="size-14 shrink-0 rounded object-cover" loading="lazy" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <span className="font-medium">{o.nome}</span>
+                        <BadgeRegistrada />
+                      </div>
+                      <p className="text-muted-foreground">{formatarDataBR(o.data)} · {o.cidade}/{o.uf}{o.modalidade ? ` · ${nomeModalidade(o.modalidade)}` : ""}</p>
+                    </div>
+                  </li>
+                ))}
               </ul>
             )}
           </section>
         ) : null}
         <h3 className="mt-4 text-sm font-semibold">Lista de estados</h3>
-        {porUf.size === 0 ? (
+        {ufsComAlgo.length === 0 ? (
           <div className="mt-2"><EstadoVazio titulo="Nenhum estado ainda" descricao="Estados aparecem ao confirmar uma inscrição (Participando) e contam como visitados após o evento com presença confirmada (Participou)." /></div>
         ) : (
           <ul className="mt-2 grid gap-1 sm:grid-cols-2">
-            {[...porUf.entries()].sort((a, b) => b[1].length - a[1].length).map(([uf, ops]) => (
+            {ufsComAlgo.sort((a, b) => total(b) - total(a)).map((uf) => (
               <li key={uf}>
                 <Button variant="plain" size="none" type="button" onClick={() => setAberto(uf)} className="flex w-full items-center justify-between rounded-md border border-border px-3 py-2 text-left text-sm hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring">
                   <span>{NOMES_UF[uf]}</span>
-                  <span className="text-muted-foreground">{ops.length}</span>
+                  <span className="text-muted-foreground">{total(uf)}</span>
                 </Button>
               </li>
             ))}

@@ -187,7 +187,7 @@ registrado no log do servidor e vira "Não foi possível concluir a operação".
 | Comunidade | `forums`, `forum_posts` (`forum_post_images`), `forum_replies` (`forum_reply_images`), `forum_post_likes`, `community_reports`, `forum_preferences`, `community_restrictions`, `moderation_logs`, `community_visits` |
 | Divulgação | `partners` (`partner_links`), `home_sections` (`home_section_geo_scopes`, `home_section_schedules`, `home_section_highlights`, `home_section_auto_selections`, `home_section_partners`, `home_section_banners`), `event_boosts` (`event_boost_placements`, `event_boost_geo_scopes`) |
 | Check-in | `check_ins` (base de referência da portaria) |
-| Perfil e gamificação | `operator_profiles` (`operator_profile_privacy`, `operator_profile_hidden_events`), `equipment` (`equipment_photos`, `equipment_invoices`), `profile_photos`, `badges` (`badge_criteria`), `badge_awards` (`badge_award_criteria`), `reward_campaigns` (`reward_campaign_eligible_events`, `reward_campaign_eligible_ticket_types`), `vouchers` (`voucher_benefits` → `voucher_benefit_eligible_events`, `voucher_benefit_eligible_ticket_types`), `attendance_corrections` |
+| Perfil e gamificação | `operator_profiles` (`operator_profile_privacy`, `operator_profile_hidden_events`), `equipment` (`equipment_photos`, `equipment_invoices`), `profile_photos`, `external_operations` (operações fora da plataforma, registradas pelo operador), `badges` (`badge_criteria`), `badge_awards` (`badge_award_criteria`), `reward_campaigns` (`reward_campaign_eligible_events`, `reward_campaign_eligible_ticket_types`), `vouchers` (`voucher_benefits` → `voucher_benefit_eligible_events`, `voucher_benefit_eligible_ticket_types`), `attendance_corrections` |
 | Pagamentos | `platform_settings` (taxa); os dados do Stripe ficam em `registration_payments` e `organization_payout_accounts` |
 | Documentos privados (fora da base transacional) | `private_documents` (metadados das notas fiscais; nunca na visão) |
 | Métricas (fora da base transacional) | `analytics_events` (append-only), `marketing_campaigns` |
@@ -243,7 +243,7 @@ O número de WhatsApp do organizador (`evento.whatsappContato`) é público.
 ## 7. APIs — `src/api/*.functions.ts`
 
 Cada arquivo exporta as server functions (`...Fn`) e wrappers de mesmo nome para o navegador.
-São 104 server functions em 14 módulos, mais o webhook do Stripe. A referência completa, com
+São 106 server functions em 14 módulos, mais o webhook do Stripe. A referência completa, com
 entrada, regras, erros e exemplo de cada uma, está em **[docs/api/](api/README.md)**.
 
 | Arquivo | Operações |
@@ -371,7 +371,7 @@ Regras detalhadas de cada área: [regras-de-negocio.md](regras-de-negocio.md).
 
 ## 10. Testes
 
-`bun run test`: 30 arquivos, 277 testes (os serviços rodam sobre uma base em memória).
+`bun run test`: 31 arquivos, 293 testes (os serviços rodam sobre uma base em memória).
 
 | Arquivo | Cobre |
 |---|---|

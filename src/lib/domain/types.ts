@@ -482,6 +482,7 @@ export interface BaseDados {
   perfisOperador: PerfilOperador[];
   equipamentos: Equipamento[];
   fotosPerfil: FotoGaleria[];
+  operacoesExternas: OperacaoExterna[];
   insignias: Insignia[];
   concessoesInsignia: ConcessaoInsignia[];
   campanhasRecompensa: CampanhaRecompensa[];
@@ -545,6 +546,31 @@ export interface Equipamento {
   criadoEm: string;
   atualizadoEm: string;
 }
+/**
+ * Operação de que o operador participou FORA da plataforma, registrada por ele mesmo, com foto.
+ * Aparece no mapa e no perfil como "Registrada pelo operador" e nunca conta para insígnias,
+ * recompensas ou participação (que exigem inscrição e presença confirmadas aqui).
+ */
+export interface OperacaoExterna {
+  id: string;
+  usuarioId: string;
+  nome: string;
+  /** Data do evento (AAAA-MM-DD). */
+  data: string;
+  cidade: string;
+  uf: string;
+  organizacao?: string | undefined;
+  modalidade?: string | undefined;
+  /** Foto obrigatória (bucket público midia). */
+  fotoUrl: string;
+  fotoAlt?: string | undefined;
+  descricao?: string | undefined;
+  /** Aparece para os outros (respeitando a privacidade do bloco "mapa"). */
+  visivel: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
 export interface FotoGaleria {
   id: string;
   usuarioId: string;

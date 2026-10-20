@@ -33,7 +33,7 @@ os avisos ficam nas notificações do app.
 bun install
 cp .env.example .env.local   # preencha as chaves do Supabase
 bun run dev                  # http://localhost:8080
-bun run test                 # 277 testes (regras, pagamentos, persistência, visão por perfil)
+bun run test                 # 293 testes (regras, pagamentos, persistência, visão por perfil)
 bun run typecheck
 bun run build
 bun run start                # servidor Node gerado pelo build (.output/server/index.mjs)
@@ -135,7 +135,7 @@ backup completo como artefato da execução (30 dias). Detalhes em
 - [docs/README.md](docs/README.md): índice da documentação
 - [docs/regras-de-negocio.md](docs/regras-de-negocio.md): o que o sistema decide em cada área, e as lacunas conhecidas
 - [docs/fluxos.md](docs/fluxos.md): fluxos ponta a ponta com diagramas (inscrição com Stripe, check-in, suporte, repasse…)
-- [docs/api/](docs/api/README.md): uma página por API (104 server functions + webhook do Stripe), com entrada, regras, erros e exemplo
+- [docs/api/](docs/api/README.md): uma página por API (106 server functions + webhook do Stripe), com entrada, regras, erros e exemplo
 - [docs/ARQUITETURA.md](docs/ARQUITETURA.md): camadas, unidade de trabalho, visão por perfil, banco, deploy, segurança e mapa de arquivos
 - [AGENTS.md](AGENTS.md): regras técnicas obrigatórias
 - [roadmap.md](roadmap.md): status das entregas

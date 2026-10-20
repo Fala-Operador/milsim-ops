@@ -186,6 +186,7 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
   v.perfisOperador = base.perfisOperador.filter((p) => p.usuarioId === meuId);
   v.equipamentos = base.equipamentos.filter((e) => e.usuarioId === meuId);
   v.fotosPerfil = base.fotosPerfil.filter((f) => f.usuarioId === meuId);
+  v.operacoesExternas = base.operacoesExternas.filter((o) => o.usuarioId === meuId);
   v.insignias = base.insignias;
   v.concessoesInsignia = base.concessoesInsignia.filter((c) => admin || c.usuarioId === meuId);
   const orgCampanha = (organizacaoId: string) =>

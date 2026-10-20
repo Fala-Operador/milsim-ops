@@ -30,6 +30,20 @@ export interface OperacaoDTO {
   estado: EstadoParticipacao;
   oculta: boolean;
 }
+/** Operação fora da plataforma, registrada pelo operador (não conta para insígnias). */
+export interface OperacaoExternaDTO {
+  id: string;
+  nome: string;
+  data: string;
+  cidade: string;
+  uf: string;
+  organizacao?: string | undefined;
+  modalidade?: string | undefined;
+  fotoUrl: string;
+  fotoAlt?: string | undefined;
+  descricao?: string | undefined;
+  visivel: boolean;
+}
 export interface EquipamentoDTO {
   id: string;
   marca: string;
@@ -76,9 +90,15 @@ export interface PerfilDTO {
   restrito: boolean;
   social?: Pick<PerfilOperador, "callsign" | "bio" | "squad" | "instagram" | "capaUrl"> | undefined;
   destaque?: { icone: string; nome: string } | undefined;
-  resumo: { operacoes?: number | undefined; estados?: number | undefined; insignias?: number | undefined };
+  /**
+   * `estados`: só participações confirmadas na plataforma (base das insígnias).
+   * `estadosTotal`: somando as operações registradas pelo operador.
+   */
+  resumo: { operacoes?: number | undefined; estados?: number | undefined; estadosTotal?: number | undefined; insignias?: number | undefined };
   operacoes?: OperacaoDTO[] | undefined;
   mapa?: OperacaoDTO[] | undefined;
+  /** Operações fora da plataforma (mesma privacidade do mapa; terceiros veem só as visíveis). */
+  externas?: OperacaoExternaDTO[] | undefined;
   insignias?: InsigniaDTO[] | undefined;
   equipamentos?: EquipamentoDTO[] | undefined;
   fotos?: FotoDTO[] | undefined;
@@ -161,6 +181,16 @@ export function montarPerfil(base: BaseDados, alvoId: string, quem: Usuario | nu
     // Dono vê "Participando" e "Participou"; terceiros só "Participou".
     dto.mapa = (proprio ? visiveis : historico).filter((p) => p.uf).map(paraDTO);
     dto.resumo.estados = proprio ? resumoReal.estados.length : resumoPublico.estados.length;
+    // Fora da plataforma: aparecem no mapa e no total de estados, nunca nas insígnias.
+    const externas = base.operacoesExternas
+      .filter((o) => o.usuarioId === alvo.id && (proprio || o.visivel))
+      .sort((a, b) => b.data.localeCompare(a.data));
+    dto.externas = externas.map((o) => ({
+      id: o.id, nome: o.nome, data: o.data, cidade: o.cidade, uf: o.uf, organizacao: o.organizacao, modalidade: o.modalidade,
+      fotoUrl: o.fotoUrl, fotoAlt: o.fotoAlt, descricao: o.descricao, visivel: o.visivel,
+    }));
+    const estadosPlataforma = proprio ? resumoReal.estados : resumoPublico.estados;
+    dto.resumo.estadosTotal = new Set([...estadosPlataforma, ...externas.map((o) => o.uf)]).size;
   }
   if (verIns) {
     dto.insignias = progresso.map((p) => paraInsigniaDTO(p, descr(p.insignia.id)));

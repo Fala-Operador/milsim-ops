@@ -92,7 +92,7 @@ try {
 
 ## Índice
 
-104 server functions em 14 módulos, mais os [webhooks do Stripe](#webhooks).
+106 server functions em 14 módulos, mais os [webhooks do Stripe](#webhooks).
 
 ### Sessão e leitura
 <a id="sessao"></a>
@@ -184,7 +184,7 @@ Conta de recebimento das organizações e taxa da plataforma. Arquivo: [`src/api
 | [`atualizarRecebimento`](repasses/atualizarRecebimento.md) | POST | Quem gere a organização | Consulta a conta Connect no Stripe e atualiza a situação do recebimento (`organizacao.recebimento`). |
 | [`abrirPainelStripe`](repasses/abrirPainelStripe.md) | POST | Quem gere a organização | Gera um link de acesso ao painel Express do Stripe (saldo, saques, dados bancários). |
 | [`saldoRecebimento`](repasses/saldoRecebimento.md) | POST | Quem gere a organização | Lê do Stripe o saldo da conta de recebimento da organização: disponível, a liberar, próximo saque, últimos saques, cronograma de saques e banco de destino (só os últimos dígitos). |
-| [`sessaoComponentesStripeOrg`](repasses/sessaoComponentesStripeOrg.md) | POST | Quem gere a organização | Cria a sessão dos componentes embutidos do Stripe (cadastro, avisos, dados da conta, saques e pagamentos dentro de Financeiro) para a conta da organização. |
+| [`sessaoComponentesStripeOrg`](repasses/sessaoComponentesStripeOrg.md) | POST | Quem gere a organização | Cria a sessão dos componentes embutidos do Stripe (painéis de saques e de pagamentos dentro de Financeiro) para a conta da organização. |
 
 ### Comunidade
 <a id="comunidade"></a>
@@ -238,6 +238,8 @@ Perfil social, privacidade, arsenal, galeria e notas fiscais privadas. Arquivo: 
 | [`enviarNota`](perfil/enviarNota.md) | POST | Dono do equipamento | Anexa (ou substitui) a nota fiscal de um equipamento. |
 | [`linkNota`](perfil/linkNota.md) | POST | Dono do equipamento | Gera um link assinado de 60 segundos para ver ou baixar a nota fiscal. |
 | [`excluirNota`](perfil/excluirNota.md) | POST | Dono do equipamento | Apaga a nota fiscal do equipamento (arquivo e metadados). |
+| [`salvarOperacaoExterna`](perfil/salvarOperacaoExterna.md) | POST | Dono do perfil (a própria conta) | Registra (ou edita) uma operação de que o operador participou fora da plataforma, com foto obrigatória. |
+| [`excluirOperacaoExterna`](perfil/excluirOperacaoExterna.md) | POST | Dono do perfil (a própria conta) | Exclui uma operação registrada fora da plataforma. |
 
 ### Central de Suporte
 <a id="suporte"></a>

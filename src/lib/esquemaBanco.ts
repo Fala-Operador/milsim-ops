@@ -384,6 +384,14 @@ export const ESQUEMA = {
       id: "id", usuarioId: "user_id", url: "url", legenda: "caption", alt: "alt", visivel: "visible", criadoEm: "created_at",
     },
   },
+  operacoesExternas: {
+    tabela: "external_operations", chave: ["id"],
+    campos: {
+      id: "id", usuarioId: "user_id", nome: "name", data: "event_date", cidade: "city", uf: "state",
+      organizacao: "organization", modalidade: "modality", fotoUrl: "photo_url", fotoAlt: "photo_alt",
+      descricao: "description", visivel: "visible", criadoEm: "created_at", atualizadoEm: "updated_at",
+    },
+  },
   insignias: {
     tabela: "badges", chave: ["id"],
     campos: {

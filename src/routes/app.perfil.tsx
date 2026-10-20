@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { obterPerfil } from "@/api/perfil.functions";
 import { MapaBrasil } from "@/components/perfil/MapaBrasil";
+import { OperacoesExternas } from "@/components/perfil/OperacoesExternas";
 import { AbaEquipamentos, AbaInsignias, AbaOperacoes, AbaRecompensas, Restrito } from "@/components/perfil/abas";
 import { EditarPerfil, Privacidade } from "@/components/perfil/edicao";
 import { Card } from "@/components/ui/card";
@@ -92,7 +93,8 @@ function GestaoPerfil({ aba, usuarioId }: { aba: Exclude<Aba, "perfil">; usuario
   if (aba === "operacoes") return (
     <div className="space-y-6">
       <AbaOperacoes operacoes={p.operacoes} futuras={p.futuras} proprio onMudou={recarregar} />
-      {p.mapa ? <MapaBrasil operacoes={p.mapa} /> : <Restrito />}
+      {p.mapa ? <MapaBrasil operacoes={p.mapa} externas={p.externas} /> : <Restrito />}
+      <OperacoesExternas externas={p.externas} proprio onMudou={recarregar} />
     </div>
   );
   if (aba === "insignias") return (

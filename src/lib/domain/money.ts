@@ -12,6 +12,10 @@ export function paraCentavos(reais: number): number {
 }
 
 export function formatarDataBR(iso: string): string {
+  // Data sem horário (AAAA-MM-DD): formata direto. new Date("2024-05-18") é meia-noite UTC,
+  // que no Brasil ainda é o dia 17 — o cronograma e as operações registradas mostravam a véspera.
+  const soData = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (soData) return `${soData[3]}/${soData[2]}/${soData[1]}`;
   return new Date(iso).toLocaleDateString("pt-BR");
 }
 
