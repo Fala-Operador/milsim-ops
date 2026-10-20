@@ -184,7 +184,7 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
 - Cada organização pode ter uma conta **Stripe Connect** com painel Express, criada pela Accounts v2
   como conta recebedora das vendas (a plataforma responde por perdas e taxas, como nas contas Express).
   Situação: `pendente`, `em_analise`, `ativa` ou `restrita`, espelhada do Stripe e visível só para quem gere a organização.
-  O site, o ramo (MCC 7999) e a descrição do negócio são enviados pela plataforma (`perfilComercialPadrao`),
+  O site, o ramo (MCC 7922, "Ingressos para eventos") e a descrição do negócio são enviados pela plataforma (`perfilComercialPadrao`),
   então o organizador não precisa informar um site próprio nem escolher o setor no cadastro do Stripe
   (na Accounts v2: `configuration.merchant.mcc` e `defaults.profile`).
 - Na reserva, se a conta tem **transferências ativas**, a cobrança nasce com destino a ela: o Stripe
