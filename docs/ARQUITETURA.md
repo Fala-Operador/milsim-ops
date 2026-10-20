@@ -308,11 +308,11 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   `resumoSaldo`). Com `STRIPE_BROWSER_PUBLIC_KEY`, o recebimento todo fica no site com os
   componentes embutidos do Stripe (`components/PaineisStripe.tsx`, `connect.js` carregado do
   Stripe): `account-onboarding` no cadastro (a conta Express é criada na primeira sessão),
-  e, nos painéis que abrem com a página quando a conta está ativa, `notification-banner`
-  (pendências), `payouts`, `payments` e `account-management`. Uma única instância do Connect
-  por organização serve todos esses componentes; a janela de confirmação do Stripe só abre pelo
-  botão que o próprio componente mostra (sem clique o navegador bloqueia) e o `logout` do
-  Connect só roda ao sair da conta do site. A Account Session (`sessaoComponentesStripe`) tem reembolso e disputa
+  e, no painel aberto pelo organizador, `notification-banner` (pendências), `payouts`, `payments`
+  e `account-management`. Uma única instância do Connect por organização serve todos esses
+  componentes, nada do Stripe é montado sozinho ao carregar a página (a janela de confirmação
+  do Stripe só abre depois de um clique, senão o navegador bloqueia) e o `logout` do Connect só
+  roda ao sair da conta do site. A Account Session (`sessaoComponentesStripe`) tem reembolso e disputa
   desligados, porque o estorno passa pelo cancelamento da inscrição. Contas Express exigem a
   autenticação do Stripe numa janela própria; sem ela só com contas em que a plataforma coleta
   os requisitos (`controller.requirement_collection = application`), assumindo o risco de saldo

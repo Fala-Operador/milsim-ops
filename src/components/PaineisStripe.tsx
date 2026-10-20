@@ -1,10 +1,9 @@
 // Componentes embutidos do Stripe Connect dentro de Financeiro: cadastro da conta, avisos de
 // pendência, dados da conta, saques e pagamentos. A organização não sai do site; o Stripe só
 // abre uma janela própria para confirmar quem é (código por e-mail ou SMS), exigência dele para
-// contas Express. Os painéis abrem com a página; quando o Stripe precisa da confirmação, o
-// próprio componente mostra um botão, porque o navegador só deixa a janela abrir após um
-// clique. O connect.js vem direto do Stripe (sem pacote npm); o servidor só cria a Account
-// Session. Reembolso e disputa ficam desligados: o estorno passa pelo cancelamento.
+// contas Express, e o navegador só deixa essa janela abrir depois de um clique; por isso nada do
+// Stripe é montado sozinho ao carregar a página. O connect.js vem direto do Stripe (sem pacote
+// npm); o servidor só cria a Account Session. Reembolso e disputa ficam desligados: o estorno passa pelo cancelamento.
 import { useEffect, useRef, useState } from "react";
 import { LayoutDashboard } from "lucide-react";
 import { sessaoComponentesStripeOrg } from "@/api/repasses.functions";
@@ -199,8 +198,9 @@ export function CadastroStripeEmbutido({ organizacaoId, aoSair }: { organizacaoI
 }
 
 export function PaineisStripe({ organizacaoId }: { organizacaoId: string }) {
+  const [aberto, setAberto] = useState(false);
   const [aba, setAba] = useState<Aba>("payouts");
-  const { instancia, erro, carregando } = useInstanciaStripe(organizacaoId, true);
+  const { instancia, erro, carregando } = useInstanciaStripe(organizacaoId, aberto);
 
   return (
     <div>
@@ -212,9 +212,12 @@ export function PaineisStripe({ organizacaoId }: { organizacaoId: string }) {
             pede para confirmar seu e-mail ou celular numa janela própria. Reembolsos são feitos pelo cancelamento da inscrição.
           </p>
         </div>
+        {!aberto && (
+          <Button type="button" variant="outline" className="w-full shrink-0 sm:w-auto" onClick={() => setAberto(true)}>Abrir painéis</Button>
+        )}
       </div>
       {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
-      {!erro && (
+      {aberto && !erro && (
         <>
           <Tabs value={aba} onValueChange={(v) => setAba(v as Aba)}>
             <TabsList aria-label="Painéis do Stripe" className="mt-3 gap-1 overflow-x-auto">
