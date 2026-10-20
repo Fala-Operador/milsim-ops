@@ -3,7 +3,8 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { restaurarBase } from "@/test/baseTeste";
 import { confirmarInscricao, confirmarPagamentoNaBase } from "@/services/inscricoes";
-import { definirTaxaPlataformaNaBase, registrarRecebimentoNaBase } from "@/services/repasses";
+import { definirTaxaPlataformaNaBase, descartarContaDeOutroModoNaBase, registrarRecebimentoNaBase } from "@/services/repasses";
+import { contaDeOutroModo, destinoInvalido, mensagemDeFalhaStripe, MSG_FALHA_STRIPE } from "@/lib/stripe";
 import { contaParaRepasse, descreverCronograma, MCC_EVENTOS, perfilComercialPadrao, precisaPerfilComercial, recebimentoDaConta, resumoRepasse, resumoSaldo, taxaDaPlataforma, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
 import { visaoParaUsuario } from "@/lib/visao";
 import type { BaseDados, Evento } from "@/lib/domain/types";
@@ -178,5 +179,38 @@ describe("perfil comercial enviado ao Stripe", () => {
     expect(precisaPerfilComercial({ id: "acct_1", business_profile: { url: "https://x.com" } })).toBe(false);
     expect(precisaPerfilComercial({ id: "acct_1", business_profile: { product_description: "Eventos" } })).toBe(false);
     expect(precisaPerfilComercial({ id: "acct_1", details_submitted: true })).toBe(false);
+  });
+});
+
+describe("troca do modo do Stripe (teste → produção)", () => {
+  const msgTeste = "No such account: 'acct_1'; a similar object exists in test mode, but a live mode key was used to make this request.";
+
+  it("reconhece a conta que só existe no outro modo", () => {
+    expect(contaDeOutroModo(404, msgTeste)).toBe(true);
+    expect(contaDeOutroModo(404, "No such account: 'acct_1'")).toBe(false);
+    expect(contaDeOutroModo(400, msgTeste)).toBe(false);
+  });
+
+  it("explica erros de configuração em vez de pedir para tentar de novo", () => {
+    expect(mensagemDeFalhaStripe(401, "Invalid API Key provided")).toMatch(/STRIPE_SERVER_API_KEY/);
+    expect(mensagemDeFalhaStripe(403, "The provided key does not have the required permissions")).toMatch(/permissão/);
+    expect(mensagemDeFalhaStripe(400, "You can only create new accounts if you've signed up for Connect")).toMatch(/Connect ainda não está ativado/);
+    expect(mensagemDeFalhaStripe(400, "Invalid email")).toBe("Stripe: Invalid email");
+    expect(mensagemDeFalhaStripe(0, "fetch failed")).toBe(MSG_FALHA_STRIPE);
+    expect(mensagemDeFalhaStripe(500, "erro")).toBe(MSG_FALHA_STRIPE);
+  });
+
+  it("checkout com destino de outro modo cai para a venda na plataforma", () => {
+    expect(destinoInvalido(400, "No such destination: 'acct_1'")).toBe(true);
+    expect(destinoInvalido(404, msgTeste)).toBe(true);
+    expect(destinoInvalido(400, "Amount must be at least R$0.50")).toBe(false);
+  });
+
+  it("esquece só a conta de outro modo registrada na organização", () => {
+    registrarRecebimentoNaBase(base, org().id, contaAtiva);
+    descartarContaDeOutroModoNaBase(base, org().id, "acct_outra");
+    expect(org().recebimento?.contaId).toBe("acct_1");
+    descartarContaDeOutroModoNaBase(base, org().id, "acct_1");
+    expect(org().recebimento).toBeUndefined();
   });
 });

@@ -22,6 +22,7 @@ Cria a sessão dos componentes embutidos do Stripe (painéis de saques e de paga
 - Exige `STRIPE_PUBLISHABLE_KEY` configurada e a conta de recebimento ativa.
 - O `clientSecret` é de uso curto e só serve para a conta da organização.
 - Se o site ganhar uma CSP, libere `https://connect-js.stripe.com` e `https://js.stripe.com` em `script-src` e `frame-src`.
+- Conta guardada que só existe no outro modo do Stripe (conta de teste depois da troca para as chaves de produção) é esquecida e a organização faz um cadastro novo.
 
 ## Resposta
 
@@ -32,6 +33,7 @@ Cria a sessão dos componentes embutidos do Stripe (painéis de saques e de paga
 Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 
 - Você só pode configurar os recebimentos da sua organização.
+- Falhas do Stripe (`mensagemDeFalhaStripe` em `src/lib/stripe.ts`): "O Stripe recusou a chave secreta da plataforma (STRIPE_SERVER_API_KEY). Confira se ela foi copiada inteira e se o site foi publicado de novo depois da troca." (401), "A chave secreta da plataforma não tem permissão para contas conectadas. Use a chave secreta padrão (sk_live_...) ou dê permissão de Connect à chave restrita." (403), "O Stripe Connect ainda não está ativado na conta da plataforma neste modo. Ative o Connect no painel do Stripe (modo de produção) e tente de novo.", "Stripe: <mensagem do Stripe>" (outros 400/404) ou "Não foi possível falar com o Stripe agora. Tente novamente em instantes." (rede ou erro do Stripe).
 - Os painéis do Stripe ainda não foram ativados na plataforma.
 - Conclua o cadastro de recebimentos para ver os painéis do Stripe.
 - Entre na sua conta para continuar.

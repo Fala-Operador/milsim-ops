@@ -31,6 +31,15 @@ export function registrarRecebimentoNaBase(base: BaseDados, organizacaoId: strin
   }
 }
 
+/**
+ * Esquece a conta de recebimento que não existe no modo atual do Stripe (conta de teste depois
+ * da troca para as chaves de produção); a organização refaz o cadastro numa conta nova.
+ */
+export function descartarContaDeOutroModoNaBase(base: BaseDados, organizacaoId: string, contaId: string): void {
+  const org = base.organizacoes.find((o) => o.id === organizacaoId);
+  if (org?.recebimento?.contaId === contaId) org.recebimento = undefined;
+}
+
 export const organizacaoDaConta = (base: BaseDados, contaId: string) => base.organizacoes.find((o) => o.recebimento?.contaId === contaId);
 
 /**

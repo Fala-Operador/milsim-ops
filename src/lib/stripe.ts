@@ -202,3 +202,31 @@ export function problemaDasChaves(secreta: string | undefined, publicavel: strin
   }
   return "";
 }
+
+/**
+ * Conta conectada que existe só no outro modo do Stripe: com a chave de produção, uma conta
+ * criada no modo de teste responde 404 "a similar object exists in test mode" (e vice-versa).
+ */
+export function contaDeOutroModo(status: number, mensagem: string): boolean {
+  return status === 404 && /similar object exists in (test|live) mode/i.test(mensagem);
+}
+
+export const MSG_FALHA_STRIPE = "Não foi possível falar com o Stripe agora. Tente novamente em instantes.";
+
+/**
+ * Mensagem para quem gere a organização quando uma chamada de Connect falha. Erros de
+ * configuração da plataforma (chave recusada ou sem permissão, Connect desligado) dizem o que
+ * conferir, em vez do genérico "tente novamente", que só vale para falha de rede ou do Stripe.
+ */
+export function mensagemDeFalhaStripe(status: number, mensagem: string): string {
+  if (status === 401) return "O Stripe recusou a chave secreta da plataforma (STRIPE_SERVER_API_KEY). Confira se ela foi copiada inteira e se o site foi publicado de novo depois da troca.";
+  if (status === 403) return "A chave secreta da plataforma não tem permissão para contas conectadas. Use a chave secreta padrão (sk_live_...) ou dê permissão de Connect à chave restrita.";
+  if (status === 400 && /signed up for connect/i.test(mensagem)) return "O Stripe Connect ainda não está ativado na conta da plataforma neste modo. Ative o Connect no painel do Stripe (modo de produção) e tente de novo.";
+  if (status === 400 || status === 404) return `Stripe: ${mensagem}`;
+  return MSG_FALHA_STRIPE;
+}
+
+/** Checkout recusado porque a conta de destino não existe neste modo do Stripe. */
+export function destinoInvalido(status: number, mensagem: string): boolean {
+  return (status === 400 || status === 404) && /no such destination|similar object exists in (test|live) mode/i.test(mensagem);
+}
