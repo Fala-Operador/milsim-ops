@@ -150,11 +150,15 @@ async function chamarStripeV2<T>(caminho: string, corpo: unknown, idempotencia?:
   return resposta;
 }
 
+const JANELA_IDEMPOTENCIA_MS = 10 * 60_000;
+
 /**
  * Cria a conta da organização pela Accounts v2 (o Stripe não libera a criação pela v1 em
  * produção para plataformas novas): conta recebedora (`recipient` com `stripe_transfers`) para
  * as cobranças com destino, painel Express e perdas e taxas com a plataforma, como nas contas
- * Express da v1. Uma por organização, pela chave de idempotência. O resto da integração
+ * Express da v1. A chave de idempotência evita contas duplicadas por cliques repetidos, mas vale só
+ * por uma janela de 10 minutos: o Stripe repete a resposta guardada para a mesma chave, inclusive
+ * um erro (ex.: plataforma ainda não ativada), e uma chave fixa travaria o cadastro. O resto da integração
  * (cadastro, sessões, saldo, saques, cobranças com destino) segue na v1, que aceita contas da v2;
  * por isso a conta criada é relida pela v1.
  */
@@ -176,7 +180,7 @@ export async function criarContaConectada(d: {
       configuration: { recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } } },
       metadata: { organizacaoId: d.organizacaoId },
     },
-    `conta-v2-${d.organizacaoId}${d.substituida ? `-${d.substituida}` : ""}`,
+    `conta-v2-${d.organizacaoId}${d.substituida ? `-${d.substituida}` : ""}-${Math.floor(Date.now() / JANELA_IDEMPOTENCIA_MS)}`,
   );
   return obterContaConectada(id);
 }
