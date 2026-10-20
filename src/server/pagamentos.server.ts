@@ -335,6 +335,14 @@ async function comContaDaPlataforma(e: Error): Promise<Error> {
     const p = await obterContaDaPlataforma();
     const nome = p.settings?.dashboard?.display_name || p.business_profile?.name || "sem nome";
     const sim = (v?: boolean) => (v ? "sim" : "não");
+    // Plataforma ativa para pagamentos: o que falta é o cadastro do Connect em produção (perfil da
+    // plataforma), que o Stripe exige antes da primeira conta conectada e responde com o mesmo erro.
+    if (p.charges_enabled) {
+      return new Error(
+        `A conta Stripe da plataforma (${p.id}, ${nome}) já recebe pagamentos, mas o Stripe ainda não liberou a criação de contas conectadas em produção. No painel do Stripe, em modo de produção, conclua o perfil da plataforma do Connect em https://dashboard.stripe.com/connect/registration e confira nome, cor e ícone em Configurações → Connect; depois tente de novo. Se continuar, peça ao suporte do Stripe para liberar o Connect na conta.`,
+        { cause: e.cause },
+      );
+    }
     return new Error(
       `${e.message} Conta do Stripe usada pela chave do site: ${p.id} (${nome}; pagamentos ativos: ${sim(p.charges_enabled)}; repasses ativos: ${sim(p.payouts_enabled)}).`,
       { cause: e.cause },
