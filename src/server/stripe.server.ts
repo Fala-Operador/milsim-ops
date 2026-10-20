@@ -155,7 +155,7 @@ const JANELA_IDEMPOTENCIA_MS = 10 * 60_000;
 /**
  * Cria a conta da organização pela Accounts v2 (o Stripe não libera a criação pela v1 em
  * produção para plataformas novas): conta recebedora (`recipient` com `stripe_transfers`) para
- * as cobranças com destino, painel Express e perdas e taxas com a plataforma, como nas contas
+ * as cobranças com destino, com `merchant.card_payments`, que o Stripe exige junto, painel Express e perdas e taxas com a plataforma, como nas contas
  * Express da v1. A chave de idempotência evita contas duplicadas por cliques repetidos, mas vale só
  * por uma janela de 10 minutos: o Stripe repete a resposta guardada para a mesma chave, inclusive
  * um erro (ex.: plataforma ainda não ativada), e uma chave fixa travaria o cadastro. O resto da integração
@@ -177,7 +177,11 @@ export async function criarContaConectada(d: {
       dashboard: "express",
       identity: { country: "br" },
       defaults: { responsibilities: { fees_collector: "application", losses_collector: "application" } },
-      configuration: { recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } } },
+      configuration: {
+        // O Stripe exige cartão (merchant.card_payments) para liberar o recebimento de transferências.
+        merchant: { capabilities: { card_payments: { requested: true } } },
+        recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } },
+      },
       metadata: { organizacaoId: d.organizacaoId },
     },
     `conta-v2-${d.organizacaoId}${d.substituida ? `-${d.substituida}` : ""}-${Math.floor(Date.now() / JANELA_IDEMPOTENCIA_MS)}`,
