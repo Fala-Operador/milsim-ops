@@ -192,8 +192,10 @@ describe("troca do modo do Stripe (teste → produção)", () => {
   });
 
   it("explica erros de configuração em vez de pedir para tentar de novo", () => {
-    expect(mensagemDeFalhaStripe(401, "Invalid API Key provided")).toMatch(/STRIPE_SERVER_API_KEY/);
-    expect(mensagemDeFalhaStripe(403, "The provided key does not have the required permissions")).toMatch(/permissão/);
+    expect(mensagemDeFalhaStripe(401, "Invalid API Key provided")).toMatch(/STRIPE_SERVER_API_KEY.*Invalid API Key provided/);
+    expect(mensagemDeFalhaStripe(403, "Outro motivo")).toBe("O Stripe recusou esta operação de contas conectadas. (Stripe: Outro motivo)");
+    expect(mensagemDeFalhaStripe(403, "Stripe no longer recommends Accounts v1 for new Connect integrations.")).toMatch(/Accounts v1 support/);
+    expect(mensagemDeFalhaStripe(400, "Stripe no longer recommends Accounts v1 for new Connect integrations.")).toMatch(/Accounts v1 support/);
     expect(mensagemDeFalhaStripe(400, "You can only create new accounts if you've signed up for Connect")).toMatch(/Connect ainda não está ativado/);
     expect(mensagemDeFalhaStripe(400, "Invalid email")).toBe("Stripe: Invalid email");
     expect(mensagemDeFalhaStripe(0, "fetch failed")).toBe(MSG_FALHA_STRIPE);
