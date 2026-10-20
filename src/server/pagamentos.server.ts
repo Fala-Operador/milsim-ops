@@ -19,6 +19,9 @@ import { estornoPendente } from "@/lib/pagamentos";
 import {
   acaoDaSessao,
   acaoDoEvento,
+  contaDeOutroModo,
+  destinoInvalido,
+  mensagemDeFalhaStripe,
   disputaDoStripe,
   inscricaoDaSessao,
   intencaoDaCobranca,
@@ -50,7 +53,7 @@ import {
   stripeConfigurado,
 } from "@/server/stripe.server";
 import { contaParaRepasse, gereRecebimento, perfilComercialPadrao, precisaPerfilComercial, resumoSaldo, type ContaStripe, type PerfilComercial, type SaldoRecebimento } from "@/lib/repasses";
-import { organizacaoDaConta, registrarRecebimentoNaBase } from "@/services/repasses";
+import { descartarContaDeOutroModoNaBase, organizacaoDaConta, registrarRecebimentoNaBase } from "@/services/repasses";
 import type { Inscricao } from "@/lib/domain/types";
 
 export { stripeConfigurado };
@@ -97,7 +100,7 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
       throw new Error("Esta reserva já foi concluída ou expirou. Confira em Meus ingressos.");
     }
     const origem = new URL(getRequestUrl()).origin;
-    sessao = existente ?? await criarSessaoCheckout({
+    const criar = () => criarSessaoCheckout({
       inscricaoId,
       descricao: d.descricao,
       valorCentavos: d.pagamento.valorCentavos,
@@ -108,6 +111,16 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
       urlSucesso: `${origem}/app/ingressos?pagamento=sucesso&sessao={CHECKOUT_SESSION_ID}`,
       urlCancelamento: `${origem}/inscricao/${d.eventoId}?pagamento=cancelado`,
     });
+    try {
+      sessao = existente ?? await criar();
+    } catch (e) {
+      // Conta de destino que o Stripe não reconhece neste modo (ex.: conta de teste com a chave
+      // de produção): a venda fica com a plataforma, como "repasse à parte".
+      if (!(d.contaDestino && e instanceof ErroStripe && destinoInvalido(e.status, e.message))) throw e;
+      console.warn("Stripe: conta de destino inválida, venda fica com a plataforma", d.contaDestino, e.message);
+      d.contaDestino = undefined;
+      sessao = await criar();
+    }
   } catch (e) {
     if (!(e instanceof ErroStripe || e instanceof TypeError)) throw e;
     console.error("Stripe: falha ao abrir checkout", e);
@@ -252,8 +265,6 @@ export async function tratarEventoStripe(evento: EventoStripe): Promise<void> {
 
 // ---------- Repasse às organizações (Stripe Connect Express) ----------
 
-const MSG_FALHA_CONTA = "Não foi possível falar com o Stripe agora. Tente novamente em instantes.";
-
 /** Dados da organização para as operações de recebimento; exige quem a gere. */
 async function organizacaoGerida(organizacaoId: string) {
   const { resultado } = await ler(({ base, usuario }) => {
@@ -271,8 +282,41 @@ async function comStripe<T>(fn: () => Promise<T>): Promise<T> {
   } catch (e) {
     if (!(e instanceof ErroStripe || e instanceof TypeError)) throw e;
     console.error("Stripe Connect", e);
-    throw new Error(e instanceof ErroStripe && e.status === 400 ? `Stripe: ${e.message}` : MSG_FALHA_CONTA);
+    throw new Error(mensagemDeFalhaStripe(e instanceof ErroStripe ? e.status : 0, e.message), { cause: e });
   }
+}
+
+/**
+ * A conta guardada só existe no outro modo do Stripe (conta de teste com a chave de produção):
+ * esquece a conta para a organização cadastrar uma nova. Devolve se descartou.
+ */
+async function descartarSeDeOutroModo(organizacaoId: string, contaId: string, e: unknown): Promise<boolean> {
+  if (!(e instanceof ErroStripe && contaDeOutroModo(e.status, e.message))) return false;
+  console.warn("Stripe: conta de recebimento de outro modo descartada", organizacaoId, contaId);
+  await mutar(({ base }) => descartarContaDeOutroModoNaBase(base, organizacaoId, contaId));
+  saldosRecentes.delete(contaId);
+  return true;
+}
+
+/**
+ * Conta da organização no modo atual do Stripe. Cria (e grava) uma conta Express quando não há
+ * nenhuma ou quando a guardada é de outro modo.
+ */
+async function contaDaOrganizacao(
+  organizacaoId: string,
+  org: { contaId?: string | undefined; email?: string | undefined },
+  perfil: PerfilComercial,
+): Promise<{ conta: ContaStripe; nova: boolean }> {
+  if (org.contaId) {
+    try {
+      return { conta: await comStripe(() => obterContaConectada(org.contaId!)), nova: false };
+    } catch (e) {
+      if (!(await descartarSeDeOutroModo(organizacaoId, org.contaId, (e as Error).cause))) throw e;
+    }
+  }
+  const conta = await comStripe(() => criarContaConectada({ organizacaoId, perfil, email: org.email }));
+  await gravarConta(organizacaoId, conta);
+  return { conta, nova: true };
 }
 
 /**
@@ -299,14 +343,14 @@ export async function iniciarCadastroRecebimento(organizacaoId: string): Promise
   if (!stripeConfigurado()) throw new Error("Os pagamentos online ainda não estão ativados na plataforma.");
   const org = await organizacaoGerida(organizacaoId);
   const origem = new URL(getRequestUrl()).origin;
-  const { contaId, url } = await comStripe(async () => {
-    const perfil = perfilComercialPadrao(org.nome, origem);
-    const conta = org.contaId ? await obterContaConectada(org.contaId) : await criarContaConectada({ organizacaoId, perfil, email: org.email });
-    if (!org.contaId) await gravarConta(organizacaoId, conta); // guarda a conta antes de sair para o Stripe
-    else await completarPerfil(conta, perfil);
-    const link = await linkDeCadastro(conta.id, `${origem}/organizacao/financeiro?recebimento=retorno`, `${origem}/organizacao/financeiro?recebimento=renovar`);
-    return { contaId: conta.id, url: link.url };
-  });
+  const perfil = perfilComercialPadrao(org.nome, origem);
+  // Conta nova já fica gravada antes de sair para o Stripe.
+  const { conta, nova } = await contaDaOrganizacao(organizacaoId, org, perfil);
+  if (!nova) await completarPerfil(conta, perfil);
+  const contaId = conta.id;
+  const { url } = await comStripe(() =>
+    linkDeCadastro(contaId, `${origem}/organizacao/financeiro?recebimento=retorno`, `${origem}/organizacao/financeiro?recebimento=renovar`),
+  );
   const r = await mutar(({ base }) => base.organizacoes.find((o) => o.id === organizacaoId)?.recebimento?.contaId === contaId);
   return { resultado: { url }, visao: r.visao };
 }
@@ -314,9 +358,15 @@ export async function iniciarCadastroRecebimento(organizacaoId: string): Promise
 /** Consulta a conta no Stripe e atualiza a situação (retorno do cadastro, abertura da página). */
 export async function sincronizarRecebimento(organizacaoId: string) {
   const org = await organizacaoGerida(organizacaoId);
-  if (!org.contaId || !stripeConfigurado()) return ler(({ base }) => base.organizacoes.find((o) => o.id === organizacaoId)?.recebimento);
-  const conta = await comStripe(() => obterContaConectada(org.contaId!));
-  return gravarConta(organizacaoId, conta);
+  const atual = () => ler(({ base }) => base.organizacoes.find((o) => o.id === organizacaoId)?.recebimento);
+  if (!org.contaId || !stripeConfigurado()) return atual();
+  try {
+    const conta = await comStripe(() => obterContaConectada(org.contaId!));
+    return await gravarConta(organizacaoId, conta);
+  } catch (e) {
+    if (await descartarSeDeOutroModo(organizacaoId, org.contaId, (e as Error).cause)) return atual();
+    throw e;
+  }
 }
 
 /** Link para o painel Express: saldo, calendário de repasses e conta bancária. */
@@ -350,10 +400,16 @@ export async function consultarSaldoRecebimento(organizacaoId: string, atualizar
   const contaId = org.contaId;
   const guardado = saldosRecentes.get(contaId);
   if (!atualizar && guardado && Date.now() - guardado.em < VALIDADE_SALDO_MS) return guardado.saldo;
-  const saldo = await comStripe(async () => {
-    const [b, p, c] = await Promise.all([saldoDaConta(contaId), saquesDaConta(contaId, 10), obterContaConectada(contaId)]);
-    return resumoSaldo(b, p, c);
-  });
+  let saldo: SaldoRecebimento;
+  try {
+    saldo = await comStripe(async () => {
+      const [b, p, c] = await Promise.all([saldoDaConta(contaId), saquesDaConta(contaId, 10), obterContaConectada(contaId)]);
+      return resumoSaldo(b, p, c);
+    });
+  } catch (e) {
+    if (await descartarSeDeOutroModo(organizacaoId, contaId, (e as Error).cause)) return undefined;
+    throw e;
+  }
   saldosRecentes.set(contaId, { em: Date.now(), saldo });
   return saldo;
 }
@@ -370,13 +426,9 @@ export async function sessaoComponentesStripe(organizacaoId: string): Promise<{ 
   const problema = problemaChavesStripe();
   if (problema) throw new Error(`Os painéis do Stripe estão mal configurados: ${problema}`);
   const perfil = perfilComercialPadrao(org.nome, new URL(getRequestUrl()).origin);
-  const contaId = org.contaId ?? (await comStripe(async () => {
-    const conta = await criarContaConectada({ organizacaoId, perfil, email: org.email });
-    await gravarConta(organizacaoId, conta);
-    return conta.id;
-  }));
-  if (org.contaId && !org.ativa) await completarPerfil(await comStripe(() => obterContaConectada(contaId)), perfil);
-  const sessao = await comStripe(() => criarSessaoDeConta(contaId));
+  const { conta, nova } = await contaDaOrganizacao(organizacaoId, org, perfil);
+  if (!nova && !org.ativa) await completarPerfil(conta, perfil);
+  const sessao = await comStripe(() => criarSessaoDeConta(conta.id));
   return { chavePublicavel: chave, clientSecret: sessao.client_secret };
 }
 
