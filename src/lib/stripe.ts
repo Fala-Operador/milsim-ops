@@ -240,6 +240,7 @@ export function mensagemDeFalhaStripe(status: number, original: string): string 
   if (/accounts v1/i.test(mensagem)) return `O Stripe não libera a criação de contas conectadas pela API Accounts v1 nesta conta. No painel do Stripe (modo de produção), ative "Accounts v1 support" nas configurações do Connect e tente de novo.${doStripe}`;
   if (status === 401) return `O Stripe recusou a chave secreta da plataforma (STRIPE_SERVER_API_KEY). Confira se ela foi copiada inteira e se o site foi publicado de novo depois da troca.${doStripe}`;
   if (status === 403) return `O Stripe recusou esta operação de contas conectadas.${doStripe}`;
+  if (/must be activated in order to create accounts/i.test(mensagem)) return "A conta Stripe da plataforma ainda não está ativada em produção, e o Stripe só deixa criar contas conectadas depois disso. Quem administra o Stripe da plataforma precisa concluir a ativação em https://dashboard.stripe.com/account/onboarding e tentar de novo.";
   if (status === 400 && /signed up for connect/i.test(mensagem)) return "O Stripe Connect ainda não está ativado na conta da plataforma neste modo. Ative o Connect no painel do Stripe (modo de produção) e tente de novo.";
   if (status === 400 || status === 404) return `Stripe: ${mensagem}`;
   return MSG_FALHA_STRIPE;
