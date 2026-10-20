@@ -52,7 +52,7 @@ export const Route = createFileRoute("/")({
         content: "Explore eventos de simulação militar, reúna seu squad e prepare-se para a missão.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   validateSearch: (s: { q?: unknown; periodo?: unknown; mod?: unknown; ordem?: unknown }): BuscaInicio => ({
