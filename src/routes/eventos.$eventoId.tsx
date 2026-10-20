@@ -85,7 +85,7 @@ function PaginaEvento() {
   );
 
   return (
-    <div className={`mx-auto max-w-4xl px-4 py-8 ${inscricoesAbertas ? "pb-28 md:pb-8" : ""}`}>
+    <div className="mx-auto max-w-4xl px-4 py-8">
       <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground">
         <Link to="/" className="hover:underline">Eventos</Link> / <span>{evento.nome}</span>
       </nav>
@@ -153,11 +153,11 @@ function PaginaEvento() {
                 .slice()
                 .sort((a, b) => a.ordem - b.ordem)
                 .map((at) => (
-                  <li key={at.id} className="flex gap-3 text-sm">
-                    <span className="w-28 shrink-0 font-mono text-xs text-accent">
+                  <li key={at.id} className="flex flex-col gap-1 text-sm sm:flex-row sm:gap-3">
+                    <span className="shrink-0 font-mono text-xs text-accent sm:w-28">
                       {formatarDataBR(at.data)} {at.horario}
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-medium">{at.titulo}</p>
                       <p className="text-muted-foreground">{at.descricao}</p>
                       {at.local && <p className="text-xs text-muted-foreground">Local: {at.local}</p>}
@@ -229,7 +229,7 @@ function PaginaEvento() {
       </Modal>
 
       {inscricoesAbertas && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden">
+        <div className="sticky bottom-0 z-30 -mx-4 mt-8 border-t border-border bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden">
           <div className="mx-auto flex max-w-4xl items-center gap-3">
             <div className="min-w-0 flex-1 text-sm">
               {aPartirDe !== null && <p className="text-xs text-muted-foreground">A partir de</p>}

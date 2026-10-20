@@ -172,7 +172,7 @@ export function Header() {
 
   return (
     <header className={`sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur transition-shadow motion-reduce:transition-none ${rolado ? "shadow-md" : ""}`}>
-      <div className="mx-auto flex h-[60px] max-w-6xl items-center gap-3 px-4 md:grid md:h-[72px] md:grid-cols-[1fr_auto_1fr]">
+      <div className="mx-auto flex h-[60px] max-w-6xl items-center gap-3 px-4 lg:grid lg:h-[72px] lg:grid-cols-[1fr_auto_1fr]">
         {/* Esquerda: marca */}
         <Link to="/" aria-label="MILSIM OPS — página inicial" className={`flex min-w-0 items-center gap-2.5 justify-self-start rounded-md ${foco}`}>
           <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary font-mono text-sm font-bold text-primary-foreground">MS</span>
@@ -180,16 +180,16 @@ export function Header() {
         </Link>
 
         {/* Centro: navegação (desktop) */}
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Navegação principal">
+        <nav className="hidden items-center gap-1 lg:flex" aria-label="Navegação principal">
           <Navegacao logado={!!usuarioVisivel} />
         </nav>
 
         {/* Direita: ações */}
-        <div className="ml-auto flex items-center gap-1.5 justify-self-end md:ml-0">
-          <SeletorCidade compacto className="hidden md:block" />
+        <div className="ml-auto flex items-center gap-1.5 justify-self-end lg:ml-0">
+          <SeletorCidade compacto className="hidden lg:block" />
           {usuarioVisivel && <Sino naoLidas={naoLidas} />}
           {usuarioVisivel ? (
-            <div className="relative hidden md:block">
+            <div className="relative hidden lg:block">
               <DropdownMenu open={menuAberto} onOpenChange={setMenuAberto} modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="plain" size="none" type="button" aria-label={`Menu da conta de ${usuarioVisivel.nomeCompleto}`}
@@ -212,14 +212,14 @@ export function Header() {
               </DropdownMenu>
             </div>
           ) : (
-            <div className="hidden items-center gap-1.5 md:flex">
+            <div className="hidden items-center gap-1.5 lg:flex">
               <Link to="/login" search={{ redirect: undefined }} className={`flex h-10 items-center rounded-md px-3 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground ${foco}`}>Entrar</Link>
               <Button asChild><Link to="/cadastro" search={{ redirect: undefined }}>Criar conta</Link></Button>
             </div>
           )}
           <Sheet open={painelAberto} onOpenChange={setPainelAberto}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="none" aria-label="Abrir menu" className={`h-11 w-11 md:hidden ${foco}`}>
+              <Button variant="ghost" size="none" aria-label="Abrir menu" className={`h-11 w-11 lg:hidden ${foco}`}>
                 <Menu className="h-5 w-5" aria-hidden="true" />
               </Button>
             </SheetTrigger>
@@ -262,7 +262,7 @@ export function Header() {
       </div>
 
       {/* Faixa de localização no celular */}
-      <div className="border-t border-border px-4 py-1.5 md:hidden">
+      <div className="border-t border-border px-4 py-1.5 lg:hidden">
         <SeletorCidade compacto />
       </div>
     </header>

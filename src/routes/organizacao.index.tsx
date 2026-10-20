@@ -213,11 +213,11 @@ function PainelEventos() {
                     </TableCell>
                     <TableCell data-rotulo="Ocupação" className="py-2 pr-3 min-w-32">
                       <p className="text-xs">{ativas}/{e.capacidadeTotal}</p>
-                      <div className="mt-1 h-1.5 w-24 rounded bg-muted md:w-auto"><div className="h-1.5 rounded bg-primary" style={{ width: `${pct}%` }} /></div>
+                      <div className="mt-1 h-1.5 w-24 rounded bg-muted lg:w-auto"><div className="h-1.5 rounded bg-primary" style={{ width: `${pct}%` }} /></div>
                     </TableCell>
                     <TableCell data-rotulo="Receita" className="py-2 pr-3 font-mono whitespace-nowrap">{formatarBRL(receitaEvento(e.id))}</TableCell>
                     <TableCell className="celula-acoes py-2">
-                      <div className="flex flex-wrap gap-1 md:justify-end">
+                      <div className="flex flex-wrap gap-1 lg:justify-end">
                         {e.status === "rascunho" && <Button variant="ghost" onClick={() => aoPublicar(e)}>Publicar</Button>}
                         {e.status === "publicado" && <Button variant="ghost" onClick={() => setCancelarEvt(e)}>Cancelar</Button>}
                         {["publicado", "inscricoes_encerradas"].includes(e.status) && (

@@ -58,13 +58,13 @@ function PaginaComunidadeOrg() {
                   Gerencie fóruns, analise denúncias, fixe publicações e suspenda participantes.
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Link to="/comunidade/$eventoId" params={{ eventoId }}>
-                  <Button variant="outline">Ver comunidade</Button>
-                </Link>
-                <Link to="/comunidade/$eventoId/gerenciar" params={{ eventoId }}>
-                  <Button>Gerenciar comunidade</Button>
-                </Link>
+              <div className="grid w-full gap-2 sm:flex sm:w-auto">
+                <Button asChild variant="outline">
+                  <Link to="/comunidade/$eventoId" params={{ eventoId }}>Ver comunidade</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/comunidade/$eventoId/gerenciar" params={{ eventoId }}>Gerenciar comunidade</Link>
+                </Button>
               </div>
             </div>
             {denunciasPendentes.length > 0 && (

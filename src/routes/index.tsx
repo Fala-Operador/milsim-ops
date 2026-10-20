@@ -345,15 +345,15 @@ function CartaoEvento({ evento: e, base, organizacao }: { evento: Evento; base: 
       </div>
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="line-clamp-2 min-h-[3.25rem] font-display text-xl font-semibold uppercase leading-tight">{e.nome}</h3>
+          <h3 className="line-clamp-2 min-w-0 font-display sm:min-h-[3.25rem] text-xl font-semibold uppercase leading-tight">{e.nome}</h3>
           {restantes <= 0 ? <Badge variant="destructive">Esgotado</Badge>
             : restantes <= e.capacidadeTotal * 0.15 ? <Badge variant="warning">Últimas vagas</Badge>
             : <Badge variant="success">Vagas abertas</Badge>}
         </div>
         <p className="mt-1 text-sm text-muted-foreground">{formatarDataBR(e.inicioEm)} · {e.cidade}/{e.uf}</p>
-        <p className="mt-1"><span className="inline-block rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{nomeModalidade(e.modalidade)}</span></p>
-        <p className="truncate text-sm text-muted-foreground">{organizacao}</p>
-        <div className="mt-auto flex items-center justify-between pt-3">
+        <p className="mt-2"><span className="inline-block rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{nomeModalidade(e.modalidade)}</span></p>
+        <p className="mt-1.5 truncate text-sm text-muted-foreground">{organizacao}</p>
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-3">
           <p className="text-sm">A partir de <span className="font-semibold text-accent">{formatarBRL(precoInicial(e))}</span></p>
           <span className="text-sm font-medium text-primary group-hover:underline">Ver operação →</span>
         </div>

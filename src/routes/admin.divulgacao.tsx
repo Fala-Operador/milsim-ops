@@ -74,7 +74,7 @@ function PaginaDivulgacao() {
           </p>
         </div>
         <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)}>
-          <TabsList className="gap-1">
+          <TabsList className="flex-wrap gap-2">
             <TabsTrigger value="secoes" asChild><Button variant={aba === "secoes" ? "default" : "outline"}>Seções</Button></TabsTrigger>
             <TabsTrigger value="parceiros" asChild><Button variant={aba === "parceiros" ? "default" : "outline"}>Parceiros</Button></TabsTrigger>
             <TabsTrigger value="impulsionamentos" asChild><Button variant={aba === "impulsionamentos" ? "default" : "outline"}>Impulsionamentos</Button></TabsTrigger>
@@ -120,9 +120,9 @@ function GestaoSecoes({ base }: { base: BaseDados }) {
             onDragStart={() => setArrastando(s.id)}
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => { if (arrastando) mover(ordenadas.findIndex((x) => x.id === arrastando), i); setArrastando(null); }}
-            className={`flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card p-3 ${arrastando === s.id ? "opacity-50" : ""}`}>
-            <GripVertical className="h-4 w-4 cursor-grab text-muted-foreground" aria-hidden />
-            <span className="w-6 font-mono text-xs text-muted-foreground">{i + 1}</span>
+            className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-border bg-card p-3 ${arrastando === s.id ? "opacity-50" : ""}`}>
+            <GripVertical className="hidden h-4 w-4 shrink-0 cursor-grab text-muted-foreground sm:block" aria-hidden />
+            <span className="w-5 shrink-0 font-mono text-xs text-muted-foreground">{i + 1}</span>
             <div className="min-w-0 flex-1">
               <p className="font-medium">{s.titulo}</p>
               <p className="text-xs text-muted-foreground">
@@ -132,7 +132,7 @@ function GestaoSecoes({ base }: { base: BaseDados }) {
               </p>
             </div>
             <Badge variant={tomStatus[s.status]}>{s.status}</Badge>
-            <div className="flex gap-1">
+            <div className="flex w-full flex-wrap gap-1 sm:w-auto">
               <Button variant="ghost" className="!px-2" aria-label={`Mover ${s.titulo} para cima`} disabled={i === 0} onClick={() => mover(i, i - 1)}><ArrowUp className="h-4 w-4" /></Button>
               <Button variant="ghost" className="!px-2" aria-label={`Mover ${s.titulo} para baixo`} disabled={i === ordenadas.length - 1} onClick={() => mover(i, i + 1)}><ArrowDown className="h-4 w-4" /></Button>
               <Button variant="outline" onClick={() => setEditando(structuredClone(s))}>Editar</Button>
@@ -443,8 +443,8 @@ function GestaoParceiros({ base }: { base: BaseDados }) {
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {base.parceiros.map((p) => (
           <Card key={p.id}>
-            <div className="flex items-center gap-3">
-              {p.logoUrl ? <img src={p.logoUrl} alt={p.textoAlt} className="h-12 w-20 rounded bg-secondary object-contain" /> : <div className="h-12 w-20 rounded bg-secondary" />}
+            <div className="flex flex-wrap items-center gap-3">
+              {p.logoUrl ? <img src={p.logoUrl} alt={p.textoAlt} className="h-12 w-20 shrink-0 rounded bg-secondary object-contain" /> : <div className="h-12 w-20 shrink-0 rounded bg-secondary" />}
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{p.nome}</p>
                 <p className="text-xs text-muted-foreground">{p.tipo} · {p.links.length ? `${p.links.length} link(s)` : "sem link"}</p>
@@ -457,7 +457,7 @@ function GestaoParceiros({ base }: { base: BaseDados }) {
                 Pendência — {rotuloDoLink(link)} “{link.url ?? link.telefone ?? ""}”: {erro}
               </p>
             ))}
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => setEditando(structuredClone(p))}>Editar</Button>
               <Button variant="ghost" onClick={() => excluirParceiro(p.id)}>Excluir</Button>
             </div>

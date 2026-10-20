@@ -146,8 +146,8 @@ export function CartaoEvento({ c }: { c: CartaoEventoResolvido }) {
       </div>
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <h3 className="font-display text-lg font-semibold uppercase">{e.nome}</h3>
+          <div className="min-w-0">
+            <h3 className="font-display text-lg font-semibold uppercase leading-tight">{e.nome}</h3>
             <span className="mt-1 inline-block rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{nomeModalidade(e.modalidade)}</span>
           </div>
           {c.esgotado ? <Badge variant="destructive">Esgotado</Badge> : <Badge variant="success">Vagas abertas</Badge>}
@@ -215,6 +215,13 @@ function CartaoParceiro({ p, secao, carrossel }: { p: Parceiro; secao: SecaoInic
 function Banner({ secao, base, celular, rastrear }: { secao: SecaoInicial; base: BaseDados; celular: boolean; rastrear: boolean }) {
   const b = secao.banner!;
   const img = celular && b.imagemCelular ? b.imagemCelular : b.imagemDesktop;
+  // Mobile first: no site público o celular usa a arte e a proporção 4:3; a partir de sm, a de desktop.
+  const imagem = celular
+    ? <ImagemSegura src={img} alt={b.textoAlt} className="aspect-[4/3] max-h-[300px] w-full" />
+    : <>
+        <ImagemSegura src={b.imagemCelular || b.imagemDesktop} alt={b.textoAlt} className="aspect-[4/3] max-h-[300px] w-full sm:hidden" />
+        <ImagemSegura src={b.imagemDesktop} alt={b.textoAlt} className="hidden aspect-[21/6] max-h-[300px] w-full sm:block" />
+      </>;
   const d = b.destino;
   const botao = b.textoBotao || "Saiba mais";
   const classeBotao = "inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90";
@@ -232,7 +239,7 @@ function Banner({ secao, base, celular, rastrear }: { secao: SecaoInicial; base:
   if (ev && img) {
     return (
       <div className="relative overflow-hidden rounded-lg border border-border bg-card">
-        <ImagemSegura src={img} alt={b.textoAlt} className={`w-full ${celular ? "aspect-[4/3] max-h-[300px]" : "aspect-[21/6] max-h-[300px]"}`} />
+        {imagem}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent" aria-hidden="true" />
         <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-3 p-4 sm:p-6">
           <div className="min-w-0 text-white">
@@ -247,7 +254,7 @@ function Banner({ secao, base, celular, rastrear }: { secao: SecaoInicial; base:
   }
   return (
     <div className="relative overflow-hidden rounded-lg border border-border bg-card">
-      {img && <ImagemSegura src={img} alt={b.textoAlt} className={`w-full ${celular ? "aspect-[4/3] max-h-[300px]" : "aspect-[21/6] max-h-[300px]"}`} />}
+      {img && imagem}
       {(b.chamada || acao) && (
         <div className="flex flex-wrap items-center justify-between gap-3 p-4">
           {b.chamada && <p className="font-display text-xl font-semibold uppercase">{b.chamada}</p>}

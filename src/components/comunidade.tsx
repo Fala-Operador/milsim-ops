@@ -167,8 +167,8 @@ export function Compositor({
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex gap-3">
-        <Avatar usuario={usuario} />
-        <div className="flex-1 space-y-2">
+        <span className="hidden sm:block"><Avatar usuario={usuario} /></span>
+        <div className="min-w-0 flex-1 space-y-2">
           <Textarea
             aria-label="Texto da publicação"
             rows={3}
@@ -182,7 +182,7 @@ export function Compositor({
             {forumFixo ? (
               <span className="text-xs text-muted-foreground">Publicando em <strong className="text-foreground">{forumFixo.nome}</strong></span>
             ) : (
-              <div className="min-w-48">
+              <div className="w-full sm:w-auto sm:min-w-48">
                 <NativeSelect aria-label="Fórum de destino" value={forumId} onChange={(e) => setForumId(e.target.value)}>
                   <option value="">Escolha o fórum…</option>
                   {forunsPermitidos.map((f) => (
@@ -235,12 +235,12 @@ function CabecalhoAutor({ base, autorId, eventoId, criadoEm, editadoEm, extra }:
   const autor = base.usuarios.find((u) => u.id === autorId);
   const selo = seloAutor(base, autorId, eventoId);
   return (
-    <div className="flex flex-wrap items-center gap-x-2 text-sm">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
       {autor ? (
         <Link to="/operador/$usuarioId" params={{ usuarioId: autor.id }} search={{ aba: undefined }} className="font-semibold hover:underline">{nomeExibicao(autor)}</Link>
       ) : <span className="font-semibold">{nomeExibicao(autor)}</span>}
       {selo && <Badge variant={selo === "Admin" ? "destructive" : "accent"}>{selo}</Badge>}
-      <span className="text-xs text-muted-foreground">· {formatarDataHoraBR(criadoEm)}</span>
+      <span className="text-xs text-muted-foreground"><span className="hidden sm:inline">· </span>{formatarDataHoraBR(criadoEm)}</span>
       {editadoEm && <span className="text-xs text-muted-foreground">(editado)</span>}
       {extra}
     </div>
@@ -302,9 +302,9 @@ export function CartaoPublicacao({
         <AvatarLink usuario={pub.removidaPeloAutor ? undefined : base.usuarios.find((u) => u.id === pub.autorId)} />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <div>
+            <div className="min-w-0">
               <CabecalhoAutor base={base} autorId={pub.autorId} eventoId={pub.eventoId} criadoEm={pub.criadoEm} editadoEm={pub.editadoEm} />
-              <div className="mt-0.5 flex flex-wrap gap-1">
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
                 {mostrarForum && forum && <span className="text-xs text-muted-foreground">em {forum.icone} {forum.nome}</span>}
                 {pub.fixada && <Badge variant="accent">📌 Fixada</Badge>}
                 {pub.importante && <Badge variant="warning">Importante</Badge>}

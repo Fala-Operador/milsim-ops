@@ -158,7 +158,7 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
         </div>
       </section>
 
-      <Card className="bg-elevated">
+      <Card className="overflow-hidden bg-elevated p-0">
         <div className="space-y-3 border-b border-border p-4">
           <div className="grid min-w-0 grid-cols-2 items-center gap-2 lg:grid-cols-[minmax(240px,1fr)_auto]">
               <div className="relative col-span-2 min-w-0 lg:col-span-1">
@@ -227,9 +227,9 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
             <ul className="divide-y divide-border md:hidden">
               {visiveis.map((i) => (
                 <li key={i.id} className="space-y-2 p-4">
-                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                  <div className="space-y-2">
                     <Participante nome={nomeDe(i)} codigo={i.codigo} />
-                    <div className="flex flex-col items-start gap-1.5"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div>
+                    <div className="flex flex-wrap items-center gap-1.5"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div>
                   </div>
                   <p className="text-xs text-muted-foreground">{nomeTipo(i.tipoId)} · {nomeEx(i.exercitoId)} · {ROTULO_ORIGEM[i.origem]}</p>
                   <Button variant="outline" className="w-full" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={`Ver detalhes de ${nomeDe(i)}`}><Eye className="h-4 w-4" /> Detalhes</Button>
