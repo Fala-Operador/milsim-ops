@@ -75,7 +75,7 @@ function Dashboard() {
                       <TableCell data-rotulo="Receita" className="py-2 pr-3">{formatarBRL(receita)}</TableCell>
                       <TableCell className="celula-acoes py-2">
                         <div className="flex flex-wrap gap-2">
-                          <Link to="/eventos/$eventoId" params={{ eventoId: ev.id }}>
+                          <Link to="/admin/eventos/$eventoId" params={{ eventoId: ev.id }}>
                             <Button variant="outline">Ver</Button>
                           </Link>
                           {ev.status === "publicado" && (

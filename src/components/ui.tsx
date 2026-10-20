@@ -1,10 +1,11 @@
 // Composições do app sobre os componentes shadcn/ui de `src/components/ui/`.
-import { type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 
 export function Campo({
   rotulo,
@@ -71,6 +72,72 @@ export function Modal({
         {children}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * Modal com um texto obrigatório (resposta, justificativa) no lugar do `prompt()` do navegador.
+ * Mostra o erro da ação sem fechar; fecha só quando `onConfirmar` termina sem erro.
+ */
+export function ModalTexto({
+  aberto,
+  titulo,
+  rotulo,
+  descricao,
+  confirmar,
+  destrutivo = false,
+  maximo,
+  onFechar,
+  onConfirmar,
+}: {
+  aberto: boolean;
+  titulo: string;
+  rotulo: string;
+  descricao?: string | undefined;
+  confirmar: string;
+  destrutivo?: boolean;
+  maximo?: number | undefined;
+  onFechar: () => void;
+  onConfirmar: (texto: string) => Promise<unknown>;
+}) {
+  const id = useId();
+  const [texto, setTexto] = useState("");
+  const [erro, setErro] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  useEffect(() => {
+    if (aberto) {
+      setTexto("");
+      setErro("");
+    }
+  }, [aberto]);
+
+  const enviar = async () => {
+    if (!texto.trim()) return setErro("Preencha este campo.");
+    setEnviando(true);
+    setErro("");
+    try {
+      await onConfirmar(texto.trim());
+      onFechar();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Não foi possível concluir. Tente novamente.");
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <Modal aberto={aberto} titulo={titulo} onFechar={onFechar}>
+      {descricao && <p className="mb-3 text-sm text-muted-foreground">{descricao}</p>}
+      <Campo rotulo={rotulo} erro={erro} htmlFor={id}>
+        <Textarea id={id} rows={4} maxLength={maximo} value={texto} onChange={(e) => setTexto(e.target.value)} autoFocus />
+      </Campo>
+      <div className="mt-4 flex justify-end gap-2">
+        <Button variant="ghost" onClick={onFechar} disabled={enviando}>Cancelar</Button>
+        <Button variant={destrutivo ? "destructive" : "default"} onClick={enviar} disabled={enviando}>
+          {enviando ? "Enviando..." : confirmar}
+        </Button>
+      </div>
+    </Modal>
   );
 }
 

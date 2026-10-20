@@ -343,6 +343,18 @@ Código: `src/services/analytics.ts`, `src/server/analytics.server.ts`, `src/lib
   únicos; conclusão = fluxos concluídos ÷ fluxos iniciados.
 - Campanhas de rastreio (`?cmp=<id>`) por evento, criadas pela gestão.
 
+### Visão geral do evento (admin)
+
+Código: `src/lib/visaoGeralEvento.ts`, página `/admin/eventos/$eventoId` (botão "Ver" do dashboard).
+
+- Só leitura, a partir da visão do admin (sem API própria).
+- Vendidos = inscrições **confirmadas** (sobre a capacidade); aguardando pagamento = reservas vigentes
+  (`reservaVigente`); cancelados e estornados contados à parte; por tipo de ingresso e por exército.
+- Check-in = confirmadas com entrada vigente (`entradaAtiva`: sem reversão nem conflito).
+- Pagamentos online: pagos, reembolsados, reembolsos pendentes e contestações em aberto (`disputaEmAberto`).
+- Suporte: chamados com `eventoId` do evento, por status exibido; "em aberto" = não resolvido nem fechado.
+- Valores em dinheiro vêm do Financeiro do evento ([seção 10](#10-financeiro-do-evento)), sem fórmula própria.
+
 ## 17. Notificações
 
 - Notificações são internas (sino). Não há e-mail transacional nem WhatsApp automático.
