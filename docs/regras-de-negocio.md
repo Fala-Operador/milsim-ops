@@ -195,9 +195,9 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
   Com `STRIPE_BROWSER_PUBLIC_KEY`, tudo acontece dentro do site: o cadastro da conta (inclusive o
   inicial), os avisos de pendência, os dados da conta e banco, os saques e os pagamentos usam os
   componentes embutidos do Stripe. Contas Express ainda passam por uma confirmação de e-mail ou
-  celular numa janela do Stripe, que só abre depois de um clique do organizador (o navegador
-  bloqueia janelas abertas sozinhas); por isso os avisos de pendência aparecem dentro dos painéis
-  ou do cadastro, não ao carregar a página. Sem a chave, cadastro e painel abrem no site do Stripe.
+  celular numa janela do Stripe, que só abre quando o organizador clica no botão do próprio
+  painel (o navegador bloqueia janelas abertas sozinhas). Com a conta ativa, os painéis e os
+  avisos de pendência abrem junto com a página. Sem a chave, cadastro e painel abrem no site do Stripe.
   → [`saldoRecebimento`](api/repasses/saldoRecebimento.md), [`sessaoComponentesStripeOrg`](api/repasses/sessaoComponentesStripeOrg.md)
 
 ## 10. Financeiro do evento
