@@ -297,7 +297,7 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   direta, sem cobrança).
 - **Repasse às organizações (Stripe Connect Express)**: cada organização cria pelo Financeiro
   uma conta com painel Express, criada pela Accounts v2 (`POST /v2/core/accounts`, conta recebedora
-  com `stripe_transfers`, perdas e taxas com a plataforma; o Stripe não libera a criação pela v1 em
+  com `stripe_transfers` e `merchant.card_payments` (exigido junto), perdas e taxas com a plataforma; o Stripe não libera a criação pela v1 em
   produção para plataformas novas) e usada pela v1 no resto (cadastro hospedado `account_links`,
   sessões, saldo, saques, cobranças com destino, webhook `account.updated`); a situação fica em
   `organizacao.recebimento` (`lib/repasses.ts`, gravada por `services/repasses.ts`, atualizada no
