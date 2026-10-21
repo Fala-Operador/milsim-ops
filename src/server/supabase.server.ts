@@ -7,6 +7,7 @@ import "@tanstack/react-start/server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { getCookies, setCookie, setResponseHeader } from "@tanstack/react-start/server";
+import { papelDaChave } from "@/lib/chavesSupabase";
 
 // Nomes alternativos usados pelos segredos do projeto (o prefixo SUPABASE_ é reservado lá).
 const ALTERNATIVAS: Record<string, string> = {
@@ -22,10 +23,23 @@ function variavel(nome: string): string {
   return valor;
 }
 
+/** A chave secreta precisa ser service_role: com a publicável, o banco nega tudo ("permission denied"). */
+function chaveSecreta(): string {
+  const chave = variavel("SUPABASE_SECRET_KEY");
+  const papel = papelDaChave(chave);
+  if (papel && papel !== "service_role") {
+    throw new Error(
+      `SUPABASE_SECRET_KEY contém uma chave "${papel}", não a secreta (service_role). ` +
+        "Use a secret key do projeto (Project Settings → API Keys).",
+    );
+  }
+  return chave;
+}
+
 let admin: SupabaseClient | null = null;
 
 export function supabaseAdmin(): SupabaseClient {
-  admin ??= createClient(variavel("SUPABASE_URL"), variavel("SUPABASE_SECRET_KEY"), {
+  admin ??= createClient(variavel("SUPABASE_URL"), chaveSecreta(), {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
   return admin;
