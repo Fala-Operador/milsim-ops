@@ -90,7 +90,7 @@ export function RecebimentosOrganizacao({ organizacao, retorno }: { organizacao:
           <p className="mt-1 text-sm text-muted-foreground">
             {rec?.status === "ativa"
               ? `As vendas pagas online são repassadas automaticamente para a conta da organização${taxa ? `, descontada a taxa da plataforma de ${taxa}` : ""}. O Stripe deposita o saldo na conta bancária cadastrada.`
-              : `Conecte uma conta Stripe para receber as vendas automaticamente${taxa ? ` (taxa da plataforma: ${taxa})` : ""}. Enquanto ela não estiver ativa, as vendas ficam com a plataforma e o repasse é feito à parte.`}
+              : `Conecte uma conta Stripe para receber as vendas automaticamente${taxa ? ` (taxa da plataforma: ${taxa})` : ""}. Enquanto ela não estiver ativa, os ingressos pagos não são vendidos; inscrições gratuitas e cortesias seguem normalmente.`}
           </p>
         </div>
         {rec && (

@@ -20,7 +20,7 @@ Cria (ou reaproveita) a conta Stripe Connect Express da organização e devolve 
 ## Regras
 
 - O retorno do cadastro volta para `/organizacao/financeiro?recebimento=retorno` (ou `renovar`, se o link expirou).
-- Até as transferências ficarem ativas, as vendas ficam com a plataforma (repasse à parte).
+- Até as transferências ficarem ativas, os ingressos pagos da organização não são vendidos.
 - Conta guardada que a chave atual não alcança (conta de teste depois da troca para as chaves de produção, ou conta de outra plataforma/sandbox, que o Stripe recusa com 403 "does not have access to account") é esquecida e a organização faz um cadastro novo. Mensagens de erro do Stripe nunca mostram a chave de API, nem mascarada.
 
 ## Resposta

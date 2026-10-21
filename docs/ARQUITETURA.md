@@ -307,8 +307,9 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   gere a organização. Na reserva, se a conta tem transferências ativas, o pagamento guarda
   `contaDestino` e `taxaCentavos` (taxa da tabela `platform_settings`, editada em
   Administração → Pagamentos); o checkout vira cobrança
-  com destino (`transfer_data.destination` + `application_fee_amount`). Sem conta ativa, o valor
-  fica na plataforma e aparece no financeiro como "repasse à parte". O reembolso de venda
+  com destino (`transfer_data.destination` + `application_fee_amount`). Sem conta ativa não há
+  venda paga: a reserva e o checkout recusam com `MSG_SEM_RECEBIMENTO` (vendas antigas sem
+  destino ainda aparecem no financeiro como "repasse à parte"). O reembolso de venda
   repassada usa `reverse_transfer` e `refund_application_fee`. Com a conta ativa, Financeiro lê
   do Stripe (cabeçalho `Stripe-Account`, cache de 60 s no servidor, nada vai para a base nem
   para a visão) saldo, saques, cronograma e banco (`consultarSaldoRecebimento`, resumo puro em
