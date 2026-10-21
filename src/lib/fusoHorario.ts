@@ -55,3 +55,10 @@ export function atividadeNoPeriodo(ev: Pick<Evento, "fuso" | "inicioEm" | "fimEm
   const t = instanteDaAtividade(ev, a).getTime();
   return t >= new Date(ev.inicioEm).getTime() && t <= new Date(ev.fimEm).getTime();
 }
+
+/** Data e hora no fuso do evento, ex.: "21/11/2026 08:00". */
+export function formatarNoFuso(iso: string, fuso: string | undefined): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fusoValido(fuso) });
+}

@@ -269,6 +269,8 @@ export function EventEditorDrawer(p: PropsEditor) {
       // Só vira lista por etapa quando é validação do evento (falha de rede etc. segue como texto).
       if (probs.some((x) => x.etapa < ETAPAS.length - 1)) {
         setErrosServidor(probs);
+        // Erros com campo (ex.: cada atividade do cronograma) também aparecem no próprio card.
+        setErros(Object.fromEntries(probs.filter((x) => x.campo).map((x) => [x.campo, x.mensagem])));
         setMsg(probs.length === 1 ? "Não foi possível concluir. Corrija a pendência abaixo:" : `Não foi possível concluir. Corrija as ${probs.length} pendências abaixo:`);
       } else {
         setMsg(mensagem);
