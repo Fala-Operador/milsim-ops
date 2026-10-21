@@ -146,6 +146,10 @@ export function validarParaPublicacao(evento: Evento): string[] {
   for (const at of evento.cronograma) {
     if (!atividadeNoPeriodo(evento, at)) erros.push(`Atividade "${at.titulo}" fora do período do evento.`);
   }
+  const fim = new Date(evento.fimEm).getTime();
+  for (const l of evento.lotes) {
+    if (l.status !== "arquivado" && new Date(l.fimVendas).getTime() > fim) erros.push(`Lote "${l.nome}": as vendas devem terminar até o término da operação.`);
+  }
   return erros;
 }
 
@@ -156,6 +160,7 @@ export async function publicarEvento(eventoId: string, usuarioId: string, perfil
     if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
     assertDono(evento, usuarioId, perfil);
     const erros = validarParaPublicacao(evento);
+    if (new Date(evento.inicioEm).getTime() <= Date.now()) erros.unshift("O início da operação já passou.");
     // Uma mensagem por linha: o editor separa e mostra cada uma na etapa certa.
     if (erros.length) throw new ErroDominio("validacao", erros.join("\n"));
     evento.status = "publicado";

@@ -10,7 +10,8 @@ import type { Ocupacao } from "@/lib/eventoEditor";
 import { formatarContatoWhatsapp, normalizarContatoWhatsapp } from "@/lib/contatoEvento";
 import { mascaraCep } from "@/lib/domain/validators";
 import { textoBuscaCep, useBuscaCep } from "@/hooks/useBuscaCep";
-import { Ajuda, inval, MsgErro, paraLocal, Secao, type PropsEtapa } from "./comum";
+import { deCampoNoFuso, paraCampoNoFuso, trocarFuso } from "@/lib/fusoHorario";
+import { Ajuda, inval, MsgErro, Secao, type PropsEtapa } from "./comum";
 
 const UFS = "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" ");
 const FUSOS = [
@@ -81,6 +82,13 @@ export function EtapaGeral({ ev, set, erros, organizacoes, podeEscolherOrg }: Pr
 }
 
 export function EtapaLocal({ ev, set, erros }: PropsEtapa) {
+  // Datas e horários são digitados no fuso do evento; ao trocar o fuso, a hora digitada se mantém.
+  const trocarFusoDoEvento = (fuso: string) => {
+    set("inicioEm", trocarFuso(ev.inicioEm, ev.fuso, fuso));
+    set("fimEm", trocarFuso(ev.fimEm, ev.fuso, fuso));
+    set("lotes", ev.lotes.map((l) => ({ ...l, inicioVendas: trocarFuso(l.inicioVendas, ev.fuso, fuso), fimVendas: trocarFuso(l.fimVendas, ev.fuso, fuso) })));
+    set("fuso", fuso);
+  };
   // CEP novo preenche endereço, cidade e UF (campos seguem editáveis; vazio do ViaCEP não apaga nada).
   const buscaCep = useBuscaCep(ev.cep, (r) => {
     const endereco = [r.logradouro, r.bairro].filter(Boolean).join(", ");
@@ -92,15 +100,15 @@ export function EtapaLocal({ ev, set, erros }: PropsEtapa) {
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <Campo rotulo="Início" htmlFor="ev-ini">
-          <Input id="ev-ini" type="datetime-local" value={paraLocal(ev.inicioEm)} onChange={(e) => e.target.value && set("inicioEm", new Date(e.target.value).toISOString())} {...inval(erros, "ev-ini")} />
+          <Input id="ev-ini" type="datetime-local" value={paraCampoNoFuso(ev.inicioEm, ev.fuso)} onChange={(e) => { const iso = deCampoNoFuso(e.target.value, ev.fuso); if (iso) set("inicioEm", iso); }} {...inval(erros, "ev-ini")} />
           <MsgErro erros={erros} id="ev-ini" />
         </Campo>
         <Campo rotulo="Término" htmlFor="ev-fim">
-          <Input id="ev-fim" type="datetime-local" value={paraLocal(ev.fimEm)} onChange={(e) => e.target.value && set("fimEm", new Date(e.target.value).toISOString())} {...inval(erros, "ev-fim")} />
+          <Input id="ev-fim" type="datetime-local" value={paraCampoNoFuso(ev.fimEm, ev.fuso)} onChange={(e) => { const iso = deCampoNoFuso(e.target.value, ev.fuso); if (iso) set("fimEm", iso); }} {...inval(erros, "ev-fim")} />
           <MsgErro erros={erros} id="ev-fim" />
         </Campo>
         <Campo rotulo="Fuso horário" htmlFor="ev-fuso">
-          <NativeSelect id="ev-fuso" value={ev.fuso} onChange={(e) => set("fuso", e.target.value)}>
+          <NativeSelect id="ev-fuso" value={ev.fuso} onChange={(e) => trocarFusoDoEvento(e.target.value)}>
             {FUSOS.map(([v, r]) => <option key={v} value={v}>{r}</option>)}
             {!FUSOS.some(([v]) => v === ev.fuso) && <option value={ev.fuso}>{ev.fuso}</option>}
           </NativeSelect>
@@ -199,7 +207,7 @@ export function EtapaCronograma({ ev, set, erros, onErroArquivo }: PropsEtapa & 
     <div className="space-y-4">
       <Secao titulo={`Cronograma (${ordenado.length})`} acao={
         <Button type="button" id="ev-at-add" variant="outline"
-          onClick={() => gravar([...ordenado, { id: gerarId("at"), data: paraLocal(ev.inicioEm).slice(0, 10), horario: "08:00", titulo: "", descricao: "", ordem: ordenado.length }])}>
+          onClick={() => gravar([...ordenado, { id: gerarId("at"), data: paraCampoNoFuso(ev.inicioEm, ev.fuso).slice(0, 10), horario: "08:00", titulo: "", descricao: "", ordem: ordenado.length }])}>
           + Adicionar atividade
         </Button>
       }>
