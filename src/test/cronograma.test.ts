@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deCampoNoFuso, instanteNoFuso as instanteAtividade, paraCampoNoFuso, trocarFuso } from "@/lib/fusoHorario";
+import { deCampoNoFuso, formatarPeriodoNoFuso, instanteNoFuso as instanteAtividade, paraCampoNoFuso, trocarFuso } from "@/lib/fusoHorario";
 import { validarEtapa } from "@/lib/eventoEditor";
 import { validarParaPublicacao } from "@/services/organizador";
 
@@ -61,5 +61,12 @@ describe("datas do editor em relação ao início e término", () => {
     const ev = { ...base, inicioEm: "2020-01-01T11:00:00.000Z", fimEm: "2020-01-01T21:00:00.000Z", local: "x", cidade: "x" };
     expect(validarEtapa({ ...ev, status: "rascunho" } as never, 1).map((p) => p.campo)).toContain("ev-ini");
     expect(validarEtapa({ ...ev, status: "publicado" } as never, 1).map((p) => p.campo)).not.toContain("ev-ini");
+  });
+});
+
+describe("formatarPeriodoNoFuso", () => {
+  it("mesmo dia mostra a data uma vez; dias diferentes mostram as duas", () => {
+    expect(formatarPeriodoNoFuso("2026-11-21T11:00:00.000Z", "2026-11-21T13:00:00.000Z", "America/Sao_Paulo")).toBe("21/11/2026 Início às 08:00, fim às 10:00");
+    expect(formatarPeriodoNoFuso("2026-11-21T11:00:00.000Z", "2026-11-22T13:00:00.000Z", "America/Sao_Paulo")).toBe("Início em 21/11/2026 às 08:00, fim em 22/11/2026 às 10:00");
   });
 });
