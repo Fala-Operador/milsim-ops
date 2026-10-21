@@ -169,6 +169,7 @@ Inscrição, checkout do Stripe, cancelamento e prévia de cupom. Arquivo: [`src
 | [`retomarPagamento`](inscricoes/retomarPagamento.md) | POST | Titular da reserva | Volta à página de pagamento de uma reserva ainda aberta (botão "Concluir pagamento" em Meus ingressos). |
 | [`sincronizarPagamento`](inscricoes/sincronizarPagamento.md) | POST | Titular da sessão de checkout | Chamada no retorno do Stripe Checkout (`/app/ingressos?pagamento=sucesso&sessao=cs_…`): consulta o Stripe e aplica o resultado, sem depender do webhook. |
 | [`cancelarInscricao`](inscricoes/cancelarInscricao.md) | POST | Titular, organização do evento ou admin | Cancela uma inscrição confirmada (estorno integral) ou libera uma reserva pendente. |
+| [`incluirParticipantes`](inscricoes/incluirParticipantes.md) | POST | Organização do evento ou admin (lista de contas: só admin) | Inclui pessoas com conta no evento (pagamento por fora), como cortesia confirmada. |
 | [`previsualizarCupom`](inscricoes/previsualizarCupom.md) | POST | Pública | Valida um cupom para mostrar o desconto na tela de inscrição. |
 
 ### Repasse (Stripe Connect)

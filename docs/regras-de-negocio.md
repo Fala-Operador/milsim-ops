@@ -140,6 +140,22 @@ Resultado:
 - Uma nova tentativa da mesma pessoa **substitui** a reserva pendente anterior dela (que é
   liberada), salvo se aquele pagamento já estiver em processamento.
 
+### Inclusão manual (pagamento por fora)
+
+Código: `incluirParticipantes` em `src/services/inscricoes.ts`. → [API](api/inscricoes/incluirParticipantes.md)
+
+- Feita pela **gestão do evento** (organização dona ou admin), em Organização › Inscritos ou na
+  visão geral do evento no admin (aba Inscrições).
+- Só para **conta existente e ativa**. A organização localiza **uma** conta por e-mail ou CPF (ela não
+  recebe a lista de usuários); o admin escolhe **várias** pelo nome numa lista com busca (até 50 por vez),
+  com o mesmo tipo de ingresso e exército para todas.
+- Tudo ou nada: se uma pessoa não puder entrar, ninguém do lote é incluído e o erro diz quem foi.
+- Entra como **cortesia já resgatada** (valor zero; aparece em cortesias emitidas/resgatadas, não no bruto).
+- Valem as regras 2 a 5 acima (idade, inscrição única, tipo/exército, capacidade); **não** exige lote
+  aberto e também vale com o evento em `inscricoes_encerradas`.
+- Origem `organizador` ("Inclusão manual") ou `admin` ("Inclusão pela administração"); a ação vai
+  para a auditoria (com a observação opcional). Inclusão pelo admin notifica os organizadores do evento.
+
 ## 7. Pagamento online (Stripe)
 
 Código: `src/lib/pagamentos.ts`, `src/lib/stripe.ts`, `src/server/pagamentos.server.ts`. → [Fluxo](fluxos.md#3-inscrição-com-pagamento-stripe)

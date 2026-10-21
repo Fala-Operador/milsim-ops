@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Download, Search, SlidersHorizontal, Ticket, Users, UserCheck, X, Eye } from "lucide-react";
 import { OperacaoSelecionada } from "@/components/OperacaoSelecionada";
+import { IncluirParticipante } from "@/components/IncluirParticipante";
 import { entradaAtiva, ROTULO_ORIGEM_ENTRADA, type RegistroCheckin } from "@/lib/checkin";
 import { registrosReferencia } from "@/services/checkin";
 import { Button } from "@/components/ui/button";
@@ -174,7 +175,10 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
               <Button variant="outline" className="shrink-0 whitespace-nowrap lg:hidden" onClick={() => setFiltrosMobile((v) => !v)} aria-expanded={filtrosMobile}>
                 <SlidersHorizontal className="h-4 w-4" /> Filtros{extras > 0 && ` (${extras})`}
               </Button>
-            <Button variant="outline" className="shrink-0 whitespace-nowrap lg:col-start-2 lg:row-start-1" onClick={exportar}><Download className="h-4 w-4 shrink-0" /> Exportar CSV</Button>
+            <div className="col-span-2 flex flex-wrap items-center gap-2 lg:col-span-1 lg:col-start-2 lg:row-start-1">
+              <IncluirParticipante evento={evento} className="shrink-0 whitespace-nowrap" />
+              <Button variant="outline" className="shrink-0 whitespace-nowrap" onClick={exportar}><Download className="h-4 w-4 shrink-0" /> Exportar CSV</Button>
+            </div>
             <div className="col-span-2 hidden min-w-0 grid-cols-3 gap-2 lg:grid">{filtrosSelect}</div>
           </div>
           {filtrosMobile && <div className="grid gap-2 sm:grid-cols-3 lg:hidden">{filtrosSelect}</div>}
