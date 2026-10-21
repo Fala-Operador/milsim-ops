@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { InputSenha } from "@/components/ui/input-senha";
 import { RequisitosSenha } from "@/components/RequisitosSenha";
 import { erroSenha } from "@/lib/domain/senha";
+import { useTurnstile } from "@/components/Turnstile";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Campo } from "@/components/ui";
 import { EditorFoto } from "@/components/EditorFoto";
@@ -68,6 +69,7 @@ function PaginaCadastro() {
   const [promocional, setPromocional] = useState(false);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const turnstile = useTurnstile("cadastro");
 
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setF((p) => ({ ...p, [k]: e.target.value }));
@@ -114,11 +116,12 @@ function PaginaCadastro() {
         aceiteTermos: aceite,
         cienciaPrivacidade: privacidade,
         autorizacaoPromocional: promocional,
-      });
+      }, turnstile.token);
       // Retorna ao fluxo de inscrição quando o cadastro começou em um evento
       navigate({ ...destinoDoLink(redirectSeguro(redirect)) } as { to: string });
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha no cadastro.");
+      turnstile.resetar();
     } finally {
       setCarregando(false);
     }
@@ -248,7 +251,8 @@ function PaginaCadastro() {
               {erro}
             </p>
           )}
-          <Button type="submit" disabled={carregando || !aceite || !privacidade || !senhaValida} className="sm:col-span-2">
+          {turnstile.elemento && <div className="sm:col-span-2">{turnstile.elemento}</div>}
+          <Button type="submit" disabled={carregando || !aceite || !privacidade || !senhaValida || !turnstile.pronto} className="sm:col-span-2">
             {carregando ? "Cadastrando..." : "Concluir cadastro"}
           </Button>
         </form>

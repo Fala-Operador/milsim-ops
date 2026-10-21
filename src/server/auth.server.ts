@@ -9,15 +9,22 @@ import { erroSenha, mensagemSenhaFraca } from "@/lib/domain/senha";
 import { normalizarEmail } from "@/lib/domain/validators";
 import { ler, mutar, type RespostaApi } from "@/server/unidade.server";
 import { supabaseAdmin, supabaseSessao } from "@/server/supabase.server";
+import { ERRO_CAPTCHA, erroDeCaptcha } from "@/server/turnstile.server";
+
+/** `captchaToken` só quando houver (o Supabase recusa sem ele se o CAPTCHA estiver ligado). */
+const comCaptcha = (token: string | undefined) => (token ? { captchaToken: token } : {});
 
 function mensagem(e: unknown): never {
   if (e instanceof ErroDominio) throw new Error(e.message);
   throw e;
 }
 
-export async function entrar(email: string, senha: string): Promise<RespostaApi<null>> {
+export async function entrar(email: string, senha: string, captchaToken?: string): Promise<RespostaApi<null>> {
   const sessao = supabaseSessao();
-  const { data, error } = await sessao.auth.signInWithPassword({ email: normalizarEmail(email), password: senha });
+  const { data, error } = await sessao.auth.signInWithPassword({
+    email: normalizarEmail(email), password: senha, options: comCaptcha(captchaToken),
+  });
+  if (erroDeCaptcha(error)) throw new Error(ERRO_CAPTCHA);
   if (error || !data.user) throw new Error("E-mail ou senha incorretos.");
   const { data: perfil } = await supabaseAdmin().from("users").select("active").eq("id", data.user.id).maybeSingle();
   if (!perfil?.active) {
@@ -32,7 +39,7 @@ export async function sair(): Promise<RespostaApi<null>> {
   return ler(() => null, { usuarioId: null });
 }
 
-export async function cadastrar(dados: DadosCadastro): Promise<RespostaApi<null>> {
+export async function cadastrar(dados: DadosCadastro, captchaToken?: string): Promise<RespostaApi<null>> {
   let email: string;
   try {
     email = validarCadastro(dados).email;
@@ -51,20 +58,33 @@ export async function cadastrar(dados: DadosCadastro): Promise<RespostaApi<null>
     throw new Error("Não foi possível criar a conta. Tente novamente.");
   }
   const id = data.user.id;
+  // A criação pelo admin não passa pelo CAPTCHA do Supabase; o login logo em seguida passa. Se o
+  // token não valer, a conta recém-criada é desfeita.
+  const sessao = supabaseSessao();
+  const login = await sessao.auth.signInWithPassword({ email, password: dados.senha, options: comCaptcha(captchaToken) });
+  if (login.error) {
+    await admin.auth.admin.deleteUser(id);
+    if (erroDeCaptcha(login.error)) throw new Error(ERRO_CAPTCHA);
+    console.error(login.error);
+    throw new Error("Não foi possível criar a conta. Tente novamente.");
+  }
   try {
     await mutar(() => registrarPerfil(id, dados), { exigirLogin: false });
   } catch (e) {
+    await sessao.auth.signOut();
     await admin.auth.admin.deleteUser(id); // desfaz a conta do Auth se o perfil não foi criado
     throw e;
   }
-  await supabaseSessao().auth.signInWithPassword({ email, password: dados.senha });
   return ler(() => null, { usuarioId: id });
 }
 
 /** Envia o e-mail de redefinição (sempre responde sucesso para não revelar contas). */
-export async function recuperarSenha(email: string): Promise<void> {
+export async function recuperarSenha(email: string, captchaToken?: string): Promise<void> {
   const destino = new URL("/recuperar-senha", getRequestUrl()).toString();
-  const { error } = await supabaseSessao().auth.resetPasswordForEmail(normalizarEmail(email), { redirectTo: destino });
+  const { error } = await supabaseSessao().auth.resetPasswordForEmail(normalizarEmail(email), {
+    redirectTo: destino, ...comCaptcha(captchaToken),
+  });
+  if (erroDeCaptcha(error)) throw new Error(ERRO_CAPTCHA);
   if (error) console.error("recuperarSenha:", error.message);
 }
 
