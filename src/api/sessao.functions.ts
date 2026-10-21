@@ -4,7 +4,7 @@ import { z } from "zod";
 import * as auth from "@/server/auth.server";
 import { consultar, contextoSomenteLeitura, ler } from "@/server/unidade.server";
 import { stripeConfigurado } from "@/server/stripe.server";
-import { taxaDoComprador } from "@/lib/repasses";
+import { contaParaRepasse, taxaDoComprador } from "@/lib/repasses";
 import { chamar } from "@/api/cliente";
 import type { DadosCadastro } from "@/services/auth";
 
@@ -23,7 +23,9 @@ export const obterEventoFn = createServerFn({ method: "GET" })
     // Taxa de serviço somada ao ingresso, mostrada na revisão antes do pagamento. A visão de
     // participantes não traz as configurações da plataforma, então ela vem da base completa.
     const { base } = await contextoSomenteLeitura();
-    return { ...r, taxaCompradorPercentual: taxaDoComprador(base) };
+    // Ingresso pago só é vendido com a conta de recebimento da organização ativa.
+    const org = base.organizacoes.find((o) => o.id === r.evento?.organizacaoId);
+    return { ...r, taxaCompradorPercentual: taxaDoComprador(base), vendasAbertas: !!contaParaRepasse(org) };
   });
 
 const entradaLogin = z.object({ email: z.string().max(200), senha: z.string().max(200) });

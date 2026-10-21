@@ -11,7 +11,7 @@ import { confirmarInscricao, previsualizarCupom } from "@/api/inscricoes.functio
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { Preco } from "@/components/Preco";
-import { taxaPlataforma } from "@/lib/repasses";
+import { MSG_SEM_RECEBIMENTO, taxaPlataforma } from "@/lib/repasses";
 import { descontoDoBeneficio, descreverBeneficio, statusVoucher } from "@/lib/participacao";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,9 +29,9 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
     pagamento: typeof s["pagamento"] === "string" ? s["pagamento"] : undefined,
   }),
   loader: async ({ params }) => {
-    const { evento, pagamentoOnline, taxaCompradorPercentual } = await obterEventoFn({ data: { eventoId: params.eventoId } });
+    const { evento, pagamentoOnline, taxaCompradorPercentual, vendasAbertas } = await obterEventoFn({ data: { eventoId: params.eventoId } });
     if (!evento || evento.status !== "publicado") throw notFound();
-    return { evento, pagamentoOnline, taxaCompradorPercentual };
+    return { evento, pagamentoOnline, taxaCompradorPercentual, vendasAbertas };
   },
   head: ({ loaderData }) => ({
     meta: loaderData
@@ -54,7 +54,7 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
 });
 
 function PaginaInscricao() {
-  const { evento: eventoCarregado, pagamentoOnline, taxaCompradorPercentual } = Route.useLoaderData();
+  const { evento: eventoCarregado, pagamentoOnline, taxaCompradorPercentual, vendasAbertas } = Route.useLoaderData();
   const evento = useEventoAtual(eventoCarregado);
   const { cortesia: codigoCortesia, voucher: voucherInicial, pagamento: retornoPagamento } = Route.useSearch();
   const { usuario } = useAuth();
@@ -186,7 +186,9 @@ function PaginaInscricao() {
       ? "Inscrições indisponíveis no momento: não há lote de venda vigente para nenhum ingresso."
       : disp && !disp.disponivel
         ? `As inscrições deste ingresso estão indisponíveis porque ${TEXTO_MOTIVO[disp.motivo]}.`
-        : "";
+        : vaiPagar && !vendasAbertas
+          ? MSG_SEM_RECEBIMENTO
+          : "";
 
   const aoConfirmar = async () => {
     if (emAndamento.current || impedimento) return;

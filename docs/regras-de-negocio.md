@@ -208,8 +208,9 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
   então o organizador não precisa informar um site próprio nem escolher o setor no cadastro do Stripe
   (na Accounts v2: `configuration.merchant.mcc` e `defaults.profile`).
 - Na reserva, se a conta tem **transferências ativas**, a cobrança nasce com destino a ela: o Stripe
-  transfere o valor menos a **taxa da plataforma**. Sem conta ativa, o valor fica com a plataforma
-  ("repasse à parte").
+  transfere o valor menos a **taxa da plataforma**. **Sem conta ativa, ingressos pagos
+  não são vendidos**: a inscrição mostra que a venda ainda não está aberta. Inscrições gratuitas e
+  cortesias seguem normais.
 - A **taxa** (%) é definida pelo admin e vale para reservas novas; cada venda guarda a taxa do momento.
 - A **taxa de serviço do comprador** (%, padrão 0%) também é definida pelo admin: é somada ao valor do
   ingresso no checkout como o item "Taxa de serviço", aparece na revisão da inscrição e fica com a
@@ -219,7 +220,7 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
 - Ao trocar as chaves do Stripe de teste para produção, a conta de recebimento criada no modo de teste
   (ou numa sandbox, que é outra conta de plataforma) é esquecida na primeira consulta e a organização
   refaz o cadastro numa conta nova. O id descartado fica no log do servidor. Enquanto isso,
-  um checkout cujo destino o Stripe não reconhece vira venda na plataforma ("repasse à parte").
+  um checkout cujo destino o Stripe não reconhece é recusado até o novo cadastro ficar ativo.
 - Mensagens de erro do Stripe mostradas no site nunca trazem a chave de API, nem mascarada.
 - Com a conta ativa, o Financeiro mostra **saldo** disponível e a liberar, próximo saque, últimos
   saques, cronograma e banco (só os últimos dígitos), lidos do Stripe com cache de 60 s.

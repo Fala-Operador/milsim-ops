@@ -53,7 +53,7 @@ import {
   saquesDaConta,
   stripeConfigurado,
 } from "@/server/stripe.server";
-import { contaParaRepasse, gereRecebimento, perfilComercialPadrao, precisaPerfilComercial, resumoSaldo, type ContaStripe, type PerfilComercial, type SaldoRecebimento } from "@/lib/repasses";
+import { contaParaRepasse, gereRecebimento, MSG_SEM_RECEBIMENTO, perfilComercialPadrao, precisaPerfilComercial, resumoSaldo, type ContaStripe, type PerfilComercial, type SaldoRecebimento } from "@/lib/repasses";
 import { descartarContaDeOutroModoNaBase, organizacaoDaConta, registrarRecebimentoNaBase } from "@/services/repasses";
 import type { Inscricao } from "@/lib/domain/types";
 
@@ -113,15 +113,16 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
       urlSucesso: `${origem}/app/ingressos?pagamento=sucesso&sessao={CHECKOUT_SESSION_ID}`,
       urlCancelamento: `${origem}/inscricao/${d.eventoId}?pagamento=cancelado`,
     });
+    // Sem conta de recebimento apta (desativada ou trocada depois da reserva) não há venda.
+    if (!existente && !d.contaDestino) throw new Error(MSG_SEM_RECEBIMENTO);
     try {
       sessao = existente ?? await criar();
     } catch (e) {
       // Conta de destino que o Stripe não reconhece neste modo (ex.: conta de teste com a chave
-      // de produção): a venda fica com a plataforma, como "repasse à parte".
+      // de produção): a venda não acontece até a organização refazer o cadastro.
       if (!(d.contaDestino && e instanceof ErroStripe && destinoInvalido(e.status, e.message))) throw e;
-      console.warn("Stripe: conta de destino inválida, venda fica com a plataforma", d.contaDestino, e.message);
-      d.contaDestino = undefined;
-      sessao = await criar();
+      console.warn("Stripe: conta de destino inválida, venda bloqueada", d.contaDestino, e.message);
+      throw new Error(MSG_SEM_RECEBIMENTO);
     }
   } catch (e) {
     if (!(e instanceof ErroStripe || e instanceof TypeError)) throw e;

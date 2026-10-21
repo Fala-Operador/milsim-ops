@@ -5,7 +5,7 @@ import { gerarTokenEntrada } from "@/lib/checkin";
 import { descontoDoBeneficio, statusVoucher } from "@/lib/participacao";
 import { restaurarVoucherDaInscricao } from "@/services/progressao";
 import { exigeEstornoOnline, fimDaReserva, ocupaVaga, reservaVigente } from "@/lib/pagamentos";
-import { contaParaRepasse, taxaDaPlataforma, taxaDoComprador, taxaPlataforma } from "@/lib/repasses";
+import { contaParaRepasse, MSG_SEM_RECEBIMENTO, taxaDaPlataforma, taxaDoComprador, taxaPlataforma } from "@/lib/repasses";
 import type {
   BaseDados,
   Cupom,
@@ -198,8 +198,8 @@ export function liberarReservasVencidas(
 }
 
 /**
- * Pagamento de uma reserva nova. Com a conta da organização apta, a cobrança já nasce com
- * destino a ela (repasse automático menos a taxa); senão o valor fica na plataforma.
+ * Pagamento de uma reserva nova: a cobrança nasce com destino à conta da organização
+ * (repasse automático menos a taxa). Sem conta de recebimento ativa não há venda.
  */
 function pagamentoInicial(
   base: BaseDados,
@@ -210,6 +210,7 @@ function pagamentoInicial(
   const contaDestino = contaParaRepasse(
     base.organizacoes.find((o) => o.id === evento.organizacaoId),
   );
+  if (!contaDestino) throw new ErroDominio("sem_recebimento", MSG_SEM_RECEBIMENTO);
   // Taxa de serviço do comprador: somada ao ingresso no checkout, sempre fica com a plataforma.
   const taxaComprador = taxaPlataforma(valorCentavos, taxaDoComprador(base));
   return {
@@ -218,7 +219,7 @@ function pagamentoInicial(
     valorCentavos,
     expiraEm: fimDaReserva(agora),
     contaDestino,
-    taxaCentavos: contaDestino ? taxaPlataforma(valorCentavos, taxaDaPlataforma(base)) : undefined,
+    taxaCentavos: taxaPlataforma(valorCentavos, taxaDaPlataforma(base)),
     taxaCompradorCentavos: taxaComprador || undefined,
   };
 }
