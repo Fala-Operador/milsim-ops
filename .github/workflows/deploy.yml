@@ -6,7 +6,8 @@
 # Cada ambiente do GitHub (Settings → Environments) guarda os seus valores:
 #   Secrets   SUPABASE_ACCESS_TOKEN  token pessoal da Supabase (supabase.com/dashboard/account/tokens)
 #             SUPABASE_DB_PASSWORD   senha do Postgres do projeto (Project Settings → Database)
-#   Variable  SUPABASE_PROJECT_REF   ref do projeto (Project Settings → General)
+#   Variable  SUPABASE_PROJECT_REF   ref do projeto (Project Settings → General);
+#             também aceita como segredo de mesmo nome (a variável vence)
 # Um segredo do ambiente vence o de mesmo nome do repositório. Em `production`,
 # sem eles, valem os do repositório e o projeto `fezrmoyjsffufdjptamp`; em
 # `homologacao` a ref é obrigatória e nunca pode ser a de produção. O
@@ -48,7 +49,7 @@ jobs:
       AMBIENTE: ${{ github.ref_name == 'main' && 'production' || 'homologacao' }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || (github.ref_name == 'main' && 'fezrmoyjsffufdjptamp' || '') }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF || (github.ref_name == 'main' && 'fezrmoyjsffufdjptamp' || '') }}
     steps:
       - uses: actions/checkout@v4
 
