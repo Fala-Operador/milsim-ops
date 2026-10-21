@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useComunidade } from "@/hooks/useComunidade";
 import { detalhePublicacao, forunsVisiveis, podeResponder } from "@/services/comunidade";
 import { responder } from "@/api/comunidade.functions";
-import { CartaoPublicacao, CompositorResposta, ItemResposta, SemAcesso } from "@/components/comunidade";
+import { CartaoPublicacao, CompositorResposta, ItemResposta, PortaComunidade, SemAcesso } from "@/components/comunidade";
 import { Button } from "@/components/ui/button";
 import { SkeletonPagina } from "@/components/ui";
 
@@ -24,7 +24,9 @@ function DetalhePublicacao() {
   const router = useRouter();
   const { montado, usuario, base, papel, gestao, atualizar } = useComunidade(eventoId, `/comunidade/${eventoId}/p/${postId}`);
   if (!montado || !usuario) return <SkeletonPagina />;
-  const det = papel ? detalhePublicacao(usuario, postId) : null;
+  // Link de publicação aberto por quem não participa: mesmo encaminhamento da comunidade.
+  if (!papel) return <PortaComunidade eventoId={eventoId} />;
+  const det = detalhePublicacao(usuario, postId);
   if (!det || det.pub.eventoId !== eventoId) return <SemAcesso eventoId={eventoId} />;
   const { pub, forum, respostas } = det;
   const foruns = forunsVisiveis(base, usuario, eventoId);

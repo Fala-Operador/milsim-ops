@@ -325,3 +325,15 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Menu inferior do celular (logado, MenuInferior.tsx): reserva o espaço no fim da página e
+   informa a altura para barras fixas (ex.: "Inscrever-se" do evento) ficarem logo acima dele. */
+@media (max-width: 767px) {
+  :root.com-menu-inferior {
+    --menu-inferior: calc(4rem + env(safe-area-inset-bottom));
+    --folga-inferior: 0.75rem;
+  }
+  :root.com-menu-inferior body {
+    padding-bottom: var(--menu-inferior);
+  }
+}

@@ -313,6 +313,16 @@ Código: `src/lib/missoes.ts` (regras puras), `src/services/missoes.ts`. → [AP
 Código: `src/services/comunidade.ts`. → [APIs](api/README.md#comunidade)
 
 - Papéis: **gestão** (organização do evento ou admin) e **membro** (inscrição confirmada).
+- **Vitrine pública** (`/comunidades`, link "Comunidades" no menu para todos): mostra que a comunidade
+  existe (evento, data, cidade, nº de confirmados), nunca o conteúdo. Lista as comunidades de eventos
+  publicados ou com inscrições encerradas que ainda não terminaram, mais as que a pessoa já acessa
+  (as dela primeiro). Regras em `src/lib/comunidadePublica.ts` (`acessoAComunidade`):
+  - membro ou gestão → entra;
+  - visitante → login e, na volta, a mesma decisão;
+  - logado sem inscrição e inscrições abertas → página de inscrição com o aviso de que a comunidade é para inscritos;
+  - reserva aguardando pagamento → "Concluir pagamento" em Meus ingressos;
+  - inscrições encerradas → explicação, sem acesso.
+  O mesmo encaminhamento vale para links diretos da comunidade e de publicações.
 - Fóruns iniciais, criados ao publicar o evento: Avisos oficiais (só a gestão publica), Conversa
   geral, Dúvidas e preparação, Caronas e logística, Fotos e experiências.
 - Cada fórum tem público (`todos` ou um exército) e permissões separadas de publicar e responder
