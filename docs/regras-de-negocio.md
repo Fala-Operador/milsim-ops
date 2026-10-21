@@ -189,7 +189,8 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
   (na Accounts v2: `configuration.merchant.mcc` e `defaults.profile`).
 - Na reserva, se a conta tem **transferências ativas**, a cobrança nasce com destino a ela: o Stripe
   transfere o valor menos a **taxa da plataforma**. **Sem conta ativa, ingressos pagos
-  não são vendidos**: a inscrição mostra que a venda ainda não está aberta. Inscrições gratuitas e
+  não são vendidos**: a inscrição mostra ao comprador que a venda ainda não está aberta, e o painel e o
+  editor de eventos avisam a organização que ela precisa concluir a conta de recebimento. Inscrições gratuitas e
   cortesias seguem normais.
 - A **taxa** (%) é definida pelo admin e vale para reservas novas; cada venda guarda a taxa do momento.
 - A **taxa de serviço do comprador** (%, padrão 0%) também é definida pelo admin: é somada ao valor do
