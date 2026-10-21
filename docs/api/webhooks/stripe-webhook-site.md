@@ -20,6 +20,8 @@ Function e aplica as regras de pagamento, reembolso e repasse.
 | `checkout.session.async_payment_failed` | Libera a reserva (vaga, cupom e benefício voltam); pagamento `falhou`. |
 | `checkout.session.expired` | Libera a reserva; pagamento `expirado`. |
 | `charge.refunded` | Registra o reembolso (integral ou parcial) na inscrição da cobrança. |
+
+Sessões e cobranças da compra de um impulso (`metadata.impulsoId`) seguem a mesma tabela, aplicadas ao impulso: pago → `disponivel` (validade a partir do pagamento), assíncrono pendente → `processando`, expirada ou recusada → `cancelado`, reembolso integral → `reembolsado` e a campanha gerada por ele é encerrada.
 | `charge.dispute.created` / `.updated` / `.closed` | Registra a **contestação** (chargeback) no pagamento da inscrição: status (`aberta`, `em_analise`, `ganha`, `perdida`, `encerrada`), valor e motivo. Na primeira vez, o responsável pela organização é notificado. Aparece em Financeiro e nas métricas. |
 | `account.updated` (Connect) | Atualiza a situação da conta de recebimento da organização (cadastro, transferências, saques, pendências). |
 

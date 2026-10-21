@@ -3,8 +3,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { restaurarBase } from "@/test/baseTeste";
 import { confirmarInscricao, confirmarPagamentoNaBase } from "@/services/inscricoes";
-import { definirTaxaPlataformaNaBase, registrarRecebimentoNaBase } from "@/services/repasses";
-import { contaParaRepasse, descreverCronograma, MCC_EVENTOS, perfilComercialPadrao, precisaPerfilComercial, recebimentoDaConta, resumoRepasse, resumoSaldo, taxaDaPlataforma, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
+import { definirTaxaCompradorNaBase, definirTaxaPlataformaNaBase, descartarContaDeOutroModoNaBase, registrarRecebimentoNaBase } from "@/services/repasses";
+import { contaDeOutroModo, contaInacessivel, destinoInvalido, mensagemDeFalhaStripe, MSG_FALHA_STRIPE, ocultarChaves } from "@/lib/stripe";
+import { contaParaRepasse, descreverCronograma, MCC_EVENTOS, perfilComercialPadrao, precisaPerfilComercial, recebimentoDaConta, resumoRepasse, resumoSaldo, taxaDaPlataforma, taxaDoComprador, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
 import { visaoParaUsuario } from "@/lib/visao";
 import type { BaseDados, Evento } from "@/lib/domain/types";
 
@@ -74,7 +75,7 @@ describe("taxa e destino da cobrança", () => {
     const comConta = await reservar();
     expect(comConta.pagamento).toMatchObject({ contaDestino: "acct_1", taxaCentavos: 2000, valorCentavos: 20000 });
     confirmarPagamentoNaBase(base, comConta.id, { intencaoId: "pi_1" });
-    expect(resumoRepasse(base, EVT)).toEqual({ cobrado: 20000, taxas: 2000, repassado: 18000, naPlataforma: 0 });
+    expect(resumoRepasse(base, EVT)).toEqual({ cobrado: 20000, taxas: 2000, taxasComprador: 0, repassado: 18000, naPlataforma: 0 });
   });
 });
 
@@ -110,6 +111,30 @@ describe("taxa configurada pela administração", () => {
     expect(base.inscricoes.find((i) => i.id === antes.id)?.pagamento?.taxaCentavos).toBe(2000);
     base.inscricoes = base.inscricoes.filter((i) => i.id !== antes.id);
     expect((await reservar()).pagamento?.taxaCentavos).toBe(1000);
+  });
+
+  it("taxa do comprador começa em 0%, valida e audita", () => {
+    expect(taxaDoComprador(base)).toBe(0);
+    expect(() => definirTaxaCompradorNaBase(base, 60, "usr-admin")).toThrow(/entre 0% e 50%/);
+    definirTaxaCompradorNaBase(base, 3.5, "usr-admin");
+    expect(base.configuracoes).toHaveLength(1);
+    expect(taxaDoComprador(base)).toBe(3.5);
+    expect(taxaDaPlataforma(base)).toBe(10);
+    expect(base.auditoria.at(-1)).toMatchObject({ acao: "taxa_comprador", justificativa: "Taxa de serviço do comprador alterada de 0% para 3.5%." });
+  });
+
+  it("taxa do comprador vai na reserva, com ou sem repasse, e não muda o repasse", async () => {
+    expect((await reservar()).pagamento?.taxaCompradorCentavos).toBeUndefined();
+    base.inscricoes = [];
+    definirTaxaCompradorNaBase(base, 5, "usr-admin");
+    expect((await reservar()).pagamento).toMatchObject({ valorCentavos: 20000, taxaCompradorCentavos: 1000, contaDestino: undefined });
+    base.inscricoes = [];
+    registrarRecebimentoNaBase(base, org().id, contaAtiva);
+    const ins = await reservar();
+    expect(ins.pagamento).toMatchObject({ valorCentavos: 20000, taxaCentavos: 2000, taxaCompradorCentavos: 1000, contaDestino: "acct_1" });
+    Object.assign(ins, { status: "confirmada" });
+    Object.assign(ins.pagamento!, { status: "pago" });
+    expect(resumoRepasse(base, EVT)).toMatchObject({ cobrado: 20000, taxas: 2000, taxasComprador: 1000, repassado: 18000 });
   });
 
   it("taxa chega à administração e aos organizadores, não aos participantes", () => {
@@ -173,10 +198,67 @@ describe("perfil comercial enviado ao Stripe", () => {
     expect(perfilComercialPadrao("Org", "https://localhost").url).toBeUndefined();
   });
 
-  it("completa só contas em cadastro que ainda não têm site nem descrição", () => {
+  it("completa só contas em cadastro sem ramo ou sem site e descrição", () => {
     expect(precisaPerfilComercial({ id: "acct_1" })).toBe(true);
-    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { url: "https://x.com" } })).toBe(false);
-    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { product_description: "Eventos" } })).toBe(false);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { url: "https://milsimops.falaoperador.com.br" } })).toBe(true);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { mcc: MCC_EVENTOS } })).toBe(true);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { mcc: "7999", url: "https://milsimops.falaoperador.com.br" } })).toBe(true);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { mcc: MCC_EVENTOS, url: "https://milsimops.falaoperador.com.br" } })).toBe(false);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { mcc: MCC_EVENTOS, product_description: "Eventos" } })).toBe(false);
     expect(precisaPerfilComercial({ id: "acct_1", details_submitted: true })).toBe(false);
+  });
+});
+
+describe("troca do modo do Stripe (teste → produção)", () => {
+  const msgTeste = "No such account: 'acct_1'; a similar object exists in test mode, but a live mode key was used to make this request.";
+
+  it("reconhece a conta que só existe no outro modo", () => {
+    expect(contaDeOutroModo(404, msgTeste)).toBe(true);
+    expect(contaDeOutroModo(404, "No such account: 'acct_1'")).toBe(false);
+    expect(contaDeOutroModo(400, msgTeste)).toBe(false);
+  });
+
+  const msgSemAcesso = "The provided key 'sk_live_*****************************E4gelA' does not have access to account 'acct_1USP1VCJTy0OtC8n' (or that account does not exist). Application access may have been revoked.";
+
+  it("reconhece a conta que esta chave não alcança (outro modo ou outra plataforma)", () => {
+    expect(contaInacessivel(404, msgTeste)).toBe(true);
+    expect(contaInacessivel(403, msgSemAcesso)).toBe(true);
+    expect(contaInacessivel(403, "Outro motivo")).toBe(false);
+    expect(contaInacessivel(401, "Invalid API Key provided")).toBe(false);
+  });
+
+  it("nunca mostra a chave de API, nem mascarada", () => {
+    expect(ocultarChaves(msgSemAcesso)).toBe("The provided key [chave oculta] does not have access to account 'acct_1USP1VCJTy0OtC8n' (or that account does not exist). Application access may have been revoked.");
+    expect(ocultarChaves("Invalid API Key provided: sk_test_abc123")).toBe("Invalid API Key provided: [chave oculta]");
+    expect(ocultarChaves("rk_live_51Abc... e pk_test_xyz")).toBe("[chave oculta] e [chave oculta]");
+    expect(mensagemDeFalhaStripe(403, msgSemAcesso)).not.toMatch(/sk_live|E4gelA/);
+    expect(mensagemDeFalhaStripe(401, "Invalid API Key provided: sk_live_****gelA")).not.toMatch(/gelA/);
+  });
+
+  it("explica erros de configuração em vez de pedir para tentar de novo", () => {
+    expect(mensagemDeFalhaStripe(401, "Invalid API Key provided")).toMatch(/STRIPE_SERVER_API_KEY.*Invalid API Key provided/);
+    expect(mensagemDeFalhaStripe(403, "Outro motivo")).toBe("O Stripe recusou esta operação de contas conectadas. (Stripe: Outro motivo)");
+    expect(mensagemDeFalhaStripe(403, "Stripe no longer recommends Accounts v1 for new Connect integrations.")).toMatch(/Accounts v1 support/);
+    expect(mensagemDeFalhaStripe(400, "Stripe no longer recommends Accounts v1 for new Connect integrations.")).toMatch(/Accounts v1 support/);
+    expect(mensagemDeFalhaStripe(400, "You can only create new accounts if you've signed up for Connect")).toMatch(/Connect ainda não está ativado/);
+    expect(mensagemDeFalhaStripe(400, "Your account must be activated in order to create accounts. You can activate your accounts at https://dashboard.stripe.com/account/onboarding.")).toMatch(/plataforma ainda não está ativada/);
+    expect(mensagemDeFalhaStripe(400, "Invalid email")).toBe("Stripe: Invalid email");
+    expect(mensagemDeFalhaStripe(0, "fetch failed")).toBe(MSG_FALHA_STRIPE);
+    expect(mensagemDeFalhaStripe(500, "erro")).toBe(MSG_FALHA_STRIPE);
+  });
+
+  it("checkout com destino de outro modo cai para a venda na plataforma", () => {
+    expect(destinoInvalido(400, "No such destination: 'acct_1'")).toBe(true);
+    expect(destinoInvalido(404, msgTeste)).toBe(true);
+    expect(destinoInvalido(403, msgSemAcesso)).toBe(true);
+    expect(destinoInvalido(400, "Amount must be at least R$0.50")).toBe(false);
+  });
+
+  it("esquece só a conta de outro modo registrada na organização", () => {
+    registrarRecebimentoNaBase(base, org().id, contaAtiva);
+    descartarContaDeOutroModoNaBase(base, org().id, "acct_outra");
+    expect(org().recebimento?.contaId).toBe("acct_1");
+    descartarContaDeOutroModoNaBase(base, org().id, "acct_1");
+    expect(org().recebimento).toBeUndefined();
   });
 });

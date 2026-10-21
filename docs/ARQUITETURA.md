@@ -196,8 +196,9 @@ registrado no log do servidor e vira "Não foi possível concluir a operação".
 ### 5.4 Mudando o schema
 
 As migrations ficam em `supabase/migrations/` e são aplicadas pelo **GitHub Actions**
-(`.github/workflows/deploy.yml`, `supabase db push` a cada push no `main`). O
-`check.yml` simula o push e roda os testes pgTAP em todo PR que mexe em `supabase/`.
+(`.github/workflows/deploy.yml`, `supabase db push` a cada push no `main` → produção, ou no
+`hml` → homologação, cada um no seu projeto Supabase). O `check.yml` simula o push contra o projeto
+do branch de destino e roda os testes pgTAP em todo PR que mexe em `supabase/`.
 
 1. `npx supabase migration new <nome>`: RLS ligado, sem policies, `grant` só para `service_role`.
    O carimbo de data precisa ser **posterior** à última migration aplicada.
@@ -295,7 +296,10 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   que é tentado de novo a cada webhook. Sem a chave, tudo continua como antes (confirmação
   direta, sem cobrança).
 - **Repasse às organizações (Stripe Connect Express)**: cada organização cria pelo Financeiro
-  uma conta Express (cadastro hospedado pelo Stripe, `account_links`); a situação fica em
+  uma conta com painel Express, criada pela Accounts v2 (`POST /v2/core/accounts`, conta recebedora
+  com `stripe_transfers` e `merchant.card_payments` (exigido junto), perdas e taxas com a plataforma; o Stripe não libera a criação pela v1 em
+  produção para plataformas novas) e usada pela v1 no resto (cadastro hospedado `account_links`,
+  sessões, saldo, saques, cobranças com destino, webhook `account.updated`); a situação fica em
   `organizacao.recebimento` (`lib/repasses.ts`, gravada por `services/repasses.ts`, atualizada no
   retorno do cadastro e pelo webhook de Connect `account.updated`) e só aparece na visão de quem
   gere a organização. Na reserva, se a conta tem transferências ativas, o pagamento guarda
@@ -408,7 +412,10 @@ docs/
   api/                             uma página por API (entrada, regras, erros, exemplo)
 .github/workflows/
   check.yml                        PR: carimbos únicos, simulação do db push, testes pgTAP
-  deploy.yml                       main: aplica migrations e publica Edge Functions
+  deploy.yml                       main/hml: aplica migrations e publica Edge Functions (prod/hml)
+  reset-banco.yml                  manual: backup e reset do banco do ambiente escolhido
+.github/scripts/
+  conferir-ambiente.sh             barra segredos faltando e hml apontando para produção
 supabase/
   config.toml                      configuração do projeto (Auth: site_url e redirects)
   migrations/                      esquema versionado (aplicado pelo deploy)

@@ -181,15 +181,26 @@ Código: `cancelarInscricao` (`src/services/inscricoes.ts`), `cancelarEvento` (`
 
 Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
 
-- Cada organização pode ter uma conta **Stripe Connect Express** (cadastro hospedado pelo Stripe).
+- Cada organização pode ter uma conta **Stripe Connect** com painel Express, criada pela Accounts v2
+  como conta recebedora das vendas (a plataforma responde por perdas e taxas, como nas contas Express).
   Situação: `pendente`, `em_analise`, `ativa` ou `restrita`, espelhada do Stripe e visível só para quem gere a organização.
-  O site, o ramo (MCC 7999) e a descrição do negócio são enviados pela plataforma (`perfilComercialPadrao`),
-  então o organizador não precisa informar um site próprio.
+  O site, o ramo (MCC 7922, "Ingressos para eventos") e a descrição do negócio são enviados pela plataforma (`perfilComercialPadrao`),
+  então o organizador não precisa informar um site próprio nem escolher o setor no cadastro do Stripe
+  (na Accounts v2: `configuration.merchant.mcc` e `defaults.profile`).
 - Na reserva, se a conta tem **transferências ativas**, a cobrança nasce com destino a ela: o Stripe
   transfere o valor menos a **taxa da plataforma**. Sem conta ativa, o valor fica com a plataforma
   ("repasse à parte").
 - A **taxa** (%) é definida pelo admin e vale para reservas novas; cada venda guarda a taxa do momento.
+- A **taxa de serviço do comprador** (%, padrão 0%) também é definida pelo admin: é somada ao valor do
+  ingresso no checkout como o item "Taxa de serviço", aparece na revisão da inscrição e fica com a
+  plataforma, sem mudar o que a organização recebe. Ex.: ingresso de R$ 100,00 com 3,5% do comprador e
+  3,5% da organização: o comprador paga R$ 103,50, a organização recebe R$ 96,50 e a plataforma R$ 7,00.
 - Reembolso de venda repassada desfaz a transferência e devolve a taxa.
+- Ao trocar as chaves do Stripe de teste para produção, a conta de recebimento criada no modo de teste
+  (ou numa sandbox, que é outra conta de plataforma) é esquecida na primeira consulta e a organização
+  refaz o cadastro numa conta nova. O id descartado fica no log do servidor. Enquanto isso,
+  um checkout cujo destino o Stripe não reconhece vira venda na plataforma ("repasse à parte").
+- Mensagens de erro do Stripe mostradas no site nunca trazem a chave de API, nem mascarada.
 - Com a conta ativa, o Financeiro mostra **saldo** disponível e a liberar, próximo saque, últimos
   saques, cronograma e banco (só os últimos dígitos), lidos do Stripe com cache de 60 s.
   Com `STRIPE_BROWSER_PUBLIC_KEY`, tudo acontece dentro do site: o cadastro da conta (inclusive o
@@ -210,7 +221,8 @@ Código: `resumoFinanceiro` (`src/services/inscricoes.ts`), `src/lib/movimentaco
   - reservas aguardando pagamento aparecem à parte e **não** entram nos valores.
 - Movimentações: `inscricao` (entrada), `desconto_cupom` (registrada com valor 0; o valor real vem
   da inscrição), `estorno` (negativo) e `ajuste`.
-- Pagamentos online mostram cobrado, taxa da plataforma, repassado à organização e o que ficou com a plataforma.
+- Pagamentos online mostram cobrado, taxa da plataforma, repassado à organização, o que ficou com a plataforma
+  e, quando houver, a taxa de serviço paga pelos compradores.
 - A tela de movimentações tem abas por tipo, busca (descrição ou código `OP-…`), período, meio de
   pagamento e ordenação; os totais das abas respeitam os filtros.
 
@@ -330,6 +342,18 @@ Código: `src/lib/divulgacao.ts`, `src/lib/impulsionamento.ts`.
     suspenso (evento fora do ar) ou encerrado.
   - Campanhas entram antes da curadoria, ordenadas por prioridade e ordem; cada evento aparece **uma vez** por seção.
   - Campanhas nunca são apagadas; encerrada não é editada.
+- **Impulsos comprados** (organização): `src/lib/impulsos.ts`, página `/organizacao/impulsos`.
+  - Seis tipos: 24h, 3, 5, 7, 15 e 30 dias. Preço, validade (padrão 30 dias) e venda de cada tipo
+    são definidos pela administração; a compra guarda os valores do momento.
+  - Só o organizador ativo compra, para a própria organização; o pagamento (Stripe Checkout) fica todo
+    com a plataforma. Preço 0 libera na hora. Checkout não pago em 60 minutos é descartado.
+  - Pago, o impulso fica no saldo da organização e precisa ser usado até `pagamento + validade`;
+    depois disso aparece como **expirado** e não pode mais ser usado.
+  - Usar = escolher uma operação publicada, não encerrada e com imagem: vira uma campanha ativa nas
+    seções de destaque e no topo da listagem, em todo o Brasil, com prioridade normal. Um segundo impulso
+    na mesma operação começa quando o anterior termina; o impulso termina no máximo no fim da operação.
+  - Reembolso integral no Stripe cancela o impulso e encerra a campanha. A organização vê as próprias
+    compras sem os ids do Stripe; o público não vê compras nem qual campanha veio de um impulso.
 
 ## 16. Métricas
 
@@ -342,6 +366,18 @@ Código: `src/services/analytics.ts`, `src/server/analytics.server.ts`, `src/lib
 - Fórmulas: CTR = cliques ÷ exibições; conversão = visitantes com inscrição confirmada ÷ visitantes
   únicos; conclusão = fluxos concluídos ÷ fluxos iniciados.
 - Campanhas de rastreio (`?cmp=<id>`) por evento, criadas pela gestão.
+
+### Visão geral do evento (admin)
+
+Código: `src/lib/visaoGeralEvento.ts`, página `/admin/eventos/$eventoId` (botão "Ver" do dashboard).
+
+- Só leitura, a partir da visão do admin (sem API própria).
+- Vendidos = inscrições **confirmadas** (sobre a capacidade); aguardando pagamento = reservas vigentes
+  (`reservaVigente`); cancelados e estornados contados à parte; por tipo de ingresso e por exército.
+- Check-in = confirmadas com entrada vigente (`entradaAtiva`: sem reversão nem conflito).
+- Pagamentos online: pagos, reembolsados, reembolsos pendentes e contestações em aberto (`disputaEmAberto`).
+- Suporte: chamados com `eventoId` do evento, por status exibido; "em aberto" = não resolvido nem fechado.
+- Valores em dinheiro vêm do Financeiro do evento ([seção 10](#10-financeiro-do-evento)), sem fórmula própria.
 
 ## 17. Notificações
 

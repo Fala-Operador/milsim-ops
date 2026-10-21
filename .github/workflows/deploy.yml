@@ -1,49 +1,60 @@
-# Aplica as migrations e publica as Edge Functions no projeto Supabase a cada
-# push no main (inclusive o merge de um PR). Também roda pela aba Actions.
+# Aplica as migrations e publica as Edge Functions no projeto Supabase de cada
+# ambiente (inclusive no merge de um PR). Também roda pela aba Actions.
+#   push no main → ambiente `production` (projeto de produção)
+#   push no hml  → ambiente `homologacao` (projeto de homologação)
 #
-# Precisa de dois segredos neste repositório (Settings → Secrets and variables
-# → Actions → Secrets):
-#   SUPABASE_ACCESS_TOKEN  token pessoal da Supabase (supabase.com/dashboard/account/tokens)
-#   SUPABASE_DB_PASSWORD   senha do Postgres do projeto (Project Settings → Database)
-#
-# O projeto é o da variável SUPABASE_PROJECT_REF (Settings → Secrets and
-# variables → Actions → Variables); sem ela, o `milsim-ops` do README. O
+# Cada ambiente do GitHub (Settings → Environments) guarda os seus valores:
+#   Secrets   SUPABASE_ACCESS_TOKEN  token pessoal da Supabase (supabase.com/dashboard/account/tokens)
+#             SUPABASE_DB_PASSWORD   senha do Postgres do projeto (Project Settings → Database)
+#   Variable  SUPABASE_PROJECT_REF   ref do projeto (Project Settings → General);
+#             também aceita como segredo de mesmo nome (a variável vence)
+# Um segredo do ambiente vence o de mesmo nome do repositório. Em `production`,
+# sem eles, valem os do repositório e o projeto `fezrmoyjsffufdjptamp`; em
+# `homologacao` a ref é obrigatória e nunca pode ser a de produção. O
 # `project_id` do config.toml é só o nome do ambiente local da CLI.
 #
 # Os segredos das Edge Functions (STRIPE_PAYMENTS_WEBHOOK_SIGNING_SECRET, STRIPE_WEBHOOK_FORWARD_URL...)
-# ficam no painel da Supabase e não passam por aqui.
+# ficam no painel da Supabase de cada projeto e não passam por aqui.
 name: Deploy Supabase
 
 on:
   push:
-    branches: [main]
+    branches: [main, hml]
     paths:
       - "supabase/migrations/**"
       - "supabase/functions/**"
       - "supabase/config.toml"
       - ".github/workflows/deploy.yml"
+      - ".github/scripts/conferir-ambiente.sh"
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# Um deploy de cada vez e na ordem dos pushes: cancelar no meio deixaria uma
-# migration pela metade.
+# Um deploy de cada vez por ambiente e na ordem dos pushes: cancelar no meio
+# deixaria uma migration pela metade.
 concurrency:
-  group: supabase-deploy
+  group: supabase-deploy-${{ github.ref_name == 'main' && 'production' || 'homologacao' }}
   cancel-in-progress: false
 
 jobs:
   deploy:
     name: Migrations e functions
+    # Pela aba Actions, só a partir do main ou do hml.
+    if: github.ref_name == 'main' || github.ref_name == 'hml'
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'production' || 'homologacao' }}
     env:
       SUPABASE_CLI_VERSION: 2.119.0
+      AMBIENTE: ${{ github.ref_name == 'main' && 'production' || 'homologacao' }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'fezrmoyjsffufdjptamp' }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF || (github.ref_name == 'main' && 'fezrmoyjsffufdjptamp' || '') }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Conferir o ambiente
+        run: bash .github/scripts/conferir-ambiente.sh
 
       # Baixa a CLI direto do release, sem ação de terceiros.
       - name: Instalar a Supabase CLI

@@ -96,6 +96,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      // Prévia de links (WhatsApp, redes): precisa de URL absoluta; rotas filhas (ex.: evento) sobrescrevem.
+      { property: "og:image", content: "https://milsimops.falaoperador.com.br/og-image.png" },
+      { name: "twitter:image", content: "https://milsimops.falaoperador.com.br/og-image.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

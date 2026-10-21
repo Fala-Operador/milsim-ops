@@ -24,8 +24,8 @@ export type PerfilComercial = {
   url?: string | undefined;
 };
 
-/** Serviços de recreação (MCC 7999), onde o Stripe classifica eventos de airsoft. */
-export const MCC_EVENTOS = "7999";
+/** Setor "Ingressos para eventos" do cadastro do Stripe (MCC 7922, venda de ingressos). */
+export const MCC_EVENTOS = "7922";
 
 /**
  * Site, ramo e descrição da organização para o cadastro do Stripe, que senão pede "Seu site" à
@@ -50,7 +50,10 @@ export function perfilComercialPadrao(nome: string, origem: string): PerfilComer
 
 /** Conta ainda em cadastro e sem site nem descrição: a plataforma completa o perfil comercial. */
 export function precisaPerfilComercial(conta: ContaStripe): boolean {
-  return !conta.details_submitted && !conta.business_profile?.url && !conta.business_profile?.product_description;
+  const p = conta.business_profile;
+  // Sem o ramo (MCC) o cadastro do Stripe pede o "Setor"; contas criadas antes do envio pela v2
+  // podem ter site e descrição mas não o ramo, ou um ramo antigo.
+  return !conta.details_submitted && (p?.mcc !== MCC_EVENTOS || (!p.url && !p.product_description));
 }
 
 export interface CronogramaStripe {
@@ -109,6 +112,12 @@ export function taxaDaPlataforma(base: Pick<BaseDados, "configuracoes">): number
   return Number.isFinite(v) && v > 0 ? Math.min(v, 100) : 0;
 }
 
+/** Taxa de serviço do comprador (%), somada ao valor do ingresso no checkout. */
+export function taxaDoComprador(base: Pick<BaseDados, "configuracoes">): number {
+  const v = base.configuracoes.find((c) => c.id === "plataforma")?.taxaCompradorPercentual ?? 0;
+  return Number.isFinite(v) && v > 0 ? Math.min(v, 100) : 0;
+}
+
 /** Erro de validação da taxa digitada pela administração (vazio = válida). */
 export function erroTaxa(percentual: number): string {
   if (!Number.isFinite(percentual)) return "Informe a taxa em porcentagem.";
@@ -151,10 +160,12 @@ export function resumoRepasse(base: BaseDados, eventoId: string) {
   const pagas = base.inscricoes.filter((i) => i.eventoId === eventoId && i.status === "confirmada" && i.pagamento?.status === "pago");
   const cobrado = pagas.reduce((s, i) => s + (i.pagamento?.valorCentavos ?? 0), 0);
   const taxas = pagas.reduce((s, i) => s + (i.pagamento?.taxaCentavos ?? 0), 0);
+  // Taxa de serviço paga pelos compradores além do ingresso: fica com a plataforma, fora do cobrado.
+  const taxasComprador = pagas.reduce((s, i) => s + (i.pagamento?.taxaCompradorCentavos ?? 0), 0);
   const repassado = pagas.filter((i) => i.pagamento?.contaDestino).reduce((s, i) => s + i.pagamento!.valorCentavos - (i.pagamento!.taxaCentavos ?? 0), 0);
   // Vendas feitas antes da conta ficar ativa ficaram na plataforma: repasse manual.
   const naPlataforma = pagas.filter((i) => !i.pagamento?.contaDestino).reduce((s, i) => s + i.pagamento!.valorCentavos, 0);
-  return { cobrado, taxas, repassado, naPlataforma };
+  return { cobrado, taxas, taxasComprador, repassado, naPlataforma };
 }
 
 // ---------- Saldo e saques da conta conectada (lidos do Stripe, nunca guardados na base) ----------

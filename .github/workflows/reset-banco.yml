@@ -4,12 +4,18 @@
 # mantém contas, organizações (com a conta Stripe vinculada), configurações do site e as
 # vendas pagas pelo Stripe, e apaga o resto. Nada é apagado no Stripe nem no Storage.
 #
-# Usa os mesmos segredos do deploy.yml (SUPABASE_ACCESS_TOKEN e SUPABASE_DB_PASSWORD).
+# Roda no ambiente escolhido (homologacao por padrão), com os segredos e a ref do projeto
+# daquele ambiente do GitHub (veja deploy.yml).
 name: Reset do banco
 
 on:
   workflow_dispatch:
     inputs:
+      ambiente:
+        description: 'Banco que será resetado'
+        type: choice
+        options: [homologacao, production]
+        default: homologacao
       confirmacao:
         description: 'Digite RESETAR para confirmar (o backup é salvo antes)'
         required: true
@@ -17,9 +23,9 @@ on:
 permissions:
   contents: read
 
-# Nunca junto de um deploy de migrations.
+# Nunca junto de um deploy de migrations do mesmo ambiente.
 concurrency:
-  group: supabase-deploy
+  group: supabase-deploy-${{ inputs.ambiente }}
   cancel-in-progress: false
 
 jobs:
@@ -27,13 +33,18 @@ jobs:
     name: Backup e reset
     if: ${{ inputs.confirmacao == 'RESETAR' }}
     runs-on: ubuntu-latest
+    environment: ${{ inputs.ambiente }}
     env:
       SUPABASE_CLI_VERSION: 2.119.0
+      AMBIENTE: ${{ inputs.ambiente }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'fezrmoyjsffufdjptamp' }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF || (inputs.ambiente == 'production' && 'fezrmoyjsffufdjptamp' || '') }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Conferir o ambiente
+        run: bash .github/scripts/conferir-ambiente.sh
 
       - name: Instalar a Supabase CLI
         run: |
@@ -54,7 +65,7 @@ jobs:
       - name: Guardar o backup
         uses: actions/upload-artifact@v4
         with:
-          name: backup-banco-${{ github.run_id }}
+          name: backup-banco-${{ inputs.ambiente }}-${{ github.run_id }}
           path: backup/
           retention-days: 30
           if-no-files-found: error

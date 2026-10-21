@@ -48,12 +48,14 @@ import { Route as OrganizacaoIndexRouteImport } from './routes/organizacao.index
 import { Route as OrganizacaoCheckinRouteImport } from './routes/organizacao.checkin'
 import { Route as OrganizacaoComunidadeRouteImport } from './routes/organizacao.comunidade'
 import { Route as OrganizacaoFinanceiroRouteImport } from './routes/organizacao.financeiro'
+import { Route as OrganizacaoImpulsosRouteImport } from './routes/organizacao.impulsos'
 import { Route as OrganizacaoInscritosRouteImport } from './routes/organizacao.inscritos'
 import { Route as OrganizacaoMetricasRouteImport } from './routes/organizacao.metricas'
 import { Route as OrganizacaoMissoesRouteImport } from './routes/organizacao.missoes'
 import { Route as OrganizacaoNotificacoesRouteImport } from './routes/organizacao.notificacoes'
 import { Route as OrganizacaoRecompensasRouteImport } from './routes/organizacao.recompensas'
 import { Route as OrganizacaoSuporteRouteImport } from './routes/organizacao.suporte'
+import { Route as AdminEventosEventoIdRouteImport } from './routes/admin.eventos.$eventoId'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as ComunidadeEventoIdIndexRouteImport } from './routes/comunidade.$eventoId.index'
 import { Route as ComunidadeEventoIdGerenciarRouteImport } from './routes/comunidade.$eventoId.gerenciar'
@@ -254,6 +256,11 @@ const OrganizacaoFinanceiroRoute = OrganizacaoFinanceiroRouteImport.update({
   path: '/financeiro',
   getParentRoute: () => OrganizacaoRoute,
 } as any)
+const OrganizacaoImpulsosRoute = OrganizacaoImpulsosRouteImport.update({
+  id: '/impulsos',
+  path: '/impulsos',
+  getParentRoute: () => OrganizacaoRoute,
+} as any)
 const OrganizacaoInscritosRoute = OrganizacaoInscritosRouteImport.update({
   id: '/inscritos',
   path: '/inscritos',
@@ -283,6 +290,11 @@ const OrganizacaoSuporteRoute = OrganizacaoSuporteRouteImport.update({
   id: '/suporte',
   path: '/suporte',
   getParentRoute: () => OrganizacaoRoute,
+} as any)
+const AdminEventosEventoIdRoute = AdminEventosEventoIdRouteImport.update({
+  id: '/eventos/$eventoId',
+  path: '/eventos/$eventoId',
+  getParentRoute: () => AdminRoute,
 } as any)
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
@@ -344,6 +356,7 @@ export interface FileRoutesByFullPath {
   '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
+  '/organizacao/impulsos': typeof OrganizacaoImpulsosRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/missoes': typeof OrganizacaoMissoesRoute
@@ -353,6 +366,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/organizacao/': typeof OrganizacaoIndexRoute
+  '/admin/eventos/$eventoId': typeof AdminEventosEventoIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
   '/comunidade/$eventoId/': typeof ComunidadeEventoIdIndexRoute
@@ -391,6 +405,7 @@ export interface FileRoutesByTo {
   '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
+  '/organizacao/impulsos': typeof OrganizacaoImpulsosRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/missoes': typeof OrganizacaoMissoesRoute
@@ -400,6 +415,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/organizacao': typeof OrganizacaoIndexRoute
+  '/admin/eventos/$eventoId': typeof AdminEventosEventoIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
   '/comunidade/$eventoId': typeof ComunidadeEventoIdIndexRoute
@@ -443,6 +459,7 @@ export interface FileRoutesById {
   '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
+  '/organizacao/impulsos': typeof OrganizacaoImpulsosRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/missoes': typeof OrganizacaoMissoesRoute
@@ -452,6 +469,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/organizacao/': typeof OrganizacaoIndexRoute
+  '/admin/eventos/$eventoId': typeof AdminEventosEventoIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
   '/comunidade/$eventoId/': typeof ComunidadeEventoIdIndexRoute
@@ -496,6 +514,7 @@ export interface FileRouteTypes {
     | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
+    | '/organizacao/impulsos'
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
     | '/organizacao/missoes'
@@ -505,6 +524,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/app/'
     | '/organizacao/'
+    | '/admin/eventos/$eventoId'
     | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
     | '/comunidade/$eventoId/'
@@ -543,6 +563,7 @@ export interface FileRouteTypes {
     | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
+    | '/organizacao/impulsos'
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
     | '/organizacao/missoes'
@@ -552,6 +573,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/organizacao'
+    | '/admin/eventos/$eventoId'
     | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
     | '/comunidade/$eventoId'
@@ -594,6 +616,7 @@ export interface FileRouteTypes {
     | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
+    | '/organizacao/impulsos'
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
     | '/organizacao/missoes'
@@ -603,6 +626,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/app/'
     | '/organizacao/'
+    | '/admin/eventos/$eventoId'
     | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
     | '/comunidade/$eventoId/'
@@ -902,6 +926,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizacaoFinanceiroRouteImport
       parentRoute: typeof OrganizacaoRoute
     }
+    '/organizacao/impulsos': {
+      id: '/organizacao/impulsos'
+      path: '/impulsos'
+      fullPath: '/organizacao/impulsos'
+      preLoaderRoute: typeof OrganizacaoImpulsosRouteImport
+      parentRoute: typeof OrganizacaoRoute
+    }
     '/organizacao/inscritos': {
       id: '/organizacao/inscritos'
       path: '/inscritos'
@@ -943,6 +974,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/organizacao/suporte'
       preLoaderRoute: typeof OrganizacaoSuporteRouteImport
       parentRoute: typeof OrganizacaoRoute
+    }
+    '/admin/eventos/$eventoId': {
+      id: '/admin/eventos/$eventoId'
+      path: '/eventos/$eventoId'
+      fullPath: '/admin/eventos/$eventoId'
+      preLoaderRoute: typeof AdminEventosEventoIdRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/api/stripe/webhook': {
       id: '/api/stripe/webhook'
@@ -988,6 +1026,7 @@ interface AdminRouteChildren {
   AdminSuporteRoute: typeof AdminSuporteRoute
   AdminUsuariosRoute: typeof AdminUsuariosRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminEventosEventoIdRoute: typeof AdminEventosEventoIdRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -1003,6 +1042,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSuporteRoute: AdminSuporteRoute,
   AdminUsuariosRoute: AdminUsuariosRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminEventosEventoIdRoute: AdminEventosEventoIdRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -1037,6 +1077,7 @@ interface OrganizacaoRouteChildren {
   OrganizacaoCheckinRoute: typeof OrganizacaoCheckinRoute
   OrganizacaoComunidadeRoute: typeof OrganizacaoComunidadeRoute
   OrganizacaoFinanceiroRoute: typeof OrganizacaoFinanceiroRoute
+  OrganizacaoImpulsosRoute: typeof OrganizacaoImpulsosRoute
   OrganizacaoInscritosRoute: typeof OrganizacaoInscritosRoute
   OrganizacaoMetricasRoute: typeof OrganizacaoMetricasRoute
   OrganizacaoMissoesRoute: typeof OrganizacaoMissoesRoute
@@ -1050,6 +1091,7 @@ const OrganizacaoRouteChildren: OrganizacaoRouteChildren = {
   OrganizacaoCheckinRoute: OrganizacaoCheckinRoute,
   OrganizacaoComunidadeRoute: OrganizacaoComunidadeRoute,
   OrganizacaoFinanceiroRoute: OrganizacaoFinanceiroRoute,
+  OrganizacaoImpulsosRoute: OrganizacaoImpulsosRoute,
   OrganizacaoInscritosRoute: OrganizacaoInscritosRoute,
   OrganizacaoMetricasRoute: OrganizacaoMetricasRoute,
   OrganizacaoMissoesRoute: OrganizacaoMissoesRoute,

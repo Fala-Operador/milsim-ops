@@ -86,6 +86,11 @@ function instanciaDaOrganizacao(organizacaoId: string, tema: Tema): Promise<Inst
   const buscarSessao = () => sessaoComponentesStripeOrg(organizacaoId);
   const nova = Promise.all([carregarConnect(), buscarSessao()]).then(([sc, primeira]) => {
     if (!sc.init) throw new Error("Não foi possível carregar os painéis do Stripe.");
+    // Resposta vazia: em geral a página foi aberta antes de uma publicação nova do site e chama
+    // uma função do servidor que não existe mais.
+    if (!primeira?.chavePublicavel || !primeira.clientSecret) {
+      throw new Error("O servidor não devolveu a sessão do Stripe. Recarregue a página (o site pode ter sido atualizado) e tente de novo.");
+    }
     let usada = false;
     return sc.init({
       publishableKey: primeira.chavePublicavel,

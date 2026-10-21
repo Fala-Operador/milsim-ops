@@ -2,7 +2,7 @@
 // devolvido pelo Stripe. As chamadas ao Stripe ficam em src/server/pagamentos.server.ts.
 import { gerarId } from "./db";
 import { ErroDominio } from "./db";
-import { erroTaxa, recebimentoDaConta, taxaDaPlataforma, type ContaStripe } from "@/lib/repasses";
+import { erroTaxa, recebimentoDaConta, taxaDaPlataforma, taxaDoComprador, type ContaStripe } from "@/lib/repasses";
 import type { BaseDados } from "@/lib/domain/types";
 
 /**
@@ -31,6 +31,15 @@ export function registrarRecebimentoNaBase(base: BaseDados, organizacaoId: strin
   }
 }
 
+/**
+ * Esquece a conta de recebimento que não existe no modo atual do Stripe (conta de teste depois
+ * da troca para as chaves de produção); a organização refaz o cadastro numa conta nova.
+ */
+export function descartarContaDeOutroModoNaBase(base: BaseDados, organizacaoId: string, contaId: string): void {
+  const org = base.organizacoes.find((o) => o.id === organizacaoId);
+  if (org?.recebimento?.contaId === contaId) org.recebimento = undefined;
+}
+
 export const organizacaoDaConta = (base: BaseDados, contaId: string) => base.organizacoes.find((o) => o.recebimento?.contaId === contaId);
 
 /**
@@ -48,5 +57,23 @@ export function definirTaxaPlataformaNaBase(base: BaseDados, percentual: number,
   base.auditoria.push({
     id: gerarId("aud"), autorId, acao: "taxa_plataforma", entidade: "configuracao", entidadeId: "plataforma",
     justificativa: `Taxa da plataforma alterada de ${anterior}% para ${percentual}%.`, criadoEm: iso,
+  });
+}
+
+/**
+ * Administração define a taxa de serviço paga pelo comprador, somada ao ingresso no checkout
+ * (padrão 0%). Vale para as reservas feitas daqui em diante. Fica registrada na auditoria.
+ */
+export function definirTaxaCompradorNaBase(base: BaseDados, percentual: number, autorId: string, agora = new Date()): void {
+  const erro = erroTaxa(percentual);
+  if (erro) throw new ErroDominio("taxa", erro);
+  const anterior = taxaDoComprador(base);
+  const iso = agora.toISOString();
+  const atual = base.configuracoes.find((c) => c.id === "plataforma");
+  if (atual) Object.assign(atual, { taxaCompradorPercentual: percentual, atualizadoEm: iso, atualizadoPor: autorId });
+  else base.configuracoes.push({ id: "plataforma", taxaPlataformaPercentual: 0, taxaCompradorPercentual: percentual, atualizadoEm: iso, atualizadoPor: autorId });
+  base.auditoria.push({
+    id: gerarId("aud"), autorId, acao: "taxa_comprador", entidade: "configuracao", entidadeId: "plataforma",
+    justificativa: `Taxa de serviço do comprador alterada de ${anterior}% para ${percentual}%.`, criadoEm: iso,
   });
 }

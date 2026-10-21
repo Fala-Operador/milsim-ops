@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Campo, EstadoVazio, Modal, SkeletonPagina } from "@/components/ui";
 import { gerarId } from "@/services/db";
 import { GestaoImpulsionamentos } from "@/components/impulsionamentos";
+import { PlanosImpulso } from "@/components/impulsos";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -84,7 +85,12 @@ function PaginaDivulgacao() {
       <div className="mt-4">
         {aba === "secoes" ? <GestaoSecoes base={base} />
           : aba === "parceiros" ? <GestaoParceiros base={base} />
-          : <GestaoImpulsionamentos base={base} eventoInicial={pesquisa.evento} irParaSecoes={() => setAba("secoes")} />}
+          : (
+            <div className="space-y-6">
+              <PlanosImpulso base={base} />
+              <GestaoImpulsionamentos base={base} eventoInicial={pesquisa.evento} irParaSecoes={() => setAba("secoes")} />
+            </div>
+          )}
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 -- banco, então anon e authenticated não podem ler nem gravar nada e só service_role executa
 -- as RPCs do servidor. Roda com `supabase test db` sobre todas as migrations aplicadas do zero.
 begin;
-select plan(9);
+select plan(10);
 
 select is(
   (select array_agg(t order by t) from unnest(public.base_tables()) t
@@ -49,6 +49,13 @@ select throws_ok(
   '23514',
   null,
   'taxa da plataforma acima de 50% é rejeitada'
+);
+
+select throws_ok(
+  $$insert into public.platform_settings (id, platform_fee_percent, buyer_fee_percent, updated_by) values ('plataforma', 5, 60, 'teste')$$,
+  '23514',
+  null,
+  'taxa do comprador acima de 50% é rejeitada'
 );
 
 select throws_ok(

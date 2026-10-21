@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ModalTexto } from "@/components/ui";
 
 export const Route = createFileRoute("/admin/privacidade")({
   head: () => ({
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/admin/privacidade")({
 function Privacidade() {
   const { usuario } = useAuth();
   const [, setVersao] = useState(0);
+  const [respondendo, setRespondendo] = useState<string | null>(null);
   if (!usuario) return null;
   const base = carregarBase();
 
@@ -43,10 +45,7 @@ function Privacidade() {
                 <Button
                   variant="outline"
                   className="mt-2"
-                  onClick={() => {
-                    const r = prompt("Resposta ao participante:");
-                    if (r) responderPrivacidade(p.id, r).then(() => setVersao((v) => v + 1));
-                  }}
+                  onClick={() => setRespondendo(p.id)}
                 >
                   Responder
                 </Button>
@@ -55,6 +54,16 @@ function Privacidade() {
           ))}
         </div>
       )}
+      <ModalTexto
+        aberto={!!respondendo}
+        titulo="Responder solicitação"
+        rotulo="Resposta ao participante"
+        descricao="O participante recebe esta resposta e a solicitação passa a respondida."
+        confirmar="Enviar resposta"
+        maximo={2000}
+        onFechar={() => setRespondendo(null)}
+        onConfirmar={(r) => responderPrivacidade(respondendo!, r).then(() => setVersao((v) => v + 1))}
+      />
     </section>
   );
 }

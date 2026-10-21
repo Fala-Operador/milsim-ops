@@ -73,10 +73,16 @@ export interface DadosCheckout {
   contaDestino?: string | undefined;
   /** Taxa da plataforma retida no repasse, em centavos. */
   taxaCentavos?: number | undefined;
+  /** Taxa de serviço paga pelo comprador, cobrada como um item à parte; fica com a plataforma. */
+  taxaCompradorCentavos?: number | undefined;
 }
 
 /** Abre uma Checkout Session em BRL; a inscrição vai em metadata e client_reference_id. */
 export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
+  const taxaComprador = d.taxaCompradorCentavos ?? 0;
+  // Com destino, a plataforma retém a sua taxa e a taxa de serviço do comprador.
+  const retido = (d.taxaCentavos ?? 0) + taxaComprador;
+  const itemTaxa = { quantity: 1, price_data: { currency: "brl", unit_amount: taxaComprador, product_data: { name: "Taxa de serviço" } } };
   return chamarStripe<SessaoCheckout>(
     "POST",
     "/checkout/sessions",
@@ -93,12 +99,46 @@ export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
       payment_intent_data: {
         metadata: { inscricaoId: d.inscricaoId },
         transfer_data: d.contaDestino ? { destination: d.contaDestino } : undefined,
-        application_fee_amount: d.contaDestino && d.taxaCentavos ? d.taxaCentavos : undefined,
+        application_fee_amount: d.contaDestino && retido ? retido : undefined,
       },
-      line_items: [{ quantity: 1, price_data: { currency: "brl", unit_amount: d.valorCentavos, product_data: { name: d.descricao } } }],
+      line_items: [
+        { quantity: 1, price_data: { currency: "brl", unit_amount: d.valorCentavos, product_data: { name: d.descricao } } },
+        ...(taxaComprador > 0 ? [itemTaxa] : []),
+      ],
     },
     // Uma sessão por reserva: repetir a chamada devolve a mesma sessão.
     `checkout-${d.inscricaoId}`,
+  );
+}
+
+export interface DadosCheckoutImpulso {
+  impulsoId: string;
+  descricao: string;
+  valorCentavos: number;
+  expiraEm: string;
+  email?: string | undefined;
+  urlSucesso: string;
+  urlCancelamento: string;
+}
+
+/** Checkout Session da compra de um impulso: o valor fica todo com a plataforma (sem destino). */
+export function criarSessaoCheckoutImpulso(d: DadosCheckoutImpulso): Promise<SessaoCheckout> {
+  return chamarStripe<SessaoCheckout>(
+    "POST",
+    "/checkout/sessions",
+    {
+      mode: "payment",
+      locale: "pt-BR",
+      client_reference_id: d.impulsoId,
+      customer_email: d.email,
+      expires_at: Math.floor(new Date(d.expiraEm).getTime() / 1000),
+      success_url: d.urlSucesso,
+      cancel_url: d.urlCancelamento,
+      metadata: { impulsoId: d.impulsoId },
+      payment_intent_data: { metadata: { impulsoId: d.impulsoId } },
+      line_items: [{ quantity: 1, price_data: { currency: "brl", unit_amount: d.valorCentavos, product_data: { name: d.descricao } } }],
+    },
+    `checkout-${d.impulsoId}`,
   );
 }
 
@@ -129,28 +169,100 @@ export function criarReembolso(inscricaoId: string, intencaoId: string, repassad
   );
 }
 
-// ---------- Stripe Connect (contas Express das organizações) ----------
+// ---------- Stripe Connect (contas das organizações, painel Express) ----------
 
-/** Cria a conta Express da organização (uma por organização, pela chave de idempotência). */
-export function criarContaConectada(d: { organizacaoId: string; perfil: PerfilComercial; email?: string | undefined }): Promise<ContaStripe> {
-  return chamarStripe<ContaStripe>(
-    "POST",
-    "/accounts",
-    {
-      type: "express",
-      country: "BR",
-      email: d.email,
-      business_profile: d.perfil,
-      capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
-      metadata: { organizacaoId: d.organizacaoId },
-    },
-    `conta-${d.organizacaoId}`,
-  );
+/** Versão da API v2 do Stripe (Accounts v2); a v1 segue a versão padrão da conta. */
+const VERSAO_API_V2 = "2026-09-30.endive";
+
+/** Chamada à API v2 do Stripe (corpo JSON). */
+async function chamarStripeV2<T>(caminho: string, corpo: unknown, idempotencia?: string): Promise<T> {
+  const chave = chaveApi();
+  if (!chave) throw new ErroStripe(0, "nao_configurado", "Stripe não configurado.");
+  const cabecalhos: Record<string, string> = {
+    Authorization: `Bearer ${chave}`,
+    "Stripe-Version": VERSAO_API_V2,
+    "Content-Type": "application/json",
+  };
+  if (idempotencia) cabecalhos["Idempotency-Key"] = idempotencia;
+  const r = await fetch(`https://api.stripe.com/v2${caminho}`, { method: "POST", headers: cabecalhos, body: JSON.stringify(corpo) });
+  const resposta = (await r.json().catch(() => ({}))) as { error?: { code?: string; message?: string } } & T;
+  if (!r.ok) throw new ErroStripe(r.status, resposta.error?.code, resposta.error?.message ?? `Stripe respondeu ${r.status}.`);
+  return resposta;
 }
 
-/** Preenche site, ramo e descrição de uma conta criada antes desse preenchimento automático. */
-export function completarPerfilComercial(contaId: string, perfil: PerfilComercial): Promise<ContaStripe> {
-  return chamarStripe<ContaStripe>("POST", `/accounts/${encodeURIComponent(contaId)}`, { business_profile: perfil });
+const JANELA_IDEMPOTENCIA_MS = 10 * 60_000;
+
+/**
+ * Cria a conta da organização pela Accounts v2 (o Stripe não libera a criação pela v1 em
+ * produção para plataformas novas): conta recebedora (`recipient` com `stripe_transfers`) para
+ * as cobranças com destino, com `merchant.card_payments`, que o Stripe exige junto, painel Express e perdas e taxas com a plataforma, como nas contas
+ * Express da v1. A chave de idempotência evita contas duplicadas por cliques repetidos, mas vale só
+ * por uma janela de 10 minutos: o Stripe repete a resposta guardada para a mesma chave, inclusive
+ * um erro (ex.: plataforma ainda não ativada), e uma chave fixa travaria o cadastro. O resto da integração
+ * (cadastro, sessões, saldo, saques, cobranças com destino) segue na v1, que aceita contas da v2;
+ * por isso a conta criada é relida pela v1.
+ */
+export async function criarContaConectada(d: {
+  organizacaoId: string;
+  perfil: PerfilComercial;
+  email?: string | undefined;
+  /** Conta descartada que esta substitui: muda a chave de idempotência para não repetir a criação anterior. */
+  substituida?: string | undefined;
+}): Promise<ContaStripe> {
+  const { id } = await chamarStripeV2<{ id: string }>(
+    "/core/accounts",
+    {
+      contact_email: d.email,
+      display_name: d.perfil.name,
+      dashboard: "express",
+      identity: { country: "br" },
+      defaults: {
+        responsibilities: { fees_collector: "application", losses_collector: "application" },
+        profile: perfilV2(d.perfil),
+      },
+      configuration: {
+        // O Stripe exige cartão (merchant.card_payments) para liberar o recebimento de transferências.
+        // Com o ramo (MCC) já definido, o cadastro do Stripe não pergunta o "Setor".
+        merchant: { mcc: d.perfil.mcc, capabilities: { card_payments: { requested: true } } },
+        recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } },
+      },
+      metadata: { organizacaoId: d.organizacaoId },
+    },
+    `conta-v2-${d.organizacaoId}${d.substituida ? `-${d.substituida}` : ""}-${Math.floor(Date.now() / JANELA_IDEMPOTENCIA_MS)}`,
+  );
+  return obterContaConectada(id);
+}
+
+/** Site, nome e descrição no formato da Accounts v2 (`defaults.profile`). */
+function perfilV2(perfil: PerfilComercial) {
+  return { doing_business_as: perfil.name, product_description: perfil.product_description, business_url: perfil.url };
+}
+
+/**
+ * Preenche site, ramo e descrição de uma conta criada antes desse preenchimento automático.
+ * Contas da v2 só aceitam isso pela v2; contas antigas da v1 seguem pela v1.
+ */
+export async function completarPerfilComercial(contaId: string, perfil: PerfilComercial): Promise<void> {
+  try {
+    await chamarStripeV2(`/core/accounts/${encodeURIComponent(contaId)}`, {
+      defaults: { profile: perfilV2(perfil) },
+      configuration: { merchant: { mcc: perfil.mcc } },
+    });
+  } catch (e) {
+    if (!(e instanceof ErroStripe && e.codigo === "v1_account_instead_of_v2_account")) throw e;
+    await chamarStripe<ContaStripe>("POST", `/accounts/${encodeURIComponent(contaId)}`, { business_profile: perfil });
+  }
+}
+
+/** Conta da própria plataforma (dona da chave secreta): usada para diagnosticar erros de Connect. */
+export function obterContaDaPlataforma(): Promise<{
+  id: string;
+  charges_enabled?: boolean;
+  payouts_enabled?: boolean;
+  business_profile?: { name?: string | null };
+  settings?: { dashboard?: { display_name?: string | null } };
+}> {
+  return chamarStripe("GET", "/account");
 }
 
 export function obterContaConectada(id: string): Promise<ContaStripe> {

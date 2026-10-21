@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Clock, TriangleAlert } from "lucide-react";
 import { carregarBase } from "@/services/db";
-import { configuracaoRepasse, definirTaxaPlataforma } from "@/api/repasses.functions";
+import { configuracaoRepasse, definirTaxaComprador, definirTaxaPlataforma } from "@/api/repasses.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
-import { erroTaxa, ROTULO_RECEBIMENTO, taxaDaPlataforma, taxaPlataforma } from "@/lib/repasses";
+import { erroTaxa, ROTULO_RECEBIMENTO, taxaDaPlataforma, taxaDoComprador, taxaPlataforma } from "@/lib/repasses";
 import { formatarBRL } from "@/lib/domain/money";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/admin/pagamentos")({
   head: () => ({
     meta: [
       { title: "Pagamentos — Admin MilSim Ops" },
-      { name: "description", content: "Taxa da plataforma e contas de recebimento das organizações." },
+      { name: "description", content: "Taxas da plataforma e do comprador e contas de recebimento das organizações." },
     ],
   }),
   component: Pagamentos,
@@ -31,12 +31,7 @@ function Pagamentos() {
   const { usuario } = useAuth();
   useVersaoBase();
   const base = carregarBase();
-  const atual = taxaDaPlataforma(base);
   const config = base.configuracoes.find((c) => c.id === "plataforma");
-  const [valor, setValor] = useState(String(atual).replace(".", ","));
-  const [erro, setErro] = useState("");
-  const [aviso, setAviso] = useState("");
-  const [salvando, setSalvando] = useState(false);
   const [pagamentoOnline, setPagamentoOnline] = useState<boolean | null>(null);
   const [avisoChaves, setAvisoChaves] = useState("");
 
@@ -48,28 +43,8 @@ function Pagamentos() {
       })
       .catch(() => setPagamentoOnline(null));
   }, [usuario?.id]);
-  // Mantém o campo em dia quando a taxa muda (outra aba, outro admin).
-  useEffect(() => setValor(String(atual).replace(".", ",")), [atual]);
 
   if (!usuario) return null;
-  const percentual = Number(valor.trim().replace(",", "."));
-  const erroCampo = valor.trim() === "" ? "Informe a taxa em porcentagem." : erroTaxa(percentual);
-
-  const salvar = async () => {
-    setErro("");
-    setAviso("");
-    if (erroCampo) return setErro(erroCampo);
-    setSalvando(true);
-    try {
-      await definirTaxaPlataforma(percentual);
-      setAviso("Taxa atualizada. Ela vale para as próximas vendas; as reservas já feitas mantêm a taxa anterior.");
-    } catch (err) {
-      setErro(err instanceof Error ? err.message : "Não foi possível salvar a taxa.");
-    } finally {
-      setSalvando(false);
-    }
-  };
-
   const organizacoes = [...base.organizacoes].sort((a, b) => a.nome.localeCompare(b.nome));
   return (
     <section className="space-y-4">
@@ -85,29 +60,23 @@ function Pagamentos() {
         </p>
       )}
 
-      <Card>
-        <h3 className="font-medium">Taxa da plataforma</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Percentual retido em cada ingresso vendido online e repassado à organização pelo Stripe Connect. Vendas de organizações
-          sem conta de recebimento ativa ficam integralmente com a plataforma.
-        </p>
-        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
-          <Campo rotulo="Taxa (%)" htmlFor="taxa">
-            <Input id="taxa" inputMode="decimal" value={valor} onChange={(e) => { setValor(e.target.value); setErro(""); setAviso(""); }} className="sm:max-w-40" aria-describedby="taxa-ajuda" />
-          </Campo>
-          <Button type="button" onClick={salvar} disabled={salvando || percentual === atual} className="w-full sm:w-auto">
-            {salvando ? "Salvando..." : "Salvar taxa"}
-          </Button>
-        </div>
-        <p id="taxa-ajuda" className="mt-2 text-xs text-muted-foreground">
-          {erroCampo
-            ? "Entre 0% e 50%, com até duas casas decimais."
-            : `Exemplo: num ingresso de ${formatarBRL(15000)}, a plataforma retém ${formatarBRL(taxaPlataforma(15000, percentual))} e a organização recebe ${formatarBRL(15000 - taxaPlataforma(15000, percentual))}.`}
-        </p>
-        {config && <p className="mt-1 text-xs text-muted-foreground">Última alteração: {new Date(config.atualizadoEm).toLocaleString("pt-BR")}.</p>}
-        {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
-        {aviso && <p role="status" className="mt-2 text-sm text-success">{aviso}</p>}
-      </Card>
+      <CardTaxa
+        id="taxa"
+        titulo="Taxa da plataforma (organização)"
+        descricao="Percentual retido em cada ingresso vendido online e repassado à organização pelo Stripe Connect. Vendas de organizações sem conta de recebimento ativa ficam integralmente com a plataforma."
+        atual={taxaDaPlataforma(base)}
+        salvar={definirTaxaPlataforma}
+        exemplo={(p) => `Exemplo: num ingresso de ${formatarBRL(15000)}, a plataforma retém ${formatarBRL(taxaPlataforma(15000, p))} e a organização recebe ${formatarBRL(15000 - taxaPlataforma(15000, p))}.`}
+      />
+      <CardTaxa
+        id="taxa-comprador"
+        titulo="Taxa de serviço (comprador)"
+        descricao="Percentual somado ao valor do ingresso e pago pelo comprador, que aparece como um item separado no pagamento. Fica com a plataforma e não muda o que a organização recebe. Use 0% para não cobrar."
+        atual={taxaDoComprador(base)}
+        salvar={definirTaxaComprador}
+        exemplo={(p) => `Exemplo: num ingresso de ${formatarBRL(15000)}, o comprador paga ${formatarBRL(15000 + taxaPlataforma(15000, p))} (${formatarBRL(taxaPlataforma(15000, p))} de taxa de serviço).`}
+      />
+      {config && <p className="text-xs text-muted-foreground">Última alteração das taxas: {new Date(config.atualizadoEm).toLocaleString("pt-BR")}.</p>}
 
       <Card>
         <h3 className="font-medium">Contas de recebimento das organizações</h3>
@@ -130,5 +99,60 @@ function Pagamentos() {
         </ul>
       </Card>
     </section>
+  );
+}
+
+/** Campo de uma taxa percentual da plataforma (0% a 50%), salva pela administração. */
+function CardTaxa({ id, titulo, descricao, atual, salvar, exemplo }: {
+  id: string;
+  titulo: string;
+  descricao: string;
+  atual: number;
+  salvar: (percentual: number) => Promise<unknown>;
+  exemplo: (percentual: number) => string;
+}) {
+  const [valor, setValor] = useState(String(atual).replace(".", ","));
+  const [erro, setErro] = useState("");
+  const [aviso, setAviso] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  // Mantém o campo em dia quando a taxa muda (outra aba, outro admin).
+  useEffect(() => setValor(String(atual).replace(".", ",")), [atual]);
+
+  const percentual = Number(valor.trim().replace(",", "."));
+  const erroCampo = valor.trim() === "" ? "Informe a taxa em porcentagem." : erroTaxa(percentual);
+
+  const aoSalvar = async () => {
+    setErro("");
+    setAviso("");
+    if (erroCampo) return setErro(erroCampo);
+    setSalvando(true);
+    try {
+      await salvar(percentual);
+      setAviso("Taxa atualizada. Ela vale para as próximas vendas; as reservas já feitas mantêm a taxa anterior.");
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : "Não foi possível salvar a taxa.");
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  return (
+    <Card>
+      <h3 className="font-medium">{titulo}</h3>
+      <p className="mt-1 text-sm text-muted-foreground">{descricao}</p>
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+        <Campo rotulo="Taxa (%)" htmlFor={id}>
+          <Input id={id} inputMode="decimal" value={valor} onChange={(e) => { setValor(e.target.value); setErro(""); setAviso(""); }} className="sm:max-w-40" aria-describedby={`${id}-ajuda`} />
+        </Campo>
+        <Button type="button" onClick={aoSalvar} disabled={salvando || percentual === atual} className="w-full sm:w-auto">
+          {salvando ? "Salvando..." : "Salvar taxa"}
+        </Button>
+      </div>
+      <p id={`${id}-ajuda`} className="mt-2 text-xs text-muted-foreground">
+        {erroCampo ? "Entre 0% e 50%, com até duas casas decimais." : exemplo(percentual)}
+      </p>
+      {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
+      {aviso && <p role="status" className="mt-2 text-sm text-success">{aviso}</p>}
+    </Card>
   );
 }

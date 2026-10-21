@@ -153,7 +153,7 @@ export const ESQUEMA = {
       pagamento: objeto("registration_payments", ["registration_id"], {
         provedor: "provider", status: "status", valorCentavos: "amount_cents", expiraEm: "expires_at",
         sessaoId: "checkout_session_id", intencaoId: "payment_intent_id", pagoEm: "paid_at", reembolsoId: "refund_id",
-        erro: "error", contaDestino: "destination_account_id", taxaCentavos: "fee_cents",
+        erro: "error", contaDestino: "destination_account_id", taxaCentavos: "fee_cents", taxaCompradorCentavos: "buyer_fee_cents",
         disputa: objeto("registration_payment_disputes", ["registration_id"], {
           status: "status", valorCentavos: "amount_cents", motivo: "reason", abertaEm: "opened_at", atualizadaEm: "updated_at",
         }),
@@ -361,7 +361,21 @@ export const ESQUEMA = {
       abrangencia: objeto("event_boost_geo_scopes", ["boost_id"], abrangencia),
       inicioEm: "starts_at", fimEm: "ends_at", fuso: "time_zone", prioridade: "priority", ordem: "sort_order",
       imagemPromocional: "promo_image_url", chamada: "headline", status: "status", criadoPor: "created_by",
-      criadoEm: "created_at", atualizadoEm: "updated_at",
+      criadoEm: "created_at", atualizadoEm: "updated_at", impulsoId: "purchase_id",
+    },
+  },
+  planosImpulso: {
+    tabela: "boost_plans", chave: ["id"],
+    campos: { id: "id", precoCentavos: "price_cents", validadeDias: "validity_days", ativo: "active", atualizadoEm: "updated_at", atualizadoPor: "updated_by" },
+  },
+  impulsosComprados: {
+    tabela: "boost_purchases", chave: ["id"],
+    campos: {
+      id: "id", organizacaoId: "organization_id", planoId: "plan_id", compradoPor: "purchased_by",
+      duracaoHoras: "duration_hours", precoCentavos: "price_cents", validadeDias: "validity_days", status: "status",
+      criadoEm: "created_at", pagoEm: "paid_at", expiraEm: "expires_at", sessaoId: "checkout_session_id",
+      intencaoId: "payment_intent_id", usadoEm: "used_at", eventoId: "event_id", impulsionamentoId: "boost_id",
+      encerradoEm: "closed_at",
     },
   },
   checkins: {
@@ -459,7 +473,7 @@ export const ESQUEMA = {
   },
   configuracoes: {
     tabela: "platform_settings", chave: ["id"],
-    campos: { id: "id", taxaPlataformaPercentual: "platform_fee_percent", atualizadoEm: "updated_at", atualizadoPor: "updated_by" },
+    campos: { id: "id", taxaPlataformaPercentual: "platform_fee_percent", taxaCompradorPercentual: "buyer_fee_percent", atualizadoEm: "updated_at", atualizadoPor: "updated_by" },
   },
 } satisfies Record<string, Tabela>;
 

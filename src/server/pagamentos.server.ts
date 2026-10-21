@@ -19,6 +19,10 @@ import { estornoPendente } from "@/lib/pagamentos";
 import {
   acaoDaSessao,
   acaoDoEvento,
+  contaInacessivel,
+  impulsoDaSessao,
+  destinoInvalido,
+  mensagemDeFalhaStripe,
   disputaDoStripe,
   inscricaoDaSessao,
   intencaoDaCobranca,
@@ -36,8 +40,10 @@ import {
   problemaChavesStripe,
   completarPerfilComercial,
   criarContaConectada,
+  obterContaDaPlataforma,
   criarReembolso,
   criarSessaoCheckout,
+  criarSessaoCheckoutImpulso,
   criarSessaoDeConta,
   ErroStripe,
   expirarSessaoCheckout,
@@ -50,8 +56,18 @@ import {
   stripeConfigurado,
 } from "@/server/stripe.server";
 import { contaParaRepasse, gereRecebimento, perfilComercialPadrao, precisaPerfilComercial, resumoSaldo, type ContaStripe, type PerfilComercial, type SaldoRecebimento } from "@/lib/repasses";
-import { organizacaoDaConta, registrarRecebimentoNaBase } from "@/services/repasses";
-import type { Inscricao } from "@/lib/domain/types";
+import { descartarContaDeOutroModoNaBase, organizacaoDaConta, registrarRecebimentoNaBase } from "@/services/repasses";
+import {
+  cancelarImpulsoNaBase,
+  confirmarImpulsoNaBase,
+  criarCompraImpulsoNaBase,
+  impulsoPorIntencao,
+  marcarImpulsoProcessando,
+  registrarReembolsoImpulsoNaBase,
+  registrarSessaoImpulsoNaBase,
+} from "@/services/impulsos";
+import { PRAZO_PAGAMENTO_MIN, gereImpulsos, rotuloDuracao, statusDoImpulso } from "@/lib/impulsos";
+import type { ImpulsoComprado, Inscricao, PlanoImpulsoId } from "@/lib/domain/types";
 
 export { stripeConfigurado };
 
@@ -97,7 +113,7 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
       throw new Error("Esta reserva já foi concluída ou expirou. Confira em Meus ingressos.");
     }
     const origem = new URL(getRequestUrl()).origin;
-    sessao = existente ?? await criarSessaoCheckout({
+    const criar = () => criarSessaoCheckout({
       inscricaoId,
       descricao: d.descricao,
       valorCentavos: d.pagamento.valorCentavos,
@@ -105,9 +121,20 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
       email: d.email,
       contaDestino: d.contaDestino,
       taxaCentavos: d.contaDestino ? d.pagamento.taxaCentavos : undefined,
+      taxaCompradorCentavos: d.pagamento.taxaCompradorCentavos,
       urlSucesso: `${origem}/app/ingressos?pagamento=sucesso&sessao={CHECKOUT_SESSION_ID}`,
       urlCancelamento: `${origem}/inscricao/${d.eventoId}?pagamento=cancelado`,
     });
+    try {
+      sessao = existente ?? await criar();
+    } catch (e) {
+      // Conta de destino que o Stripe não reconhece neste modo (ex.: conta de teste com a chave
+      // de produção): a venda fica com a plataforma, como "repasse à parte".
+      if (!(d.contaDestino && e instanceof ErroStripe && destinoInvalido(e.status, e.message))) throw e;
+      console.warn("Stripe: conta de destino inválida, venda fica com a plataforma", d.contaDestino, e.message);
+      d.contaDestino = undefined;
+      sessao = await criar();
+    }
   } catch (e) {
     if (!(e instanceof ErroStripe || e instanceof TypeError)) throw e;
     console.error("Stripe: falha ao abrir checkout", e);
@@ -226,12 +253,19 @@ export async function processarEstornos(): Promise<RespostaApi<string> | undefin
 export async function tratarEventoStripe(evento: EventoStripe): Promise<void> {
   if (evento.type.startsWith("checkout.session.")) {
     const sessao = evento.data.object as SessaoCheckout;
-    await aplicarSessao(sessao, acaoDoEvento(evento.type, sessao));
+    if (impulsoDaSessao(sessao)) await aplicarSessaoImpulso(sessao, acaoDoEvento(evento.type, sessao));
+    else await aplicarSessao(sessao, acaoDoEvento(evento.type, sessao));
   } else if (evento.type === "charge.refunded") {
     const cobranca = evento.data.object as CobrancaStripe;
     const intencao = intencaoDaCobranca(cobranca);
     const integral = cobranca.refunded === true || cobranca.amount_refunded >= cobranca.amount;
     await mutar(({ base }) => {
+      // Compra de impulso: reembolso integral cancela o impulso (e a campanha gerada por ele).
+      const impulso = base.impulsosComprados.find((i) => i.id === cobranca.metadata?.["impulsoId"]) ?? (intencao ? impulsoPorIntencao(base, intencao) : undefined);
+      if (impulso) {
+        if (integral) registrarReembolsoImpulsoNaBase(base, impulso.id);
+        return;
+      }
       const ins = base.inscricoes.find(
         (i) => (cobranca.metadata?.["inscricaoId"] && i.id === cobranca.metadata["inscricaoId"]) || (!!intencao && i.pagamento?.intencaoId === intencao),
       );
@@ -250,9 +284,95 @@ export async function tratarEventoStripe(evento: EventoStripe): Promise<void> {
   await processarEstornos();
 }
 
-// ---------- Repasse às organizações (Stripe Connect Express) ----------
+// ---------- Impulsos comprados pelas organizações (pagos à plataforma) ----------
 
-const MSG_FALHA_CONTA = "Não foi possível falar com o Stripe agora. Tente novamente em instantes.";
+export interface ResultadoCompraImpulso {
+  impulso: ImpulsoComprado;
+  /** Página de pagamento do Stripe; ausente quando o impulso já está disponível (tipo gratuito). */
+  urlPagamento?: string | undefined;
+}
+
+/** Compra um impulso: registra a compra e abre o checkout (tipo gratuito já fica disponível). */
+export async function comprarImpulso(planoId: PlanoImpulsoId): Promise<RespostaApi<ResultadoCompraImpulso>> {
+  const online = stripeConfigurado();
+  const r = await mutar(({ base, usuario }) => criarCompraImpulsoNaBase(base, usuario, planoId, { pagamentoOnline: online }));
+  if (r.resultado.status !== "aguardando_pagamento") return { ...r, resultado: { impulso: r.resultado } };
+  try {
+    return await abrirCheckoutImpulso(r.resultado.id);
+  } catch (e) {
+    await mutar(({ base }) => cancelarImpulsoNaBase(base, r.resultado.id));
+    throw e;
+  }
+}
+
+/** Devolve a página de pagamento do impulso: reaproveita a sessão aberta ou cria uma nova. */
+export async function abrirCheckoutImpulso(impulsoId: string): Promise<RespostaApi<ResultadoCompraImpulso>> {
+  const { resultado: d } = await ler(({ base, usuario }) => {
+    const i = base.impulsosComprados.find((x) => x.id === impulsoId);
+    if (!i || !gereImpulsos(usuario, i.organizacaoId)) throw new ErroDominio("impulso", "Impulso não encontrado.");
+    if (statusDoImpulso(i, new Date()) !== "aguardando_pagamento") throw new ErroDominio("impulso", "Este impulso não está mais aguardando pagamento.");
+    return { impulso: i, email: usuario?.email };
+  });
+  let sessao: SessaoCheckout;
+  try {
+    const existente = d.impulso.sessaoId ? await obterSessaoCheckout(d.impulso.sessaoId) : undefined;
+    if (existente && existente.status !== "open") {
+      await aplicarSessaoImpulso(existente, acaoDaSessao(existente));
+      throw new Error("Este pagamento já foi concluído ou expirou. Confira em Impulsionar.");
+    }
+    const origem = new URL(getRequestUrl()).origin;
+    sessao = existente ?? await criarSessaoCheckoutImpulso({
+      impulsoId,
+      descricao: `Impulso de ${rotuloDuracao(d.impulso.duracaoHoras)} — MilSim Ops`,
+      valorCentavos: d.impulso.precoCentavos,
+      expiraEm: new Date(new Date(d.impulso.criadoEm).getTime() + PRAZO_PAGAMENTO_MIN * 60_000).toISOString(),
+      email: d.email,
+      urlSucesso: `${origem}/organizacao/impulsos?pagamento=sucesso&sessao={CHECKOUT_SESSION_ID}`,
+      urlCancelamento: `${origem}/organizacao/impulsos?pagamento=cancelado`,
+    });
+  } catch (e) {
+    if (!(e instanceof ErroStripe || e instanceof TypeError)) throw e;
+    console.error("Stripe: falha ao abrir checkout do impulso", e);
+    throw new Error(MSG_FALHA_STRIPE);
+  }
+  if (!sessao.url) throw new Error(MSG_FALHA_STRIPE);
+  const url = sessao.url;
+  return mutar(({ base }) => ({ impulso: registrarSessaoImpulsoNaBase(base, impulsoId, sessao.id), urlPagamento: url }));
+}
+
+/** Aplica o estado de uma Checkout Session de impulso (idempotente). */
+export async function aplicarSessaoImpulso(sessao: SessaoCheckout, acao: AcaoSessao): Promise<void> {
+  const impulsoId = impulsoDaSessao(sessao);
+  if (!impulsoId || acao === "nada") return;
+  const stripe = { sessaoId: sessao.id, intencaoId: intencaoDaSessao(sessao) };
+  await mutar(({ base }) => {
+    const i = base.impulsosComprados.find((x) => x.id === impulsoId);
+    // Só a sessão desta compra decide sobre ela.
+    if (!i || (i.sessaoId && i.sessaoId !== sessao.id)) return;
+    if (acao === "confirmar") confirmarImpulsoNaBase(base, impulsoId, stripe);
+    else if (acao === "processando") marcarImpulsoProcessando(base, impulsoId, stripe);
+    else cancelarImpulsoNaBase(base, impulsoId);
+  }, { exigirLogin: false });
+}
+
+/** Retorno do checkout do impulso: consulta a sessão no Stripe e aplica, sem depender do webhook. */
+export async function sincronizarSessaoImpulso(sessaoId: string): Promise<RespostaApi<ImpulsoComprado | undefined>> {
+  const { resultado: usuario } = await ler(({ usuario }) => usuario);
+  let sessao: SessaoCheckout;
+  try {
+    sessao = await obterSessaoCheckout(sessaoId);
+  } catch (e) {
+    console.error("Stripe: falha ao consultar sessão do impulso", e);
+    throw new Error("Não foi possível consultar o pagamento agora.");
+  }
+  const impulsoId = impulsoDaSessao(sessao);
+  const { resultado: org } = await ler(({ base }) => base.impulsosComprados.find((i) => i.id === impulsoId)?.organizacaoId);
+  if (!impulsoId || !org || !gereImpulsos(usuario, org)) throw new Error("Pagamento não encontrado.");
+  await aplicarSessaoImpulso(sessao, acaoDaSessao(sessao));
+  return ler(({ base }) => base.impulsosComprados.find((i) => i.id === impulsoId));
+}
+
+// ---------- Repasse às organizações (Stripe Connect Express) ----------
 
 /** Dados da organização para as operações de recebimento; exige quem a gere. */
 async function organizacaoGerida(organizacaoId: string) {
@@ -271,7 +391,72 @@ async function comStripe<T>(fn: () => Promise<T>): Promise<T> {
   } catch (e) {
     if (!(e instanceof ErroStripe || e instanceof TypeError)) throw e;
     console.error("Stripe Connect", e);
-    throw new Error(e instanceof ErroStripe && e.status === 400 ? `Stripe: ${e.message}` : MSG_FALHA_CONTA);
+    throw new Error(mensagemDeFalhaStripe(e instanceof ErroStripe ? e.status : 0, e.message), { cause: e });
+  }
+}
+
+/**
+ * A conta guardada não é alcançável com a chave atual (conta de teste com a chave de produção,
+ * ou conta de outra plataforma/sandbox): esquece a conta para a organização cadastrar uma nova.
+ * Devolve se descartou.
+ */
+async function descartarSeInacessivel(organizacaoId: string, contaId: string, e: unknown): Promise<boolean> {
+  if (!(e instanceof ErroStripe && contaInacessivel(e.status, e.message))) return false;
+  console.warn("Stripe: conta de recebimento inacessível descartada", organizacaoId, contaId, e.status);
+  await mutar(({ base }) => descartarContaDeOutroModoNaBase(base, organizacaoId, contaId));
+  saldosRecentes.delete(contaId);
+  return true;
+}
+
+/**
+ * Conta da organização no modo atual do Stripe. Cria (e grava) uma conta Express quando não há
+ * nenhuma ou quando a guardada é inacessível (outro modo ou outra plataforma).
+ */
+async function contaDaOrganizacao(
+  organizacaoId: string,
+  org: { contaId?: string | undefined; email?: string | undefined },
+  perfil: PerfilComercial,
+): Promise<{ conta: ContaStripe; nova: boolean }> {
+  let substituida: string | undefined;
+  if (org.contaId) {
+    try {
+      return { conta: await comStripe(() => obterContaConectada(org.contaId!)), nova: false };
+    } catch (e) {
+      if (!(await descartarSeInacessivel(organizacaoId, org.contaId, (e as Error).cause))) throw e;
+      substituida = org.contaId;
+    }
+  }
+  const conta = await comStripe(() => criarContaConectada({ organizacaoId, perfil, email: org.email, substituida }))
+    .catch(async (e: Error) => { throw await comContaDaPlataforma(e); });
+  await gravarConta(organizacaoId, conta);
+  await completarPerfil(conta, perfil); // site, ramo e descrição, que a criação pela v2 não leva
+  return { conta, nova: true };
+}
+
+/**
+ * Quando o Stripe diz que a plataforma não está ativada, acrescenta qual conta a chave do site
+ * usa e se ela recebe pagamentos, para comparar com a conta aberta no painel do Stripe.
+ */
+async function comContaDaPlataforma(e: Error): Promise<Error> {
+  if (!/must be activated in order to create accounts/i.test(e.message)) return e;
+  try {
+    const p = await obterContaDaPlataforma();
+    const nome = p.settings?.dashboard?.display_name || p.business_profile?.name || "sem nome";
+    const sim = (v?: boolean) => (v ? "sim" : "não");
+    // Plataforma ativa para pagamentos: o que falta é o cadastro do Connect em produção (perfil da
+    // plataforma), que o Stripe exige antes da primeira conta conectada e responde com o mesmo erro.
+    if (p.charges_enabled) {
+      return new Error(
+        `A conta Stripe da plataforma (${p.id}, ${nome}) já recebe pagamentos, mas o Stripe ainda não liberou a criação de contas conectadas em produção. No painel do Stripe, em modo de produção, conclua o perfil da plataforma do Connect em https://dashboard.stripe.com/connect/registration e confira nome, cor e ícone em Configurações → Connect; depois tente de novo. Se continuar, peça ao suporte do Stripe para liberar o Connect na conta.`,
+        { cause: e.cause },
+      );
+    }
+    return new Error(
+      `${e.message} Conta do Stripe usada pela chave do site: ${p.id} (${nome}; pagamentos ativos: ${sim(p.charges_enabled)}; repasses ativos: ${sim(p.payouts_enabled)}).`,
+      { cause: e.cause },
+    );
+  } catch {
+    return e;
   }
 }
 
@@ -299,14 +484,14 @@ export async function iniciarCadastroRecebimento(organizacaoId: string): Promise
   if (!stripeConfigurado()) throw new Error("Os pagamentos online ainda não estão ativados na plataforma.");
   const org = await organizacaoGerida(organizacaoId);
   const origem = new URL(getRequestUrl()).origin;
-  const { contaId, url } = await comStripe(async () => {
-    const perfil = perfilComercialPadrao(org.nome, origem);
-    const conta = org.contaId ? await obterContaConectada(org.contaId) : await criarContaConectada({ organizacaoId, perfil, email: org.email });
-    if (!org.contaId) await gravarConta(organizacaoId, conta); // guarda a conta antes de sair para o Stripe
-    else await completarPerfil(conta, perfil);
-    const link = await linkDeCadastro(conta.id, `${origem}/organizacao/financeiro?recebimento=retorno`, `${origem}/organizacao/financeiro?recebimento=renovar`);
-    return { contaId: conta.id, url: link.url };
-  });
+  const perfil = perfilComercialPadrao(org.nome, origem);
+  // Conta nova já fica gravada antes de sair para o Stripe.
+  const { conta, nova } = await contaDaOrganizacao(organizacaoId, org, perfil);
+  if (!nova) await completarPerfil(conta, perfil);
+  const contaId = conta.id;
+  const { url } = await comStripe(() =>
+    linkDeCadastro(contaId, `${origem}/organizacao/financeiro?recebimento=retorno`, `${origem}/organizacao/financeiro?recebimento=renovar`),
+  );
   const r = await mutar(({ base }) => base.organizacoes.find((o) => o.id === organizacaoId)?.recebimento?.contaId === contaId);
   return { resultado: { url }, visao: r.visao };
 }
@@ -314,9 +499,15 @@ export async function iniciarCadastroRecebimento(organizacaoId: string): Promise
 /** Consulta a conta no Stripe e atualiza a situação (retorno do cadastro, abertura da página). */
 export async function sincronizarRecebimento(organizacaoId: string) {
   const org = await organizacaoGerida(organizacaoId);
-  if (!org.contaId || !stripeConfigurado()) return ler(({ base }) => base.organizacoes.find((o) => o.id === organizacaoId)?.recebimento);
-  const conta = await comStripe(() => obterContaConectada(org.contaId!));
-  return gravarConta(organizacaoId, conta);
+  const atual = () => ler(({ base }) => base.organizacoes.find((o) => o.id === organizacaoId)?.recebimento);
+  if (!org.contaId || !stripeConfigurado()) return atual();
+  try {
+    const conta = await comStripe(() => obterContaConectada(org.contaId!));
+    return await gravarConta(organizacaoId, conta);
+  } catch (e) {
+    if (await descartarSeInacessivel(organizacaoId, org.contaId, (e as Error).cause)) return atual();
+    throw e;
+  }
 }
 
 /** Link para o painel Express: saldo, calendário de repasses e conta bancária. */
@@ -350,10 +541,16 @@ export async function consultarSaldoRecebimento(organizacaoId: string, atualizar
   const contaId = org.contaId;
   const guardado = saldosRecentes.get(contaId);
   if (!atualizar && guardado && Date.now() - guardado.em < VALIDADE_SALDO_MS) return guardado.saldo;
-  const saldo = await comStripe(async () => {
-    const [b, p, c] = await Promise.all([saldoDaConta(contaId), saquesDaConta(contaId, 10), obterContaConectada(contaId)]);
-    return resumoSaldo(b, p, c);
-  });
+  let saldo: SaldoRecebimento;
+  try {
+    saldo = await comStripe(async () => {
+      const [b, p, c] = await Promise.all([saldoDaConta(contaId), saquesDaConta(contaId, 10), obterContaConectada(contaId)]);
+      return resumoSaldo(b, p, c);
+    });
+  } catch (e) {
+    if (await descartarSeInacessivel(organizacaoId, contaId, (e as Error).cause)) return undefined;
+    throw e;
+  }
   saldosRecentes.set(contaId, { em: Date.now(), saldo });
   return saldo;
 }
@@ -370,13 +567,9 @@ export async function sessaoComponentesStripe(organizacaoId: string): Promise<{ 
   const problema = problemaChavesStripe();
   if (problema) throw new Error(`Os painéis do Stripe estão mal configurados: ${problema}`);
   const perfil = perfilComercialPadrao(org.nome, new URL(getRequestUrl()).origin);
-  const contaId = org.contaId ?? (await comStripe(async () => {
-    const conta = await criarContaConectada({ organizacaoId, perfil, email: org.email });
-    await gravarConta(organizacaoId, conta);
-    return conta.id;
-  }));
-  if (org.contaId && !org.ativa) await completarPerfil(await comStripe(() => obterContaConectada(contaId)), perfil);
-  const sessao = await comStripe(() => criarSessaoDeConta(contaId));
+  const { conta, nova } = await contaDaOrganizacao(organizacaoId, org, perfil);
+  if (!nova && !org.ativa) await completarPerfil(conta, perfil);
+  const sessao = await comStripe(() => criarSessaoDeConta(conta.id));
   return { chavePublicavel: chave, clientSecret: sessao.client_secret };
 }
 
