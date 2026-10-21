@@ -4,6 +4,7 @@ import { ehModalidade, erroModalidadeParaPublicar, nomeModalidade } from "@/lib/
 import { estornarEventoNaBase } from "@/services/inscricoes";
 import { ocupaVaga } from "@/lib/pagamentos";
 import { contatoParaGravar, errosContatoEvento } from "@/lib/contatoEvento";
+import { instanteAtividade } from "@/lib/cronograma";
 import { carregarBase, mutarBase, latencia, ErroDominio, gerarId, gerarCodigo } from "./db";
 import { silenciado } from "./notificacoes";
 import { cnpjValido, normalizarEmail, somenteDigitos, telefoneValido } from "@/lib/domain/validators";
@@ -144,8 +145,8 @@ export function validarParaPublicacao(evento: Evento): string[] {
   const inicio = new Date(evento.inicioEm);
   const fim = new Date(evento.fimEm);
   for (const at of evento.cronograma) {
-    const dataAt = new Date(`${at.data}T${at.horario}:00`);
-    if (dataAt < inicio || dataAt > fim) {
+    const dataAt = instanteAtividade(at.data, at.horario, evento.fuso);
+    if (Number.isNaN(dataAt.getTime()) || dataAt < inicio || dataAt > fim) {
       erros.push(`Atividade "${at.titulo}" fora do período do evento.`);
     }
   }

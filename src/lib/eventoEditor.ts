@@ -6,6 +6,7 @@ import { ehModalidade } from "@/lib/modalidades";
 import { disponibilidadeTipo, type OcupacaoLote } from "@/lib/vendas";
 import { validarParaPublicacao } from "@/services/organizador";
 import { errosContatoEvento } from "@/lib/contatoEvento";
+import { formatarNoFuso, instanteAtividade } from "@/lib/cronograma";
 
 export const ETAPAS = [
   { id: "geral", titulo: "Informações gerais" },
@@ -106,9 +107,11 @@ function schemaEtapa(i: number, oc: Ocupacao) {
         const fim = new Date(ev.fimEm);
         ev.cronograma.forEach((a) => {
           if (vazio(a.titulo)) erro(ctx, `at-titulo-${a.id}`, "Dê um nome à atividade.");
-          const quando = new Date(`${a.data}T${a.horario || "00:00"}:00`);
+          const quando = instanteAtividade(a.data, a.horario, ev.fuso);
           if (Number.isNaN(quando.getTime())) erro(ctx, `at-data-${a.id}`, "Informe data e horário.");
-          else if (quando < ini || quando > fim) erro(ctx, `at-data-${a.id}`, "Atividade fora do período do evento.");
+          else if (quando < ini || quando > fim) {
+            erro(ctx, `at-data-${a.id}`, `Fora do período do evento (${formatarNoFuso(ev.inicioEm, ev.fuso)} a ${formatarNoFuso(ev.fimEm, ev.fuso)}).`);
+          }
         });
         if (ev.regras && vazio(ev.regras.titulo)) erro(ctx, "ev-regras-titulo", "Informe o título do caderno de regras.");
         break;
