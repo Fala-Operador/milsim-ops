@@ -175,6 +175,8 @@
 
 :root,
 .tema-claro {
+  /* Controles nativos (ícones de data/hora, seletores, barras de rolagem) seguem o tema. */
+  color-scheme: light;
   --radius: 0.5rem;
   /* Light — TAN militar */
   --background: oklch(0.93 0.025 85);
@@ -206,6 +208,7 @@
 
 .dark,
 .tema-escuro {
+  color-scheme: dark;
   /* Dark — verde-oliva militar */
   --background: oklch(0.185 0.02 140);
   --foreground: oklch(0.95 0.015 120);

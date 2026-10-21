@@ -87,6 +87,10 @@ Código: `src/services/organizador.ts`, `src/lib/eventoEditor.ts`, `src/lib/cont
 - **Publicar** exige: nome, modalidade, descrição resumida (até 200), enredo, local, imagem
   principal, ao menos um exército, um tipo de ingresso e uma atividade no cronograma, todas dentro
   do período do evento. Publicar cria os fóruns da comunidade.
+- Data e horário das atividades são lidos no **fuso do evento** (`src/lib/fusoHorario.ts`), nunca no
+  fuso de quem valida: o editor e o servidor (em UTC) chegam ao mesmo resultado. Início e término inclusos.
+- Erros de publicação aparecem por etapa no editor: cada pendência mostra a etapa, a etapa fica em
+  vermelho na navegação e há um atalho para ela (`etapaDaMensagem` em `src/lib/eventoEditor.ts`).
 - **Capacidade**: a total e a de cada exército nunca ficam abaixo da ocupação atual
   (confirmadas + reservas de pagamento vigentes). Nomes de exército não se repetem.
 - Troca de modalidade é auditada.
@@ -402,6 +406,9 @@ Código: `src/lib/visaoGeralEvento.ts`, página `/admin/eventos/$eventoId` (bot�
 - Perfil do operador: cada bloco é `eu` ou `autenticados`; visitante deslogado vê só nome e foto.
 - Solicitações LGPD (acesso, correção, exportação, exclusão) vão para os admins, que respondem pela plataforma.
 - Listagens da gestão mostram CPF e telefone mascarados.
+- **CEP** (cadastro e local do evento): ao completar 8 dígitos, o navegador consulta o ViaCEP
+  (`consultarCep` em `src/services/geolocalizacao.ts`) enviando só o CEP, e preenche endereço, bairro,
+  cidade e UF; os campos continuam editáveis e o CEP com que o formulário abriu não é reconsultado.
 
 ## 19. Lacunas conhecidas
 

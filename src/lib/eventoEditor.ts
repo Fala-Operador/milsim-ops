@@ -6,6 +6,7 @@ import { ehModalidade } from "@/lib/modalidades";
 import { disponibilidadeTipo, type OcupacaoLote } from "@/lib/vendas";
 import { validarParaPublicacao } from "@/services/organizador";
 import { errosContatoEvento } from "@/lib/contatoEvento";
+import { atividadeNoPeriodo, instanteDaAtividade } from "@/lib/fusoHorario";
 
 export const ETAPAS = [
   { id: "geral", titulo: "Informações gerais" },
@@ -102,19 +103,48 @@ function schemaEtapa(i: number, oc: Ocupacao) {
         break;
       case "cronograma": {
         if (ev.cronograma.length === 0) erro(ctx, "ev-at-add", "Adicione ao menos uma atividade ao cronograma.");
-        const ini = new Date(ev.inicioEm);
-        const fim = new Date(ev.fimEm);
         ev.cronograma.forEach((a) => {
           if (vazio(a.titulo)) erro(ctx, `at-titulo-${a.id}`, "Dê um nome à atividade.");
-          const quando = new Date(`${a.data}T${a.horario || "00:00"}:00`);
-          if (Number.isNaN(quando.getTime())) erro(ctx, `at-data-${a.id}`, "Informe data e horário.");
-          else if (quando < ini || quando > fim) erro(ctx, `at-data-${a.id}`, "Atividade fora do período do evento.");
+          if (Number.isNaN(instanteDaAtividade(ev, a).getTime())) erro(ctx, `at-data-${a.id}`, "Informe data e horário.");
+          else if (!atividadeNoPeriodo(ev, a)) erro(ctx, `at-data-${a.id}`, "Atividade fora do período do evento.");
         });
         if (ev.regras && vazio(ev.regras.titulo)) erro(ctx, "ev-regras-titulo", "Informe o título do caderno de regras.");
         break;
       }
     }
   });
+}
+
+// Mensagens de validação do servidor (publicar/salvar) → etapa do editor. A ordem importa:
+// "Atividade … fora do período" é do cronograma, não da etapa de datas.
+const ETAPA_POR_MENSAGEM: [RegExp, number][] = [
+  [/atividade|cronograma|regras/i, 5],
+  [/ingresso|lote/i, 4],
+  [/ex[eé]rcito|capacidade/i, 3],
+  [/imagem|banner/i, 2],
+  [/local|endere[cç]o|cidade|in[ií]cio|t[eé]rmino|data/i, 1],
+  [/nome|modalidade|descri|enredo|whatsapp|grupo/i, 0],
+];
+
+/** Etapa a que pertence uma mensagem de erro; sem correspondência, a revisão. */
+export function etapaDaMensagem(mensagem: string): number {
+  return ETAPA_POR_MENSAGEM.find(([re]) => re.test(mensagem))?.[1] ?? ETAPAS.length - 1;
+}
+
+/**
+ * Erro devolvido pelo servidor (uma mensagem por linha) como problemas por etapa. Atividades
+ * citadas pelo nome ganham o campo de data, para o foco ir direto até ela.
+ */
+export function problemasDoServidor(mensagem: string, ev: Pick<Evento, "cronograma">): Problema[] {
+  return mensagem
+    .split("\n")
+    .map((m) => m.trim())
+    .filter(Boolean)
+    .map((m) => {
+      const titulo = /^Atividade "(.*)" fora do período/.exec(m)?.[1];
+      const at = titulo !== undefined ? ev.cronograma.find((a) => a.titulo === titulo) : undefined;
+      return { etapa: etapaDaMensagem(m), campo: at ? `at-data-${at.id}` : "", mensagem: m };
+    });
 }
 
 /** Valida somente os campos necessários da etapa (usado por "Continuar"). */

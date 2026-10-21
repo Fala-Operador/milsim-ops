@@ -20,7 +20,8 @@ Publica o evento (passa a aparecer na página inicial e aceitar inscrições) e 
 ## Regras
 
 - Valida para publicar (`validarParaPublicacao`): nome, modalidade, descrição, enredo, local, imagem principal, ao menos um exército, um tipo de ingresso e uma atividade no cronograma, e atividades dentro do período do evento.
-- Os erros de validação chegam juntos numa única mensagem.
+- Data e horário de cada atividade valem no fuso do evento (`fuso`), não no fuso do servidor.
+- Os erros de validação chegam juntos numa única mensagem, **um por linha** (`\n`); o editor separa e associa cada um à sua etapa.
 
 ## Resposta
 
@@ -36,6 +37,7 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - Adicione a imagem principal do evento.
 - Cadastre ao menos um tipo de ingresso.
 - O cronograma precisa de ao menos uma atividade.
+- Atividade "{título}" fora do período do evento.
 - Entre na sua conta para continuar.
 
 ## Exemplo
