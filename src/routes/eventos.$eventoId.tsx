@@ -7,7 +7,8 @@ import { dataUrlParaBlobUrl } from "@/lib/imagens";
 import { useEventoAtual } from "@/hooks/useEventoAtual";
 import { registrarCliqueInscrever, registrarVisita } from "@/services/analytics";
 import { vagasRestantes, loteVigente } from "@/services/inscricoes";
-import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
+import { formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
+import { Preco } from "@/components/Preco";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -179,7 +180,7 @@ function PaginaEvento() {
                   <li key={t.id} className="rounded-md border border-border bg-elevated p-3">
                     <div className="flex items-start justify-between gap-3">
                       <span className="min-w-0 font-medium">{t.nome}</span>
-                      <span className="shrink-0 text-accent">{formatarBRL(preco)}</span>
+                      <Preco centavos={preco} className="shrink-0 text-accent" />
                     </div>
                     {t.descricao && <p className="text-muted-foreground">{t.descricao}</p>}
                     {t.beneficios && <p className="text-xs text-muted-foreground">Inclui: {t.beneficios}</p>}
@@ -233,7 +234,7 @@ function PaginaEvento() {
           <div className="mx-auto flex max-w-4xl items-center gap-3">
             <div className="min-w-0 flex-1 text-sm">
               {aPartirDe !== null && <p className="text-xs text-muted-foreground">A partir de</p>}
-              <p className="truncate font-mono font-semibold text-accent">{aPartirDe !== null ? formatarBRL(aPartirDe) : `${restantes} vagas`}</p>
+              <p className="truncate font-mono font-semibold text-accent">{aPartirDe !== null ? <Preco centavos={aPartirDe} /> : `${restantes} vagas`}</p>
             </div>
             <div className="w-40 shrink-0">{linkInscricao}</div>
           </div>

@@ -5,7 +5,8 @@ import { carregarBase } from "@/services/db";
 import { POSICAO_LISTAGEM, type BaseDados, type Evento } from "@/lib/domain/types";
 import { campanhasNaPosicao } from "@/lib/impulsionamento";
 import { vagasRestantes } from "@/services/inscricoes";
-import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
+import { formatarDataBR } from "@/lib/domain/money";
+import { Preco } from "@/components/Preco";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkeletonGrade } from "@/components/ui";
@@ -354,7 +355,7 @@ function CartaoEvento({ evento: e, base, organizacao }: { evento: Evento; base: 
         <p className="mt-2"><span className="inline-block rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{nomeModalidade(e.modalidade)}</span></p>
         <p className="mt-1.5 truncate text-sm text-muted-foreground">{organizacao}</p>
         <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-3">
-          <p className="text-sm">A partir de <span className="font-semibold text-accent">{formatarBRL(precoInicial(e))}</span></p>
+          <p className="text-sm">A partir de <Preco centavos={precoInicial(e)} className="font-semibold text-accent" /></p>
           <span className="text-sm font-medium text-primary group-hover:underline">Ver operação →</span>
         </div>
       </div>

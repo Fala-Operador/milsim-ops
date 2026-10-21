@@ -10,6 +10,7 @@ import { reservaVigente } from "@/lib/pagamentos";
 import { confirmarInscricao, previsualizarCupom } from "@/api/inscricoes.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
+import { Preco } from "@/components/Preco";
 import { taxaPlataforma } from "@/lib/repasses";
 import { descontoDoBeneficio, descreverBeneficio, statusVoucher } from "@/lib/participacao";
 import { Button } from "@/components/ui/button";
@@ -326,20 +327,20 @@ function PaginaInscricao() {
                 <dt>Ingresso</dt><dd className="text-right text-foreground">{tipo.nome}</dd>
                 {!cortesia && <><dt>Lote</dt><dd className="text-right text-foreground">{lote?.nome ?? "—"}</dd></>}
                 <dt>Exército</dt><dd className="text-right text-foreground">{evento.exercitos.find((x) => x.id === exercitoId)?.nome ?? "—"}</dd>
-                <dt>Valor original</dt><dd className="text-right font-mono">{impedimento ? "—" : formatarBRL(preco)}</dd>
+                <dt>Valor original</dt><dd className="text-right font-mono">{impedimento ? "—" : <Preco centavos={preco} />}</dd>
                 {!voucherId && cupomAplicado && !impedimento && (
-                  <><dt>Cupom {cupomAplicado.codigo} ({cupomAplicado.percentual}%)</dt><dd className="text-right font-mono">−{formatarBRL(desconto)}</dd></>
+                  <><dt>Cupom {cupomAplicado.codigo} ({cupomAplicado.percentual}%)</dt><dd className="text-right font-mono">−<Preco centavos={desconto} /></dd></>
                 )}
-                {descontoVoucher > 0 && <><dt>Benefício de recompensa</dt><dd className="text-right font-mono">−{formatarBRL(descontoVoucher)}</dd></>}
+                {descontoVoucher > 0 && <><dt>Benefício de recompensa</dt><dd className="text-right font-mono">−<Preco centavos={descontoVoucher} /></dd></>}
                 <dt className="font-medium text-foreground">Valor final</dt>
                 <dd className="text-right font-mono font-medium text-foreground">
-                  {impedimento ? "—" : formatarBRL(valorFinal)}
+                  {impedimento ? "—" : <Preco centavos={valorFinal} />}
                   {cortesia && " (cortesia)"}
                 </dd>
                 {!impedimento && taxaServico > 0 && (
                   <>
-                    <dt>Taxa de serviço ({String(taxaCompradorPercentual).replace(".", ",")}%)</dt><dd className="text-right font-mono">+{formatarBRL(taxaServico)}</dd>
-                    <dt className="font-medium text-foreground">Total a pagar</dt><dd className="text-right font-mono font-medium text-foreground">{formatarBRL(valorFinal + taxaServico)}</dd>
+                    <dt>Taxa de serviço ({String(taxaCompradorPercentual).replace(".", ",")}%)</dt><dd className="text-right font-mono">+<Preco centavos={taxaServico} /></dd>
+                    <dt className="font-medium text-foreground">Total a pagar</dt><dd className="text-right font-mono font-medium text-foreground"><Preco centavos={valorFinal + taxaServico} /></dd>
                   </>
                 )}
               </dl>
