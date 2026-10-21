@@ -48,8 +48,10 @@ const { inscricao, urlPagamento } = await confirmarInscricao({ eventoId, tipoId,
 - Regra de negócio violada lança `ErroDominio`: a **mensagem chega ao navegador** em
   `error.message` e pode ser mostrada como está. As listas "Erros" de cada página trazem essas
   mensagens, extraídas do código.
-- Qualquer outro erro é registrado no log do servidor e vira a mensagem genérica
-  "Não foi possível concluir a operação. Tente novamente."
+- Qualquer outro erro é registrado no log do servidor como `[erro CÓDIGO]` e vira a mensagem
+  genérica "Não foi possível concluir a operação. Tente novamente. (código CÓDIGO)". Quando o
+  banco não responde (5xx ou rede), a mensagem é "O servidor de dados não respondeu. Tente
+  novamente em instantes. (código CÓDIGO)". O código liga a mensagem ao log com a causa real.
 - Escritas concorrentes: a gravação usa versão otimista (`MS409`) e o servidor repete sozinho
   até 4 vezes; se ainda assim falhar, a mensagem é "Muitas alterações ao mesmo tempo. Tente novamente."
 

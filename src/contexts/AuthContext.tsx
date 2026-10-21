@@ -39,6 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useVersaoBase();
   const [carga, setCarga] = useState<EstadoCarga>("carregando");
   const ultimaCarga = useRef(0);
+  const cargaRef = useRef(carga);
+  cargaRef.current = carga;
   const usuario = carga === "pronto" ? usuarioDaVisao() : null;
 
   const recarregar = useCallback(async () => {
@@ -47,8 +49,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await recarregarVisao();
       setCarga("pronto");
     } catch (e) {
-      console.error(e);
-      setCarga((c) => (c === "pronto" ? c : "erro"));
+      // Já carregada (ex.: atualização ao voltar para a aba): segue com a visão atual.
+      if (cargaRef.current === "pronto") {
+        console.warn("Não foi possível atualizar os dados; seguindo com os já carregados.", e);
+        return;
+      }
+      // Carga inicial: uma falha passageira (rede, Supabase oscilando) ganha mais uma tentativa.
+      try {
+        await new Promise((ok) => setTimeout(ok, 1500));
+        await recarregarVisao();
+        setCarga("pronto");
+      } catch (e2) {
+        console.error(e2);
+        setCarga((c) => (c === "pronto" ? c : "erro"));
+      }
     }
   }, []);
 
