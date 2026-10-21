@@ -6,6 +6,7 @@ import { TEXTO_MOTIVO } from "@/lib/vendas";
 import { resumoRepasse } from "@/lib/repasses";
 import { disputaEmAberto, ROTULO_DISPUTA } from "@/lib/stripe";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
+import { Preco } from "@/components/Preco";
 import { mascararCpf } from "@/lib/domain/validators";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -235,7 +236,7 @@ export function AvisoLotes({ evento, compacto = false, onConfigurar }: { evento:
             <span>{t.nome}</span>
             {d.disponivel ? (
               <span className="flex items-center gap-2 text-muted-foreground">
-                {d.lote.nome} · {formatarBRL(d.precoCentavos)} · {d.restantes} vagas
+                {d.lote.nome} · <Preco centavos={d.precoCentavos} /> · {d.restantes} vagas
                 <Badge variant="success">disponível</Badge>
               </span>
             ) : (
