@@ -51,6 +51,7 @@ bun run start                # servidor Node gerado pelo build (.output/server/i
 | `STRIPE_WEBHOOK_FORWARD_SECRET` | segredo compartilhado entre a Edge Function `stripe-webhook` e o site (mesmo valor nos dois lados) |
 | `STRIPE_BROWSER_PUBLIC_KEY` | opcional (`pk_...`): o cadastro e a gestão do recebimento da organização acontecem dentro do site (componentes embutidos do Stripe) |
 | `LOVABLE_API_KEY` | opcional, habilita Admin › Insights IA |
+| `TURNSTILE_SITE_KEY` | chave pública (site key) do Cloudflare Turnstile, mostrado no login, cadastro e pedido de redefinição de senha. A chave secreta fica só no Supabase (Authentication → Attack Protection → CAPTCHA). Com o CAPTCHA ligado no Supabase, sem esta variável ninguém entra |
 
 Na publicação, configure as variáveis do Supabase (e as do Stripe, se usar) como **segredos** do
 ambiente. Os segredos `whsec_…` do Stripe ficam só no Supabase (Edge Functions → Secrets), junto

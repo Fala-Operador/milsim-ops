@@ -4,6 +4,7 @@ import { z } from "zod";
 import * as auth from "@/server/auth.server";
 import { consultar, contextoSomenteLeitura, ler } from "@/server/unidade.server";
 import { stripeConfigurado } from "@/server/stripe.server";
+import { chaveSiteTurnstile } from "@/server/turnstile.server";
 import { contaParaRepasse, taxaDoComprador } from "@/lib/repasses";
 import { chamar } from "@/api/cliente";
 import type { DadosCadastro } from "@/services/auth";
@@ -28,10 +29,17 @@ export const obterEventoFn = createServerFn({ method: "GET" })
     return { ...r, taxaCompradorPercentual: taxaDoComprador(base), vendasAbertas: !!contaParaRepasse(org) };
   });
 
-const entradaLogin = z.object({ email: z.string().max(200), senha: z.string().max(200) });
+// Token do Cloudflare Turnstile, repassado ao CAPTCHA do Supabase Auth.
+const captcha = z.string().max(4096).optional();
+
+export const obterConfigTurnstileFn = createServerFn({ method: "GET" }).handler(() => ({
+  chaveSite: chaveSiteTurnstile(),
+}));
+
+const entradaLogin = z.object({ email: z.string().max(200), senha: z.string().max(200), captcha });
 export const entrarFn = createServerFn({ method: "POST" })
   .validator(entradaLogin.parse)
-  .handler(({ data }) => auth.entrar(data.email, data.senha));
+  .handler(({ data }) => auth.entrar(data.email, data.senha, data.captcha));
 
 export const sairFn = createServerFn({ method: "POST" }).handler(() => auth.sair());
 
@@ -41,15 +49,15 @@ const entradaCadastro = z.object({
   logradouro: z.string().max(200), numero: z.string().max(20), complemento: z.string().max(200).optional(),
   bairro: z.string().max(200), cidade: z.string().max(200), uf: z.string().max(2), instagram: z.string().max(100).optional(),
   squad: z.string().max(100).optional(), fotoUrl: z.string().optional(), aceiteTermos: z.boolean(),
-  cienciaPrivacidade: z.boolean(), autorizacaoPromocional: z.boolean(),
+  cienciaPrivacidade: z.boolean(), autorizacaoPromocional: z.boolean(), captcha,
 });
 export const cadastrarFn = createServerFn({ method: "POST" })
   .validator(entradaCadastro.parse)
-  .handler(({ data }) => auth.cadastrar(data as DadosCadastro));
+  .handler(({ data: { captcha, ...dados } }) => auth.cadastrar(dados as DadosCadastro, captcha));
 
 export const recuperarSenhaFn = createServerFn({ method: "POST" })
-  .validator(z.object({ email: z.string().max(200) }).parse)
-  .handler(({ data }) => auth.recuperarSenha(data.email));
+  .validator(z.object({ email: z.string().max(200), captcha }).parse)
+  .handler(({ data }) => auth.recuperarSenha(data.email, data.captcha));
 
 export const trocarCodigoFn = createServerFn({ method: "POST" })
   .validator(z.object({ codigo: z.string().min(1).max(500) }).parse)
@@ -65,10 +73,12 @@ export const definirNovaSenhaFn = createServerFn({ method: "POST" })
 
 // ---------- Uso no navegador ----------
 export const recarregarVisao = () => chamar(obterVisaoFn());
-export const entrar = (email: string, senha: string) => chamar(entrarFn({ data: { email, senha } }));
+export const obterConfigTurnstile = () => obterConfigTurnstileFn();
+export const entrar = (email: string, senha: string, captcha?: string) =>
+  chamar(entrarFn({ data: { email, senha, captcha } }));
 export const sair = () => chamar(sairFn());
-export const cadastrar = (dados: DadosCadastro) => chamar(cadastrarFn({ data: dados }));
-export const recuperarSenha = (email: string) => recuperarSenhaFn({ data: { email } });
+export const cadastrar = (dados: DadosCadastro, captcha?: string) => chamar(cadastrarFn({ data: { ...dados, captcha } }));
+export const recuperarSenha = (email: string, captcha?: string) => recuperarSenhaFn({ data: { email, captcha } });
 export const trocarCodigoRecuperacao = (codigo: string) => trocarCodigoFn({ data: { codigo } });
 export const validarTokenRecuperacao = (tokenHash: string) => validarTokenRecuperacaoFn({ data: { tokenHash } });
 export const definirNovaSenha = (senha: string) => chamar(definirNovaSenhaFn({ data: { senha } }));

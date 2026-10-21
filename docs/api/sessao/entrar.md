@@ -17,6 +17,7 @@ Login com e-mail e senha (Supabase Auth). A sessão fica em cookies HTTP.
 |---|---|---|
 | `email` | string (até 200) | E-mail da conta. |
 | `senha` | string (até 200) | Senha. |
+| `captcha?` | string | Token do Cloudflare Turnstile, repassado ao CAPTCHA do Supabase Auth (`captchaToken`). Obrigatório quando o CAPTCHA está ligado no Supabase. |
 
 ## Regras
 
@@ -32,6 +33,7 @@ Login com e-mail e senha (Supabase Auth). A sessão fica em cookies HTTP.
 Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 
 - E-mail ou senha incorretos.
+- Não conseguimos confirmar que você não é um robô. Refaça a verificação e tente de novo.
 - Conta inativa.
 
 ## Exemplo
