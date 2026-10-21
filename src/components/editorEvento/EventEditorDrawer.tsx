@@ -18,6 +18,7 @@ import { EtapaImagem } from "./EventImageStep";
 import { EtapaIngressos } from "./EventTicketsStep";
 import { EtapaRevisao } from "./EventReviewStep";
 import { ABRIR_SECAO } from "./comum";
+import { AvisoRecebimento } from "@/components/AvisoRecebimento";
 
 type EstadoSalvamento = "ocioso" | "salvando" | "salvo" | "erro";
 const ESPERA_AUTOSAVE = 1500;
@@ -319,6 +320,7 @@ export function EventEditorDrawer(p: PropsEditor) {
 
         <div ref={conteudoRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 md:px-6">
           <div className="mx-auto max-w-5xl">
+            <AvisoRecebimento organizacaoId={ev.organizacaoId} className="mb-4" />
             <h3 className="mb-4 font-display text-base font-semibold uppercase tracking-wider text-muted-foreground">{ETAPAS[etapa]?.titulo}</h3>
             {etapa === 0 && <EtapaGeral ev={ev} set={set} erros={erros} organizacoes={p.organizacoes} podeEscolherOrg={p.podeEscolherOrg && !p.existente} />}
             {etapa === 1 && <EtapaLocal ev={ev} set={set} erros={erros} />}
