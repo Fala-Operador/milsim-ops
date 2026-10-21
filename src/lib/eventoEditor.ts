@@ -6,7 +6,7 @@ import { ehModalidade } from "@/lib/modalidades";
 import { disponibilidadeTipo, type OcupacaoLote } from "@/lib/vendas";
 import { validarParaPublicacao } from "@/services/organizador";
 import { errosContatoEvento } from "@/lib/contatoEvento";
-import { atividadeNoPeriodo, formatarNoFuso, instanteDaAtividade } from "@/lib/fusoHorario";
+import { atividadeNoPeriodo, formatarNoFuso, formatarPeriodoNoFuso, instanteDaAtividade } from "@/lib/fusoHorario";
 
 export const ETAPAS = [
   { id: "geral", titulo: "Informações gerais" },
@@ -54,6 +54,10 @@ function schemaEtapa(i: number, oc: Ocupacao) {
         if (!dataValida(ev.inicioEm)) erro(ctx, "ev-ini", "Informe data e horário de início.");
         if (!dataValida(ev.fimEm)) erro(ctx, "ev-fim", "Informe data e horário de término.");
         else if (new Date(ev.fimEm) <= new Date(ev.inicioEm)) erro(ctx, "ev-fim", "O término deve ser depois do início.");
+        // Só antes de publicar: operações já publicadas podem estar em andamento ou encerradas.
+        if (ev.status === "rascunho" && dataValida(ev.inicioEm) && new Date(ev.inicioEm) <= new Date()) {
+          erro(ctx, "ev-ini", "O início da operação já passou.");
+        }
         if (vazio(ev.local)) erro(ctx, "ev-local", "Informe o nome do local ou campo.");
         if (ev.cep && !/^\d{5}-?\d{3}$/.test(ev.cep.trim())) erro(ctx, "ev-cep", "CEP inválido. Use o formato 00000-000.");
         if (vazio(ev.cidade)) erro(ctx, "ev-cid", "Informe a cidade.");
@@ -92,6 +96,8 @@ function schemaEtapa(i: number, oc: Ocupacao) {
           if (vazio(l.nome)) erro(ctx, `lt-nome-${l.id}`, "Dê um nome ao lote.");
           if (!dataValida(l.inicioVendas) || !dataValida(l.fimVendas) || new Date(l.fimVendas) <= new Date(l.inicioVendas)) {
             erro(ctx, `lt-fim-${l.id}`, "O fim das vendas deve ser depois do início.");
+          } else if (l.status !== "arquivado" && dataValida(ev.fimEm) && new Date(l.fimVendas) > new Date(ev.fimEm)) {
+            erro(ctx, `lt-fim-${l.id}`, `As vendas devem terminar até o término da operação (${formatarNoFuso(ev.fimEm, ev.fuso)}).`);
           }
           if (l.itens.length === 0) erro(ctx, `lt-nome-${l.id}`, "Inclua pelo menos um tipo de ingresso no lote.");
           l.itens.forEach((it) => {
@@ -107,7 +113,7 @@ function schemaEtapa(i: number, oc: Ocupacao) {
           if (vazio(a.titulo)) erro(ctx, `at-titulo-${a.id}`, "Dê um nome à atividade.");
           if (Number.isNaN(instanteDaAtividade(ev, a).getTime())) erro(ctx, `at-data-${a.id}`, "Informe data e horário.");
           else if (!atividadeNoPeriodo(ev, a)) {
-            erro(ctx, `at-data-${a.id}`, `Fora do período do evento (${formatarNoFuso(ev.inicioEm, ev.fuso)} a ${formatarNoFuso(ev.fimEm, ev.fuso)}).`);
+            erro(ctx, `at-data-${a.id}`, `Fora do período da operação (${formatarPeriodoNoFuso(ev.inicioEm, ev.fimEm, ev.fuso)}).`);
           }
         });
         if (ev.regras && vazio(ev.regras.titulo)) erro(ctx, "ev-regras-titulo", "Informe o título do caderno de regras.");
@@ -137,7 +143,7 @@ export function etapaDaMensagem(mensagem: string): number {
  * Erro devolvido pelo servidor (uma mensagem por linha) como problemas por etapa. Atividades
  * citadas pelo nome ganham o campo de data, para o foco ir direto até ela.
  */
-export function problemasDoServidor(mensagem: string, ev: Pick<Evento, "cronograma">): Problema[] {
+export function problemasDoServidor(mensagem: string, ev: Pick<Evento, "cronograma" | "lotes">): Problema[] {
   return mensagem
     .split("\n")
     .map((m) => m.trim())
@@ -145,7 +151,10 @@ export function problemasDoServidor(mensagem: string, ev: Pick<Evento, "cronogra
     .map((m) => {
       const titulo = /^Atividade "(.*)" fora do período/.exec(m)?.[1];
       const at = titulo !== undefined ? ev.cronograma.find((a) => a.titulo === titulo) : undefined;
-      return { etapa: etapaDaMensagem(m), campo: at ? `at-data-${at.id}` : "", mensagem: m };
+      const nomeLote = /^Lote "(.*)": as vendas/.exec(m)?.[1];
+      const lote = nomeLote !== undefined ? ev.lotes.find((l) => l.nome === nomeLote) : undefined;
+      const campo = at ? `at-data-${at.id}` : lote ? `lt-fim-${lote.id}` : m.startsWith("O início da operação") ? "ev-ini" : "";
+      return { etapa: etapaDaMensagem(m), campo, mensagem: m };
     });
 }
 
@@ -180,7 +189,7 @@ export function revisarEvento(ev: Evento, oc: Ocupacao = SEM_OCUPACAO, agora = n
   if (!ev.imagemUrl) erros.push({ etapa: 2, campo: "ev-img-arquivo", mensagem: "Adicione a imagem principal do evento." });
   // Regras do servidor que ainda não foram cobertas pelas etapas.
   for (const m of validarParaPublicacao(ev)) {
-    if (!erros.some((e) => e.mensagem === m) && !/obrigat|Cadastre|cronograma precisa|fora do período|imagem principal|modalidade/i.test(m)) {
+    if (!erros.some((e) => e.mensagem === m) && !/obrigat|Cadastre|cronograma precisa|fora do período|as vendas devem terminar|início da operação já|imagem principal|modalidade/i.test(m)) {
       erros.push({ etapa: 6, campo: "", mensagem: m });
     }
   }

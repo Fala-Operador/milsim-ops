@@ -62,3 +62,43 @@ export function formatarNoFuso(iso: string, fuso: string | undefined): string {
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fusoValido(fuso) });
 }
+
+/** ISO → valor de `<input type="datetime-local">` ("AAAA-MM-DDTHH:MM") no fuso do evento. */
+export function paraCampoNoFuso(iso: string, fuso: string | undefined): string {
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return "";
+  return new Date(t + deslocamento(fusoValido(fuso), t) * 60000).toISOString().slice(0, 16);
+}
+
+/** Valor de `<input type="datetime-local">` digitado no fuso do evento → ISO. Inválido devolve "". */
+export function deCampoNoFuso(valor: string, fuso: string | undefined): string {
+  const [data = "", horario = ""] = valor.split("T");
+  const d = instanteNoFuso(data, horario.slice(0, 5), fuso);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString();
+}
+
+/** Mantém a hora "de parede" ao trocar o fuso (08:00 continua 08:00 no novo fuso). */
+export function trocarFuso(iso: string, de: string | undefined, para: string | undefined): string {
+  return deCampoNoFuso(paraCampoNoFuso(iso, de), para) || iso;
+}
+
+/**
+ * Período da operação para mensagens. Mesmo dia: "21/11/2026 Início às 08:00, fim às 10:00";
+ * dias diferentes: "Início em 21/11/2026 às 08:00, fim em 22/11/2026 às 10:00".
+ */
+export function formatarPeriodoNoFuso(inicioIso: string, fimIso: string, fuso: string | undefined): string {
+  const partes = (iso: string) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    const z = fusoValido(fuso);
+    return {
+      data: d.toLocaleDateString("pt-BR", { timeZone: z }),
+      hora: d.toLocaleTimeString("pt-BR", { timeZone: z, hour: "2-digit", minute: "2-digit" }),
+    };
+  };
+  const ini = partes(inicioIso);
+  const fim = partes(fimIso);
+  if (!ini || !fim) return "";
+  if (ini.data === fim.data) return `${ini.data} Início às ${ini.hora}, fim às ${fim.hora}`;
+  return `Início em ${ini.data} às ${ini.hora}, fim em ${fim.data} às ${fim.hora}`;
+}
