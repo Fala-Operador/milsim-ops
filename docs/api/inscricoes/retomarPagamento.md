@@ -33,7 +33,7 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - Reserva não encontrada.
 - Esta reserva não está mais aguardando pagamento.
 - O prazo desta reserva terminou. Faça uma nova inscrição.
-- A venda de ingressos deste evento ainda não está aberta: a organização precisa concluir a conta de recebimento. (a conta de recebimento deixou de estar ativa depois da reserva)
+- A venda de ingressos deste evento ainda não está aberta. (a conta de recebimento deixou de estar ativa depois da reserva)
 - Entre na sua conta para continuar.
 
 ## Exemplo

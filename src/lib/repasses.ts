@@ -101,9 +101,10 @@ export function recebimentoDaConta(conta: ContaStripe, agora = new Date()): Rece
 }
 
 /** A organização pode receber o repasse de uma venda agora (transferências ativas no Stripe). */
-/** Motivo mostrado quando a organização ainda não pode vender ingressos pagos. */
-export const MSG_SEM_RECEBIMENTO =
-  "A venda de ingressos deste evento ainda não está aberta: a organização precisa concluir a conta de recebimento.";
+/** Mostrado ao comprador quando a organização ainda não pode vender ingressos pagos. */
+export const MSG_SEM_RECEBIMENTO = "A venda de ingressos deste evento ainda não está aberta.";
+/** Mostrado à organização (painel e editor de evento) enquanto a conta de recebimento não está ativa. */
+export const MSG_ORG_SEM_RECEBIMENTO = "A organização precisa concluir a conta de recebimento para vender ingressos pagos.";
 
 export function contaParaRepasse(org: Organizacao | undefined): string | undefined {
   const r = org?.recebimento;
