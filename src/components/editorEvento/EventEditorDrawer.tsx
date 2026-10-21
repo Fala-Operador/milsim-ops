@@ -251,7 +251,20 @@ export function EventEditorDrawer(p: PropsEditor) {
       setTimeout(p.onFechar, 200);
     } catch (e) {
       setEstado("erro");
-      setMsg(e instanceof Error ? e.message : "Falha ao concluir.");
+      const texto = e instanceof Error ? e.message : "Falha ao concluir.";
+      // Atividades recusadas pelo servidor: cada erro vai para o card da sua atividade.
+      const titulos = [...texto.matchAll(/Atividade "([^"]*)" fora do período do evento\./g)].map((m) => m[1]);
+      const atividades = form.getValues().cronograma.filter((a) => titulos.includes(a.titulo));
+      if (atividades.length) {
+        setErros(Object.fromEntries(atividades.map((a) => [`at-data-${a.id}`, "Fora do período do evento."])));
+        focoPendente.current = `at-data-${atividades[0]!.id}`;
+        setEtapa(ETAPAS.findIndex((x) => x.id === "cronograma"));
+        const resto = texto.replace(/Atividade "[^"]*" fora do período do evento\.\s*/g, "").trim();
+        const n = atividades.length;
+        setMsg(`${n === 1 ? "1 atividade está" : `${n} atividades estão`} fora do período do evento.${resto ? ` ${resto}` : ""}`);
+      } else {
+        setMsg(texto);
+      }
     } finally {
       setEnviando(false);
     }

@@ -203,7 +203,7 @@ export function EtapaCronograma({ ev, set, erros, onErroArquivo }: PropsEtapa & 
                   <Input id={`at-data-${a.id}`} type="date" value={a.data} onChange={(e) => mudar(a.id, { data: e.target.value })} {...inval(erros, `at-data-${a.id}`)} />
                 </Campo>
                 <Campo rotulo="Horário" htmlFor={`at-hora-${a.id}`}>
-                  <Input id={`at-hora-${a.id}`} type="time" value={a.horario} onChange={(e) => mudar(a.id, { horario: e.target.value })} />
+                  <Input id={`at-hora-${a.id}`} type="time" value={a.horario} onChange={(e) => mudar(a.id, { horario: e.target.value })} {...inval(erros, `at-data-${a.id}`)} />
                 </Campo>
                 <Campo rotulo="Atividade" htmlFor={`at-titulo-${a.id}`}>
                   <Input id={`at-titulo-${a.id}`} value={a.titulo} onChange={(e) => mudar(a.id, { titulo: e.target.value })} {...inval(erros, `at-titulo-${a.id}`)} />
