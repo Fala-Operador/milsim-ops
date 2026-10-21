@@ -49,6 +49,7 @@ import { Route as OrganizacaoIndexRouteImport } from './routes/organizacao.index
 import { Route as OrganizacaoCheckinRouteImport } from './routes/organizacao.checkin'
 import { Route as OrganizacaoComunidadeRouteImport } from './routes/organizacao.comunidade'
 import { Route as OrganizacaoFinanceiroRouteImport } from './routes/organizacao.financeiro'
+import { Route as OrganizacaoImpulsosRouteImport } from './routes/organizacao.impulsos'
 import { Route as OrganizacaoInscritosRouteImport } from './routes/organizacao.inscritos'
 import { Route as OrganizacaoMetricasRouteImport } from './routes/organizacao.metricas'
 import { Route as OrganizacaoMissoesRouteImport } from './routes/organizacao.missoes'
@@ -261,6 +262,11 @@ const OrganizacaoFinanceiroRoute = OrganizacaoFinanceiroRouteImport.update({
   path: '/financeiro',
   getParentRoute: () => OrganizacaoRoute,
 } as any)
+const OrganizacaoImpulsosRoute = OrganizacaoImpulsosRouteImport.update({
+  id: '/impulsos',
+  path: '/impulsos',
+  getParentRoute: () => OrganizacaoRoute,
+} as any)
 const OrganizacaoInscritosRoute = OrganizacaoInscritosRouteImport.update({
   id: '/inscritos',
   path: '/inscritos',
@@ -357,6 +363,7 @@ export interface FileRoutesByFullPath {
   '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
+  '/organizacao/impulsos': typeof OrganizacaoImpulsosRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/missoes': typeof OrganizacaoMissoesRoute
@@ -406,6 +413,7 @@ export interface FileRoutesByTo {
   '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
+  '/organizacao/impulsos': typeof OrganizacaoImpulsosRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/missoes': typeof OrganizacaoMissoesRoute
@@ -460,6 +468,7 @@ export interface FileRoutesById {
   '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
+  '/organizacao/impulsos': typeof OrganizacaoImpulsosRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/missoes': typeof OrganizacaoMissoesRoute
@@ -515,6 +524,7 @@ export interface FileRouteTypes {
     | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
+    | '/organizacao/impulsos'
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
     | '/organizacao/missoes'
@@ -564,6 +574,7 @@ export interface FileRouteTypes {
     | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
+    | '/organizacao/impulsos'
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
     | '/organizacao/missoes'
@@ -617,6 +628,7 @@ export interface FileRouteTypes {
     | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
+    | '/organizacao/impulsos'
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
     | '/organizacao/missoes'
@@ -934,6 +946,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizacaoFinanceiroRouteImport
       parentRoute: typeof OrganizacaoRoute
     }
+    '/organizacao/impulsos': {
+      id: '/organizacao/impulsos'
+      path: '/impulsos'
+      fullPath: '/organizacao/impulsos'
+      preLoaderRoute: typeof OrganizacaoImpulsosRouteImport
+      parentRoute: typeof OrganizacaoRoute
+    }
     '/organizacao/inscritos': {
       id: '/organizacao/inscritos'
       path: '/inscritos'
@@ -1078,6 +1097,7 @@ interface OrganizacaoRouteChildren {
   OrganizacaoCheckinRoute: typeof OrganizacaoCheckinRoute
   OrganizacaoComunidadeRoute: typeof OrganizacaoComunidadeRoute
   OrganizacaoFinanceiroRoute: typeof OrganizacaoFinanceiroRoute
+  OrganizacaoImpulsosRoute: typeof OrganizacaoImpulsosRoute
   OrganizacaoInscritosRoute: typeof OrganizacaoInscritosRoute
   OrganizacaoMetricasRoute: typeof OrganizacaoMetricasRoute
   OrganizacaoMissoesRoute: typeof OrganizacaoMissoesRoute
@@ -1091,6 +1111,7 @@ const OrganizacaoRouteChildren: OrganizacaoRouteChildren = {
   OrganizacaoCheckinRoute: OrganizacaoCheckinRoute,
   OrganizacaoComunidadeRoute: OrganizacaoComunidadeRoute,
   OrganizacaoFinanceiroRoute: OrganizacaoFinanceiroRoute,
+  OrganizacaoImpulsosRoute: OrganizacaoImpulsosRoute,
   OrganizacaoInscritosRoute: OrganizacaoInscritosRoute,
   OrganizacaoMetricasRoute: OrganizacaoMetricasRoute,
   OrganizacaoMissoesRoute: OrganizacaoMissoesRoute,

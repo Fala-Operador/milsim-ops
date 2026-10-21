@@ -111,6 +111,37 @@ export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
   );
 }
 
+export interface DadosCheckoutImpulso {
+  impulsoId: string;
+  descricao: string;
+  valorCentavos: number;
+  expiraEm: string;
+  email?: string | undefined;
+  urlSucesso: string;
+  urlCancelamento: string;
+}
+
+/** Checkout Session da compra de um impulso: o valor fica todo com a plataforma (sem destino). */
+export function criarSessaoCheckoutImpulso(d: DadosCheckoutImpulso): Promise<SessaoCheckout> {
+  return chamarStripe<SessaoCheckout>(
+    "POST",
+    "/checkout/sessions",
+    {
+      mode: "payment",
+      locale: "pt-BR",
+      client_reference_id: d.impulsoId,
+      customer_email: d.email,
+      expires_at: Math.floor(new Date(d.expiraEm).getTime() / 1000),
+      success_url: d.urlSucesso,
+      cancel_url: d.urlCancelamento,
+      metadata: { impulsoId: d.impulsoId },
+      payment_intent_data: { metadata: { impulsoId: d.impulsoId } },
+      line_items: [{ quantity: 1, price_data: { currency: "brl", unit_amount: d.valorCentavos, product_data: { name: d.descricao } } }],
+    },
+    `checkout-${d.impulsoId}`,
+  );
+}
+
 export function obterSessaoCheckout(id: string): Promise<SessaoCheckout> {
   return chamarStripe<SessaoCheckout>("GET", `/checkout/sessions/${encodeURIComponent(id)}`);
 }

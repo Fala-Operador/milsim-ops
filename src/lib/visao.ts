@@ -8,6 +8,7 @@ import { pagamentoAnonimo, pagamentoSemIds } from "@/lib/pagamentos";
 import { organizacaoVisivel } from "@/lib/repasses";
 import { podeVerGrupo } from "@/lib/contatoEvento";
 import { destinadaA, exercitoDaPessoa } from "@/lib/missoes";
+import { gereImpulsos } from "@/lib/impulsos";
 import {
   forunsVisiveis,
   nomeExibicao,
@@ -186,7 +187,14 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
   v.impulsionamentos = base.impulsionamentos.flatMap((c) => {
     if (admin || geridos.has(c.eventoId)) return [c];
     if (c.status !== "ativo") return [];
-    return [{ ...c, nome: "", criadoPor: "" }];
+    return [{ ...c, nome: "", criadoPor: "", impulsoId: undefined }];
+  });
+  // Impulsos: preços públicos; compras só para a organização (sem ids do Stripe) e a administração.
+  v.planosImpulso = base.planosImpulso;
+  v.impulsosComprados = base.impulsosComprados.flatMap((i) => {
+    if (admin) return [i];
+    if (!gereImpulsos(eu, i.organizacaoId)) return [];
+    return [{ ...i, sessaoId: undefined, intencaoId: undefined }];
   });
 
   // ----- Perfil do operador e gamificação -----
