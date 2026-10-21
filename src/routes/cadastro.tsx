@@ -239,7 +239,7 @@ function PaginaCadastro() {
               {erro}
             </p>
           )}
-          <Button type="submit" disabled={carregando} className="sm:col-span-2">
+          <Button type="submit" disabled={carregando || !aceite || !privacidade} className="sm:col-span-2">
             {carregando ? "Cadastrando..." : "Concluir cadastro"}
           </Button>
         </form>
