@@ -342,6 +342,18 @@ Código: `src/lib/divulgacao.ts`, `src/lib/impulsionamento.ts`.
     suspenso (evento fora do ar) ou encerrado.
   - Campanhas entram antes da curadoria, ordenadas por prioridade e ordem; cada evento aparece **uma vez** por seção.
   - Campanhas nunca são apagadas; encerrada não é editada.
+- **Impulsos comprados** (organização): `src/lib/impulsos.ts`, página `/organizacao/impulsos`.
+  - Seis tipos: 24h, 3, 5, 7, 15 e 30 dias. Preço, validade (padrão 30 dias) e venda de cada tipo
+    são definidos pela administração; a compra guarda os valores do momento.
+  - Só o organizador ativo compra, para a própria organização; o pagamento (Stripe Checkout) fica todo
+    com a plataforma. Preço 0 libera na hora. Checkout não pago em 60 minutos é descartado.
+  - Pago, o impulso fica no saldo da organização e precisa ser usado até `pagamento + validade`;
+    depois disso aparece como **expirado** e não pode mais ser usado.
+  - Usar = escolher uma operação publicada, não encerrada e com imagem: vira uma campanha ativa nas
+    seções de destaque e no topo da listagem, em todo o Brasil, com prioridade normal. Um segundo impulso
+    na mesma operação começa quando o anterior termina; o impulso termina no máximo no fim da operação.
+  - Reembolso integral no Stripe cancela o impulso e encerra a campanha. A organização vê as próprias
+    compras sem os ids do Stripe; o público não vê compras nem qual campanha veio de um impulso.
 
 ## 16. Métricas
 

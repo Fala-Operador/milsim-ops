@@ -1,0 +1,133 @@
+// Administração → Página inicial e divulgação → Impulsionamentos: preço, validade e venda
+// dos tipos de impulso, e as compras feitas pelas organizações.
+import { useEffect, useState } from "react";
+import type { BaseDados, PlanoImpulsoId } from "@/lib/domain/types";
+import { ROTULO_STATUS_IMPULSO, erroPlano, planosDeImpulso, rotuloDuracao, statusDoImpulso } from "@/lib/impulsos";
+import { salvarPlanosImpulso } from "@/api/impulsos.functions";
+import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+interface Linha { id: PlanoImpulsoId; rotulo: string; preco: string; validade: string; ativo: boolean }
+
+const paraLinhas = (base: BaseDados): Linha[] =>
+  planosDeImpulso(base).map((p) => ({
+    id: p.id, rotulo: p.rotulo, preco: (p.precoCentavos / 100).toFixed(2).replace(".", ","), validade: String(p.validadeDias), ativo: p.ativo,
+  }));
+
+const centavos = (preco: string) => Math.round(Number(preco.trim().replace(/\./g, "").replace(",", ".")) * 100);
+
+export function PlanosImpulso({ base }: { base: BaseDados }) {
+  const [linhas, setLinhas] = useState(() => paraLinhas(base));
+  const [erro, setErro] = useState("");
+  const [aviso, setAviso] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const chave = JSON.stringify(planosDeImpulso(base));
+  // Mantém os campos em dia quando os preços mudam (outra aba, outro admin).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => setLinhas(paraLinhas(base)), [chave]);
+
+  const mudar = (id: PlanoImpulsoId, campo: Partial<Linha>) => {
+    setErro(""); setAviso("");
+    setLinhas((ls) => ls.map((l) => (l.id === id ? { ...l, ...campo } : l)));
+  };
+
+  const salvar = async () => {
+    setErro(""); setAviso("");
+    const planos = linhas.map((l) => ({ id: l.id, precoCentavos: centavos(l.preco), validadeDias: Number(l.validade), ativo: l.ativo }));
+    for (const [i, p] of planos.entries()) {
+      const e = erroPlano(p);
+      if (e) return setErro(`${linhas[i]!.rotulo}: ${e}`);
+    }
+    setSalvando(true);
+    try {
+      await salvarPlanosImpulso(planos);
+      setAviso("Impulsos atualizados. Os novos valores valem para as próximas compras.");
+    } catch (e) {
+      setErro((e as Error).message);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  return (
+    <Card className="space-y-3">
+      <div>
+        <h3 className="font-medium">Impulsos à venda para as organizações</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          A organização compra em Minha organização → Impulsionar, paga à plataforma pelo Stripe e usa numa operação publicada dentro da validade (contada do pagamento).
+          O impulso usado vira uma campanha abaixo, nos destaques e no topo da listagem, em todo o Brasil. Preço 0 libera o tipo de graça.
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <Table className="w-full min-w-[560px] text-sm">
+          <TableHeader className="text-left text-xs uppercase text-muted-foreground">
+            <TableRow>{["Tipo", "Preço (R$)", "Validade (dias)", "À venda"].map((h) => <TableHead key={h} className="px-2 py-2">{h}</TableHead>)}</TableRow>
+          </TableHeader>
+          <TableBody>
+            {linhas.map((l) => (
+              <TableRow key={l.id} className="border-t border-border">
+                <TableCell className="px-2 py-2 font-medium">{l.rotulo}</TableCell>
+                <TableCell className="px-2 py-2">
+                  <Input aria-label={`Preço do ${l.rotulo}`} inputMode="decimal" value={l.preco} onChange={(e) => mudar(l.id, { preco: e.target.value })} className="max-w-32" />
+                </TableCell>
+                <TableCell className="px-2 py-2">
+                  <Input aria-label={`Validade do ${l.rotulo}`} inputMode="numeric" value={l.validade} onChange={(e) => mudar(l.id, { validade: e.target.value })} className="max-w-24" />
+                </TableCell>
+                <TableCell className="px-2 py-2">
+                  <Label className="flex items-center gap-2">
+                    <Checkbox checked={l.ativo} onCheckedChange={(v) => mudar(l.id, { ativo: v === true })} />
+                    {l.ativo ? "Sim" : "Não"}
+                  </Label>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
+      {aviso && <p role="status" className="text-sm text-success">{aviso}</p>}
+      <Button type="button" disabled={salvando} onClick={() => void salvar()}>{salvando ? "Salvando…" : "Salvar impulsos"}</Button>
+      <VendasImpulso base={base} />
+    </Card>
+  );
+}
+
+function VendasImpulso({ base }: { base: BaseDados }) {
+  const agora = new Date();
+  const vendas = base.impulsosComprados
+    .filter((i) => i.pagoEm)
+    .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm))
+    .slice(0, 50);
+  if (!vendas.length) return <p className="text-sm text-muted-foreground">Nenhum impulso vendido ainda.</p>;
+  const nomeOrg = (id: string) => base.organizacoes.find((o) => o.id === id)?.nome ?? "Organização removida";
+  const nomeEvento = (id?: string) => (id ? base.eventos.find((e) => e.id === id)?.nome ?? "Operação removida" : "—");
+  return (
+    <div className="space-y-2">
+      <h4 className="text-sm font-medium">Últimas vendas</h4>
+      <div className="overflow-x-auto">
+        <Table className="w-full min-w-[640px] text-sm">
+          <TableHeader className="text-left text-xs uppercase text-muted-foreground">
+            <TableRow>{["Organização", "Impulso", "Pago em", "Situação", "Operação"].map((h) => <TableHead key={h} className="px-2 py-2">{h}</TableHead>)}</TableRow>
+          </TableHeader>
+          <TableBody>
+            {vendas.map((i) => (
+              <TableRow key={i.id} className="border-t border-border">
+                <TableCell className="px-2 py-2">{nomeOrg(i.organizacaoId)}</TableCell>
+                <TableCell className="px-2 py-2 whitespace-nowrap">{rotuloDuracao(i.duracaoHoras)} · {formatarBRL(i.precoCentavos)}</TableCell>
+                <TableCell className="px-2 py-2 whitespace-nowrap">{formatarDataBR(i.pagoEm!)}</TableCell>
+                <TableCell className="px-2 py-2"><Badge variant="outline">{ROTULO_STATUS_IMPULSO[statusDoImpulso(i, agora)]}</Badge></TableCell>
+                <TableCell className="px-2 py-2">{nomeEvento(i.eventoId)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}

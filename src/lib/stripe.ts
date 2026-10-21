@@ -108,7 +108,10 @@ export interface EventoStripe {
 
 const idDe = (x: string | { id: string } | null | undefined) => (typeof x === "string" ? x : x?.id);
 
-export const inscricaoDaSessao = (s: SessaoCheckout) => s.metadata?.["inscricaoId"] || s.client_reference_id || undefined;
+/** Compra de impulso (metadata.impulsoId); sessões de ingresso não têm esse campo. */
+export const impulsoDaSessao = (s: SessaoCheckout) => s.metadata?.["impulsoId"] || undefined;
+export const inscricaoDaSessao = (s: SessaoCheckout) =>
+  impulsoDaSessao(s) ? undefined : s.metadata?.["inscricaoId"] || s.client_reference_id || undefined;
 export const intencaoDaSessao = (s: SessaoCheckout) => idDe(s.payment_intent);
 export const intencaoDaCobranca = (c: CobrancaStripe) => idDe(c.payment_intent);
 export const intencaoDaDisputa = (d: DisputaStripe) => idDe(d.payment_intent);

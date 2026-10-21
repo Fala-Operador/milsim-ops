@@ -92,7 +92,7 @@ try {
 
 ## Índice
 
-116 server functions em 15 módulos, mais os [webhooks do Stripe](#webhooks).
+121 server functions em 16 módulos, mais os [webhooks do Stripe](#webhooks).
 
 ### Sessão e leitura
 <a id="sessao"></a>
@@ -330,6 +330,19 @@ Campanhas de destaque de eventos na página inicial. Arquivo: [`src/api/impulsio
 |---|---|---|---|
 | [`salvarImpulsionamento`](impulsionamentos/salvarImpulsionamento.md) | POST | Somente admin | Cria ou edita uma campanha de impulsionamento: o evento ganha prioridade nas seções escolhidas da página inicial, num período e numa região. |
 | [`alterarImpulsionamento`](impulsionamentos/alterarImpulsionamento.md) | POST | Somente admin | Pausa, retoma ou encerra uma campanha de impulsionamento. |
+
+### Impulsos das organizações
+<a id="impulsos"></a>
+
+Impulsos comprados pela organização (24h a 30 dias) e usados nas próprias operações. Arquivo: [`src/api/impulsos.functions.ts`](../../src/api/impulsos.functions.ts).
+
+| API | Método | Acesso | O que faz |
+|---|---|---|---|
+| [`comprarImpulso`](impulsos/comprarImpulso.md) | POST | Organizador ativo | Compra um impulso para a organização e abre o pagamento no Stripe Checkout da plataforma. |
+| [`retomarPagamentoImpulso`](impulsos/retomarPagamentoImpulso.md) | POST | Organizador ativo | Volta à página de pagamento de um impulso que ainda aguarda pagamento. |
+| [`sincronizarPagamentoImpulso`](impulsos/sincronizarPagamentoImpulso.md) | POST | Organizador ativo | Retorno do checkout: consulta o Stripe e aplica o pagamento do impulso. |
+| [`usarImpulso`](impulsos/usarImpulso.md) | POST | Organizador ativo | Usa um impulso disponível numa operação publicada: cria a campanha de destaque. |
+| [`salvarPlanosImpulso`](impulsos/salvarPlanosImpulso.md) | POST | Somente admin | Define preço, validade e venda dos tipos de impulso. |
 
 ### Webhooks
 <a id="webhooks"></a>
