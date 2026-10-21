@@ -64,6 +64,7 @@ Código: `src/services/auth.ts`, `src/server/auth.server.ts`, `src/lib/domain/va
 - **CPF e e-mail são únicos.** Se o perfil não puder ser gravado, a conta criada no Auth é apagada.
 - A conta é criada com e-mail já confirmado (ver [lacunas](#19-lacunas-conhecidas)).
 - Recuperação de senha por link de e-mail de uso único; a resposta não revela se o e-mail existe.
+- Login, cadastro e pedido de redefinição de senha mostram o Cloudflare Turnstile (`src/components/Turnstile.tsx`); o token é conferido pelo CAPTCHA do Supabase Auth, e cada token vale uma tentativa.
 - Foto de perfil: JPEG, PNG ou WebP, recortada no navegador, até ~2,2 MB.
 - Tema: visitante sempre escuro; a conta guarda claro ou escuro.
 - Preferência de modalidades: `todas`, `selecionadas` (ids do catálogo) ou `pendente`; ordena a

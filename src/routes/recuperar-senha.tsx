@@ -8,6 +8,7 @@ import { Campo, Spinner } from "@/components/ui";
 import { CheckCircle2, ShieldAlert } from "lucide-react";
 import { InputSenha } from "@/components/ui/input-senha";
 import { RequisitosSenha } from "@/components/RequisitosSenha";
+import { useTurnstile } from "@/components/Turnstile";
 import { erroSenha } from "@/lib/domain/senha";
 
 export const Route = createFileRoute("/recuperar-senha")({
@@ -53,16 +54,18 @@ function PedirLink({ erroLink }: { erroLink?: string | undefined }) {
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState(erroLink ? "O link de recuperação é inválido ou expirou. Solicite um novo." : "");
+  const turnstile = useTurnstile("recuperar_senha");
 
   const aoEnviar = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro("");
     setEnviando(true);
     try {
-      await recuperarSenha(email);
+      await recuperarSenha(email, turnstile.token);
       setEnviado(true);
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha ao processar.");
+      turnstile.resetar();
     } finally {
       setEnviando(false);
     }
@@ -80,7 +83,8 @@ function PedirLink({ erroLink }: { erroLink?: string | undefined }) {
       <Campo rotulo="E-mail" htmlFor="email" erro={erro || undefined}>
         <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </Campo>
-      <Button type="submit" className="w-full" disabled={enviando}>{enviando ? "Enviando..." : "Enviar link de recuperação"}</Button>
+      {turnstile.elemento}
+      <Button type="submit" className="w-full" disabled={enviando || !turnstile.pronto}>{enviando ? "Enviando..." : "Enviar link de recuperação"}</Button>
     </form>
   );
 }

@@ -26,11 +26,13 @@ Cria a conta de participante: valida os dados, cria o usuário no Supabase Auth 
 | `fotoUrl?` | string (data URL) | Foto opcional; vai para o Storage. |
 | `aceiteTermos, cienciaPrivacidade` | boolean | Obrigatórios (`true`). |
 | `autorizacaoPromocional` | boolean | Consentimento opcional para comunicações. |
+| `captcha?` | string | Token do Cloudflare Turnstile, repassado ao CAPTCHA do Supabase Auth (`captchaToken`). Obrigatório quando o CAPTCHA está ligado no Supabase. |
 
 ## Regras
 
 - CPF e e-mail são únicos.
 - Menores de 18 anos (15 a 17) ficam com `autorizacaoResponsavel = "pendente"` e só se inscrevem depois da aprovação do admin.
+- A conta é criada pelo admin (que não passa pelo CAPTCHA) e logo em seguida entra com o token do Turnstile; se o CAPTCHA recusar o token, a conta recém-criada é apagada.
 - Se a gravação do perfil falhar, a conta criada no Auth é apagada (não fica conta órfã).
 - Perfil, papel e organização ficam na tabela `usuarios`, nunca em `user_metadata`.
 
@@ -55,6 +57,7 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - Esta senha já apareceu em vazamentos de dados e não pode ser usada. Escolha outra.
 - Senha fraca. Escolha uma senha mais difícil de adivinhar.
 - Não foi possível criar a conta. Tente novamente.
+- Não conseguimos confirmar que você não é um robô. Refaça a verificação e tente de novo.
 
 ## Exemplo
 
