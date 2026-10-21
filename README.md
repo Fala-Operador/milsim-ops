@@ -45,7 +45,7 @@ bun run start                # servidor Node gerado pelo build (.output/server/i
 |---|---|
 | `SUPABASE_URL` | URL do projeto |
 | `SUPABASE_PUBLISHABLE_KEY` | chave publicável; o servidor a usa para a sessão do Supabase Auth |
-| `SUPABASE_SECRET_KEY` | chave secreta, **somente servidor** (acesso ao banco, Storage e Auth admin) |
+| `SUPABASE_SECRET_KEY` | chave secreta (`sb_secret_…` ou a legada `service_role`), **somente servidor** (acesso ao banco, Storage e Auth admin). Com a chave publicável aqui o banco nega tudo ("permission denied for function export_base"); o servidor agora avisa isso no log |
 | `SUPABASE_DB_PASSWORD` | só para `supabase link` / `db push` |
 | `STRIPE_SERVER_API_KEY` | opcional, **somente servidor**: liga a venda pelo Stripe Checkout e o Stripe Connect (sem ela, inscrição confirmada sem cobrança) |
 | `STRIPE_WEBHOOK_FORWARD_SECRET` | segredo compartilhado entre a Edge Function `stripe-webhook` e o site (mesmo valor nos dois lados) |
