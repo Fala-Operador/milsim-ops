@@ -6,7 +6,7 @@ import { ehModalidade } from "@/lib/modalidades";
 import { disponibilidadeTipo, type OcupacaoLote } from "@/lib/vendas";
 import { validarParaPublicacao } from "@/services/organizador";
 import { errosContatoEvento } from "@/lib/contatoEvento";
-import { formatarNoFuso, instanteNoFuso } from "@/lib/fusoHorario";
+import { formatarNoFuso, formatarPeriodoNoFuso, instanteNoFuso } from "@/lib/fusoHorario";
 
 export const ETAPAS = [
   { id: "geral", titulo: "Informações gerais" },
@@ -116,7 +116,7 @@ function schemaEtapa(i: number, oc: Ocupacao) {
           const quando = instanteNoFuso(a.data, a.horario, ev.fuso);
           if (Number.isNaN(quando.getTime())) erro(ctx, `at-data-${a.id}`, "Informe data e horário.");
           else if (quando < ini || quando > fim) {
-            erro(ctx, `at-data-${a.id}`, `Fora do período da operação (${formatarNoFuso(ev.inicioEm, ev.fuso)} a ${formatarNoFuso(ev.fimEm, ev.fuso)}).`);
+            erro(ctx, `at-data-${a.id}`, `Fora do período da operação (${formatarPeriodoNoFuso(ev.inicioEm, ev.fimEm, ev.fuso)}).`);
           }
         });
         if (ev.regras && vazio(ev.regras.titulo)) erro(ctx, "ev-regras-titulo", "Informe o título do caderno de regras.");
