@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { InputSenha } from "@/components/ui/input-senha";
 import { Campo } from "@/components/ui";
 
 export const Route = createFileRoute("/login")({
@@ -61,9 +62,8 @@ function PaginaLogin() {
             />
           </Campo>
           <Campo rotulo="Senha" htmlFor="senha">
-            <Input
+            <InputSenha
               id="senha"
-              type="password"
               autoComplete="current-password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}

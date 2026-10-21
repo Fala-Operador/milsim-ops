@@ -53,7 +53,12 @@ escrita. As telas só refletem o resultado. Valores entre parênteses são os li
 Código: `src/services/auth.ts`, `src/server/auth.server.ts`, `src/lib/domain/validators.ts`.
 
 - Obrigatórios: CPF válido, nome, nascimento, e-mail válido, WhatsApp com DDD, endereço,
-  senha (mínimo **6** caracteres, com confirmação) e aceite dos termos e do aviso de privacidade.
+  senha (mínimo **6** caracteres, com letra minúscula, maiúscula, número e símbolo, e confirmação)
+  e aceite dos termos e do aviso de privacidade.
+- Requisitos de senha em `src/lib/domain/senha.ts`, espelhando a configuração do Supabase Auth
+  (Authentication → Email); se mudar lá, mude o módulo. O Supabase também recusa senhas vazadas
+  (HaveIBeenPwned) e o erro chega traduzido. As telas mostram a checklist ao vivo e todo campo de
+  senha tem o botão de olho (`InputSenha`).
 - **Idade mínima: 15 anos.** De 15 a 17 anos a conta nasce com `autorizacaoResponsavel = pendente`
   e **não pode se inscrever** até o admin aprovar. → [`aprovarAutorizacaoResponsavel`](api/admin/aprovarAutorizacaoResponsavel.md)
 - **CPF e e-mail são únicos.** Se o perfil não puder ser gravado, a conta criada no Auth é apagada.
