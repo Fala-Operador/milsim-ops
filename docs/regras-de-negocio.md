@@ -191,6 +191,10 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
   transfere o valor menos a **taxa da plataforma**. Sem conta ativa, o valor fica com a plataforma
   ("repasse à parte").
 - A **taxa** (%) é definida pelo admin e vale para reservas novas; cada venda guarda a taxa do momento.
+- A **taxa de serviço do comprador** (%, padrão 0%) também é definida pelo admin: é somada ao valor do
+  ingresso no checkout como o item "Taxa de serviço", aparece na revisão da inscrição e fica com a
+  plataforma, sem mudar o que a organização recebe. Ex.: ingresso de R$ 100,00 com 3,5% do comprador e
+  3,5% da organização: o comprador paga R$ 103,50, a organização recebe R$ 96,50 e a plataforma R$ 7,00.
 - Reembolso de venda repassada desfaz a transferência e devolve a taxa.
 - Ao trocar as chaves do Stripe de teste para produção, a conta de recebimento criada no modo de teste
   (ou numa sandbox, que é outra conta de plataforma) é esquecida na primeira consulta e a organização
@@ -217,7 +221,8 @@ Código: `resumoFinanceiro` (`src/services/inscricoes.ts`), `src/lib/movimentaco
   - reservas aguardando pagamento aparecem à parte e **não** entram nos valores.
 - Movimentações: `inscricao` (entrada), `desconto_cupom` (registrada com valor 0; o valor real vem
   da inscrição), `estorno` (negativo) e `ajuste`.
-- Pagamentos online mostram cobrado, taxa da plataforma, repassado à organização e o que ficou com a plataforma.
+- Pagamentos online mostram cobrado, taxa da plataforma, repassado à organização, o que ficou com a plataforma
+  e, quando houver, a taxa de serviço paga pelos compradores.
 - A tela de movimentações tem abas por tipo, busca (descrição ou código `OP-…`), período, meio de
   pagamento e ordenação; os totais das abas respeitam os filtros.
 

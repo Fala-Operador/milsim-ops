@@ -2,8 +2,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import * as auth from "@/server/auth.server";
-import { consultar, ler } from "@/server/unidade.server";
+import { consultar, contextoSomenteLeitura, ler } from "@/server/unidade.server";
 import { stripeConfigurado } from "@/server/stripe.server";
+import { taxaDoComprador } from "@/lib/repasses";
 import { chamar } from "@/api/cliente";
 import type { DadosCadastro } from "@/services/auth";
 
@@ -12,14 +13,18 @@ export const obterVisaoFn = createServerFn({ method: "GET" }).handler(() => ler(
 
 export const obterEventoFn = createServerFn({ method: "GET" })
   .validator(z.object({ eventoId: z.string().min(1) }).parse)
-  .handler(({ data }) =>
-    consultar((base) => {
+  .handler(async ({ data }) => {
+    const r = await consultar((base) => {
       const evento = base.eventos.find((e) => e.id === data.eventoId) ?? null;
       const organizacao = evento ? base.organizacoes.find((o) => o.id === evento.organizacaoId) ?? null : null;
       // Com o Stripe configurado, inscrições pagas passam pelo checkout.
       return { evento, organizacao, pagamentoOnline: stripeConfigurado() };
-    }),
-  );
+    });
+    // Taxa de serviço somada ao ingresso, mostrada na revisão antes do pagamento. A visão de
+    // participantes não traz as configurações da plataforma, então ela vem da base completa.
+    const { base } = await contextoSomenteLeitura();
+    return { ...r, taxaCompradorPercentual: taxaDoComprador(base) };
+  });
 
 const entradaLogin = z.object({ email: z.string().max(200), senha: z.string().max(200) });
 export const entrarFn = createServerFn({ method: "POST" })

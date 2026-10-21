@@ -153,7 +153,7 @@ export const ESQUEMA = {
       pagamento: objeto("registration_payments", ["registration_id"], {
         provedor: "provider", status: "status", valorCentavos: "amount_cents", expiraEm: "expires_at",
         sessaoId: "checkout_session_id", intencaoId: "payment_intent_id", pagoEm: "paid_at", reembolsoId: "refund_id",
-        erro: "error", contaDestino: "destination_account_id", taxaCentavos: "fee_cents",
+        erro: "error", contaDestino: "destination_account_id", taxaCentavos: "fee_cents", taxaCompradorCentavos: "buyer_fee_cents",
         disputa: objeto("registration_payment_disputes", ["registration_id"], {
           status: "status", valorCentavos: "amount_cents", motivo: "reason", abertaEm: "opened_at", atualizadaEm: "updated_at",
         }),
@@ -459,7 +459,7 @@ export const ESQUEMA = {
   },
   configuracoes: {
     tabela: "platform_settings", chave: ["id"],
-    campos: { id: "id", taxaPlataformaPercentual: "platform_fee_percent", atualizadoEm: "updated_at", atualizadoPor: "updated_by" },
+    campos: { id: "id", taxaPlataformaPercentual: "platform_fee_percent", taxaCompradorPercentual: "buyer_fee_percent", atualizadoEm: "updated_at", atualizadoPor: "updated_by" },
   },
 } satisfies Record<string, Tabela>;
 

@@ -109,6 +109,7 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
       email: d.email,
       contaDestino: d.contaDestino,
       taxaCentavos: d.contaDestino ? d.pagamento.taxaCentavos : undefined,
+      taxaCompradorCentavos: d.pagamento.taxaCompradorCentavos,
       urlSucesso: `${origem}/app/ingressos?pagamento=sucesso&sessao={CHECKOUT_SESSION_ID}`,
       urlCancelamento: `${origem}/inscricao/${d.eventoId}?pagamento=cancelado`,
     });

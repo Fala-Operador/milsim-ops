@@ -180,6 +180,7 @@ Conta de recebimento das organizações e taxa da plataforma. Arquivo: [`src/api
 |---|---|---|---|
 | [`configuracaoRepasse`](repasses/configuracaoRepasse.md) | GET | Pública | Informa se os pagamentos online (Stripe) e os painéis embutidos do Stripe estão ativos. |
 | [`definirTaxaPlataforma`](repasses/definirTaxaPlataforma.md) | POST | Somente admin | Define a taxa da plataforma (%) retida em cada venda repassada às organizações. |
+| [`definirTaxaComprador`](repasses/definirTaxaComprador.md) | POST | Somente admin | Define a taxa de serviço (%) paga pelo comprador, somada ao ingresso no checkout (padrão 0%). |
 | [`cadastrarRecebimento`](repasses/cadastrarRecebimento.md) | POST | Quem gere a organização (organizador dela ou admin) | Cria (ou reaproveita) a conta Stripe Connect Express da organização e devolve o link do cadastro hospedado pelo Stripe. |
 | [`atualizarRecebimento`](repasses/atualizarRecebimento.md) | POST | Quem gere a organização | Consulta a conta Connect no Stripe e atualiza a situação do recebimento (`organizacao.recebimento`). |
 | [`abrirPainelStripe`](repasses/abrirPainelStripe.md) | POST | Quem gere a organização | Gera um link de acesso ao painel Express do Stripe (saldo, saques, dados bancários). |

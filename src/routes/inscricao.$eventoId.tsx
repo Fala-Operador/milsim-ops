@@ -10,6 +10,7 @@ import { reservaVigente } from "@/lib/pagamentos";
 import { confirmarInscricao, previsualizarCupom } from "@/api/inscricoes.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
+import { taxaPlataforma } from "@/lib/repasses";
 import { descontoDoBeneficio, descreverBeneficio, statusVoucher } from "@/lib/participacao";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,9 +28,9 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
     pagamento: typeof s["pagamento"] === "string" ? s["pagamento"] : undefined,
   }),
   loader: async ({ params }) => {
-    const { evento, pagamentoOnline } = await obterEventoFn({ data: { eventoId: params.eventoId } });
+    const { evento, pagamentoOnline, taxaCompradorPercentual } = await obterEventoFn({ data: { eventoId: params.eventoId } });
     if (!evento || evento.status !== "publicado") throw notFound();
-    return { evento, pagamentoOnline };
+    return { evento, pagamentoOnline, taxaCompradorPercentual };
   },
   head: ({ loaderData }) => ({
     meta: loaderData
@@ -52,7 +53,7 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
 });
 
 function PaginaInscricao() {
-  const { evento: eventoCarregado, pagamentoOnline } = Route.useLoaderData();
+  const { evento: eventoCarregado, pagamentoOnline, taxaCompradorPercentual } = Route.useLoaderData();
   const evento = useEventoAtual(eventoCarregado);
   const { cortesia: codigoCortesia, voucher: voucherInicial, pagamento: retornoPagamento } = Route.useSearch();
   const { usuario } = useAuth();
@@ -114,6 +115,8 @@ function PaginaInscricao() {
   const valorFinal = Math.max(0, preco - (voucherId ? descontoVoucher : desconto));
   // Com o Stripe ativo, valor a pagar passa pelo checkout; cortesia e valor zerado confirmam direto.
   const vaiPagar = pagamentoOnline && !cortesia && !!tipo && valorFinal > 0;
+  // Taxa de serviço somada no checkout (mesma conta do servidor na reserva).
+  const taxaServico = vaiPagar ? taxaPlataforma(valorFinal, taxaCompradorPercentual) : 0;
   const reservaAberta = base.inscricoes.find(
     (i) => i.eventoId === evento.id && i.usuarioId === usuario?.id && i.pagamento?.status === "aguardando" && reservaVigente(i),
   );
@@ -333,6 +336,12 @@ function PaginaInscricao() {
                   {impedimento ? "—" : formatarBRL(valorFinal)}
                   {cortesia && " (cortesia)"}
                 </dd>
+                {!impedimento && taxaServico > 0 && (
+                  <>
+                    <dt>Taxa de serviço ({String(taxaCompradorPercentual).replace(".", ",")}%)</dt><dd className="text-right font-mono">+{formatarBRL(taxaServico)}</dd>
+                    <dt className="font-medium text-foreground">Total a pagar</dt><dd className="text-right font-mono font-medium text-foreground">{formatarBRL(valorFinal + taxaServico)}</dd>
+                  </>
+                )}
               </dl>
               {!impedimento && !cortesia && preco > 0 && desconto >= preco && <p className="mt-1 text-xs">Inscrição integralmente descontada.</p>}
             </div>

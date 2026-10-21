@@ -5,7 +5,7 @@ import { gerarTokenEntrada } from "@/lib/checkin";
 import { descontoDoBeneficio, statusVoucher } from "@/lib/participacao";
 import { restaurarVoucherDaInscricao } from "@/services/progressao";
 import { exigeEstornoOnline, fimDaReserva, ocupaVaga, reservaVigente } from "@/lib/pagamentos";
-import { contaParaRepasse, taxaDaPlataforma, taxaPlataforma } from "@/lib/repasses";
+import { contaParaRepasse, taxaDaPlataforma, taxaDoComprador, taxaPlataforma } from "@/lib/repasses";
 import type {
   BaseDados,
   Cupom,
@@ -210,6 +210,8 @@ function pagamentoInicial(
   const contaDestino = contaParaRepasse(
     base.organizacoes.find((o) => o.id === evento.organizacaoId),
   );
+  // Taxa de serviço do comprador: somada ao ingresso no checkout, sempre fica com a plataforma.
+  const taxaComprador = taxaPlataforma(valorCentavos, taxaDoComprador(base));
   return {
     provedor: "stripe",
     status: "aguardando",
@@ -217,6 +219,7 @@ function pagamentoInicial(
     expiraEm: fimDaReserva(agora),
     contaDestino,
     taxaCentavos: contaDestino ? taxaPlataforma(valorCentavos, taxaDaPlataforma(base)) : undefined,
+    taxaCompradorCentavos: taxaComprador || undefined,
   };
 }
 
