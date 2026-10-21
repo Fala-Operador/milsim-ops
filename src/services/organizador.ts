@@ -4,7 +4,7 @@ import { ehModalidade, erroModalidadeParaPublicar, nomeModalidade } from "@/lib/
 import { estornarEventoNaBase } from "@/services/inscricoes";
 import { ocupaVaga } from "@/lib/pagamentos";
 import { contatoParaGravar, errosContatoEvento } from "@/lib/contatoEvento";
-import { instanteAtividade } from "@/lib/cronograma";
+import { instanteNoFuso } from "@/lib/fusoHorario";
 import { carregarBase, mutarBase, latencia, ErroDominio, gerarId, gerarCodigo } from "./db";
 import { silenciado } from "./notificacoes";
 import { cnpjValido, normalizarEmail, somenteDigitos, telefoneValido } from "@/lib/domain/validators";
@@ -145,9 +145,14 @@ export function validarParaPublicacao(evento: Evento): string[] {
   const inicio = new Date(evento.inicioEm);
   const fim = new Date(evento.fimEm);
   for (const at of evento.cronograma) {
-    const dataAt = instanteAtividade(at.data, at.horario, evento.fuso);
+    const dataAt = instanteNoFuso(at.data, at.horario, evento.fuso);
     if (Number.isNaN(dataAt.getTime()) || dataAt < inicio || dataAt > fim) {
       erros.push(`Atividade "${at.titulo}" fora do período do evento.`);
+    }
+  }
+  for (const l of evento.lotes) {
+    if (l.status !== "arquivado" && new Date(l.fimVendas).getTime() > fim.getTime()) {
+      erros.push(`Lote "${l.nome}": as vendas devem terminar até o término da operação.`);
     }
   }
   return erros;
@@ -160,6 +165,7 @@ export async function publicarEvento(eventoId: string, usuarioId: string, perfil
     if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
     assertDono(evento, usuarioId, perfil);
     const erros = validarParaPublicacao(evento);
+    if (new Date(evento.inicioEm).getTime() <= Date.now()) erros.unshift("O início da operação já passou.");
     if (erros.length) throw new ErroDominio("validacao", erros.join(" "));
     evento.status = "publicado";
   });
