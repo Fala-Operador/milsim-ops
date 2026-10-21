@@ -1,7 +1,7 @@
 // API de métricas: coleta anônima em lote, leitura (organização/admin) e campanhas.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { ErroDominio } from "@/services/db";
+import { tratarErro } from "@/server/unidade.server";
 import * as analytics from "@/server/analytics.server";
 import type { OrigemCampanha, RegistroAnalytics } from "@/lib/analytics";
 
@@ -25,9 +25,7 @@ async function comMensagem<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
   } catch (e) {
-    if (e instanceof ErroDominio) throw new Error(e.message);
-    console.error(e);
-    throw new Error("Não foi possível concluir a operação. Tente novamente.");
+    tratarErro(e);
   }
 }
 

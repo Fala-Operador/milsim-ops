@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import * as sup from "@/services/suporte";
 import { ErroDominio } from "@/services/db";
-import { contextoSomenteLeitura, exigirUsuario, mutar } from "@/server/unidade.server";
+import { contextoSomenteLeitura, exigirUsuario, mutar, tratarErro } from "@/server/unidade.server";
 import { gravarAnexo, urlDoAnexo } from "@/server/anexosSuporte.server";
 import { podeVer, podeAbrirAnexo, LIMITE_MENSAGEM, type AcaoStatus } from "@/lib/suporte";
 import { chamar } from "@/api/cliente";
@@ -12,12 +12,6 @@ import { recarregarVisao } from "@/api/sessao.functions";
 const id = z.string().min(1).max(100);
 const clienteId = z.string().regex(/^[a-z0-9-]{8,64}$/i);
 const anexo = z.object({ nome: z.string().max(200), dataUrl: z.string().max(7_200_000) }).optional();
-
-function erro(e: unknown): never {
-  if (e instanceof ErroDominio) throw new Error(e.message);
-  console.error(e);
-  throw new Error("Não foi possível concluir a operação. Tente novamente.");
-}
 
 async function enviarAnexo(chamadoId: string, cid: string, a: z.infer<typeof anexo>, novoChamado: boolean) {
   if (!a) return undefined;
@@ -33,7 +27,7 @@ async function enviarAnexo(chamadoId: string, cid: string, a: z.infer<typeof ane
       if (c && c.solicitanteId !== u.id) throw new ErroDominio("cliente", "Identificador inválido.");
     }
     return await gravarAnexo(chamadoId, cid, a.nome, a.dataUrl);
-  } catch (e) { erro(e); }
+  } catch (e) { tratarErro(e); }
 }
 
 export const abrirChamadoSuporteFn = createServerFn({ method: "POST" })
@@ -84,7 +78,7 @@ export const linkAnexoFn = createServerFn({ method: "POST" })
       const m = c.mensagens.find((x) => x.id === data.mensagemId);
       if (!m?.anexo) throw new ErroDominio("anexo", "Anexo não encontrado.");
       return await urlDoAnexo(m.anexo, data.baixar);
-    } catch (e) { erro(e); }
+    } catch (e) { tratarErro(e); }
   });
 
 // ---------- Uso no navegador ----------

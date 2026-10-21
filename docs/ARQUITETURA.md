@@ -114,8 +114,10 @@ regra no próprio banco.
 ### 3.3 Erros
 
 `ErroDominio` (regra violada) chega ao navegador com a mensagem original. Qualquer outro erro é
-registrado no log do servidor e vira "Não foi possível concluir a operação". As telas mostram
-`e.message`.
+registrado no log do servidor como `[erro CÓDIGO]` e vira "Não foi possível concluir a operação.
+Tente novamente. (código CÓDIGO)" (ou "O servidor de dados não respondeu…" quando o Supabase
+devolve 5xx ou não responde). O código é o mesmo nos dois lados: procure-o no log do servidor para
+ver a causa real. As telas mostram `e.message`.
 
 ---
 
