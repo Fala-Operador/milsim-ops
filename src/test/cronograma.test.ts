@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { instanteAtividade } from "@/lib/cronograma";
+import { instanteNoFuso as instanteAtividade } from "@/lib/fusoHorario";
 import { validarParaPublicacao } from "@/services/organizador";
 
-describe("instanteAtividade", () => {
+describe("instanteNoFuso", () => {
   it("interpreta data e horário no fuso do evento, independente do fuso do servidor", () => {
     expect(instanteAtividade("2026-11-21", "08:30", "America/Sao_Paulo").toISOString()).toBe("2026-11-21T11:30:00.000Z");
     expect(instanteAtividade("2026-11-21", "08:30", "America/Manaus").toISOString()).toBe("2026-11-21T12:30:00.000Z");
@@ -10,7 +10,7 @@ describe("instanteAtividade", () => {
 
   it("fuso inválido cai em Brasília; data inválida dá NaN", () => {
     expect(instanteAtividade("2026-11-21", "08:30", "Fuso/Invalido").toISOString()).toBe("2026-11-21T11:30:00.000Z");
-    expect(Number.isNaN(instanteAtividade("", "08:30").getTime())).toBe(true);
+    expect(Number.isNaN(instanteAtividade("", "08:30", undefined).getTime())).toBe(true);
   });
 
   it("publicação aceita atividades dentro do período no horário de Brasília", () => {

@@ -2,7 +2,7 @@ import { destinoDoLink, redirectSeguro } from "@/lib/links";
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { consultarCep } from "@/services/auth";
+import { textoBuscaCep, useBuscaCep } from "@/hooks/useBuscaCep";
 import {
   mascaraCep,
   mascaraCpf,
@@ -69,20 +69,16 @@ function PaginaCadastro() {
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setF((p) => ({ ...p, [k]: e.target.value }));
 
-  const aoBuscarCep = async () => {
-    try {
-      const r = await consultarCep(f.cep);
-      setF((p) => ({
-        ...p,
-        logradouro: p.logradouro || r.logradouro,
-        bairro: p.bairro || r.bairro,
-        cidade: r.cidade || p.cidade,
-        uf: r.uf || p.uf,
-      }));
-    } catch {
-      /* preenchimento manual permitido */
-    }
-  };
+  // CEP completo preenche o endereço sozinho; o que o ViaCEP não traz (CEP de cidade) fica como está.
+  const buscaCep = useBuscaCep(f.cep, (r) =>
+    setF((p) => ({
+      ...p,
+      logradouro: r.logradouro || p.logradouro,
+      bairro: r.bairro || p.bairro,
+      cidade: r.cidade || p.cidade,
+      uf: r.uf || p.uf,
+    })),
+  );
 
   // A foto escolhida abre o editor (recorte, zoom, girar, ajustes) antes de ser usada.
   const aoSelecionarFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -175,10 +171,10 @@ function PaginaCadastro() {
           </Campo>
 
           <Campo rotulo="CEP" htmlFor="cep">
-            <div className="flex gap-2">
-              <Input id="cep" inputMode="numeric" value={f.cep} onChange={(e) => setF((p) => ({ ...p, cep: mascaraCep(e.target.value) }))} placeholder="00000-000" required />
-              <Button type="button" variant="outline" onClick={aoBuscarCep}>Buscar</Button>
-            </div>
+            <Input id="cep" inputMode="numeric" autoComplete="postal-code" value={f.cep} onChange={(e) => setF((p) => ({ ...p, cep: mascaraCep(e.target.value) }))} placeholder="00000-000" required />
+            <p aria-live="polite" className={`text-xs ${buscaCep.status === "erro" ? "text-destructive" : "text-muted-foreground"}`}>
+              {textoBuscaCep(buscaCep) || "Digite o CEP para preencher o endereço automaticamente."}
+            </p>
           </Campo>
           <Campo rotulo="Logradouro" htmlFor="logr">
             <Input id="logr" value={f.logradouro} onChange={set("logradouro")} required />

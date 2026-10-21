@@ -110,14 +110,3 @@ export function registrarPerfil(id: string, dados: DadosCadastro): Usuario {
     return usuario;
   });
 }
-
-/** Consulta o CEP no ViaCEP (serviço público e gratuito). Os campos continuam editáveis. */
-export async function consultarCep(cep: string) {
-  const d = somenteDigitos(cep);
-  if (d.length !== 8) throw new ErroDominio("cep", "CEP inválido.");
-  const resposta = await fetch(`https://viacep.com.br/ws/${d}/json/`);
-  if (!resposta.ok) throw new ErroDominio("cep", "Não foi possível consultar o CEP agora.");
-  const r = (await resposta.json()) as { erro?: boolean | string; logradouro?: string; bairro?: string; localidade?: string; uf?: string };
-  if (r.erro) throw new ErroDominio("cep", "CEP não encontrado.");
-  return { logradouro: r.logradouro ?? "", bairro: r.bairro ?? "", cidade: r.localidade ?? "", uf: r.uf ?? "" };
-}
