@@ -11,6 +11,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { InputSenha } from "@/components/ui/input-senha";
+import { RequisitosSenha } from "@/components/RequisitosSenha";
+import { erroSenha } from "@/lib/domain/senha";
+import { useTurnstile } from "@/components/Turnstile";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Campo } from "@/components/ui";
 import { EditorFoto } from "@/components/EditorFoto";
@@ -65,6 +69,7 @@ function PaginaCadastro() {
   const [promocional, setPromocional] = useState(false);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const turnstile = useTurnstile("cadastro");
 
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setF((p) => ({ ...p, [k]: e.target.value }));
@@ -93,9 +98,12 @@ function PaginaCadastro() {
     setArquivoFoto(arquivo);
   };
 
+  const senhaValida = erroSenha(f.senha) === null && f.senha === f.confirmacaoSenha;
+
   const aoEnviar = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro("");
+    if (!senhaValida) return setErro(erroSenha(f.senha) ?? "A confirmação de senha não confere.");
     setCarregando(true);
     try {
       await registrar({
@@ -104,11 +112,12 @@ function PaginaCadastro() {
         aceiteTermos: aceite,
         cienciaPrivacidade: privacidade,
         autorizacaoPromocional: promocional,
-      });
+      }, turnstile.token);
       // Retorna ao fluxo de inscrição quando o cadastro começou em um evento
       navigate({ ...destinoDoLink(redirectSeguro(redirect)) } as { to: string });
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha no cadastro.");
+      turnstile.resetar();
     } finally {
       setCarregando(false);
     }
@@ -164,11 +173,14 @@ function PaginaCadastro() {
             <Input id="whats" inputMode="tel" value={f.whatsapp} onChange={(e) => setF((p) => ({ ...p, whatsapp: mascaraTelefone(e.target.value) }))} placeholder="(11) 99999-9999" required />
           </Campo>
           <Campo rotulo="Senha" htmlFor="senha">
-            <Input id="senha" type="password" value={f.senha} onChange={set("senha")} required minLength={6} />
+            <InputSenha id="senha" autoComplete="new-password" value={f.senha} onChange={set("senha")} aria-describedby="requisitos-senha" required />
           </Campo>
           <Campo rotulo="Confirmar senha" htmlFor="senha2">
-            <Input id="senha2" type="password" value={f.confirmacaoSenha} onChange={set("confirmacaoSenha")} required />
+            <InputSenha id="senha2" autoComplete="new-password" value={f.confirmacaoSenha} onChange={set("confirmacaoSenha")} required />
           </Campo>
+          <div className="sm:col-span-2">
+            <RequisitosSenha id="requisitos-senha" senha={f.senha} confirmacao={f.confirmacaoSenha} />
+          </div>
 
           <Campo rotulo="CEP" htmlFor="cep">
             <Input id="cep" inputMode="numeric" autoComplete="postal-code" value={f.cep} onChange={(e) => setF((p) => ({ ...p, cep: mascaraCep(e.target.value) }))} placeholder="00000-000" required />
@@ -235,7 +247,8 @@ function PaginaCadastro() {
               {erro}
             </p>
           )}
-          <Button type="submit" disabled={carregando || !aceite || !privacidade} className="sm:col-span-2">
+          {turnstile.elemento && <div className="sm:col-span-2">{turnstile.elemento}</div>}
+          <Button type="submit" disabled={carregando || !aceite || !privacidade || !senhaValida || !turnstile.pronto} className="sm:col-span-2">
             {carregando ? "Cadastrando..." : "Concluir cadastro"}
           </Button>
         </form>

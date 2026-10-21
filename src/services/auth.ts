@@ -14,6 +14,7 @@ import {
 } from "@/lib/domain/validators";
 import { validarFoto } from "@/services/conta";
 import type { Usuario } from "@/lib/domain/types";
+import { erroSenha } from "@/lib/domain/senha";
 
 export interface DadosCadastro {
   cpf: string;
@@ -38,7 +39,7 @@ export interface DadosCadastro {
   autorizacaoPromocional: boolean;
 }
 
-export const SENHA_MINIMA = 6;
+export { SENHA_MINIMA } from "@/lib/domain/senha";
 
 /** Valida o formulário de cadastro; devolve os campos normalizados. */
 export function validarCadastro(dados: DadosCadastro) {
@@ -52,9 +53,8 @@ export function validarCadastro(dados: DadosCadastro) {
   if (!emailValido(email)) throw new ErroDominio("email", "Informe um e-mail válido.");
   if (!cpfValido(cpf)) throw new ErroDominio("cpf", "CPF inválido.");
   if (!telefoneValido(whatsapp)) throw new ErroDominio("telefone", "Telefone/WhatsApp inválido.");
-  if (dados.senha.length < SENHA_MINIMA) {
-    throw new ErroDominio("senha", `A senha deve ter ao menos ${SENHA_MINIMA} caracteres.`);
-  }
+  const problemaSenha = erroSenha(dados.senha);
+  if (problemaSenha) throw new ErroDominio("senha", problemaSenha);
   if (dados.senha !== dados.confirmacaoSenha) {
     throw new ErroDominio("senha_confirmacao", "A confirmação de senha não confere.");
   }
