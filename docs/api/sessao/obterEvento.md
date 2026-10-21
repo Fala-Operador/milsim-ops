@@ -22,10 +22,11 @@ Carrega um evento e a organização dele para os carregadores de rota (`/eventos
 - Roda `consultar()`: a função recebe **só a visão** da pessoa, então rascunhos de outra organização e o link do grupo do WhatsApp (para quem não é inscrito confirmado) não vazam no HTML.
 - `pagamentoOnline` indica se o Stripe está configurado (inscrições pagas passam pelo checkout).
 - `taxaCompradorPercentual` é a taxa de serviço (%) somada ao ingresso no checkout (0 = sem taxa), lida da base completa porque a visão de participantes não traz as configurações.
+- `vendasAbertas` diz se a organização tem conta de recebimento ativa; sem ela, ingressos pagos não são vendidos (gratuitos e cortesias seguem normais).
 
 ## Resposta
 
-`{ evento, organizacao, pagamentoOnline, taxaCompradorPercentual }`; `evento` é `null` quando não existe ou não é visível.
+`{ evento, organizacao, pagamentoOnline, taxaCompradorPercentual, vendasAbertas }`; `evento` é `null` quando não existe ou não é visível.
 
 ## Exemplo
 
@@ -62,6 +63,7 @@ Resultado devolvido pela chamada:
     "nome": "Fala Operador Podcast"
   },
   "pagamentoOnline": true,
-  "taxaCompradorPercentual": 0
+  "taxaCompradorPercentual": 0,
+  "vendasAbertas": true
 }
 ```

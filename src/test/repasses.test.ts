@@ -5,7 +5,7 @@ import { restaurarBase } from "@/test/baseTeste";
 import { confirmarInscricao, confirmarPagamentoNaBase } from "@/services/inscricoes";
 import { definirTaxaCompradorNaBase, definirTaxaPlataformaNaBase, descartarContaDeOutroModoNaBase, registrarRecebimentoNaBase } from "@/services/repasses";
 import { contaDeOutroModo, contaInacessivel, destinoInvalido, mensagemDeFalhaStripe, MSG_FALHA_STRIPE, ocultarChaves } from "@/lib/stripe";
-import { contaParaRepasse, descreverCronograma, MCC_EVENTOS, perfilComercialPadrao, precisaPerfilComercial, recebimentoDaConta, resumoRepasse, resumoSaldo, taxaDaPlataforma, taxaDoComprador, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
+import { contaParaRepasse, descreverCronograma, MCC_EVENTOS, MSG_SEM_RECEBIMENTO, perfilComercialPadrao, precisaPerfilComercial, recebimentoDaConta, resumoRepasse, resumoSaldo, taxaDaPlataforma, taxaDoComprador, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
 import { visaoParaUsuario } from "@/lib/visao";
 import type { BaseDados, Evento } from "@/lib/domain/types";
 
@@ -67,11 +67,12 @@ describe("taxa e destino da cobrança", () => {
     expect(taxaPlataforma(1000, 150)).toBe(1000);
   });
 
-  it("sem conta ativa a venda fica na plataforma; com conta ativa vai para a organização", async () => {
-    const semConta = await reservar();
-    expect(semConta.pagamento).toMatchObject({ contaDestino: undefined, taxaCentavos: undefined });
+  it("sem conta ativa não há venda paga; com conta ativa vai para a organização", async () => {
+    await expect(reservar()).rejects.toThrow(MSG_SEM_RECEBIMENTO);
+    expect(base.inscricoes.filter((i) => i.eventoId === EVT)).toHaveLength(0);
+    registrarRecebimentoNaBase(base, org().id, { id: "acct_1", details_submitted: true });
+    await expect(reservar()).rejects.toThrow(MSG_SEM_RECEBIMENTO);
     registrarRecebimentoNaBase(base, org().id, contaAtiva);
-    base.inscricoes = base.inscricoes.filter((i) => i.id !== semConta.id);
     const comConta = await reservar();
     expect(comConta.pagamento).toMatchObject({ contaDestino: "acct_1", taxaCentavos: 2000, valorCentavos: 20000 });
     confirmarPagamentoNaBase(base, comConta.id, { intencaoId: "pi_1" });
@@ -123,13 +124,11 @@ describe("taxa configurada pela administração", () => {
     expect(base.auditoria.at(-1)).toMatchObject({ acao: "taxa_comprador", justificativa: "Taxa de serviço do comprador alterada de 0% para 3.5%." });
   });
 
-  it("taxa do comprador vai na reserva, com ou sem repasse, e não muda o repasse", async () => {
+  it("taxa do comprador vai na reserva e não muda o repasse", async () => {
+    registrarRecebimentoNaBase(base, org().id, contaAtiva);
     expect((await reservar()).pagamento?.taxaCompradorCentavos).toBeUndefined();
     base.inscricoes = [];
     definirTaxaCompradorNaBase(base, 5, "usr-admin");
-    expect((await reservar()).pagamento).toMatchObject({ valorCentavos: 20000, taxaCompradorCentavos: 1000, contaDestino: undefined });
-    base.inscricoes = [];
-    registrarRecebimentoNaBase(base, org().id, contaAtiva);
     const ins = await reservar();
     expect(ins.pagamento).toMatchObject({ valorCentavos: 20000, taxaCentavos: 2000, taxaCompradorCentavos: 1000, contaDestino: "acct_1" });
     Object.assign(ins, { status: "confirmada" });

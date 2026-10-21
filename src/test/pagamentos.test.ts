@@ -15,6 +15,7 @@ import {
   vagasRestantes,
 } from "@/services/inscricoes";
 import { cancelarEvento } from "@/services/organizador";
+import { registrarRecebimentoNaBase } from "@/services/repasses";
 import { ocupaVaga, reservaVigente } from "@/lib/pagamentos";
 import { visaoParaUsuario } from "@/lib/visao";
 import { acaoDaSessao, acaoDoEvento, assinarPayload, assinaturaValida, codificarFormulario, disputaDoStripe, problemaDasChaves, statusDaDisputa } from "@/lib/stripe";
@@ -45,6 +46,8 @@ const ins = (id: string) => base.inscricoes.find((i) => i.id === id)!;
 beforeEach(() => {
   base = restaurarBase();
   base.eventos.push(evento());
+  // Venda paga exige conta de recebimento ativa.
+  registrarRecebimentoNaBase(base, base.eventos[0]!.organizacaoId, { id: "acct_org", details_submitted: true, payouts_enabled: true, capabilities: { transfers: "active" }, requirements: { currently_due: [] } });
   const p = base.usuarios.find((u) => u.id === PART)!;
   base.usuarios.push({ ...structuredClone(p), id: OUTRO, email: "outro@exemplo.com", cpf: "52998224725" });
 });
