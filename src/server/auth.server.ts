@@ -4,7 +4,8 @@
 import "@tanstack/react-start/server-only";
 import { getRequestUrl } from "@tanstack/react-start/server";
 import { ErroDominio } from "@/services/db";
-import { registrarPerfil, validarCadastro, SENHA_MINIMA, type DadosCadastro } from "@/services/auth";
+import { registrarPerfil, validarCadastro, type DadosCadastro } from "@/services/auth";
+import { erroSenha, mensagemSenhaFraca } from "@/lib/domain/senha";
 import { normalizarEmail } from "@/lib/domain/validators";
 import { ler, mutar, type RespostaApi } from "@/server/unidade.server";
 import { supabaseAdmin, supabaseSessao } from "@/server/supabase.server";
@@ -45,7 +46,7 @@ export async function cadastrar(dados: DadosCadastro): Promise<RespostaApi<null>
     if (error?.code === "email_exists" || /already/i.test(error?.message ?? "")) {
       throw new Error("Já existe um cadastro com este e-mail.");
     }
-    if (error?.code === "weak_password") throw new Error("Senha fraca. Use uma senha mais longa.");
+    if (error?.code === "weak_password") throw new Error(mensagemSenhaFraca(motivosSenhaFraca(error)));
     console.error(error);
     throw new Error("Não foi possível criar a conta. Tente novamente.");
   }
@@ -84,8 +85,17 @@ export async function validarTokenRecuperacao(tokenHash: string): Promise<void> 
 }
 
 export async function definirNovaSenha(senha: string): Promise<RespostaApi<null>> {
-  if (senha.length < SENHA_MINIMA) throw new Error(`A senha deve ter ao menos ${SENHA_MINIMA} caracteres.`);
+  const problemaSenha = erroSenha(senha);
+  if (problemaSenha) throw new Error(problemaSenha);
   const { data, error } = await supabaseSessao().auth.updateUser({ password: senha });
+  if (error?.code === "weak_password") throw new Error(mensagemSenhaFraca(motivosSenhaFraca(error)));
+  if (error?.code === "same_password") throw new Error("A nova senha precisa ser diferente da atual.");
   if (error || !data.user) throw new Error("Sessão de recuperação expirada. Solicite um novo link.");
   return ler(() => null, { usuarioId: data.user.id });
+}
+
+/** Motivos do `weak_password` (`AuthWeakPasswordError.reasons`: pwned, length, characters). */
+function motivosSenhaFraca(error: unknown): string[] | undefined {
+  const motivos = (error as { reasons?: unknown }).reasons;
+  return Array.isArray(motivos) ? motivos.filter((m): m is string => typeof m === "string") : undefined;
 }

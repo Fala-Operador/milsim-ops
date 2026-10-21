@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Campo, Spinner } from "@/components/ui";
-import { Check, CheckCircle2, Circle, Eye, EyeOff, ShieldAlert } from "lucide-react";
-import { SENHA_MINIMA } from "@/services/auth";
+import { CheckCircle2, ShieldAlert } from "lucide-react";
+import { InputSenha } from "@/components/ui/input-senha";
+import { RequisitosSenha } from "@/components/RequisitosSenha";
+import { erroSenha } from "@/lib/domain/senha";
 
 export const Route = createFileRoute("/recuperar-senha")({
   // O e-mail de recuperação (supabase/templates/recuperar-senha.html) volta para esta página com
@@ -104,7 +106,6 @@ function NovaSenha({ link }: { link: LinkRecuperacao }) {
   const [estado, setEstado] = useState<"validando" | "pronto" | "invalido" | "concluido">("validando");
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
-  const [mostrar, setMostrar] = useState(false);
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
 
@@ -116,13 +117,13 @@ function NovaSenha({ link }: { link: LinkRecuperacao }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chave]);
 
-  const tamanhoOk = senha.length >= SENHA_MINIMA;
+  const problemaSenha = erroSenha(senha);
   const iguais = senha.length > 0 && senha === confirmacao;
 
   const aoSalvar = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro("");
-    if (!tamanhoOk) return setErro(`A senha deve ter ao menos ${SENHA_MINIMA} caracteres.`);
+    if (problemaSenha) return setErro(problemaSenha);
     if (!iguais) return setErro("A confirmação de senha não confere.");
     setSalvando(true);
     try {
@@ -171,60 +172,33 @@ function NovaSenha({ link }: { link: LinkRecuperacao }) {
     );
   }
 
-  const Olho = mostrar ? EyeOff : Eye;
   return (
     <form onSubmit={aoSalvar} className="mt-4 space-y-4" noValidate>
       <p className="text-sm text-muted-foreground">Escolha uma nova senha para a sua conta. Depois de salvar, você entra direto.</p>
       <Campo rotulo="Nova senha" htmlFor="senha">
-        <div className="relative">
-          <Input
-            id="senha"
-            type={mostrar ? "text" : "password"}
-            autoComplete="new-password"
-            autoFocus
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            aria-describedby="requisitos-senha"
-            className="pr-11"
-          />
-          <button
-            type="button"
-            onClick={() => setMostrar((m) => !m)}
-            aria-label={mostrar ? "Ocultar senha" : "Mostrar senha"}
-            aria-pressed={mostrar}
-            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            <Olho className="size-4" aria-hidden="true" />
-          </button>
-        </div>
+        <InputSenha
+          id="senha"
+          autoComplete="new-password"
+          autoFocus
+          value={senha}
+          onChange={(e) => setSenha(e.target.value)}
+          aria-describedby="requisitos-senha"
+        />
       </Campo>
       <Campo rotulo="Confirme a nova senha" htmlFor="confirmacao">
-        <Input
+        <InputSenha
           id="confirmacao"
-          type={mostrar ? "text" : "password"}
           autoComplete="new-password"
           value={confirmacao}
           onChange={(e) => setConfirmacao(e.target.value)}
         />
       </Campo>
-      <ul id="requisitos-senha" className="space-y-1 text-sm" aria-live="polite">
-        <Requisito ok={tamanhoOk}>Pelo menos {SENHA_MINIMA} caracteres</Requisito>
-        <Requisito ok={iguais}>As duas senhas são iguais</Requisito>
-      </ul>
+      <RequisitosSenha id="requisitos-senha" senha={senha} confirmacao={confirmacao} />
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
-      <Button type="submit" className="w-full" disabled={salvando || !tamanhoOk || !iguais}>
+      <Button type="submit" className="w-full" disabled={salvando || problemaSenha !== null || !iguais}>
         {salvando ? "Salvando..." : "Salvar nova senha"}
       </Button>
     </form>
   );
 }
 
-function Requisito({ ok, children }: { ok: boolean; children: React.ReactNode }) {
-  const Icone = ok ? Check : Circle;
-  return (
-    <li className={`flex items-center gap-2 ${ok ? "text-success" : "text-muted-foreground"}`}>
-      <Icone className="size-4 shrink-0" aria-hidden="true" />
-      <span>{children}<span className="sr-only">{ok ? " (atendido)" : " (pendente)"}</span></span>
-    </li>
-  );
-}
