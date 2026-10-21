@@ -238,6 +238,8 @@ export interface PagamentoInscricao {
   contaDestino?: string | undefined;
   /** Taxa da plataforma retida no repasse, em centavos. */
   taxaCentavos?: number | undefined;
+  /** Taxa de serviço paga pelo comprador além do valor do ingresso, em centavos (fica com a plataforma). */
+  taxaCompradorCentavos?: number | undefined;
   /** Contestação (chargeback) aberta pelo comprador no banco do cartão. */
   disputa?: DisputaPagamento | undefined;
 }
@@ -555,6 +557,8 @@ export interface ConfiguracaoPlataforma {
   id: "plataforma";
   /** Taxa retida nas vendas repassadas às organizações (Stripe Connect), em % (ex.: 8.5). */
   taxaPlataformaPercentual: number;
+  /** Taxa de serviço somada ao ingresso e paga pelo comprador, em % (vazio = 0). */
+  taxaCompradorPercentual?: number | undefined;
   atualizadoEm: string;
   atualizadoPor: string;
 }

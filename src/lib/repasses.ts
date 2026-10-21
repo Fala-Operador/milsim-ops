@@ -112,6 +112,12 @@ export function taxaDaPlataforma(base: Pick<BaseDados, "configuracoes">): number
   return Number.isFinite(v) && v > 0 ? Math.min(v, 100) : 0;
 }
 
+/** Taxa de serviço do comprador (%), somada ao valor do ingresso no checkout. */
+export function taxaDoComprador(base: Pick<BaseDados, "configuracoes">): number {
+  const v = base.configuracoes.find((c) => c.id === "plataforma")?.taxaCompradorPercentual ?? 0;
+  return Number.isFinite(v) && v > 0 ? Math.min(v, 100) : 0;
+}
+
 /** Erro de validação da taxa digitada pela administração (vazio = válida). */
 export function erroTaxa(percentual: number): string {
   if (!Number.isFinite(percentual)) return "Informe a taxa em porcentagem.";
@@ -154,10 +160,12 @@ export function resumoRepasse(base: BaseDados, eventoId: string) {
   const pagas = base.inscricoes.filter((i) => i.eventoId === eventoId && i.status === "confirmada" && i.pagamento?.status === "pago");
   const cobrado = pagas.reduce((s, i) => s + (i.pagamento?.valorCentavos ?? 0), 0);
   const taxas = pagas.reduce((s, i) => s + (i.pagamento?.taxaCentavos ?? 0), 0);
+  // Taxa de serviço paga pelos compradores além do ingresso: fica com a plataforma, fora do cobrado.
+  const taxasComprador = pagas.reduce((s, i) => s + (i.pagamento?.taxaCompradorCentavos ?? 0), 0);
   const repassado = pagas.filter((i) => i.pagamento?.contaDestino).reduce((s, i) => s + i.pagamento!.valorCentavos - (i.pagamento!.taxaCentavos ?? 0), 0);
   // Vendas feitas antes da conta ficar ativa ficaram na plataforma: repasse manual.
   const naPlataforma = pagas.filter((i) => !i.pagamento?.contaDestino).reduce((s, i) => s + i.pagamento!.valorCentavos, 0);
-  return { cobrado, taxas, repassado, naPlataforma };
+  return { cobrado, taxas, taxasComprador, repassado, naPlataforma };
 }
 
 // ---------- Saldo e saques da conta conectada (lidos do Stripe, nunca guardados na base) ----------

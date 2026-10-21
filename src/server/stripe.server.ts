@@ -73,10 +73,16 @@ export interface DadosCheckout {
   contaDestino?: string | undefined;
   /** Taxa da plataforma retida no repasse, em centavos. */
   taxaCentavos?: number | undefined;
+  /** Taxa de serviço paga pelo comprador, cobrada como um item à parte; fica com a plataforma. */
+  taxaCompradorCentavos?: number | undefined;
 }
 
 /** Abre uma Checkout Session em BRL; a inscrição vai em metadata e client_reference_id. */
 export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
+  const taxaComprador = d.taxaCompradorCentavos ?? 0;
+  // Com destino, a plataforma retém a sua taxa e a taxa de serviço do comprador.
+  const retido = (d.taxaCentavos ?? 0) + taxaComprador;
+  const itemTaxa = { quantity: 1, price_data: { currency: "brl", unit_amount: taxaComprador, product_data: { name: "Taxa de serviço" } } };
   return chamarStripe<SessaoCheckout>(
     "POST",
     "/checkout/sessions",
@@ -93,9 +99,12 @@ export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
       payment_intent_data: {
         metadata: { inscricaoId: d.inscricaoId },
         transfer_data: d.contaDestino ? { destination: d.contaDestino } : undefined,
-        application_fee_amount: d.contaDestino && d.taxaCentavos ? d.taxaCentavos : undefined,
+        application_fee_amount: d.contaDestino && retido ? retido : undefined,
       },
-      line_items: [{ quantity: 1, price_data: { currency: "brl", unit_amount: d.valorCentavos, product_data: { name: d.descricao } } }],
+      line_items: [
+        { quantity: 1, price_data: { currency: "brl", unit_amount: d.valorCentavos, product_data: { name: d.descricao } } },
+        ...(taxaComprador > 0 ? [itemTaxa] : []),
+      ],
     },
     // Uma sessão por reserva: repetir a chamada devolve a mesma sessão.
     `checkout-${d.inscricaoId}`,

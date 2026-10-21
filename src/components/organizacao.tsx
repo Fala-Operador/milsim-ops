@@ -151,6 +151,7 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
       ["Repassado à organização", formatarBRL(rep.repassado)],
     );
     if (rep.naPlataforma > 0) itens.push(["Com a plataforma (repasse à parte)", formatarBRL(rep.naPlataforma)]);
+    if (rep.taxasComprador > 0) itens.push(["Taxa de serviço paga pelos compradores (fica com a plataforma)", formatarBRL(rep.taxasComprador)]);
   }
   return (
     <div>
