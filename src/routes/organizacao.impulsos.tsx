@@ -11,7 +11,8 @@ import {
 } from "@/lib/impulsos";
 import { statusExibido } from "@/lib/impulsionamento";
 import { StatusImpulsionamento } from "@/components/impulsionamentos";
-import { formatarBRL, formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
+import { formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
+import { Preco } from "@/components/Preco";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -140,7 +141,7 @@ function Impulsos() {
                   <Rocket className="h-4 w-4 shrink-0 text-primary" />
                   <span className="font-semibold">{p.rotulo}</span>
                 </div>
-                <p className="font-display text-2xl font-semibold">{p.precoCentavos === 0 ? "Grátis" : formatarBRL(p.precoCentavos)}</p>
+                <p className="font-mono text-2xl font-semibold text-accent">{p.precoCentavos === 0 ? "Grátis" : <Preco centavos={p.precoCentavos} />}</p>
                 <p className="text-xs text-muted-foreground">Use em até {p.validadeDias} dias depois da compra.</p>
                 <Button className="mt-auto" disabled={ocupado !== null} onClick={() => void comprar(p.id)}>
                   {ocupado === p.id ? "Abrindo pagamento…" : "Comprar"}
@@ -191,7 +192,7 @@ function LinhaImpulso({ base, impulso: i, agora, ocupado, onUsar, onPagar }: {
           {campanha && <StatusImpulsionamento s={statusExibido(base, campanha, agora)} />}
         </div>
         <p className="text-xs text-muted-foreground">
-          Comprado em {formatarDataBR(i.criadoEm)} · {i.precoCentavos === 0 ? "grátis" : formatarBRL(i.precoCentavos)}
+          Comprado em {formatarDataBR(i.criadoEm)} · {i.precoCentavos === 0 ? "grátis" : <Preco centavos={i.precoCentavos} />}
           {st === "disponivel" && i.expiraEm && <> · <Clock className="inline h-3 w-3" /> use até {formatarDataHoraBR(i.expiraEm)}</>}
           {st === "expirado" && i.expiraEm && <> · expirou em {formatarDataBR(i.expiraEm)}</>}
         </p>
