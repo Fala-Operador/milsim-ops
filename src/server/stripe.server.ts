@@ -73,15 +73,15 @@ export interface DadosCheckout {
   contaDestino?: string | undefined;
   /** Taxa da plataforma retida no repasse, em centavos. */
   taxaCentavos?: number | undefined;
-  /** Taxa de serviço paga pelo comprador, cobrada como um item à parte; fica com a plataforma. */
+  /** Taxa de serviço paga pelo comprador, cobrada como um item à parte; vai para a organização. */
   taxaCompradorCentavos?: number | undefined;
 }
 
 /** Abre uma Checkout Session em BRL; a inscrição vai em metadata e client_reference_id. */
 export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
   const taxaComprador = d.taxaCompradorCentavos ?? 0;
-  // Com destino, a plataforma retém a sua taxa e a taxa de serviço do comprador.
-  const retido = (d.taxaCentavos ?? 0) + taxaComprador;
+  // Com destino, a plataforma retém só a sua taxa; a taxa de serviço do comprador segue para a organização.
+  const retido = d.taxaCentavos ?? 0;
   const itemTaxa = { quantity: 1, price_data: { currency: "brl", unit_amount: taxaComprador, product_data: { name: "Taxa de serviço" } } };
   return chamarStripe<SessaoCheckout>(
     "POST",

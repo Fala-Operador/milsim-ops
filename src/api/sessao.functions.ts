@@ -21,12 +21,12 @@ export const obterEventoFn = createServerFn({ method: "GET" })
       // Com o Stripe configurado, inscrições pagas passam pelo checkout.
       return { evento, organizacao, pagamentoOnline: stripeConfigurado() };
     });
-    // Taxa de serviço somada ao ingresso, mostrada na revisão antes do pagamento. A visão de
-    // participantes não traz as configurações da plataforma, então ela vem da base completa.
+    // Taxa de serviço da organização somada ao ingresso, mostrada na revisão antes do pagamento,
+    // e conta de recebimento: lidas da base completa (a visão de participantes as esconde).
     const { base } = await contextoSomenteLeitura();
     // Ingresso pago só é vendido com a conta de recebimento da organização ativa.
     const org = base.organizacoes.find((o) => o.id === r.evento?.organizacaoId);
-    return { ...r, taxaCompradorPercentual: taxaDoComprador(base), vendasAbertas: !!contaParaRepasse(org) };
+    return { ...r, taxaCompradorPercentual: taxaDoComprador(org), vendasAbertas: !!contaParaRepasse(org) };
   });
 
 // Token do Cloudflare Turnstile, repassado ao CAPTCHA do Supabase Auth.
