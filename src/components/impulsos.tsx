@@ -1,6 +1,7 @@
 // Administração → Página inicial e divulgação → Impulsionamentos: preço, validade e venda
 // dos tipos de impulso, e as compras feitas pelas organizações.
 import { useEffect, useState } from "react";
+import { ImageUp } from "lucide-react";
 import type { BaseDados, PlanoImpulsoId } from "@/lib/domain/types";
 import { ROTULO_STATUS_IMPULSO, erroPlano, imagemPadraoImpulso, planosDeImpulso, rotuloDuracao, statusDoImpulso } from "@/lib/impulsos";
 import { salvarPlanosImpulso, sincronizarPlanosImpulso } from "@/api/impulsos.functions";
@@ -100,8 +101,11 @@ export function PlanosImpulso({ base }: { base: BaseDados }) {
                   <div className="flex items-center gap-2">
                     <img src={l.imagem} alt={`Imagem do ${l.rotulo}`} className="h-12 w-[72px] shrink-0 rounded object-cover" />
                     <div className="flex flex-col gap-1">
-                      <Input type="file" accept="image/jpeg,image/png,image/webp" aria-label={`Trocar imagem do ${l.rotulo}`}
-                        className="h-8 max-w-48 text-xs" onChange={(e) => void trocarImagem(l.id, e.target.files?.[0])} />
+                      <Label className="inline-flex h-8 cursor-pointer items-center gap-2 whitespace-nowrap rounded-md border border-border px-3 text-xs font-normal hover:bg-secondary focus-within:ring-2 focus-within:ring-ring">
+                        <ImageUp className="size-4" aria-hidden="true" />Trocar imagem
+                        <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label={`Trocar imagem do ${l.rotulo}`}
+                          onChange={(e) => { const a = e.target.files?.[0]; e.target.value = ""; void trocarImagem(l.id, a); }} />
+                      </Label>
                       {l.imagem !== imagemPadraoImpulso(l.id) && (
                         <Button type="button" variant="ghost" size="sm" className="h-6 justify-start px-1 text-xs" onClick={() => mudar(l.id, { imagem: imagemPadraoImpulso(l.id) })}>
                           Usar a padrão
