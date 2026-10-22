@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { carregarBase } from "@/services/db";
@@ -26,7 +26,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Campo, EstadoVazio, Modal, SkeletonPagina } from "@/components/ui";
 import { gerarId } from "@/services/db";
 import { GestaoImpulsionamentos } from "@/components/impulsionamentos";
-import { PlanosImpulso } from "@/components/impulsos";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -87,7 +86,9 @@ function PaginaDivulgacao() {
           : aba === "parceiros" ? <GestaoParceiros base={base} />
           : (
             <div className="space-y-6">
-              <PlanosImpulso base={base} />
+              <p className="text-sm text-muted-foreground">
+                Preço, validade e imagem dos impulsos vendidos às organizações ficam em <Link to="/admin/loja" hash="impulsos" className="underline">Loja da plataforma</Link>.
+              </p>
               <GestaoImpulsionamentos base={base} eventoInicial={pesquisa.evento} irParaSecoes={() => setAba("secoes")} />
             </div>
           )}
