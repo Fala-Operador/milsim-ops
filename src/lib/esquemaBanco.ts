@@ -366,7 +366,11 @@ export const ESQUEMA = {
   },
   planosImpulso: {
     tabela: "boost_plans", chave: ["id"],
-    campos: { id: "id", precoCentavos: "price_cents", validadeDias: "validity_days", ativo: "active", atualizadoEm: "updated_at", atualizadoPor: "updated_by" },
+    campos: {
+      id: "id", precoCentavos: "price_cents", validadeDias: "validity_days", ativo: "active", imagemUrl: "image_url",
+      stripeProdutoId: "stripe_product_id", stripePrecoId: "stripe_price_id", sincronizadoEm: "stripe_synced_at",
+      atualizadoEm: "updated_at", atualizadoPor: "updated_by",
+    },
   },
   impulsosComprados: {
     tabela: "boost_purchases", chave: ["id"],

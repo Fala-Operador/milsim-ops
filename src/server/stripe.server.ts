@@ -111,6 +111,62 @@ export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
   );
 }
 
+// ---------- Catálogo da plataforma: um produto por tipo de impulso ----------
+
+export interface ProdutoImpulso {
+  /** Id fixo (milsim_impulso_<tipo>): a sincronização é repetível sem duplicar. */
+  produtoId: string;
+  nome: string;
+  descricao: string;
+  /** Só URLs https (o Stripe não aceita outras). */
+  imagens: string[];
+  ativo: boolean;
+  precoCentavos: number;
+  metadata: Record<string, string>;
+}
+
+interface PrecoStripe { id: string; unit_amount: number | null; currency: string; active: boolean }
+
+/**
+ * Cria ou atualiza o produto do tipo de impulso e garante um preço ativo em BRL igual ao
+ * atual. Preços do Stripe não mudam de valor: quando o valor muda, cria um preço novo, passa
+ * a usá-lo como padrão do produto e arquiva os antigos. Devolve o produto e o preço vigentes.
+ */
+export async function sincronizarProdutoImpulso(d: ProdutoImpulso): Promise<{ produtoId: string; precoId: string }> {
+  const caminho = `/products/${encodeURIComponent(d.produtoId)}`;
+  const dados = { name: d.nome, description: d.descricao, images: d.imagens.length ? d.imagens : "", active: d.ativo, metadata: d.metadata };
+  let existe = true;
+  try {
+    await chamarStripe("GET", caminho);
+  } catch (e) {
+    if (!(e instanceof ErroStripe && e.status === 404)) throw e;
+    existe = false;
+  }
+  if (!existe) {
+    const criado = await chamarStripe<{ default_price?: string | { id: string } | null }>(
+      "POST", "/products",
+      { id: d.produtoId, ...dados, images: d.imagens.length ? d.imagens : undefined, default_price_data: { currency: "brl", unit_amount: d.precoCentavos } },
+      `produto-${d.produtoId}`,
+    );
+    const preco = typeof criado.default_price === "string" ? criado.default_price : criado.default_price?.id;
+    if (preco) return { produtoId: d.produtoId, precoId: preco };
+  } else {
+    await chamarStripe("POST", caminho, dados);
+  }
+  const { data: precos = [] } = await chamarStripe<{ data?: PrecoStripe[] }>(
+    "GET", `/prices?product=${encodeURIComponent(d.produtoId)}&active=true&limit=100`,
+  );
+  let atual = precos.find((p) => p.currency === "brl" && p.unit_amount === d.precoCentavos);
+  if (!atual) {
+    atual = await chamarStripe<PrecoStripe>("POST", "/prices", {
+      product: d.produtoId, currency: "brl", unit_amount: d.precoCentavos, metadata: d.metadata,
+    });
+  }
+  await chamarStripe("POST", caminho, { default_price: atual.id });
+  for (const p of precos) if (p.id !== atual.id) await chamarStripe("POST", `/prices/${encodeURIComponent(p.id)}`, { active: false });
+  return { produtoId: d.produtoId, precoId: atual.id };
+}
+
 export interface DadosCheckoutImpulso {
   impulsoId: string;
   descricao: string;
@@ -119,6 +175,10 @@ export interface DadosCheckoutImpulso {
   email?: string | undefined;
   urlSucesso: string;
   urlCancelamento: string;
+  /** Preço do catálogo (quando ainda é o valor da compra) ou, sem ele, o produto do catálogo. */
+  precoId?: string | undefined;
+  produtoId?: string | undefined;
+  imagens?: string[] | undefined;
 }
 
 /** Checkout Session da compra de um impulso: o valor fica todo com a plataforma (sem destino). */
@@ -136,7 +196,17 @@ export function criarSessaoCheckoutImpulso(d: DadosCheckoutImpulso): Promise<Ses
       cancel_url: d.urlCancelamento,
       metadata: { impulsoId: d.impulsoId },
       payment_intent_data: { metadata: { impulsoId: d.impulsoId } },
-      line_items: [{ quantity: 1, price_data: { currency: "brl", unit_amount: d.valorCentavos, product_data: { name: d.descricao } } }],
+      line_items: [
+        d.precoId
+          ? { quantity: 1, price: d.precoId }
+          : {
+              quantity: 1,
+              price_data: {
+                currency: "brl", unit_amount: d.valorCentavos,
+                ...(d.produtoId ? { product: d.produtoId } : { product_data: { name: d.descricao, images: d.imagens?.length ? d.imagens : undefined } }),
+              },
+            },
+      ],
     },
     `checkout-${d.impulsoId}`,
   );

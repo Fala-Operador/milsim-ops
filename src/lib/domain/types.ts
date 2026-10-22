@@ -972,6 +972,12 @@ export interface PlanoImpulso {
   /** Dias, a partir do pagamento, para usar o impulso num evento. */
   validadeDias: number;
   ativo: boolean;
+  /** Imagem do tipo (vitrine da organização e produto no Stripe); sem ela vale a padrão. */
+  imagemUrl?: string | undefined;
+  /** Produto e preço do tipo no Stripe (catálogo da plataforma; só a administração vê). */
+  stripeProdutoId?: string | undefined;
+  stripePrecoId?: string | undefined;
+  sincronizadoEm?: string | undefined;
   atualizadoEm: string;
   atualizadoPor: string;
 }
