@@ -146,10 +146,10 @@ export async function ler<T>(
 ): Promise<RespostaApi<T>> {
   try {
     const id = opcoes.usuarioId !== undefined ? opcoes.usuarioId : await idDaSessao();
-    const { base } = await lerBase();
+    const { base, versao } = await lerBase();
     const usuario = usuarioAtivo(base, id);
     const resultado = await armazenamento.run({ base }, () => fn({ base, usuario }));
-    return { resultado, visao: { base: visaoParaUsuario(base, usuario), usuarioId: usuario?.id ?? null } };
+    return { resultado, visao: { base: visaoParaUsuario(base, usuario), usuarioId: usuario?.id ?? null, versao } };
   } catch (e) {
     tratarErro(e);
   }
@@ -220,7 +220,9 @@ export async function mutar<T>(
         if (error) throw falhaBanco("Falha ao gravar", error, status);
       }
       const depois = usuarioAtivo(base, id);
-      return { resultado, visao: { base: visaoParaUsuario(base, depois), usuarioId: depois?.id ?? null } };
+      // apply_changes incrementa a versão em 1 a cada lote gravado.
+      const versaoNova = Object.keys(lote).length > 0 ? versao + 1 : versao;
+      return { resultado, visao: { base: visaoParaUsuario(base, depois), usuarioId: depois?.id ?? null, versao: versaoNova } };
     }
     throw new ErroDominio("concorrencia", "Muitas alterações ao mesmo tempo. Tente novamente.");
   } catch (e) {

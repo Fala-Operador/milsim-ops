@@ -6,6 +6,7 @@ import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { usuarioIdDaVisao } from "@/api/cliente";
 import { cadastrar, entrar, recarregarVisao, sair } from "@/api/sessao.functions";
 import { encerrarStripeConnect } from "@/components/PaineisStripe";
+import { iniciarTempoReal } from "@/services/tempoReal";
 
 /** Estado da carga inicial da visão (dados do servidor). */
 export type EstadoCarga = "carregando" | "pronto" | "erro";
@@ -75,6 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener("focus", aoFocar);
     return () => window.removeEventListener("focus", aoFocar);
   }, [recarregar]);
+
+  // Tempo real: gravação de outra pessoa → busca a visão de novo.
+  const pronto = carga === "pronto";
+  useEffect(() => (pronto ? iniciarTempoReal(recarregar) : undefined), [pronto, recarregar]);
 
   const login = useCallback(async (email: string, senha: string, captcha?: string) => {
     await entrar(email, senha, captcha);
