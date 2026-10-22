@@ -36,6 +36,20 @@ function chaveSecreta(): string {
   return chave;
 }
 
+/**
+ * URL e chave publicável para o navegador assinar o sinal de versão do Realtime.
+ * Só a chave publicável sai daqui: se a variável tiver outra chave, o tempo real fica desligado.
+ */
+export function configRealtimeNavegador(): { url: string; chave: string } | null {
+  try {
+    const chave = variavel("SUPABASE_PUBLISHABLE_KEY");
+    if (papelDaChave(chave) !== "anon") return null;
+    return { url: variavel("SUPABASE_URL"), chave };
+  } catch {
+    return null;
+  }
+}
+
 let admin: SupabaseClient | null = null;
 
 export function supabaseAdmin(): SupabaseClient {

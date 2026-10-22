@@ -22,6 +22,8 @@ import type { BaseDados, Evento, Inscricao, Usuario } from "@/lib/domain/types";
 export interface Visao {
   base: BaseDados;
   usuarioId: string | null;
+  /** Versão da base (base_control) de onde a visão saiu; o tempo real compara com ela. */
+  versao?: number;
 }
 
 /** Status de evento visíveis para qualquer visitante. */
