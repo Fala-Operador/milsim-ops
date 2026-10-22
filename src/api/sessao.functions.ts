@@ -7,6 +7,7 @@ import { consultar, contextoSomenteLeitura, ler } from "@/server/unidade.server"
 import { stripeConfigurado } from "@/server/stripe.server";
 import { chaveSiteTurnstile } from "@/server/turnstile.server";
 import { contaParaRepasse, taxaDoComprador } from "@/lib/repasses";
+import { esquemaFicha } from "@/lib/fichaEmergencia";
 import { chamar } from "@/api/cliente";
 import type { DadosCadastro } from "@/services/auth";
 
@@ -53,7 +54,7 @@ const entradaCadastro = z.object({
   logradouro: z.string().max(200), numero: z.string().max(20), complemento: z.string().max(200).optional(),
   bairro: z.string().max(200), cidade: z.string().max(200), uf: z.string().max(2), instagram: z.string().max(100).optional(),
   squad: z.string().max(100).optional(), fotoUrl: z.string().optional(), aceiteTermos: z.boolean(),
-  cienciaPrivacidade: z.boolean(), autorizacaoPromocional: z.boolean(), captcha,
+  cienciaPrivacidade: z.boolean(), autorizacaoPromocional: z.boolean(), fichaEmergencia: esquemaFicha.optional(), captcha,
 });
 export const cadastrarFn = createServerFn({ method: "POST" })
   .validator(entradaCadastro.parse)

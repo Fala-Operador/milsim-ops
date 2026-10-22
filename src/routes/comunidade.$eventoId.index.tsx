@@ -12,7 +12,7 @@ import {
   preferenciaForum,
 } from "@/services/comunidade";
 import { definirPreferenciaForum, registrarVisita } from "@/api/comunidade.functions";
-import { CartaoPublicacao, Compositor, SemAcesso } from "@/components/comunidade";
+import { CartaoPublicacao, Compositor, PortaComunidade, SemAcesso } from "@/components/comunidade";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -66,7 +66,7 @@ function ComunidadeInicio() {
 
   if (!montado || !usuario) return <SkeletonPagina />;
   const evento = base.eventos.find((e) => e.id === eventoId)!;
-  if (!papel) return <SemAcesso eventoId={eventoId} />;
+  if (!papel) return <PortaComunidade eventoId={eventoId} />;
 
   const foruns = forunsVisiveis(base, usuario, eventoId);
   const forumAtual = forumSel ? foruns.find((f) => f.id === forumSel) : undefined;

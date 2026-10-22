@@ -22,9 +22,11 @@ import { Campo, SkeletonPagina } from "@/components/ui";
 const novoId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
 
 export const Route = createFileRoute("/inscricao/$eventoId")({
-  validateSearch: (s: Record<string, unknown>): { cortesia: string | undefined; voucher: string | undefined; pagamento?: string | undefined } => ({
+  validateSearch: (s: Record<string, unknown>): { cortesia: string | undefined; voucher: string | undefined; pagamento?: string | undefined; comunidade?: string | undefined } => ({
     cortesia: typeof s["cortesia"] === "string" ? s["cortesia"] : undefined,
     voucher: typeof s["voucher"] === "string" ? s["voucher"] : undefined,
+    // Veio da comunidade sem ter acesso: explica que a comunidade é para inscritos.
+    comunidade: s["comunidade"] === "1" || s["comunidade"] === 1 ? "1" : undefined,
     // Volta do checkout do Stripe sem pagar.
     pagamento: typeof s["pagamento"] === "string" ? s["pagamento"] : undefined,
   }),
@@ -56,7 +58,7 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
 function PaginaInscricao() {
   const { evento: eventoCarregado, pagamentoOnline, taxaCompradorPercentual, vendasAbertas } = Route.useLoaderData();
   const evento = useEventoAtual(eventoCarregado);
-  const { cortesia: codigoCortesia, voucher: voucherInicial, pagamento: retornoPagamento } = Route.useSearch();
+  const { cortesia: codigoCortesia, voucher: voucherInicial, pagamento: retornoPagamento, comunidade: vemDaComunidade } = Route.useSearch();
   const { usuario } = useAuth();
   const navigate = useNavigate();
   const base = carregarBase();
@@ -228,6 +230,12 @@ function PaginaInscricao() {
       </nav>
       <Card className="mt-3">
         <h1 className="font-display text-2xl font-semibold uppercase">Inscrição — {evento.nome}</h1>
+        {vemDaComunidade && (
+          <p role="status" className="mt-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent">
+            A comunidade desta operação é exclusiva para inscritos. Conclua a inscrição para entrar nos fóruns e
+            acompanhar os avisos da organização.
+          </p>
+        )}
         {cortesia && (
           <p className="mt-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent">
             Cortesia para {cortesia.nomeConvidado}. O resgate depende de disponibilidade e não

@@ -77,12 +77,42 @@ export function filtrarEventos(
     .sort((a, b) => a.inicioEm.localeCompare(b.inicioEm));
 }
 
-/** Rótulo curto do local para botões: "Campinas, SP" ou "Todo o Brasil". */
+/** Rótulo curto do local para botões: "São Paulo (SP)", "Campinas, SP" ou "Todo o Brasil". */
 export function rotuloCurto(a: Abrangencia): string {
   if (a.escopo === "cidade" && a.cidade) return `${a.cidade}, ${a.uf}`;
-  if (a.escopo === "estado" && a.uf) return `Estado de ${a.uf}`;
+  if (a.escopo === "estado" && a.uf) return NOMES_UF[a.uf] ? `${NOMES_UF[a.uf]} (${a.uf})` : `Estado de ${a.uf}`;
   if (a.escopo === "regiao" && a.regiao) return `Região ${a.regiao}`;
   return "Todo o Brasil";
+}
+
+export const NOMES_UF: Record<string, string> = {
+  AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia", CE: "Ceará", DF: "Distrito Federal",
+  ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão", MT: "Mato Grosso", MS: "Mato Grosso do Sul", MG: "Minas Gerais",
+  PA: "Pará", PB: "Paraíba", PR: "Paraná", PE: "Pernambuco", PI: "Piauí", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte",
+  RS: "Rio Grande do Sul", RO: "Rondônia", RR: "Roraima", SC: "Santa Catarina", SP: "São Paulo", SE: "Sergipe", TO: "Tocantins",
+};
+
+export interface Estado { uf: string; nome: string }
+
+/** Os 27 estados (com DF), em ordem alfabética do nome. */
+export const ESTADOS: Estado[] = Object.entries(NOMES_UF)
+  .map(([uf, nome]) => ({ uf, nome }))
+  .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+
+/** Busca por nome do estado ou UF (sem acento, sem diferenciar maiúsculas). UF exata vem primeiro. */
+export function buscarEstados(termo: string): Estado[] {
+  const q = normalizar(termo);
+  if (!q) return ESTADOS;
+  const exata = ESTADOS.filter((e) => e.uf.toLowerCase() === q);
+  const porNome = ESTADOS
+    .filter((e) => !exata.includes(e) && normalizar(e.nome).includes(q))
+    .sort((a, b) => Number(!normalizar(a.nome).startsWith(q)) - Number(!normalizar(b.nome).startsWith(q)));
+  return [...exata, ...porNome];
+}
+
+/** A descoberta filtra por estado: um local salvo por cidade (versões antigas) vira o estado dela. */
+export function paraEstado(a: Abrangencia): Abrangencia {
+  return a.escopo === "cidade" && a.uf ? { escopo: "estado", uf: a.uf } : a;
 }
 
 /** Principais cidades para a busca manual (somadas às cidades dos eventos). */

@@ -129,6 +129,7 @@ Missões, privacidade, notificações, foto, tema e preferências. Arquivo: [`sr
 | [`definirSilencio`](conta/definirSilencio.md) | POST | Qualquer pessoa autenticada e ativa | Silencia notificações: todas (`todas`) ou só as da comunidade (`comunidade`). |
 | [`definirFoto`](conta/definirFoto.md) | POST | Qualquer pessoa autenticada e ativa | Troca ou remove a foto de perfil. |
 | [`definirTema`](conta/definirTema.md) | POST | Qualquer pessoa autenticada e ativa | Guarda o tema da conta (claro ou escuro). |
+| [`salvarFichaEmergencia`](conta/salvarFichaEmergencia.md) | POST | Qualquer pessoa autenticada e ativa | Grava (ou remove) a ficha de emergência da própria conta, com a autorização de compartilhar. |
 | [`salvarPreferenciaConta`](conta/salvarPreferenciaConta.md) | POST | Qualquer pessoa autenticada e ativa | Salva as modalidades favoritas da conta (usadas para ordenar a página inicial "Para você"). |
 
 ### Administração
@@ -171,6 +172,7 @@ Inscrição, checkout do Stripe, cancelamento e prévia de cupom. Arquivo: [`src
 | [`retomarPagamento`](inscricoes/retomarPagamento.md) | POST | Titular da reserva | Volta à página de pagamento de uma reserva ainda aberta (botão "Concluir pagamento" em Meus ingressos). |
 | [`sincronizarPagamento`](inscricoes/sincronizarPagamento.md) | POST | Titular da sessão de checkout | Chamada no retorno do Stripe Checkout (`/app/ingressos?pagamento=sucesso&sessao=cs_…`): consulta o Stripe e aplica o resultado, sem depender do webhook. |
 | [`cancelarInscricao`](inscricoes/cancelarInscricao.md) | POST | Titular, organização do evento ou admin | Cancela uma inscrição confirmada (estorno integral) ou libera uma reserva pendente. |
+| [`incluirParticipantes`](inscricoes/incluirParticipantes.md) | POST | Organização do evento ou admin (lista de contas: só admin) | Inclui pessoas com conta no evento (pagamento por fora), como cortesia confirmada. |
 | [`previsualizarCupom`](inscricoes/previsualizarCupom.md) | POST | Pública | Valida um cupom para mostrar o desconto na tela de inscrição. |
 
 ### Repasse (Stripe Connect)

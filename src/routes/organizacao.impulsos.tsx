@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Campo, EstadoVazio, Modal } from "@/components/ui";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { BaseDados, ImpulsoComprado } from "@/lib/domain/types";
 
 export const Route = createFileRoute("/organizacao/impulsos")({
@@ -98,6 +99,7 @@ function Impulsos() {
   const planos = planosDeImpulso(base).filter((p) => p.ativo);
   const meus = impulsosDaOrganizacao(base, organizacaoId, agora);
   const disponiveis = meus.filter((i) => statusDoImpulso(i, agora) === "disponivel");
+  const [aba, setAba] = useState<"meus" | "comprar">("meus");
 
   const executar = async (chave: string, fn: () => Promise<void>) => {
     setErro(""); setOcupado(chave);
@@ -127,50 +129,57 @@ function Impulsos() {
       )}
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
 
-      <div className="space-y-3">
-        <h2 className="font-display text-lg font-semibold uppercase">Comprar impulso</h2>
-        {planos.length === 0 ? (
-          <EstadoVazio titulo="Nenhum impulso à venda no momento" />
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {planos.map((p) => (
-              <Card key={p.id} className="flex flex-col gap-3 overflow-hidden p-0">
-                {p.imagemUrl && <img src={p.imagemUrl} alt={p.rotulo} loading="lazy" className="aspect-[3/2] w-full object-cover" />}
-                <div className="flex flex-1 flex-col gap-3 px-4 pb-4">
-                <div className="flex items-center gap-2">
-                  <Rocket className="h-4 w-4 shrink-0 text-primary" />
-                  <span className="font-semibold">{p.rotulo}</span>
-                </div>
-                <p className="font-mono text-2xl font-semibold text-accent">{p.precoCentavos === 0 ? "Grátis" : <Preco centavos={p.precoCentavos} />}</p>
-                <p className="text-xs text-muted-foreground">Use em até {p.validadeDias} dias depois da compra.</p>
-                <Button className="mt-auto" disabled={ocupado !== null} onClick={() => void comprar(p.id)}>
-                  {ocupado === p.id ? "Abrindo pagamento…" : "Comprar"}
-                </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+      <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)}>
+        <TabsList>
+          <TabsTrigger value="meus">Meus impulsos{disponiveis.length > 0 ? ` (${disponiveis.length})` : ""}</TabsTrigger>
+          <TabsTrigger value="comprar">Comprar</TabsTrigger>
+        </TabsList>
+        <TabsContent value="meus" className="mt-4 space-y-3">
+          {disponiveis.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {disponiveis.length === 1 ? "1 impulso disponível" : `${disponiveis.length} impulsos disponíveis`}. Impulso não usado dentro da validade expira.
+            </p>
+          )}
+          {meus.length === 0 ? (
+            <div className="space-y-3 text-center">
+              <EstadoVazio titulo="Nenhum impulso ainda" descricao="Os impulsos comprados aparecem aqui até serem usados." />
+              <Button onClick={() => setAba("comprar")}>Comprar impulso</Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {meus.map((i) => (
+                <LinhaImpulso key={i.id} base={base} impulso={i} agora={agora} ocupado={ocupado === i.id}
+                  onUsar={() => setUsando(i)} onPagar={() => void pagar(i)} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
-      <div className="space-y-3">
-        <h2 className="font-display text-lg font-semibold uppercase">Meus impulsos</h2>
-        {disponiveis.length > 0 && (
-          <p className="text-sm text-muted-foreground">
-            {disponiveis.length === 1 ? "1 impulso disponível" : `${disponiveis.length} impulsos disponíveis`}. Impulso não usado dentro da validade expira.
-          </p>
-        )}
-        {meus.length === 0 ? (
-          <EstadoVazio titulo="Nenhum impulso ainda" descricao="Os impulsos comprados aparecem aqui até serem usados." />
-        ) : (
-          <div className="space-y-2">
-            {meus.map((i) => (
-              <LinhaImpulso key={i.id} base={base} impulso={i} agora={agora} ocupado={ocupado === i.id}
-                onUsar={() => setUsando(i)} onPagar={() => void pagar(i)} />
-            ))}
-          </div>
-        )}
-      </div>
+        <TabsContent value="comprar" className="mt-4 space-y-3">
+          {planos.length === 0 ? (
+            <EstadoVazio titulo="Nenhum impulso à venda no momento" />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {planos.map((p) => (
+                <Card key={p.id} className="flex flex-col gap-3 overflow-hidden p-0">
+                  {p.imagemUrl && <img src={p.imagemUrl} alt={p.rotulo} loading="lazy" className="aspect-[3/2] w-full object-cover" />}
+                  <div className="flex flex-1 flex-col gap-3 px-4 pb-4">
+                  <div className="flex items-center gap-2">
+                    <Rocket className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="font-semibold">{p.rotulo}</span>
+                  </div>
+                  <p className="font-mono text-2xl font-semibold text-accent">{p.precoCentavos === 0 ? "Grátis" : <Preco centavos={p.precoCentavos} />}</p>
+                  <p className="text-xs text-muted-foreground">Use em até {p.validadeDias} dias depois da compra.</p>
+                  <Button className="mt-auto" disabled={ocupado !== null} onClick={() => void comprar(p.id)}>
+                    {ocupado === p.id ? "Abrindo pagamento…" : "Comprar"}
+                  </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {usando && <ModalUsar base={base} impulso={usando} onFechar={() => setUsando(null)} />}
     </section>

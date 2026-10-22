@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { deCampoNoFuso, formatarPeriodoNoFuso, instanteNoFuso as instanteAtividade, paraCampoNoFuso, trocarFuso } from "@/lib/fusoHorario";
-import { validarEtapa } from "@/lib/eventoEditor";
+import { problemasDoServidor, validarEtapa } from "@/lib/eventoEditor";
 import { validarParaPublicacao } from "@/services/organizador";
 
 describe("instanteNoFuso", () => {
@@ -55,6 +55,11 @@ describe("datas do editor em relação ao início e término", () => {
   it("lote arquivado e lote que termina no fim da operação passam", () => {
     const ev = { ...base, nome: "", lotes: [lote("2026-11-22T12:00:00.000Z", "arquivado"), { ...lote("2026-11-21T21:00:00.000Z"), id: "l2" }] } as never;
     expect(validarParaPublicacao(ev).filter((m) => m.startsWith("Lote"))).toEqual([]);
+  });
+
+  it("erro do servidor vai para o campo do lote e do início", () => {
+    const probs = problemasDoServidor('O início da operação já passou.\nLote "1º lote": as vendas devem terminar até o término da operação.', { cronograma: [], lotes: [lote("x")] } as never);
+    expect(probs.map((p) => [p.etapa, p.campo])).toEqual([[1, "ev-ini"], [4, "lt-fim-l1"]]);
   });
 
   it("rascunho com início no passado é recusado; publicado não", () => {

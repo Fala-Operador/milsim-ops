@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as CadastroRouteImport } from './routes/cadastro'
+import { Route as ComunidadesRouteImport } from './routes/comunidades'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ModalidadesRouteImport } from './routes/modalidades'
 import { Route as OrganizacaoRouteImport } from './routes/organizacao'
@@ -80,6 +81,11 @@ const AppRoute = AppRouteImport.update({
 const CadastroRoute = CadastroRouteImport.update({
   id: '/cadastro',
   path: '/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComunidadesRoute = ComunidadesRouteImport.update({
+  id: '/comunidades',
+  path: '/comunidades',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -330,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/cadastro': typeof CadastroRoute
+  '/comunidades': typeof ComunidadesRoute
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/organizacao': typeof OrganizacaoRouteWithChildren
@@ -382,6 +389,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
+  '/comunidades': typeof ComunidadesRoute
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -435,6 +443,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/cadastro': typeof CadastroRoute
+  '/comunidades': typeof ComunidadesRoute
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/organizacao': typeof OrganizacaoRouteWithChildren
@@ -491,6 +500,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/cadastro'
+    | '/comunidades'
     | '/login'
     | '/modalidades'
     | '/organizacao'
@@ -543,6 +553,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/cadastro'
+    | '/comunidades'
     | '/login'
     | '/modalidades'
     | '/privacidade'
@@ -595,6 +606,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/cadastro'
+    | '/comunidades'
     | '/login'
     | '/modalidades'
     | '/organizacao'
@@ -650,6 +662,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
   CadastroRoute: typeof CadastroRoute
+  ComunidadesRoute: typeof ComunidadesRoute
   LoginRoute: typeof LoginRoute
   ModalidadesRoute: typeof ModalidadesRoute
   OrganizacaoRoute: typeof OrganizacaoRouteWithChildren
@@ -691,6 +704,13 @@ declare module '@tanstack/react-router' {
       path: '/cadastro'
       fullPath: '/cadastro'
       preLoaderRoute: typeof CadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comunidades': {
+      id: '/comunidades'
+      path: '/comunidades'
+      fullPath: '/comunidades'
+      preLoaderRoute: typeof ComunidadesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1146,6 +1166,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AppRoute: AppRouteWithChildren,
   CadastroRoute: CadastroRoute,
+  ComunidadesRoute: ComunidadesRoute,
   LoginRoute: LoginRoute,
   ModalidadesRoute: ModalidadesRoute,
   OrganizacaoRoute: OrganizacaoRouteWithChildren,

@@ -37,6 +37,27 @@ export interface Usuario {
   organizacaoId?: string | undefined; // quando organizador aprovado
   ativo: boolean;
   criadoEm: string;
+  /**
+   * Ficha de emergência (opcional). Dado de saúde (LGPD, art. 11): só o titular e, com a
+   * autorização dele, a gestão dos eventos em que está confirmado, na janela do evento.
+   * Regras em src/lib/fichaEmergencia.ts; filtrada na visão.
+   */
+  fichaEmergencia?: FichaEmergencia | undefined;
+}
+
+export type TipoSanguineo = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
+
+export interface FichaEmergencia {
+  tipoSanguineo?: TipoSanguineo | undefined;
+  alergias?: string | undefined;
+  contatoNome?: string | undefined;
+  /** Somente dígitos (com DDD). */
+  contatoTelefone?: string | undefined;
+  /** Autorização explícita para a organização ver a ficha (sem ela, só o titular vê). */
+  compartilhar: boolean;
+  /** Quando a autorização foi dada (vazio quando não autorizada). */
+  consentimentoEm?: string | undefined;
+  atualizadoEm: string;
 }
 
 export interface Organizacao {

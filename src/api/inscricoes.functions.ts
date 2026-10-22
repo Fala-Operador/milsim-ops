@@ -2,7 +2,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { ErroDominio } from "@/services/db";
-import { cancelarInscricao as cancelar, confirmarInscricao as confirmar, validarCupom } from "@/services/inscricoes";
+import {
+  cancelarInscricao as cancelar,
+  confirmarInscricao as confirmar,
+  incluirParticipantes as incluir,
+  LIMITE_INCLUSAO_MANUAL,
+  validarCupom,
+} from "@/services/inscricoes";
 import { registrarConfirmacao } from "@/services/analytics";
 import { gereEvento } from "@/lib/visao";
 import { exigirUsuario, ler, mutar } from "@/server/unidade.server";
@@ -78,6 +84,32 @@ export const cancelarInscricaoFn = createServerFn({ method: "POST" })
     return { resultado: null, visao: (estornos ?? r).visao };
   });
 
+/**
+ * Inclusão manual (pagamento combinado por fora) pela organização do evento ou pelo admin.
+ * Organização informa e-mail/CPF; admin pode mandar várias contas escolhidas na lista.
+ */
+export const incluirParticipantesFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      eventoId: id,
+      identificador: z.string().max(200).optional(),
+      usuarioIds: z.array(id).max(LIMITE_INCLUSAO_MANUAL).optional(),
+      tipoId: id,
+      exercitoId: id,
+      observacao: z.string().max(500).optional(),
+    }).parse,
+  )
+  .handler(({ data }) =>
+    mutar(({ base, usuario }) => {
+      const u = exigirUsuario(usuario);
+      const evento = base.eventos.find((e) => e.id === data.eventoId);
+      if (!evento || !gereEvento(u, evento)) {
+        throw new ErroDominio("permissao", "Você só pode gerenciar eventos da sua organização.");
+      }
+      return incluir(data, u);
+    }),
+  );
+
 export const previsualizarCupomFn = createServerFn({ method: "POST" })
   .validator(z.object({ eventoId: id, codigo: z.string().max(40), tipoId: id }).parse)
   .handler(({ data }) =>
@@ -112,5 +144,13 @@ export async function sincronizarPagamento(sessaoId: string) {
 }
 export const cancelarInscricao = (inscricaoId: string, motivo: string) =>
   chamar(cancelarInscricaoFn({ data: { inscricaoId, motivo } }));
+export const incluirParticipantes = (d: {
+  eventoId: string;
+  identificador?: string | undefined;
+  usuarioIds?: string[] | undefined;
+  tipoId: string;
+  exercitoId: string;
+  observacao?: string | undefined;
+}) => chamar(incluirParticipantesFn({ data: d }));
 export const previsualizarCupom = (eventoId: string, codigo: string, tipoId: string) =>
   chamar(previsualizarCupomFn({ data: { eventoId, codigo, tipoId } }));

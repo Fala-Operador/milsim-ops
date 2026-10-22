@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { EstadoVazio } from "@/components/ui";
 import { StatusInscricao } from "@/components/StatusInscricao";
 import { Financeiro, TabelaInscritos } from "@/components/organizacao";
+import { IncluirParticipante } from "@/components/IncluirParticipante";
 
 export const Route = createFileRoute("/admin/eventos/$eventoId")({
   head: () => ({
@@ -113,7 +114,14 @@ function VisaoGeral() {
 
       {aba === "resumo" && <Resumo eventoId={eventoId} v={v} />}
       {aba === "financeiro" && <Financeiro eventoId={eventoId} />}
-      {aba === "inscricoes" && <TabelaInscritos eventoId={eventoId} />}
+      {aba === "inscricoes" && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <IncluirParticipante evento={evento} />
+          </div>
+          <TabelaInscritos eventoId={eventoId} />
+        </div>
+      )}
       {aba === "suporte" && <Suporte v={v} />}
     </div>
   );
