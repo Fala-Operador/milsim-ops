@@ -2,7 +2,7 @@ import { destinoDoLink, redirectSeguro } from "@/lib/links";
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { consultarCep } from "@/services/auth";
+import { textoBuscaCep, useBuscaCep } from "@/hooks/useBuscaCep";
 import {
   mascaraCep,
   mascaraCpf,
@@ -21,6 +21,8 @@ import { EditorFoto } from "@/components/EditorFoto";
 import { TIPOS_FOTO, erroArquivoFoto } from "@/lib/recorteFoto";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { CamposFicha, FICHA_VAZIA } from "@/components/perfil/FichaEmergencia";
+import { fichaPreenchida, type DadosFicha } from "@/lib/fichaEmergencia";
 
 export const Route = createFileRoute("/cadastro")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -67,6 +69,7 @@ function PaginaCadastro() {
   const [aceite, setAceite] = useState(false);
   const [privacidade, setPrivacidade] = useState(false);
   const [promocional, setPromocional] = useState(false);
+  const [ficha, setFicha] = useState<DadosFicha>(FICHA_VAZIA);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
   const turnstile = useTurnstile("cadastro");
@@ -74,20 +77,16 @@ function PaginaCadastro() {
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setF((p) => ({ ...p, [k]: e.target.value }));
 
-  const aoBuscarCep = async () => {
-    try {
-      const r = await consultarCep(f.cep);
-      setF((p) => ({
-        ...p,
-        logradouro: p.logradouro || r.logradouro,
-        bairro: p.bairro || r.bairro,
-        cidade: r.cidade || p.cidade,
-        uf: r.uf || p.uf,
-      }));
-    } catch {
-      /* preenchimento manual permitido */
-    }
-  };
+  // CEP completo preenche o endereço sozinho; o que o ViaCEP não traz (CEP de cidade) fica como está.
+  const buscaCep = useBuscaCep(f.cep, (r) =>
+    setF((p) => ({
+      ...p,
+      logradouro: r.logradouro || p.logradouro,
+      bairro: r.bairro || p.bairro,
+      cidade: r.cidade || p.cidade,
+      uf: r.uf || p.uf,
+    })),
+  );
 
   // A foto escolhida abre o editor (recorte, zoom, girar, ajustes) antes de ser usada.
   const aoSelecionarFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,6 +115,8 @@ function PaginaCadastro() {
         aceiteTermos: aceite,
         cienciaPrivacidade: privacidade,
         autorizacaoPromocional: promocional,
+        // Só envia a ficha se algo foi preenchido ou autorizado.
+        fichaEmergencia: fichaPreenchida(ficha) || ficha.compartilhar ? ficha : undefined,
       }, turnstile.token);
       // Retorna ao fluxo de inscrição quando o cadastro começou em um evento
       navigate({ ...destinoDoLink(redirectSeguro(redirect)) } as { to: string });
@@ -187,10 +188,10 @@ function PaginaCadastro() {
           </div>
 
           <Campo rotulo="CEP" htmlFor="cep">
-            <div className="flex gap-2">
-              <Input id="cep" inputMode="numeric" value={f.cep} onChange={(e) => setF((p) => ({ ...p, cep: mascaraCep(e.target.value) }))} placeholder="00000-000" required />
-              <Button type="button" variant="outline" onClick={aoBuscarCep}>Buscar</Button>
-            </div>
+            <Input id="cep" inputMode="numeric" autoComplete="postal-code" value={f.cep} onChange={(e) => setF((p) => ({ ...p, cep: mascaraCep(e.target.value) }))} placeholder="00000-000" required />
+            <p aria-live="polite" className={`text-xs ${buscaCep.status === "erro" ? "text-destructive" : "text-muted-foreground"}`}>
+              {textoBuscaCep(buscaCep) || "Digite o CEP para preencher o endereço automaticamente."}
+            </p>
           </Campo>
           <Campo rotulo="Logradouro" htmlFor="logr">
             <Input id="logr" value={f.logradouro} onChange={set("logradouro")} required />
@@ -221,6 +222,16 @@ function PaginaCadastro() {
           <Campo rotulo="Squad (opcional)" htmlFor="squad">
             <Input id="squad" value={f.squad} onChange={set("squad")} />
           </Campo>
+
+          <section aria-labelledby="titulo-ficha" className="sm:col-span-2 space-y-3 rounded-md border border-border p-4">
+            <div>
+              <h2 id="titulo-ficha" className="font-medium">Ficha de emergência (opcional)</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Tipo sanguíneo, alergias e um contato para emergências em campo. Você pode preencher depois em Meu perfil.
+              </p>
+            </div>
+            <CamposFicha valor={ficha} onChange={setFicha} prefixo="cad-ficha" />
+          </section>
 
           <div className="sm:col-span-2 space-y-2 text-sm">
             <Label className="flex items-start gap-2 text-[length:inherit] font-normal text-inherit">

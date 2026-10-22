@@ -2,7 +2,7 @@
 -- banco, então anon e authenticated não podem ler nem gravar nada e só service_role executa
 -- as RPCs do servidor. Roda com `supabase test db` sobre todas as migrations aplicadas do zero.
 begin;
-select plan(11);
+select plan(13);
 
 select is(
   (select array_agg(t order by t) from unnest(public.base_tables()) t
@@ -65,6 +65,23 @@ select throws_ok(
   '23514',
   null,
   'só existe o registro "plataforma"'
+);
+
+-- Ficha de emergência (dado de saúde): compartilhar exige a data da autorização, e vice-versa.
+select throws_ok(
+  $$insert into public.user_emergency_records (user_id, share_with_organizers, updated_at)
+    values ('00000000-0000-0000-0000-000000000001', true, now())$$,
+  '23514',
+  null,
+  'ficha compartilhada sem data de autorização é rejeitada'
+);
+
+select throws_ok(
+  $$insert into public.user_emergency_records (user_id, blood_type, share_with_organizers, updated_at)
+    values ('00000000-0000-0000-0000-000000000001', 'Z+', false, now())$$,
+  '23514',
+  null,
+  'tipo sanguíneo fora da lista é rejeitado'
 );
 
 select is(

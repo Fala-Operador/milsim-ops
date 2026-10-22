@@ -7,7 +7,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogTit
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import type { Evento } from "@/lib/domain/types";
-import { ETAPAS, revisarEvento, validarEtapa, type Ocupacao } from "@/lib/eventoEditor";
+import { ETAPAS, problemasDoServidor, revisarEvento, validarEtapa, type Ocupacao, type Problema } from "@/lib/eventoEditor";
 import type { OcupacaoLote } from "@/lib/vendas";
 import { carregarBase } from "@/services/db";
 import { publicarEvento, salvarEvento } from "@/api/organizador.functions";
@@ -54,6 +54,8 @@ export function EventEditorDrawer(p: PropsEditor) {
   const [erros, setErros] = useState<Record<string, string>>({});
   const [estado, setEstado] = useState<EstadoSalvamento>("ocioso");
   const [msg, setMsg] = useState("");
+  // Pendências apontadas pelo servidor ao publicar/salvar, já separadas por etapa.
+  const [errosServidor, setErrosServidor] = useState<Problema[]>([]);
   const [confirmar, setConfirmar] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [entrou, setEntrou] = useState(false);
@@ -228,6 +230,16 @@ export function EventEditorDrawer(p: PropsEditor) {
   };
 
   const revisao = useMemo(() => revisarEvento(ev, ocupacao, new Date(), p.ocupacaoLote), [ev, ocupacao, p.ocupacaoLote]);
+  // Etapas já percorridas que ainda têm pendência (as futuras ainda não foram preenchidas).
+  const etapasComErro = useMemo(
+    () => new Set([...revisao.erros.filter((e) => e.etapa <= alcancada).map((e) => e.etapa), ...errosServidor.map((e) => e.etapa)]),
+    [revisao.erros, errosServidor, alcancada],
+  );
+
+  const irParaProblema = (x: Problema) => {
+    irPara(x.etapa, x.campo || undefined);
+    if (x.campo) setErros((atual) => ({ ...atual, [x.campo]: x.mensagem }));
+  };
 
   const finalizar = async () => {
     if (revisao.erros.length) {
@@ -236,6 +248,7 @@ export function EventEditorDrawer(p: PropsEditor) {
     }
     setEnviando(true);
     setMsg("");
+    setErrosServidor([]);
     try {
       if (modoServidor) {
         if (!(await persistir(true))) return;
@@ -252,19 +265,16 @@ export function EventEditorDrawer(p: PropsEditor) {
       setTimeout(p.onFechar, 200);
     } catch (e) {
       setEstado("erro");
-      const texto = e instanceof Error ? e.message : "Falha ao concluir.";
-      // Atividades recusadas pelo servidor: cada erro vai para o card da sua atividade.
-      const titulos = [...texto.matchAll(/Atividade "([^"]*)" fora do período do evento\./g)].map((m) => m[1]);
-      const atividades = form.getValues().cronograma.filter((a) => titulos.includes(a.titulo));
-      if (atividades.length) {
-        setErros(Object.fromEntries(atividades.map((a) => [`at-data-${a.id}`, "Fora do período do evento."])));
-        focoPendente.current = `at-data-${atividades[0]!.id}`;
-        setEtapa(ETAPAS.findIndex((x) => x.id === "cronograma"));
-        const resto = texto.replace(/Atividade "[^"]*" fora do período do evento\.\s*/g, "").trim();
-        const n = atividades.length;
-        setMsg(`${n === 1 ? "1 atividade está" : `${n} atividades estão`} fora do período do evento.${resto ? ` ${resto}` : ""}`);
+      const mensagem = e instanceof Error ? e.message : "Falha ao concluir.";
+      const probs = problemasDoServidor(mensagem, form.getValues());
+      // Só vira lista por etapa quando é validação do evento (falha de rede etc. segue como texto).
+      if (probs.some((x) => x.etapa < ETAPAS.length - 1)) {
+        setErrosServidor(probs);
+        // Erros com campo (ex.: cada atividade do cronograma) também aparecem no próprio card.
+        setErros(Object.fromEntries(probs.filter((x) => x.campo).map((x) => [x.campo, x.mensagem])));
+        setMsg(probs.length === 1 ? "Não foi possível concluir. Corrija a pendência abaixo:" : `Não foi possível concluir. Corrija as ${probs.length} pendências abaixo:`);
       } else {
-        setMsg(texto);
+        setMsg(mensagem);
       }
     } finally {
       setEnviando(false);
@@ -305,7 +315,7 @@ export function EventEditorDrawer(p: PropsEditor) {
             </div>
             <Button type="button" variant="ghost" aria-label="Fechar editor" onClick={pedirFechar}>✕</Button>
           </div>
-          <EventStepNavigation atual={etapa} alcancada={alcancada} irPara={(i) => irPara(i)} />
+          <EventStepNavigation atual={etapa} alcancada={alcancada} comErro={etapasComErro} irPara={(i) => irPara(i)} />
         </header>
 
         <div ref={conteudoRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 md:px-6">
@@ -324,6 +334,17 @@ export function EventEditorDrawer(p: PropsEditor) {
 
         <footer className="border-t border-border px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:px-6">
           {msg && <p role="alert" className={`mb-2 text-sm ${estado === "erro" ? "text-destructive" : "text-muted-foreground"}`}>{msg}</p>}
+          {errosServidor.length > 0 && (
+            <ul className="mb-3 max-h-40 space-y-1 overflow-y-auto text-sm" aria-label="Pendências por etapa">
+              {errosServidor.map((x, i) => (
+                <li key={i} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-destructive">
+                  <span className="shrink-0 font-medium">Etapa {x.etapa + 1} · {ETAPAS[x.etapa]?.titulo}</span>
+                  <span className="min-w-0 flex-1 break-words">{x.mensagem}</span>
+                  <Button type="button" variant="outline" className="h-7 shrink-0 px-2 text-xs" onClick={() => irParaProblema(x)}>Ir para a etapa</Button>
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Button type="button" variant="outline" disabled={etapa === 0} onClick={() => { setErros({}); setEtapa(etapa - 1); }}>Voltar</Button>
             <div className="flex flex-wrap gap-2">

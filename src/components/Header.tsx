@@ -1,9 +1,9 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { Bell, ChevronDown, LogOut, Menu, X } from "lucide-react";
+import { ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useNotifications } from "@/contexts/NotificationContext";
+import { SinoNotificacoes } from "./SinoNotificacoes";
 import { usePreferencias } from "@/contexts/PreferenciasContext";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -103,21 +103,6 @@ function AvatarConta({ nome, foto }: { nome: string; foto?: string | undefined }
   );
 }
 
-function Sino({ naoLidas }: { naoLidas: number }) {
-  const rotulo = naoLidas > 99 ? "99+" : String(naoLidas);
-  return (
-    <Link to="/app/notificacoes"
-      className={`relative flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground ${foco}`}
-      aria-label={naoLidas > 0 ? `Notificações, ${naoLidas} não lidas` : "Notificações, nenhuma não lida"}>
-      <Bell className={`h-5 w-5 ${naoLidas > 0 ? "text-warning" : ""}`} aria-hidden="true" />
-      {naoLidas > 0 && (
-        <span aria-hidden="true" className="absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-warning px-1 text-[10px] font-bold leading-none text-warning-foreground">
-          {rotulo}
-        </span>
-      )}
-    </Link>
-  );
-}
 
 const linkNav = `rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-secondary/60 hover:text-foreground ${foco}`;
 const linkNavAtivo = "bg-secondary text-foreground font-medium shadow-[inset_0_-2px_0_var(--accent)]";
@@ -129,16 +114,14 @@ function Navegacao({ logado, aoNavegar, vertical = false }: { logado: boolean; a
       <Link to="/" activeOptions={{ exact: true }} className={cls} activeProps={{ className: linkNavAtivo }} onClick={aoNavegar}>Eventos</Link>
       {/* Modalidades é público: explica o que existe, logado ou não. */}
       <Link to="/modalidades" className={cls} activeProps={{ className: linkNavAtivo }} onClick={aoNavegar}>Modalidades</Link>
-      {logado && (
-        <Link to="/app/comunidades" className={cls} activeProps={{ className: linkNavAtivo }} onClick={aoNavegar}>Comunidades</Link>
-      )}
+      {/* Comunidades é vitrine pública; o conteúdo continua só para inscritos (decidido ao entrar). */}
+      <Link to="/comunidades" className={cls} activeProps={{ className: linkNavAtivo }} onClick={aoNavegar}>Comunidades</Link>
     </>
   );
 }
 
 export function Header() {
   const { usuario, logout } = useAuth();
-  const { naoLidas } = useNotifications();
   const navigate = useNavigate();
   const caminho = useRouterState({ select: (s) => s.location.pathname });
   const [menuAberto, setMenuAberto] = useState(false);
@@ -187,7 +170,7 @@ export function Header() {
         {/* Direita: ações */}
         <div className="ml-auto flex items-center gap-1.5 justify-self-end lg:ml-0">
           <SeletorCidade compacto className="hidden lg:block" />
-          {usuarioVisivel && <Sino naoLidas={naoLidas} />}
+          {usuarioVisivel && <SinoNotificacoes />}
           {usuarioVisivel ? (
             <div className="relative hidden lg:block">
               <DropdownMenu open={menuAberto} onOpenChange={setMenuAberto} modal={false}>

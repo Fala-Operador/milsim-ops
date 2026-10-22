@@ -72,7 +72,7 @@ export function EtapaRevisao({ ev, erros, avisos, irPara }: { ev: Evento; erros:
           {ev.lotes.length === 0 && <p className="text-warning">Nenhum lote.</p>}
         </Bloco>
         <Bloco titulo="Cronograma" etapa={5} irPara={irPara}>
-          <ul>{[...ev.cronograma].sort((a, b) => a.ordem - b.ordem).map((a) => <li key={a.id}>{a.data} {a.horario} · {a.titulo || "Sem nome"}</li>)}</ul>
+          <ul>{[...ev.cronograma].sort((a, b) => a.ordem - b.ordem).map((a) => <li key={a.id}>{a.data ? formatarDataBR(a.data) : "Sem data"}{a.horario ? ` às ${a.horario}` : ""} · {a.titulo || "Sem nome"}</li>)}</ul>
           {ev.cronograma.length === 0 && <p className="text-muted-foreground">Sem atividades.</p>}
         </Bloco>
         <Bloco titulo="Documento de regras" etapa={5} irPara={irPara}>

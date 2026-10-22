@@ -93,6 +93,10 @@ Código: `src/services/organizador.ts`, `src/lib/eventoEditor.ts`, `src/lib/cont
 - **Publicar** exige: nome, modalidade, descrição resumida (até 200), enredo, local, imagem
   principal, ao menos um exército, um tipo de ingresso e uma atividade no cronograma, todas dentro
   do período do evento. Publicar cria os fóruns da comunidade.
+- Data e horário das atividades são lidos no **fuso do evento** (`src/lib/fusoHorario.ts`), nunca no
+  fuso de quem valida: o editor e o servidor (em UTC) chegam ao mesmo resultado. Início e término inclusos.
+- Erros de publicação aparecem por etapa no editor: cada pendência mostra a etapa, a etapa fica em
+  vermelho na navegação e há um atalho para ela (`etapaDaMensagem` em `src/lib/eventoEditor.ts`).
 - **Capacidade**: a total e a de cada exército nunca ficam abaixo da ocupação atual
   (confirmadas + reservas de pagamento vigentes). Nomes de exército não se repetem.
 - Troca de modalidade é auditada.
@@ -145,6 +149,22 @@ Resultado:
   checkout), sem gastar o cupom duas vezes.
 - Uma nova tentativa da mesma pessoa **substitui** a reserva pendente anterior dela (que é
   liberada), salvo se aquele pagamento já estiver em processamento.
+
+### Inclusão manual (pagamento por fora)
+
+Código: `incluirParticipantes` em `src/services/inscricoes.ts`. → [API](api/inscricoes/incluirParticipantes.md)
+
+- Feita pela **gestão do evento** (organização dona ou admin), em Organização › Inscritos ou na
+  visão geral do evento no admin (aba Inscrições).
+- Só para **conta existente e ativa**. A organização localiza **uma** conta por e-mail ou CPF (ela não
+  recebe a lista de usuários); o admin escolhe **várias** pelo nome numa lista com busca (até 50 por vez),
+  com o mesmo tipo de ingresso e exército para todas.
+- Tudo ou nada: se uma pessoa não puder entrar, ninguém do lote é incluído e o erro diz quem foi.
+- Entra como **cortesia já resgatada** (valor zero; aparece em cortesias emitidas/resgatadas, não no bruto).
+- Valem as regras 2 a 5 acima (idade, inscrição única, tipo/exército, capacidade); **não** exige lote
+  aberto e também vale com o evento em `inscricoes_encerradas`.
+- Origem `organizador` ("Inclusão manual") ou `admin` ("Inclusão pela administração"); a ação vai
+  para a auditoria (com a observação opcional). Inclusão pelo admin notifica os organizadores do evento.
 
 ## 7. Pagamento online (Stripe)
 
@@ -199,6 +219,7 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
   editor de eventos avisam a organização que ela precisa concluir a conta de recebimento. Inscrições gratuitas e
   cortesias seguem normais.
 - A **taxa** (%) é definida pelo admin e vale para reservas novas; cada venda guarda a taxa do momento.
+  A organização vê a taxa vigente (só leitura) no Financeiro, com um exemplo do valor que recebe.
 - A **taxa de serviço do comprador** (%, padrão 0%) é definida por **cada organização** no Financeiro:
   é somada ao valor do ingresso no checkout como o item "Taxa de serviço", aparece na revisão da
   inscrição e é repassada à organização junto com a venda. Ex.: ingresso de R$ 100,00 com 3,5% do
@@ -301,6 +322,16 @@ Código: `src/lib/missoes.ts` (regras puras), `src/services/missoes.ts`. → [AP
 Código: `src/services/comunidade.ts`. → [APIs](api/README.md#comunidade)
 
 - Papéis: **gestão** (organização do evento ou admin) e **membro** (inscrição confirmada).
+- **Vitrine pública** (`/comunidades`, link "Comunidades" no menu para todos): mostra que a comunidade
+  existe (evento, data, cidade, nº de confirmados), nunca o conteúdo. Lista as comunidades de eventos
+  publicados ou com inscrições encerradas que ainda não terminaram, mais as que a pessoa já acessa
+  (as dela primeiro). Regras em `src/lib/comunidadePublica.ts` (`acessoAComunidade`):
+  - membro ou gestão → entra;
+  - visitante → login e, na volta, a mesma decisão;
+  - logado sem inscrição e inscrições abertas → página de inscrição com o aviso de que a comunidade é para inscritos;
+  - reserva aguardando pagamento → "Concluir pagamento" em Meus ingressos;
+  - inscrições encerradas → explicação, sem acesso.
+  O mesmo encaminhamento vale para links diretos da comunidade e de publicações.
 - Fóruns iniciais, criados ao publicar o evento: Avisos oficiais (só a gestão publica), Conversa
   geral, Dúvidas e preparação, Caronas e logística, Fotos e experiências.
 - Cada fórum tem público (`todos` ou um exército) e permissões separadas de publicar e responder
@@ -416,6 +447,16 @@ Código: `src/lib/visaoGeralEvento.ts`, página `/admin/eventos/$eventoId` (bot�
 - Perfil do operador: cada bloco é `eu` ou `autenticados`; visitante deslogado vê só nome e foto.
 - Solicitações LGPD (acesso, correção, exportação, exclusão) vão para os admins, que respondem pela plataforma.
 - Listagens da gestão mostram CPF e telefone mascarados.
+- **Ficha de emergência** (opcional: tipo sanguíneo, alergias, contato de emergência; `src/lib/fichaEmergencia.ts`):
+  dado de saúde (LGPD, art. 11). Preenchida no cadastro ou em Meu perfil › Ficha de emergência; vazia = removida.
+  - O titular sempre vê e edita.
+  - A organização dona do evento e o admin só veem com a **autorização explícita** (guardada com data), inscrição
+    **confirmada** e de **7 dias antes do início até o fim** do evento — no detalhe do inscrito e no check-in
+    (inclusive offline). Fora disso a ficha nem chega ao navegador (filtrada na visão, mesmo para o admin).
+  - Contas existentes receberam uma notificação para preencher (migration `20261022100000_ficha_emergencia`).
+- **CEP** (cadastro e local do evento): ao completar 8 dígitos, o navegador consulta o ViaCEP
+  (`consultarCep` em `src/services/geolocalizacao.ts`) enviando só o CEP, e preenche endereço, bairro,
+  cidade e UF; os campos continuam editáveis e o CEP com que o formulário abriu não é reconsultado.
 
 ## 19. Lacunas conhecidas
 
