@@ -74,7 +74,7 @@ export function SeletorCidade({ compacto = false, className = "" }: { compacto?:
           className="w-full rounded-md border border-input bg-background py-2 pl-8 pr-3 text-sm focus:border-ring focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </div>
-      <ul className="mt-2 min-h-0 flex-1 overflow-y-auto" aria-label="Estados">
+      <ul className="mt-2 max-h-[min(18rem,50dvh)] min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1" aria-label="Estados">
         <li>
           <Button variant="plain" size="none" type="button" onClick={() => { definirLocal(NACIONAL); fechar(); }} aria-pressed={local.escopo === "nacional"}
             className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">
@@ -135,7 +135,7 @@ export function SeletorCidade({ compacto = false, className = "" }: { compacto?:
             align="start"
             sideOffset={8}
             onOpenAutoFocus={focarBusca}
-            className="w-[22rem] rounded-lg border-border p-4 shadow-xl"
+            className="flex max-h-[var(--radix-popover-content-available-height)] w-[22rem] flex-col rounded-lg border-border p-4 shadow-xl"
           >
             {conteudo}
           </PopoverContent>
