@@ -40,6 +40,7 @@ const abas = [
   { to: "/admin/gamificacao", rotulo: "Gamificação e recompensas" },
   { to: "/admin/suporte", rotulo: "Suporte" },
   { to: "/admin/solicitacoes", rotulo: "Solicitações" },
+  { to: "/admin/loja", rotulo: "Loja da plataforma" },
   { to: "/admin/pagamentos", rotulo: "Pagamentos" },
   { to: "/admin/notificacoes", rotulo: "Notificações" },
   { to: "/admin/usuarios", rotulo: "Usuários" },
