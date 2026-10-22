@@ -21,6 +21,8 @@ import { EditorFoto } from "@/components/EditorFoto";
 import { TIPOS_FOTO, erroArquivoFoto } from "@/lib/recorteFoto";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { CamposFicha, FICHA_VAZIA } from "@/components/perfil/FichaEmergencia";
+import { fichaPreenchida, type DadosFicha } from "@/lib/fichaEmergencia";
 
 export const Route = createFileRoute("/cadastro")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -67,6 +69,7 @@ function PaginaCadastro() {
   const [aceite, setAceite] = useState(false);
   const [privacidade, setPrivacidade] = useState(false);
   const [promocional, setPromocional] = useState(false);
+  const [ficha, setFicha] = useState<DadosFicha>(FICHA_VAZIA);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
   const turnstile = useTurnstile("cadastro");
@@ -112,6 +115,8 @@ function PaginaCadastro() {
         aceiteTermos: aceite,
         cienciaPrivacidade: privacidade,
         autorizacaoPromocional: promocional,
+        // Só envia a ficha se algo foi preenchido ou autorizado.
+        fichaEmergencia: fichaPreenchida(ficha) || ficha.compartilhar ? ficha : undefined,
       }, turnstile.token);
       // Retorna ao fluxo de inscrição quando o cadastro começou em um evento
       navigate({ ...destinoDoLink(redirectSeguro(redirect)) } as { to: string });
@@ -217,6 +222,16 @@ function PaginaCadastro() {
           <Campo rotulo="Squad (opcional)" htmlFor="squad">
             <Input id="squad" value={f.squad} onChange={set("squad")} />
           </Campo>
+
+          <section aria-labelledby="titulo-ficha" className="sm:col-span-2 space-y-3 rounded-md border border-border p-4">
+            <div>
+              <h2 id="titulo-ficha" className="font-medium">Ficha de emergência (opcional)</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Tipo sanguíneo, alergias e um contato para emergências em campo. Você pode preencher depois em Meu perfil.
+              </p>
+            </div>
+            <CamposFicha valor={ficha} onChange={setFicha} prefixo="cad-ficha" />
+          </section>
 
           <div className="sm:col-span-2 space-y-2 text-sm">
             <Label className="flex items-start gap-2 text-[length:inherit] font-normal text-inherit">

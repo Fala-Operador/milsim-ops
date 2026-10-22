@@ -7,13 +7,14 @@ import { OperacoesExternas } from "@/components/perfil/OperacoesExternas";
 import { AbaEquipamentos, AbaInsignias, AbaOperacoes, AbaRecompensas, Restrito } from "@/components/perfil/abas";
 import { EditarPerfil, Privacidade } from "@/components/perfil/edicao";
 import { CompartilharPerfil } from "@/components/perfil/CompartilharPerfil";
+import { CartaoFichaEmergencia } from "@/components/perfil/FichaEmergencia";
 import { Card } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Campo, ErroSecao, SkeletonPagina } from "@/components/ui";
 
-const ABAS = ["perfil", "equipamentos", "operacoes", "insignias", "privacidade"] as const;
+const ABAS = ["perfil", "emergencia", "equipamentos", "operacoes", "insignias", "privacidade"] as const;
 type Aba = (typeof ABAS)[number];
-const ROTULOS: Record<Aba, string> = { perfil: "Meu perfil", equipamentos: "Meus equipamentos", operacoes: "Operações e mapa", insignias: "Insígnias e recompensas", privacidade: "Privacidade" };
+const ROTULOS: Record<Aba, string> = { perfil: "Meu perfil", emergencia: "Ficha de emergência", equipamentos: "Meus equipamentos", operacoes: "Operações e mapa", insignias: "Insígnias e recompensas", privacidade: "Privacidade" };
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { formatarDataBR } from "@/lib/domain/money";
@@ -78,7 +79,7 @@ function Perfil() {
         </TabsList>
       </Tabs>
       <div role="tabpanel" aria-label={ROTULOS[aba]}>
-        {aba === "perfil" ? <DadosConta /> : <GestaoPerfil aba={aba} usuarioId={usuario.id} />}
+        {aba === "perfil" ? <DadosConta /> : aba === "emergencia" ? <CartaoFichaEmergencia ficha={usuario.fichaEmergencia} /> : <GestaoPerfil aba={aba} usuarioId={usuario.id} />}
       </div>
     </div>
   );

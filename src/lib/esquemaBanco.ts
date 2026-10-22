@@ -88,6 +88,11 @@ export const ESQUEMA = {
       autorizacaoResponsavel: "guardian_authorization", autorizacaoPromocional: "marketing_consent",
       aceiteTermosVersao: "terms_version", aceiteTermosEm: "terms_accepted_at",
       organizacaoId: "organization_id", ativo: "active", criadoEm: "created_at",
+      fichaEmergencia: objeto("user_emergency_records", ["user_id"], {
+        tipoSanguineo: "blood_type", alergias: "allergies", contatoNome: "contact_name",
+        contatoTelefone: "contact_phone", compartilhar: "share_with_organizers",
+        consentimentoEm: "consent_at", atualizadoEm: "updated_at",
+      }),
     },
   },
   organizacoes: {
