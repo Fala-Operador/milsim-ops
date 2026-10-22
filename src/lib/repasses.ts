@@ -117,9 +117,9 @@ export function taxaDaPlataforma(base: Pick<BaseDados, "configuracoes">): number
   return Number.isFinite(v) && v > 0 ? Math.min(v, 100) : 0;
 }
 
-/** Taxa de serviço do comprador (%), somada ao valor do ingresso no checkout. */
-export function taxaDoComprador(base: Pick<BaseDados, "configuracoes">): number {
-  const v = base.configuracoes.find((c) => c.id === "plataforma")?.taxaCompradorPercentual ?? 0;
+/** Taxa de serviço do comprador (%) definida pela organização, somada ao ingresso no checkout. */
+export function taxaDoComprador(org: Pick<Organizacao, "taxaCompradorPercentual"> | undefined): number {
+  const v = org?.taxaCompradorPercentual ?? 0;
   return Number.isFinite(v) && v > 0 ? Math.min(v, 100) : 0;
 }
 
@@ -165,9 +165,9 @@ export function resumoRepasse(base: BaseDados, eventoId: string) {
   const pagas = base.inscricoes.filter((i) => i.eventoId === eventoId && i.status === "confirmada" && i.pagamento?.status === "pago");
   const cobrado = pagas.reduce((s, i) => s + (i.pagamento?.valorCentavos ?? 0), 0);
   const taxas = pagas.reduce((s, i) => s + (i.pagamento?.taxaCentavos ?? 0), 0);
-  // Taxa de serviço paga pelos compradores além do ingresso: fica com a plataforma, fora do cobrado.
+  // Taxa de serviço paga pelos compradores além do ingresso: vai para a organização, fora do cobrado.
   const taxasComprador = pagas.reduce((s, i) => s + (i.pagamento?.taxaCompradorCentavos ?? 0), 0);
-  const repassado = pagas.filter((i) => i.pagamento?.contaDestino).reduce((s, i) => s + i.pagamento!.valorCentavos - (i.pagamento!.taxaCentavos ?? 0), 0);
+  const repassado = pagas.filter((i) => i.pagamento?.contaDestino).reduce((s, i) => s + i.pagamento!.valorCentavos + (i.pagamento!.taxaCompradorCentavos ?? 0) - (i.pagamento!.taxaCentavos ?? 0), 0);
   // Vendas feitas antes da conta ficar ativa ficaram na plataforma: repasse manual.
   const naPlataforma = pagas.filter((i) => !i.pagamento?.contaDestino).reduce((s, i) => s + i.pagamento!.valorCentavos, 0);
   return { cobrado, taxas, taxasComprador, repassado, naPlataforma };

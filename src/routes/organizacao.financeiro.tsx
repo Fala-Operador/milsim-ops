@@ -12,6 +12,10 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Campo } from "@/components/ui";
 import { RecebimentosOrganizacao } from "@/components/RecebimentosOrganizacao";
+import { CardTaxa } from "@/components/CardTaxa";
+import { definirTaxaComprador } from "@/api/repasses.functions";
+import { taxaDoComprador, taxaPlataforma } from "@/lib/repasses";
+import { formatarBRL } from "@/lib/domain/money";
 import { AvisoLotes, Financeiro, useEventoSelecionado, useEventosOrg } from "@/components/organizacao";
 
 export const Route = createFileRoute("/organizacao/financeiro")({
@@ -92,6 +96,17 @@ function PaginaFinanceiro() {
         <Card>
           <RecebimentosOrganizacao organizacao={organizacao} retorno={retornoRecebimento} />
         </Card>
+      )}
+
+      {organizacao && (
+        <CardTaxa
+          id="taxa-comprador"
+          titulo="Taxa de serviço (comprador)"
+          descricao="Percentual somado ao valor do ingresso e pago pelo comprador, que aparece como um item separado no pagamento. O valor é repassado à organização junto com a venda. Use 0% para não cobrar."
+          atual={taxaDoComprador(organizacao)}
+          salvar={(p) => definirTaxaComprador(organizacao.id, p).then(() => setVersao((v) => v + 1))}
+          exemplo={(p) => `Exemplo: num ingresso de ${formatarBRL(15000)}, o comprador paga ${formatarBRL(15000 + taxaPlataforma(15000, p))} (${formatarBRL(taxaPlataforma(15000, p))} de taxa de serviço).`}
+        />
       )}
 
       {evento && (
