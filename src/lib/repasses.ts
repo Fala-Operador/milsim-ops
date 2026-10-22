@@ -14,6 +14,19 @@ export interface ContaStripe {
   settings?: { payouts?: { schedule?: CronogramaStripe | null } | null } | null;
   external_accounts?: { data?: ContaExternaStripe[] | null } | null;
   business_profile?: { url?: string | null; product_description?: string | null; mcc?: string | null } | null;
+  metadata?: Record<string, string> | null;
+  created?: number;
+}
+
+/**
+ * Conta já criada no Stripe para a organização (metadata.organizacaoId) a reaproveitar em vez
+ * de criar outra: a que já avançou no cadastro, depois a mais antiga.
+ */
+export function contaExistenteDaOrganizacao(contas: ContaStripe[], organizacaoId: string, ignorar?: string): ContaStripe | undefined {
+  const progresso = (c: ContaStripe) => (c.charges_enabled ? 2 : 0) + (c.details_submitted ? 1 : 0);
+  return contas
+    .filter((c) => c.metadata?.["organizacaoId"] === organizacaoId && c.id !== ignorar)
+    .sort((a, b) => progresso(b) - progresso(a) || (a.created ?? 0) - (b.created ?? 0))[0];
 }
 
 /** Perfil comercial que a plataforma envia ao Stripe para a organização não precisar digitar. */

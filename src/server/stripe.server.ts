@@ -335,6 +335,22 @@ export function obterContaDaPlataforma(): Promise<{
   return chamarStripe("GET", "/account");
 }
 
+/** Todas as contas conectadas da plataforma (paginadas de 100 em 100). */
+export async function listarContasConectadas(): Promise<ContaStripe[]> {
+  const contas: ContaStripe[] = [];
+  let depois: string | undefined;
+  for (let pagina = 0; pagina < 50; pagina++) {
+    const r = await chamarStripe<{ data: ContaStripe[]; has_more?: boolean }>(
+      "GET",
+      `/accounts?limit=100${depois ? `&starting_after=${encodeURIComponent(depois)}` : ""}`,
+    );
+    contas.push(...r.data);
+    if (!r.has_more || r.data.length === 0) break;
+    depois = r.data.at(-1)!.id;
+  }
+  return contas;
+}
+
 export function obterContaConectada(id: string): Promise<ContaStripe> {
   return chamarStripe<ContaStripe>("GET", `/accounts/${encodeURIComponent(id)}`);
 }

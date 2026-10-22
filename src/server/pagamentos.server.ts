@@ -40,6 +40,7 @@ import {
   problemaChavesStripe,
   completarPerfilComercial,
   criarContaConectada,
+  listarContasConectadas,
   obterContaDaPlataforma,
   criarReembolso,
   criarSessaoCheckout,
@@ -56,7 +57,7 @@ import {
   saquesDaConta,
   stripeConfigurado,
 } from "@/server/stripe.server";
-import { contaParaRepasse, gereRecebimento, MSG_SEM_RECEBIMENTO, perfilComercialPadrao, precisaPerfilComercial, resumoSaldo, type ContaStripe, type PerfilComercial, type SaldoRecebimento } from "@/lib/repasses";
+import { contaExistenteDaOrganizacao, contaParaRepasse, gereRecebimento, MSG_SEM_RECEBIMENTO, perfilComercialPadrao, precisaPerfilComercial, resumoSaldo, type ContaStripe, type PerfilComercial, type SaldoRecebimento } from "@/lib/repasses";
 import { descartarContaDeOutroModoNaBase, organizacaoDaConta, registrarRecebimentoNaBase } from "@/services/repasses";
 import {
   cancelarImpulsoNaBase,
@@ -496,9 +497,23 @@ async function contaDaOrganizacao(
       substituida = org.contaId;
     }
   }
+  // Uma conta por organização: se o registro na base se perdeu (ou outra pessoa da organização
+  // já começou o cadastro), reaproveita a conta que o Stripe já tem para ela.
+  const contas = await comStripe(() => listarContasConectadas());
+  const existente = contaExistenteDaOrganizacao(contas, organizacaoId, substituida);
+  if (existente) {
+    console.warn("Stripe: conta de recebimento existente reaproveitada", organizacaoId, existente.id);
+    await gravarConta(organizacaoId, existente);
+    return { conta: existente, nova: false };
+  }
   const conta = await comStripe(() => criarContaConectada({ organizacaoId, perfil, email: org.email, substituida }))
     .catch(async (e: Error) => { throw await comContaDaPlataforma(e); });
-  await gravarConta(organizacaoId, conta);
+  const gravada = (await gravarConta(organizacaoId, conta)).resultado;
+  if (gravada && gravada.contaId !== conta.id) {
+    // Outra pessoa da organização gravou uma conta ao mesmo tempo: vale a que ficou na base.
+    console.warn("Stripe: conta criada em paralelo ignorada", organizacaoId, conta.id, "mantida", gravada.contaId);
+    return { conta: await comStripe(() => obterContaConectada(gravada.contaId)), nova: false };
+  }
   await completarPerfil(conta, perfil); // site, ramo e descrição, que a criação pela v2 não leva
   return { conta, nova: true };
 }
