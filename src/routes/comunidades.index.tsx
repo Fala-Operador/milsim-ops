@@ -19,10 +19,12 @@ import { LIMITE_POST, MAX_FOTOS } from "@/lib/comunidadeGeral";
 import { Compositor } from "@/components/social/Compositor";
 import { ListaPosts } from "@/components/social/ListaPosts";
 import { CartaoPerfilComunidade, PedidosParaSeguir } from "@/components/social/Relacoes";
+import { ListaForuns } from "@/components/social/Foruns";
+import { LateralComunidade } from "@/components/social/LateralComunidade";
 
 export const Route = createFileRoute("/comunidades/")({
-  validateSearch: (s: Record<string, unknown>): { aba?: "geral" | "operacoes" | "pedidos" | undefined } => ({
-    aba: s["aba"] === "operacoes" || s["aba"] === "pedidos" ? s["aba"] : undefined,
+  validateSearch: (s: Record<string, unknown>): { aba?: "geral" | "foruns" | "operacoes" | "pedidos" | undefined } => ({
+    aba: s["aba"] === "foruns" || s["aba"] === "operacoes" || s["aba"] === "pedidos" ? s["aba"] : undefined,
   }),
   head: () => ({
     meta: [
@@ -96,9 +98,10 @@ function Cartao({ item }: { item: ItemVitrine }) {
   );
 }
 
-type Aba = "geral" | "operacoes" | "pedidos";
+type Aba = "geral" | "foruns" | "operacoes" | "pedidos";
 const ABAS: { id: Aba; rotulo: string; logado?: boolean }[] = [
   { id: "geral", rotulo: "Geral" },
+  { id: "foruns", rotulo: "Fóruns" },
   { id: "operacoes", rotulo: "Operações" },
   { id: "pedidos", rotulo: "Pedidos para seguir", logado: true },
 ];
@@ -127,6 +130,7 @@ function Comunidades() {
         </Tabs>
       </header>
       {aba === "geral" && <FeedGeral />}
+      {aba === "foruns" && <ListaForuns />}
       {aba === "operacoes" && <VitrineOperacoes />}
       {aba === "pedidos" && <div className="max-w-xl"><PedidosParaSeguir /></div>}
     </div>
@@ -140,6 +144,7 @@ function FeedGeral() {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
       <div className="min-w-0 space-y-4">
+        <LateralComunidade compacta />
         {usuario ? (
           <Compositor onPublicado={() => void qc.invalidateQueries({ queryKey: ["social", "feed"] })} />
         ) : (
@@ -157,10 +162,11 @@ function FeedGeral() {
           vazio={{ titulo: "Nenhuma publicação ainda", descricao: usuario ? "Seja o primeiro a publicar." : "Volte mais tarde." }}
         />
       </div>
-      {/* Lateral: preferências agora; banners, operações e patrocinadores impulsionados na fase 3. */}
-      <aside className="space-y-4" aria-label="Sua conta na comunidade">
+      {/* Lateral: conta na comunidade, depois banners, operações impulsionadas e patrocinadores. */}
+      <aside className="space-y-4" aria-label="Sua conta na comunidade e destaques">
         <CartaoPerfilComunidade />
         <PedidosParaSeguir compacto />
+        <div className="hidden lg:block"><LateralComunidade /></div>
         <p className="px-1 text-xs text-muted-foreground">
           Até {LIMITE_POST} caracteres e {MAX_FOTOS} fotos por publicação. Conteúdo sexual, de drogas ou de morte e violência real não é permitido.
         </p>

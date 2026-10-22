@@ -330,7 +330,7 @@ export const ESQUEMA = {
       links: lista("partner_links", ["partner_id"], {
         id: "id", tipo: "type", url: "url", rotulo: "label", telefone: "phone", mensagem: "message", principal: "is_primary",
       }),
-      ativo: "active", criadoEm: "created_at", atualizadoEm: "updated_at",
+      ativo: "active", naComunidade: "show_in_community", criadoEm: "created_at", atualizadoEm: "updated_at",
     },
   },
   secoesInicio: {
@@ -340,7 +340,7 @@ export const ESQUEMA = {
       abrangencia: objeto("home_section_geo_scopes", ["section_id"], abrangencia),
       ordem: "sort_order", status: "status",
       agendamento: objeto("home_section_schedules", ["section_id"], { inicioEm: "starts_at", fimEm: "ends_at" }),
-      layout: "layout", modo: "mode",
+      layout: "layout", modo: "mode", naComunidade: "show_in_community",
       destaques: lista("home_section_highlights", ["section_id"], {
         id: "id", eventoId: "event_id", posicao: "slot", imagemPromocional: "promo_image_url", selo: "badge",
         chamada: "headline", agendamento: embutido({ inicioEm: "starts_at", fimEm: "ends_at" }),

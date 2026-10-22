@@ -2,8 +2,8 @@
 // fotos e ações (curtir, responder, compartilhar, denunciar, excluir, bloquear).
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Ban, Flag, Heart, MessageCircle, MoreHorizontal, Share2, Trash2 } from "lucide-react";
-import { bloquear, curtirPost, denunciarPost, excluirPost } from "@/api/social.functions";
+import { Ban, EyeOff, Flag, Heart, MessageCircle, MoreHorizontal, Share2, Trash2 } from "lucide-react";
+import { bloquear, curtirPost, denunciarPost, excluirPost, ocultarPostDoForum } from "@/api/social.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { MOTIVOS_DENUNCIA, type MotivoDenunciaSocial, type PostDTO } from "@/lib/comunidadeGeral";
 import { tempoRelativo } from "@/lib/tempoRelativo";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { Campo, Modal } from "@/components/ui";
+import { Campo, Modal, ModalTexto } from "@/components/ui";
 
 export function AvatarAutor({ nome, fotoUrl, tamanho = "h-10 w-10" }: { nome: string; fotoUrl?: string | undefined; tamanho?: string }) {
   if (fotoUrl) return <img src={fotoUrl} alt="" className={`${tamanho} shrink-0 rounded-full object-cover`} />;
@@ -38,7 +38,11 @@ function GradeFotos({ imagens }: { imagens: PostDTO["imagens"] }) {
   );
 }
 
-export function CartaoPost({ post, onMudou, destaque = false }: { post: PostDTO; onMudou: () => void; destaque?: boolean }) {
+export function CartaoPost({ post, onMudou, destaque = false, moderar = false }: {
+  post: PostDTO; onMudou: () => void; destaque?: boolean;
+  /** Dono ou moderador do fórum do post: pode ocultar. */
+  moderar?: boolean;
+}) {
   const { usuario } = useAuth();
   const navigate = useNavigate();
   const [curtiu, setCurtiu] = useState(post.curtiu);
@@ -46,6 +50,7 @@ export function CartaoPost({ post, onMudou, destaque = false }: { post: PostDTO;
   const [aviso, setAviso] = useState("");
   const [denunciando, setDenunciando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
+  const [ocultando, setOcultando] = useState(false);
   const link = `/comunidades/p/${post.id}`;
 
   const exigirLogin = () => {
@@ -121,6 +126,12 @@ export function CartaoPost({ post, onMudou, destaque = false }: { post: PostDTO;
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {moderar && !post.proprio && (
+                    <>
+                      <DropdownMenuItem onSelect={() => setOcultando(true)}><EyeOff className="h-4 w-4" /> Ocultar (moderação do fórum)</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   {post.proprio ? (
                     <DropdownMenuItem onSelect={() => setExcluindo(true)} className="text-destructive"><Trash2 className="h-4 w-4" /> Excluir publicação</DropdownMenuItem>
                   ) : (
@@ -159,6 +170,20 @@ export function CartaoPost({ post, onMudou, destaque = false }: { post: PostDTO;
         await denunciarPost(post.id, m, d);
         setAviso("Denúncia enviada. A moderação vai analisar.");
       }} />
+      <ModalTexto
+        aberto={ocultando}
+        titulo="Ocultar publicação do fórum"
+        rotulo="Motivo (o autor recebe este texto)"
+        descricao="A publicação deixa de aparecer para todos no fórum."
+        confirmar="Ocultar"
+        destrutivo
+        maximo={300}
+        onFechar={() => setOcultando(false)}
+        onConfirmar={async (motivo) => {
+          await ocultarPostDoForum(post.id, motivo);
+          onMudou();
+        }}
+      />
       <Modal aberto={excluindo} titulo="Excluir publicação" onFechar={() => setExcluindo(false)}>
         <p className="text-sm text-muted-foreground">A publicação some do feed e do seu perfil. Não dá para desfazer.</p>
         <div className="mt-4 flex justify-end gap-2">

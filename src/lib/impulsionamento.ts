@@ -2,7 +2,7 @@
 // concorrência entre campanhas e posições de divulgação.
 // Não há agendador no servidor: o estado é recalculado a cada carregamento.
 import type { Abrangencia, BaseDados, Evento, Impulsionamento, SecaoInicial } from "@/lib/domain/types";
-import { POSICAO_LISTAGEM } from "@/lib/domain/types";
+import { POSICAO_COMUNIDADE, POSICAO_LISTAGEM } from "@/lib/domain/types";
 import { areasSobrepostas, esgotado, UF_REGIAO } from "@/lib/divulgacao";
 
 export type StatusExibidoImpulsionamento =
@@ -46,6 +46,7 @@ export function secoesCompativeis(base: BaseDados): SecaoInicial[] {
 
 export function rotuloPosicao(base: BaseDados, posicao: string): string {
   if (posicao === POSICAO_LISTAGEM) return "Listagem de eventos";
+  if (posicao === POSICAO_COMUNIDADE) return "Lateral da comunidade";
   return base.secoesInicio.find((s) => s.id === posicao)?.titulo ?? "Seção removida";
 }
 
@@ -59,7 +60,7 @@ export function pendenciasAtivacao(base: BaseDados, c: Pick<Impulsionamento, "ev
   if (!c.inicioEm || !c.fimEm || ms(c.fimEm) <= ms(c.inicioEm)) erros.push("O término deve ser depois do início.");
   else if (ms(c.fimEm) <= agora.getTime()) erros.push("O período de divulgação já terminou.");
   if (c.fimEm && ms(c.fimEm) > ms(e.fimEm)) erros.push("O impulsionamento não pode continuar após o término da operação.");
-  const validas = new Set([POSICAO_LISTAGEM, ...secoesCompativeis(base).map((s) => s.id)]);
+  const validas = new Set([POSICAO_LISTAGEM, POSICAO_COMUNIDADE, ...secoesCompativeis(base).map((s) => s.id)]);
   if (!c.posicoes.length) erros.push("Escolha pelo menos um local de divulgação.");
   else if (c.posicoes.some((p) => !validas.has(p))) erros.push("Há um local de divulgação que não existe mais ou está desativado.");
   if (!(c.imagemPromocional || e.imagemUrl)) erros.push("A operação precisa de uma imagem para a apresentação.");

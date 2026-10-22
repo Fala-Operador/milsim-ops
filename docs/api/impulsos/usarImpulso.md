@@ -21,7 +21,7 @@ Usa um impulso disponível numa operação da organização: cria uma campanha d
 ## Regras
 
 - O impulso precisa estar `disponivel` e dentro da validade; a operação precisa estar publicada, não encerrada e ter imagem.
-- A campanha aparece nas seções de destaque da página inicial e no topo da listagem, em todo o Brasil, com prioridade normal.
+- A campanha aparece nas seções de destaque da página inicial, no topo da listagem e na lateral da comunidade geral, em todo o Brasil, com prioridade normal.
 - Começa agora ou, se a operação já tem um impulso comprado em vigor ou agendado, quando o último terminar; termina na duração do impulso ou no fim da operação, o que vier primeiro (o tempo que sobra é perdido).
 - Depois de usado, o impulso não troca de operação. A administração pode pausar ou encerrar a campanha como qualquer outra.
 - Auditado (`impulso_usado`).

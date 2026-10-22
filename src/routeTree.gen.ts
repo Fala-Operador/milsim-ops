@@ -62,6 +62,7 @@ import { Route as AdminEventosEventoIdRouteImport } from './routes/admin.eventos
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as ComunidadeEventoIdIndexRouteImport } from './routes/comunidade.$eventoId.index'
 import { Route as ComunidadeEventoIdGerenciarRouteImport } from './routes/comunidade.$eventoId.gerenciar'
+import { Route as ComunidadesFForumIdRouteImport } from './routes/comunidades.f.$forumId'
 import { Route as ComunidadesPPostIdRouteImport } from './routes/comunidades.p.$postId'
 import { Route as ComunidadeEventoIdPPostIdRouteImport } from './routes/comunidade.$eventoId.p.$postId'
 
@@ -331,6 +332,11 @@ const ComunidadeEventoIdGerenciarRoute =
     path: '/gerenciar',
     getParentRoute: () => ComunidadeEventoIdRoute,
   } as any)
+const ComunidadesFForumIdRoute = ComunidadesFForumIdRouteImport.update({
+  id: '/comunidades/f/$forumId',
+  path: '/comunidades/f/$forumId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ComunidadesPPostIdRoute = ComunidadesPPostIdRouteImport.update({
   id: '/comunidades/p/$postId',
   path: '/comunidades/p/$postId',
@@ -396,6 +402,7 @@ export interface FileRoutesByFullPath {
   '/admin/eventos/$eventoId': typeof AdminEventosEventoIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
+  '/comunidades/f/$forumId': typeof ComunidadesFForumIdRoute
   '/comunidades/p/$postId': typeof ComunidadesPPostIdRoute
   '/comunidade/$eventoId/': typeof ComunidadeEventoIdIndexRoute
   '/comunidade/$eventoId/p/$postId': typeof ComunidadeEventoIdPPostIdRoute
@@ -449,6 +456,7 @@ export interface FileRoutesByTo {
   '/admin/eventos/$eventoId': typeof AdminEventosEventoIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
+  '/comunidades/f/$forumId': typeof ComunidadesFForumIdRoute
   '/comunidades/p/$postId': typeof ComunidadesPPostIdRoute
   '/comunidade/$eventoId': typeof ComunidadeEventoIdIndexRoute
   '/comunidade/$eventoId/p/$postId': typeof ComunidadeEventoIdPPostIdRoute
@@ -507,6 +515,7 @@ export interface FileRoutesById {
   '/admin/eventos/$eventoId': typeof AdminEventosEventoIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
+  '/comunidades/f/$forumId': typeof ComunidadesFForumIdRoute
   '/comunidades/p/$postId': typeof ComunidadesPPostIdRoute
   '/comunidade/$eventoId/': typeof ComunidadeEventoIdIndexRoute
   '/comunidade/$eventoId/p/$postId': typeof ComunidadeEventoIdPPostIdRoute
@@ -566,6 +575,7 @@ export interface FileRouteTypes {
     | '/admin/eventos/$eventoId'
     | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
+    | '/comunidades/f/$forumId'
     | '/comunidades/p/$postId'
     | '/comunidade/$eventoId/'
     | '/comunidade/$eventoId/p/$postId'
@@ -619,6 +629,7 @@ export interface FileRouteTypes {
     | '/admin/eventos/$eventoId'
     | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
+    | '/comunidades/f/$forumId'
     | '/comunidades/p/$postId'
     | '/comunidade/$eventoId'
     | '/comunidade/$eventoId/p/$postId'
@@ -676,6 +687,7 @@ export interface FileRouteTypes {
     | '/admin/eventos/$eventoId'
     | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
+    | '/comunidades/f/$forumId'
     | '/comunidades/p/$postId'
     | '/comunidade/$eventoId/'
     | '/comunidade/$eventoId/p/$postId'
@@ -698,6 +710,7 @@ export interface RootRouteChildren {
   OperadorUsuarioIdRoute: typeof OperadorUsuarioIdRoute
   ComunidadesIndexRoute: typeof ComunidadesIndexRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
+  ComunidadesFForumIdRoute: typeof ComunidadesFForumIdRoute
   ComunidadesPPostIdRoute: typeof ComunidadesPPostIdRoute
 }
 
@@ -1074,6 +1087,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComunidadeEventoIdGerenciarRouteImport
       parentRoute: typeof ComunidadeEventoIdRoute
     }
+    '/comunidades/f/$forumId': {
+      id: '/comunidades/f/$forumId'
+      path: '/comunidades/f/$forumId'
+      fullPath: '/comunidades/f/$forumId'
+      preLoaderRoute: typeof ComunidadesFForumIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/comunidades/p/$postId': {
       id: '/comunidades/p/$postId'
       path: '/comunidades/p/$postId'
@@ -1219,6 +1239,7 @@ const rootRouteChildren: RootRouteChildren = {
   OperadorUsuarioIdRoute: OperadorUsuarioIdRoute,
   ComunidadesIndexRoute: ComunidadesIndexRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
+  ComunidadesFForumIdRoute: ComunidadesFForumIdRoute,
   ComunidadesPPostIdRoute: ComunidadesPPostIdRoute,
 }
 export const routeTree = rootRouteImport
