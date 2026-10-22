@@ -15,8 +15,7 @@ function ErroOrganizacao({ error, reset }: ErrorComponentProps) {
   }, [error]);
   return <ErroSecao onTentar={() => reset()} />;
 }
-import { LayoutDashboard, Users, MessagesSquare, Wallet, Gift, Bell, LifeBuoy, BarChart3, QrCode, Target } from "lucide-react";
-import { useNotifications } from "@/contexts/NotificationContext";
+import { LayoutDashboard, Users, MessagesSquare, Wallet, Gift, LifeBuoy, BarChart3, QrCode, Target, Rocket } from "lucide-react";
 
 export const Route = createFileRoute("/organizacao")({
   head: () => ({
@@ -41,14 +40,13 @@ const itens = [
   { to: "/organizacao/missoes", rotulo: "Missões", icone: Target },
   { to: "/organizacao/financeiro", rotulo: "Financeiro", icone: Wallet },
   { to: "/organizacao/metricas", rotulo: "Métricas", icone: BarChart3 },
+  { to: "/organizacao/impulsos", rotulo: "Impulsionar", icone: Rocket },
   { to: "/organizacao/recompensas", rotulo: "Recompensas", icone: Gift },
   { to: "/organizacao/suporte", rotulo: "Suporte", icone: LifeBuoy },
-  { to: "/organizacao/notificacoes", rotulo: "Notificações", icone: Bell },
 ] as const;
 
 function LayoutOrganizacao() {
   const { usuario } = useAuth();
-  const { naoLidas } = useNotifications();
   const { atencaoEquipe } = useSuporte();
   const navigate = useNavigate();
   const [montado, setMontado] = useState(false);
@@ -89,11 +87,6 @@ function LayoutOrganizacao() {
               {item.rotulo}
               {item.rotulo === "Suporte" && atencaoEquipe > 0 && (
                 <span className="ml-auto rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">{atencaoEquipe}</span>
-              )}
-              {item.rotulo === "Notificações" && naoLidas > 0 && (
-                <span className="ml-auto rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">
-                  {naoLidas}
-                </span>
               )}
             </Link>
           ))}

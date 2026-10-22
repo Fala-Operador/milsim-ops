@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { carregarBase } from "@/services/db";
@@ -84,7 +84,14 @@ function PaginaDivulgacao() {
       <div className="mt-4">
         {aba === "secoes" ? <GestaoSecoes base={base} />
           : aba === "parceiros" ? <GestaoParceiros base={base} />
-          : <GestaoImpulsionamentos base={base} eventoInicial={pesquisa.evento} irParaSecoes={() => setAba("secoes")} />}
+          : (
+            <div className="space-y-6">
+              <p className="text-sm text-muted-foreground">
+                Preço, validade e imagem dos impulsos vendidos às organizações ficam em <Link to="/admin/loja" hash="impulsos" className="underline">Loja da plataforma</Link>.
+              </p>
+              <GestaoImpulsionamentos base={base} eventoInicial={pesquisa.evento} irParaSecoes={() => setAba("secoes")} />
+            </div>
+          )}
       </div>
     </div>
   );

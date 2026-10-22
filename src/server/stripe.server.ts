@@ -73,10 +73,16 @@ export interface DadosCheckout {
   contaDestino?: string | undefined;
   /** Taxa da plataforma retida no repasse, em centavos. */
   taxaCentavos?: number | undefined;
+  /** Taxa de serviço paga pelo comprador, cobrada como um item à parte; vai para a organização. */
+  taxaCompradorCentavos?: number | undefined;
 }
 
 /** Abre uma Checkout Session em BRL; a inscrição vai em metadata e client_reference_id. */
 export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
+  const taxaComprador = d.taxaCompradorCentavos ?? 0;
+  // Com destino, a plataforma retém só a sua taxa; a taxa de serviço do comprador segue para a organização.
+  const retido = d.taxaCentavos ?? 0;
+  const itemTaxa = { quantity: 1, price_data: { currency: "brl", unit_amount: taxaComprador, product_data: { name: "Taxa de serviço" } } };
   return chamarStripe<SessaoCheckout>(
     "POST",
     "/checkout/sessions",
@@ -93,12 +99,116 @@ export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
       payment_intent_data: {
         metadata: { inscricaoId: d.inscricaoId },
         transfer_data: d.contaDestino ? { destination: d.contaDestino } : undefined,
-        application_fee_amount: d.contaDestino && d.taxaCentavos ? d.taxaCentavos : undefined,
+        application_fee_amount: d.contaDestino && retido ? retido : undefined,
       },
-      line_items: [{ quantity: 1, price_data: { currency: "brl", unit_amount: d.valorCentavos, product_data: { name: d.descricao } } }],
+      line_items: [
+        { quantity: 1, price_data: { currency: "brl", unit_amount: d.valorCentavos, product_data: { name: d.descricao } } },
+        ...(taxaComprador > 0 ? [itemTaxa] : []),
+      ],
     },
     // Uma sessão por reserva: repetir a chamada devolve a mesma sessão.
     `checkout-${d.inscricaoId}`,
+  );
+}
+
+// ---------- Catálogo da plataforma: um produto por tipo de impulso ----------
+
+export interface ProdutoImpulso {
+  /** Id fixo (milsim_impulso_<tipo>): a sincronização é repetível sem duplicar. */
+  produtoId: string;
+  nome: string;
+  descricao: string;
+  /** Só URLs https (o Stripe não aceita outras). */
+  imagens: string[];
+  ativo: boolean;
+  precoCentavos: number;
+  metadata: Record<string, string>;
+}
+
+interface PrecoStripe { id: string; unit_amount: number | null; currency: string; active: boolean }
+
+/**
+ * Cria ou atualiza o produto do tipo de impulso e garante um preço ativo em BRL igual ao
+ * atual. Preços do Stripe não mudam de valor: quando o valor muda, cria um preço novo, passa
+ * a usá-lo como padrão do produto e arquiva os antigos. Devolve o produto e o preço vigentes.
+ */
+export async function sincronizarProdutoImpulso(d: ProdutoImpulso): Promise<{ produtoId: string; precoId: string }> {
+  const caminho = `/products/${encodeURIComponent(d.produtoId)}`;
+  const dados = { name: d.nome, description: d.descricao, images: d.imagens.length ? d.imagens : "", active: d.ativo, metadata: d.metadata };
+  let existe = true;
+  try {
+    await chamarStripe("GET", caminho);
+  } catch (e) {
+    if (!(e instanceof ErroStripe && e.status === 404)) throw e;
+    existe = false;
+  }
+  if (!existe) {
+    const criado = await chamarStripe<{ default_price?: string | { id: string } | null }>(
+      "POST", "/products",
+      { id: d.produtoId, ...dados, images: d.imagens.length ? d.imagens : undefined, default_price_data: { currency: "brl", unit_amount: d.precoCentavos } },
+      `produto-${d.produtoId}`,
+    );
+    const preco = typeof criado.default_price === "string" ? criado.default_price : criado.default_price?.id;
+    if (preco) return { produtoId: d.produtoId, precoId: preco };
+  } else {
+    await chamarStripe("POST", caminho, dados);
+  }
+  const { data: precos = [] } = await chamarStripe<{ data?: PrecoStripe[] }>(
+    "GET", `/prices?product=${encodeURIComponent(d.produtoId)}&active=true&limit=100`,
+  );
+  let atual = precos.find((p) => p.currency === "brl" && p.unit_amount === d.precoCentavos);
+  if (!atual) {
+    atual = await chamarStripe<PrecoStripe>("POST", "/prices", {
+      product: d.produtoId, currency: "brl", unit_amount: d.precoCentavos, metadata: d.metadata,
+    });
+  }
+  await chamarStripe("POST", caminho, { default_price: atual.id });
+  for (const p of precos) if (p.id !== atual.id) await chamarStripe("POST", `/prices/${encodeURIComponent(p.id)}`, { active: false });
+  return { produtoId: d.produtoId, precoId: atual.id };
+}
+
+export interface DadosCheckoutImpulso {
+  impulsoId: string;
+  descricao: string;
+  valorCentavos: number;
+  expiraEm: string;
+  email?: string | undefined;
+  urlSucesso: string;
+  urlCancelamento: string;
+  /** Preço do catálogo (quando ainda é o valor da compra) ou, sem ele, o produto do catálogo. */
+  precoId?: string | undefined;
+  produtoId?: string | undefined;
+  imagens?: string[] | undefined;
+}
+
+/** Checkout Session da compra de um impulso: o valor fica todo com a plataforma (sem destino). */
+export function criarSessaoCheckoutImpulso(d: DadosCheckoutImpulso): Promise<SessaoCheckout> {
+  return chamarStripe<SessaoCheckout>(
+    "POST",
+    "/checkout/sessions",
+    {
+      mode: "payment",
+      locale: "pt-BR",
+      client_reference_id: d.impulsoId,
+      customer_email: d.email,
+      expires_at: Math.floor(new Date(d.expiraEm).getTime() / 1000),
+      success_url: d.urlSucesso,
+      cancel_url: d.urlCancelamento,
+      metadata: { impulsoId: d.impulsoId },
+      payment_intent_data: { metadata: { impulsoId: d.impulsoId } },
+      line_items: [
+        d.precoId
+          ? { quantity: 1, price: d.precoId }
+          : {
+              quantity: 1,
+              price_data: {
+                currency: "brl", unit_amount: d.valorCentavos,
+                ...(d.produtoId ? { product: d.produtoId } : { product_data: { name: d.descricao, images: d.imagens?.length ? d.imagens : undefined } }),
+              },
+            },
+      ],
+    },
+    `checkout-${d.impulsoId}`,
   );
 }
 
@@ -155,7 +265,7 @@ const JANELA_IDEMPOTENCIA_MS = 10 * 60_000;
 /**
  * Cria a conta da organização pela Accounts v2 (o Stripe não libera a criação pela v1 em
  * produção para plataformas novas): conta recebedora (`recipient` com `stripe_transfers`) para
- * as cobranças com destino, painel Express e perdas e taxas com a plataforma, como nas contas
+ * as cobranças com destino, com `merchant.card_payments`, que o Stripe exige junto, painel Express e perdas e taxas com a plataforma, como nas contas
  * Express da v1. A chave de idempotência evita contas duplicadas por cliques repetidos, mas vale só
  * por uma janela de 10 minutos: o Stripe repete a resposta guardada para a mesma chave, inclusive
  * um erro (ex.: plataforma ainda não ativada), e uma chave fixa travaria o cadastro. O resto da integração
@@ -176,8 +286,16 @@ export async function criarContaConectada(d: {
       display_name: d.perfil.name,
       dashboard: "express",
       identity: { country: "br" },
-      defaults: { responsibilities: { fees_collector: "application", losses_collector: "application" } },
-      configuration: { recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } } },
+      defaults: {
+        responsibilities: { fees_collector: "application", losses_collector: "application" },
+        profile: perfilV2(d.perfil),
+      },
+      configuration: {
+        // O Stripe exige cartão (merchant.card_payments) para liberar o recebimento de transferências.
+        // Com o ramo (MCC) já definido, o cadastro do Stripe não pergunta o "Setor".
+        merchant: { mcc: d.perfil.mcc, capabilities: { card_payments: { requested: true } } },
+        recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } },
+      },
       metadata: { organizacaoId: d.organizacaoId },
     },
     `conta-v2-${d.organizacaoId}${d.substituida ? `-${d.substituida}` : ""}-${Math.floor(Date.now() / JANELA_IDEMPOTENCIA_MS)}`,
@@ -185,9 +303,36 @@ export async function criarContaConectada(d: {
   return obterContaConectada(id);
 }
 
-/** Preenche site, ramo e descrição de uma conta criada antes desse preenchimento automático. */
-export function completarPerfilComercial(contaId: string, perfil: PerfilComercial): Promise<ContaStripe> {
-  return chamarStripe<ContaStripe>("POST", `/accounts/${encodeURIComponent(contaId)}`, { business_profile: perfil });
+/** Site, nome e descrição no formato da Accounts v2 (`defaults.profile`). */
+function perfilV2(perfil: PerfilComercial) {
+  return { doing_business_as: perfil.name, product_description: perfil.product_description, business_url: perfil.url };
+}
+
+/**
+ * Preenche site, ramo e descrição de uma conta criada antes desse preenchimento automático.
+ * Contas da v2 só aceitam isso pela v2; contas antigas da v1 seguem pela v1.
+ */
+export async function completarPerfilComercial(contaId: string, perfil: PerfilComercial): Promise<void> {
+  try {
+    await chamarStripeV2(`/core/accounts/${encodeURIComponent(contaId)}`, {
+      defaults: { profile: perfilV2(perfil) },
+      configuration: { merchant: { mcc: perfil.mcc } },
+    });
+  } catch (e) {
+    if (!(e instanceof ErroStripe && e.codigo === "v1_account_instead_of_v2_account")) throw e;
+    await chamarStripe<ContaStripe>("POST", `/accounts/${encodeURIComponent(contaId)}`, { business_profile: perfil });
+  }
+}
+
+/** Conta da própria plataforma (dona da chave secreta): usada para diagnosticar erros de Connect. */
+export function obterContaDaPlataforma(): Promise<{
+  id: string;
+  charges_enabled?: boolean;
+  payouts_enabled?: boolean;
+  business_profile?: { name?: string | null };
+  settings?: { dashboard?: { display_name?: string | null } };
+}> {
+  return chamarStripe("GET", "/account");
 }
 
 export function obterContaConectada(id: string): Promise<ContaStripe> {

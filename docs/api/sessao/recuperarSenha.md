@@ -16,12 +16,19 @@ Envia o e-mail de recuperação de senha (`resetPasswordForEmail`) com o templat
 | Campo | Tipo | Observação |
 |---|---|---|
 | `email` | string (até 200) |  |
+| `captcha?` | string | Token do Cloudflare Turnstile, repassado ao CAPTCHA do Supabase Auth (`captchaToken`). Obrigatório quando o CAPTCHA está ligado no Supabase. |
 
 ## Regras
 
 - A resposta é a mesma exista ou não a conta (não revela e-mails cadastrados).
 - O link do e-mail usa o endereço do site (`site_url` do Supabase Auth, hoje `https://milsimops.falaoperador.com.br`), não o endereço que o servidor vê atrás do proxy. Link de recuperação que cair na página inicial é encaminhado para `/recuperar-senha`.
 - Depende do SMTP do Supabase Auth: o embutido só entrega para membros da organização no Supabase, 2 por hora.
+
+## Erros
+
+Mensagens que chegam ao navegador em `error.message`:
+
+- Não conseguimos confirmar que você não é um robô. Refaça a verificação e tente de novo.
 
 ## Resposta
 

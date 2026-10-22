@@ -58,6 +58,7 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - Cortesias não aceitam cupom.
 - Cortesias não aceitam benefício de recompensa.
 - Tipo de ingresso diferente do convite.
+- A venda de ingressos deste evento ainda não está aberta. (ingresso pago com pagamento online e organização sem conta de recebimento ativa)
 - As inscrições deste ingresso estão indisponíveis: [motivo].
 - O benefício não pode ser combinado com cupom.
 - Benefício indisponível ou fora da validade.

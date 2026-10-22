@@ -3,7 +3,7 @@
 // Não há agendador no servidor: o estado é recalculado a cada carregamento.
 import type { Abrangencia, BaseDados, Evento, Impulsionamento, SecaoInicial } from "@/lib/domain/types";
 import { POSICAO_LISTAGEM } from "@/lib/domain/types";
-import { areasSobrepostas, esgotado } from "@/lib/divulgacao";
+import { areasSobrepostas, esgotado, UF_REGIAO } from "@/lib/divulgacao";
 
 export type StatusExibidoImpulsionamento =
   | "rascunho" | "agendado" | "ativo" | "pausado" | "pausado_esgotado" | "encerrado" | "suspenso";
@@ -74,8 +74,39 @@ function comparar(a: Impulsionamento, b: Impulsionamento): number {
   return a.inicioEm.localeCompare(b.inicioEm) || a.id.localeCompare(b.id);
 }
 
-/** Campanhas exibidas numa posição para o local escolhido; um evento aparece uma vez só. */
-export function campanhasNaPosicao(base: BaseDados, posicao: string, local: Abrangencia, agora: Date): Impulsionamento[] {
+/** Impulsos comprados pelas organizações exibidos por bloco (as campanhas da administração não contam). */
+export const LIMITE_IMPULSOS_COMPRADOS = 8;
+
+export interface OpcoesExibicao {
+  /** Id do visitante: a ordem dos impulsos comprados é sorteada por visitante e a cada 15 minutos. */
+  semente?: string | undefined;
+  /** Só eventos que passam aqui disputam as vagas (ex.: busca e filtros da listagem). */
+  filtro?: ((eventoId: string) => boolean) | undefined;
+}
+
+/** Hash FNV-1a de 32 bits: sorteio estável sem estado. */
+function sorteio(texto: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < texto.length; i++) h = Math.imul(h ^ texto.charCodeAt(i), 0x01000193);
+  return h >>> 0;
+}
+
+/** Minutos de cada rodada do rodízio: a ordem dos impulsos comprados é sorteada de novo a cada rodada. */
+export const RODADA_RODIZIO_MIN = 15;
+
+/** Número da rodada atual (00, 15, 30 e 45 de cada hora). */
+const rodadaDoRodizio = (agora: Date) => Math.floor(agora.getTime() / (RODADA_RODIZIO_MIN * 60_000));
+
+/** O evento fica na área escolhida pelo visitante (preferência no rodízio; nacional não prefere ninguém). */
+function eventoNaArea(e: Evento | undefined, local: Abrangencia): boolean {
+  if (!e || local.escopo === "nacional") return false;
+  if (local.escopo === "regiao") return UF_REGIAO[e.uf.toUpperCase()] === local.regiao;
+  if (local.escopo === "estado") return e.uf.toUpperCase() === local.uf?.toUpperCase();
+  return e.uf.toUpperCase() === local.uf?.toUpperCase() && e.cidade.trim().toLowerCase() === local.cidade?.trim().toLowerCase();
+}
+
+/** Campanhas ativas da posição e da área, uma por evento, na ordem estável. */
+function candidatasNaPosicao(base: BaseDados, posicao: string, local: Abrangencia, agora: Date): Impulsionamento[] {
   const vistos = new Set<string>();
   return base.impulsionamentos
     .filter((c) => c.posicoes.includes(posicao))
@@ -83,6 +114,27 @@ export function campanhasNaPosicao(base: BaseDados, posicao: string, local: Abra
     .filter((c) => areasSobrepostas(c.abrangencia, local))
     .sort(comparar)
     .filter((c) => (vistos.has(c.eventoId) ? false : (vistos.add(c.eventoId), true)));
+}
+
+/**
+ * Campanhas exibidas numa posição para o local escolhido; um evento aparece uma vez só.
+ * As da administração vêm primeiro, na ordem estável. Os impulsos comprados entram num
+ * rodízio: no máximo LIMITE_IMPULSOS_COMPRADOS por bloco, eventos da área do visitante
+ * primeiro e, entre eles, ordem sorteada por visitante a cada 15 minutos, para que todos os
+ * organizadores que pagaram tenham chances parecidas de aparecer.
+ */
+export function campanhasNaPosicao(base: BaseDados, posicao: string, local: Abrangencia, agora: Date, opcoes: OpcoesExibicao = {}): Impulsionamento[] {
+  const candidatas = candidatasNaPosicao(base, posicao, local, agora).filter((c) => !opcoes.filtro || opcoes.filtro(c.eventoId));
+  const daAdministracao = candidatas.filter((c) => !c.impulsoId);
+  const chave = `${opcoes.semente ?? ""}:${rodadaDoRodizio(agora)}:${posicao}`;
+  const evento = (id: string) => base.eventos.find((e) => e.id === id);
+  const compradas = candidatas
+    .filter((c) => c.impulsoId)
+    .map((c) => ({ c, perto: eventoNaArea(evento(c.eventoId), local), ordem: sorteio(`${chave}:${c.eventoId}`) }))
+    .sort((a, b) => Number(b.perto) - Number(a.perto) || a.ordem - b.ordem || a.c.id.localeCompare(b.c.id))
+    .slice(0, LIMITE_IMPULSOS_COMPRADOS)
+    .map((x) => x.c);
+  return [...daAdministracao, ...compradas];
 }
 
 /** Campanhas do mesmo evento com período e posição sobrepostos (aviso ao admin). */
@@ -144,7 +196,11 @@ export function diagnosticarPosicao(base: BaseDados, posicao: string, local: Abr
       if (!areasSobrepostas(c.abrangencia, local)) motivos.push("A área escolhida fica fora da abrangência da campanha.");
       if (!motivos.length) {
         const vencedora = exibidas.find((x) => x.eventoId === c.eventoId);
-        motivos.push(vencedora ? "Outra campanha da mesma operação tem precedência (a operação aparece uma vez só)." : "Não atende às regras de exibição.");
+        motivos.push(
+          vencedora ? "Outra campanha da mesma operação tem precedência (a operação aparece uma vez só)."
+            : c.impulsoId ? `Fora do rodízio desta prévia: até ${LIMITE_IMPULSOS_COMPRADOS} impulsos comprados por bloco, sorteados por visitante a cada ${RODADA_RODIZIO_MIN} minutos.`
+            : "Não atende às regras de exibição.",
+        );
       }
       return { campanha: c, aparece: false, motivos };
     })

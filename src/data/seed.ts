@@ -70,6 +70,8 @@ function criarBaseLegada(): BaseSemComunidade {
   return {
     versao: VERSAO_BASE,
     impulsionamentos: [],
+    planosImpulso: [],
+    impulsosComprados: [],
     configuracoes: [],
     usuarios: [
       {

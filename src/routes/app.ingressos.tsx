@@ -7,7 +7,8 @@ import {
   sincronizarPagamento,
 } from "@/api/inscricoes.functions";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
+import { formatarDataBR } from "@/lib/domain/money";
+import { Preco } from "@/components/Preco";
 import { ROTULO_PAGAMENTO, reservaVigente } from "@/lib/pagamentos";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -224,7 +225,7 @@ function MeusIngressos() {
                         ? "Cortesia por convite"
                         : ins.descontoCentavos >= ins.valorCentavos && ins.valorCentavos > 0
                           ? "Inscrição integralmente descontada"
-                          : `Valor: ${formatarBRL(ins.valorCentavos - ins.descontoCentavos)}`}
+                          : <>Valor: <Preco centavos={ins.valorCentavos - ins.descontoCentavos} /></>}
                     </p>
                     {ins.pagamento && (
                       <p className="text-sm text-muted-foreground">

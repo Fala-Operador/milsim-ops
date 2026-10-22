@@ -175,6 +175,8 @@
 
 :root,
 .tema-claro {
+  /* Controles nativos (ícones de data/hora, seletores, barras de rolagem) seguem o tema. */
+  color-scheme: light;
   --radius: 0.5rem;
   /* Light — TAN militar */
   --background: oklch(0.93 0.025 85);
@@ -206,6 +208,7 @@
 
 .dark,
 .tema-escuro {
+  color-scheme: dark;
   /* Dark — verde-oliva militar */
   --background: oklch(0.185 0.02 140);
   --foreground: oklch(0.95 0.015 120);
@@ -250,6 +253,36 @@
     outline-offset: 2px;
   }
 
+  /* Mãozinha em tudo que é clicável (o Tailwind v4 deixa botões com o cursor padrão).
+     Classes utilitárias como disabled:cursor-not-allowed continuam valendo por cima. */
+  a[href],
+  button,
+  summary,
+  select,
+  label[for],
+  label:has(input, button, [role="checkbox"], [role="radio"], [role="switch"]),
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"],
+  [role="button"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="switch"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"] {
+    cursor: pointer;
+  }
+
+  :disabled,
+  [aria-disabled="true"],
+  [data-disabled],
+  label:has(:disabled) {
+    cursor: not-allowed;
+  }
+
   /* Seletor de arquivo nativo com a cara dos botões do app (o rótulo segue o idioma do aparelho). */
   input[type="file"] {
     max-width: 100%;
@@ -291,6 +324,18 @@
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Menu inferior do celular (logado, MenuInferior.tsx): reserva o espaço no fim da página e
+   informa a altura para barras fixas (ex.: "Inscrever-se" do evento) ficarem logo acima dele. */
+@media (max-width: 767px) {
+  :root.com-menu-inferior {
+    --menu-inferior: calc(4rem + env(safe-area-inset-bottom));
+    --folga-inferior: 0.75rem;
+  }
+  :root.com-menu-inferior body {
+    padding-bottom: var(--menu-inferior);
+  }
 }
 
 /* Confirmação de entrada no QR Code do ingresso: círculo e "check" se desenhando */

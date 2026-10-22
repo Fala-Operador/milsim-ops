@@ -3,6 +3,36 @@ import { useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
 import { CameraOff, Loader2 } from "lucide-react";
 
+const ALTERNATIVA = "Enquanto isso, use a busca ou digite o código do ingresso.";
+
+/**
+ * Explica por que a câmera não abriu. "NotAllowedError" cobre três casos bem diferentes:
+ * o site proíbe a câmera (cabeçalho Permissions-Policy), a pessoa bloqueou no navegador
+ * ou o sistema operacional não libera a câmera para o navegador.
+ */
+async function motivoFalhaCamera(e: DOMException | undefined): Promise<string> {
+  const nome = e?.name ?? "";
+  if (nome === "NotFoundError" || nome === "OverconstrainedError") return `Nenhuma câmera encontrada neste aparelho. ${ALTERNATIVA}`;
+  if (nome === "NotReadableError") return `A câmera está em uso por outro aplicativo ou aba. Feche-o e tente de novo. ${ALTERNATIVA}`;
+  if (nome !== "NotAllowedError" && nome !== "SecurityError") return `Câmera indisponível. ${ALTERNATIVA}`;
+  if (typeof window !== "undefined" && !window.isSecureContext) return `A câmera só funciona em endereço seguro (https). ${ALTERNATIVA}`;
+  // Chrome/Edge expõem a política do documento; outros navegadores caem nos casos abaixo.
+  const politica = (document as Document & { permissionsPolicy?: { allowsFeature(f: string): boolean }; featurePolicy?: { allowsFeature(f: string): boolean } });
+  const pol = politica.permissionsPolicy ?? politica.featurePolicy;
+  if (pol && !pol.allowsFeature("camera")) {
+    return `A câmera está bloqueada pela configuração do site (Permissions-Policy). Avise a administração da plataforma. ${ALTERNATIVA}`;
+  }
+  try {
+    const p = await navigator.permissions?.query({ name: "camera" as PermissionName });
+    if (p?.state === "denied") {
+      return `O navegador está bloqueando a câmera para este site. Toque no cadeado ao lado do endereço, permita a câmera e reabra o leitor. ${ALTERNATIVA}`;
+    }
+  } catch {
+    /* navegador sem consulta de permissão de câmera */
+  }
+  return `Acesso à câmera negado. Verifique a permissão do navegador e, no computador, se o sistema libera a câmera para o navegador. ${ALTERNATIVA}`;
+}
+
 export function LeitorQr({ pausado, onLeitura, onErro }: {
   pausado: boolean; onLeitura: (texto: string) => void; onErro: (msg: string) => void;
 }) {
@@ -48,9 +78,7 @@ export function LeitorQr({ pausado, onLeitura, onErro }: {
         };
         quadro = requestAnimationFrame(ler);
       })
-      .catch((e: DOMException) => falhar(e?.name === "NotAllowedError"
-        ? "Acesso à câmera negado. Use a busca ou digite o código do ingresso."
-        : "Câmera indisponível. Use a busca ou digite o código do ingresso."));
+      .catch(async (e: DOMException) => { if (vivo) falhar(await motivoFalhaCamera(e)); });
     return () => { vivo = false; cancelAnimationFrame(quadro); stream?.getTracks().forEach((t) => t.stop()); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

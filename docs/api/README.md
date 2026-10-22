@@ -48,8 +48,10 @@ const { inscricao, urlPagamento } = await confirmarInscricao({ eventoId, tipoId,
 - Regra de negócio violada lança `ErroDominio`: a **mensagem chega ao navegador** em
   `error.message` e pode ser mostrada como está. As listas "Erros" de cada página trazem essas
   mensagens, extraídas do código.
-- Qualquer outro erro é registrado no log do servidor e vira a mensagem genérica
-  "Não foi possível concluir a operação. Tente novamente."
+- Qualquer outro erro é registrado no log do servidor como `[erro CÓDIGO]` e vira a mensagem
+  genérica "Não foi possível concluir a operação. Tente novamente. (código CÓDIGO)". Quando o
+  banco não responde (5xx ou rede), a mensagem é "O servidor de dados não respondeu. Tente
+  novamente em instantes. (código CÓDIGO)". O código liga a mensagem ao log com a causa real.
 - Escritas concorrentes: a gravação usa versão otimista (`MS409`) e o servidor repete sozinho
   até 4 vezes; se ainda assim falhar, a mensagem é "Muitas alterações ao mesmo tempo. Tente novamente."
 
@@ -92,7 +94,7 @@ try {
 
 ## Índice
 
-116 server functions em 15 módulos, mais os [webhooks do Stripe](#webhooks).
+122 server functions em 16 módulos, mais os [webhooks do Stripe](#webhooks).
 
 ### Sessão e leitura
 <a id="sessao"></a>
@@ -169,6 +171,7 @@ Inscrição, checkout do Stripe, cancelamento e prévia de cupom. Arquivo: [`src
 | [`retomarPagamento`](inscricoes/retomarPagamento.md) | POST | Titular da reserva | Volta à página de pagamento de uma reserva ainda aberta (botão "Concluir pagamento" em Meus ingressos). |
 | [`sincronizarPagamento`](inscricoes/sincronizarPagamento.md) | POST | Titular da sessão de checkout | Chamada no retorno do Stripe Checkout (`/app/ingressos?pagamento=sucesso&sessao=cs_…`): consulta o Stripe e aplica o resultado, sem depender do webhook. |
 | [`cancelarInscricao`](inscricoes/cancelarInscricao.md) | POST | Titular, organização do evento ou admin | Cancela uma inscrição confirmada (estorno integral) ou libera uma reserva pendente. |
+| [`incluirParticipantes`](inscricoes/incluirParticipantes.md) | POST | Organização do evento ou admin (lista de contas: só admin) | Inclui pessoas com conta no evento (pagamento por fora), como cortesia confirmada. |
 | [`previsualizarCupom`](inscricoes/previsualizarCupom.md) | POST | Pública | Valida um cupom para mostrar o desconto na tela de inscrição. |
 
 ### Repasse (Stripe Connect)
@@ -180,6 +183,7 @@ Conta de recebimento das organizações e taxa da plataforma. Arquivo: [`src/api
 |---|---|---|---|
 | [`configuracaoRepasse`](repasses/configuracaoRepasse.md) | GET | Pública | Informa se os pagamentos online (Stripe) e os painéis embutidos do Stripe estão ativos. |
 | [`definirTaxaPlataforma`](repasses/definirTaxaPlataforma.md) | POST | Somente admin | Define a taxa da plataforma (%) retida em cada venda repassada às organizações. |
+| [`definirTaxaComprador`](repasses/definirTaxaComprador.md) | POST | Organizador da própria organização ou admin | Define a taxa de serviço (%) que a organização cobra do comprador, somada ao ingresso e repassada a ela (padrão 0%). |
 | [`cadastrarRecebimento`](repasses/cadastrarRecebimento.md) | POST | Quem gere a organização (organizador dela ou admin) | Cria (ou reaproveita) a conta Stripe Connect Express da organização e devolve o link do cadastro hospedado pelo Stripe. |
 | [`atualizarRecebimento`](repasses/atualizarRecebimento.md) | POST | Quem gere a organização | Consulta a conta Connect no Stripe e atualiza a situação do recebimento (`organizacao.recebimento`). |
 | [`abrirPainelStripe`](repasses/abrirPainelStripe.md) | POST | Quem gere a organização | Gera um link de acesso ao painel Express do Stripe (saldo, saques, dados bancários). |
@@ -329,6 +333,20 @@ Campanhas de destaque de eventos na página inicial. Arquivo: [`src/api/impulsio
 |---|---|---|---|
 | [`salvarImpulsionamento`](impulsionamentos/salvarImpulsionamento.md) | POST | Somente admin | Cria ou edita uma campanha de impulsionamento: o evento ganha prioridade nas seções escolhidas da página inicial, num período e numa região. |
 | [`alterarImpulsionamento`](impulsionamentos/alterarImpulsionamento.md) | POST | Somente admin | Pausa, retoma ou encerra uma campanha de impulsionamento. |
+
+### Impulsos das organizações
+<a id="impulsos"></a>
+
+Impulsos comprados pela organização (24h a 30 dias) e usados nas próprias operações. Arquivo: [`src/api/impulsos.functions.ts`](../../src/api/impulsos.functions.ts).
+
+| API | Método | Acesso | O que faz |
+|---|---|---|---|
+| [`comprarImpulso`](impulsos/comprarImpulso.md) | POST | Organizador ativo | Compra um impulso para a organização e abre o pagamento no Stripe Checkout da plataforma. |
+| [`retomarPagamentoImpulso`](impulsos/retomarPagamentoImpulso.md) | POST | Organizador ativo | Volta à página de pagamento de um impulso que ainda aguarda pagamento. |
+| [`sincronizarPagamentoImpulso`](impulsos/sincronizarPagamentoImpulso.md) | POST | Organizador ativo | Retorno do checkout: consulta o Stripe e aplica o pagamento do impulso. |
+| [`usarImpulso`](impulsos/usarImpulso.md) | POST | Organizador ativo | Usa um impulso disponível numa operação publicada: cria a campanha de destaque. |
+| [`salvarPlanosImpulso`](impulsos/salvarPlanosImpulso.md) | POST | Somente admin | Define preço, validade, imagem e venda dos tipos de impulso e atualiza os produtos no Stripe. |
+| [`sincronizarPlanosImpulso`](impulsos/sincronizarPlanosImpulso.md) | POST | Somente admin | Cria ou atualiza no Stripe o produto e o preço de cada tipo de impulso. |
 
 ### Webhooks
 <a id="webhooks"></a>

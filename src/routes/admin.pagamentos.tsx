@@ -5,13 +5,11 @@ import { carregarBase } from "@/services/db";
 import { configuracaoRepasse, definirTaxaPlataforma } from "@/api/repasses.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
-import { erroTaxa, ROTULO_RECEBIMENTO, taxaDaPlataforma, taxaPlataforma } from "@/lib/repasses";
+import { ROTULO_RECEBIMENTO, taxaDaPlataforma, taxaPlataforma } from "@/lib/repasses";
 import { formatarBRL } from "@/lib/domain/money";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Campo } from "@/components/ui";
+import { CardTaxa } from "@/components/CardTaxa";
 import type { StatusRecebimento } from "@/lib/domain/types";
 
 export const Route = createFileRoute("/admin/pagamentos")({
@@ -31,12 +29,7 @@ function Pagamentos() {
   const { usuario } = useAuth();
   useVersaoBase();
   const base = carregarBase();
-  const atual = taxaDaPlataforma(base);
   const config = base.configuracoes.find((c) => c.id === "plataforma");
-  const [valor, setValor] = useState(String(atual).replace(".", ","));
-  const [erro, setErro] = useState("");
-  const [aviso, setAviso] = useState("");
-  const [salvando, setSalvando] = useState(false);
   const [pagamentoOnline, setPagamentoOnline] = useState<boolean | null>(null);
   const [avisoChaves, setAvisoChaves] = useState("");
 
@@ -48,28 +41,8 @@ function Pagamentos() {
       })
       .catch(() => setPagamentoOnline(null));
   }, [usuario?.id]);
-  // Mantém o campo em dia quando a taxa muda (outra aba, outro admin).
-  useEffect(() => setValor(String(atual).replace(".", ",")), [atual]);
 
   if (!usuario) return null;
-  const percentual = Number(valor.trim().replace(",", "."));
-  const erroCampo = valor.trim() === "" ? "Informe a taxa em porcentagem." : erroTaxa(percentual);
-
-  const salvar = async () => {
-    setErro("");
-    setAviso("");
-    if (erroCampo) return setErro(erroCampo);
-    setSalvando(true);
-    try {
-      await definirTaxaPlataforma(percentual);
-      setAviso("Taxa atualizada. Ela vale para as próximas vendas; as reservas já feitas mantêm a taxa anterior.");
-    } catch (err) {
-      setErro(err instanceof Error ? err.message : "Não foi possível salvar a taxa.");
-    } finally {
-      setSalvando(false);
-    }
-  };
-
   const organizacoes = [...base.organizacoes].sort((a, b) => a.nome.localeCompare(b.nome));
   return (
     <section className="space-y-4">
@@ -85,29 +58,15 @@ function Pagamentos() {
         </p>
       )}
 
-      <Card>
-        <h3 className="font-medium">Taxa da plataforma</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Percentual retido em cada ingresso vendido online e repassado à organização pelo Stripe Connect. Vendas de organizações
-          sem conta de recebimento ativa ficam integralmente com a plataforma.
-        </p>
-        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
-          <Campo rotulo="Taxa (%)" htmlFor="taxa">
-            <Input id="taxa" inputMode="decimal" value={valor} onChange={(e) => { setValor(e.target.value); setErro(""); setAviso(""); }} className="sm:max-w-40" aria-describedby="taxa-ajuda" />
-          </Campo>
-          <Button type="button" onClick={salvar} disabled={salvando || percentual === atual} className="w-full sm:w-auto">
-            {salvando ? "Salvando..." : "Salvar taxa"}
-          </Button>
-        </div>
-        <p id="taxa-ajuda" className="mt-2 text-xs text-muted-foreground">
-          {erroCampo
-            ? "Entre 0% e 50%, com até duas casas decimais."
-            : `Exemplo: num ingresso de ${formatarBRL(15000)}, a plataforma retém ${formatarBRL(taxaPlataforma(15000, percentual))} e a organização recebe ${formatarBRL(15000 - taxaPlataforma(15000, percentual))}.`}
-        </p>
-        {config && <p className="mt-1 text-xs text-muted-foreground">Última alteração: {new Date(config.atualizadoEm).toLocaleString("pt-BR")}.</p>}
-        {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
-        {aviso && <p role="status" className="mt-2 text-sm text-success">{aviso}</p>}
-      </Card>
+      <CardTaxa
+        id="taxa"
+        titulo="Taxa da plataforma (organização)"
+        descricao="Percentual retido em cada ingresso vendido online e repassado à organização pelo Stripe Connect. Organizações sem conta de recebimento ativa não vendem ingressos pagos."
+        atual={taxaDaPlataforma(base)}
+        salvar={definirTaxaPlataforma}
+        exemplo={(p) => `Exemplo: num ingresso de ${formatarBRL(15000)}, a plataforma retém ${formatarBRL(taxaPlataforma(15000, p))} e a organização recebe ${formatarBRL(15000 - taxaPlataforma(15000, p))}.`}
+      />
+      {config && <p className="text-xs text-muted-foreground">Última alteração da taxa: {new Date(config.atualizadoEm).toLocaleString("pt-BR")}. A taxa de serviço do comprador é definida por cada organização no Financeiro dela.</p>}
 
       <Card>
         <h3 className="font-medium">Contas de recebimento das organizações</h3>

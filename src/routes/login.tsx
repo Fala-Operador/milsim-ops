@@ -5,7 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { InputSenha } from "@/components/ui/input-senha";
 import { Campo } from "@/components/ui";
+import { useTurnstile } from "@/components/Turnstile";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -30,16 +32,18 @@ function PaginaLogin() {
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const turnstile = useTurnstile("login");
 
   const aoEnviar = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro("");
     setCarregando(true);
     try {
-      await login(email, senha);
+      await login(email, senha, turnstile.token);
       navigate({ ...destinoDoLink(redirectSeguro(redirect)) } as { to: string });
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha ao entrar.");
+      turnstile.resetar();
     } finally {
       setCarregando(false);
     }
@@ -61,9 +65,8 @@ function PaginaLogin() {
             />
           </Campo>
           <Campo rotulo="Senha" htmlFor="senha">
-            <Input
+            <InputSenha
               id="senha"
-              type="password"
               autoComplete="current-password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
@@ -75,7 +78,8 @@ function PaginaLogin() {
               {erro}
             </p>
           )}
-          <Button type="submit" disabled={carregando} className="w-full">
+          {turnstile.elemento}
+          <Button type="submit" disabled={carregando || !turnstile.pronto} className="w-full">
             {carregando ? "Entrando..." : "Entrar"}
           </Button>
         </form>

@@ -50,6 +50,8 @@ export interface Organizacao {
   criadoEm: string;
   /** Conta conectada (Stripe Connect Express) que recebe o repasse das vendas. */
   recebimento?: RecebimentoOrganizacao | undefined;
+  /** Taxa de serviço (%) somada ao ingresso e paga pelo comprador; fica com a organização (vazio = 0). */
+  taxaCompradorPercentual?: number | undefined;
 }
 
 /**
@@ -238,6 +240,8 @@ export interface PagamentoInscricao {
   contaDestino?: string | undefined;
   /** Taxa da plataforma retida no repasse, em centavos. */
   taxaCentavos?: number | undefined;
+  /** Taxa de serviço paga pelo comprador além do valor do ingresso, em centavos (repassada à organização). */
+  taxaCompradorCentavos?: number | undefined;
   /** Contestação (chargeback) aberta pelo comprador no banco do cartão. */
   disputa?: DisputaPagamento | undefined;
 }
@@ -535,6 +539,10 @@ export interface BaseDados {
   secoesInicio: SecaoInicial[];
   /** Campanhas de impulsionamento concedidas pela administração. */
   impulsionamentos: Impulsionamento[];
+  /** Preço e validade dos tipos de impulso (sem registro = valor padrão de src/lib/impulsos.ts). */
+  planosImpulso: PlanoImpulso[];
+  /** Impulsos comprados pelas organizações. */
+  impulsosComprados: ImpulsoComprado[];
   /** Base de referência do credenciamento (registros já aceitos pelo servidor). */
   checkins: RegistroCheckin[];
   // ===== Perfil do operador e gamificação =====
@@ -555,6 +563,8 @@ export interface ConfiguracaoPlataforma {
   id: "plataforma";
   /** Taxa retida nas vendas repassadas às organizações (Stripe Connect), em % (ex.: 8.5). */
   taxaPlataformaPercentual: number;
+  /** Taxa de serviço somada ao ingresso e paga pelo comprador, em % (vazio = 0). */
+  taxaCompradorPercentual?: number | undefined;
   atualizadoEm: string;
   atualizadoPor: string;
 }
@@ -950,4 +960,51 @@ export interface Impulsionamento {
   criadoPor: string;
   criadoEm: string;
   atualizadoEm: string;
+  /** Impulso comprado pela organização que gerou esta campanha (ausente = concedida pela administração). */
+  impulsoId?: string | undefined;
+}
+
+// ===== Impulsos comprados pelas organizações =====
+/** Tipos de impulso à venda (id fixo de cada duração). */
+export type PlanoImpulsoId = "24h" | "3d" | "5d" | "7d" | "15d" | "30d";
+/** Preço, validade e venda de cada tipo, editados pela administração. */
+export interface PlanoImpulso {
+  id: PlanoImpulsoId;
+  precoCentavos: number;
+  /** Dias, a partir do pagamento, para usar o impulso num evento. */
+  validadeDias: number;
+  ativo: boolean;
+  /** Imagem do tipo (vitrine da organização e produto no Stripe); sem ela vale a padrão. */
+  imagemUrl?: string | undefined;
+  /** Produto e preço do tipo no Stripe (catálogo da plataforma; só a administração vê). */
+  stripeProdutoId?: string | undefined;
+  stripePrecoId?: string | undefined;
+  sincronizadoEm?: string | undefined;
+  atualizadoEm: string;
+  atualizadoPor: string;
+}
+/** Estado gravado; "expirado" é derivado na leitura (disponível depois da validade). */
+export type StatusImpulso = "aguardando_pagamento" | "processando" | "disponivel" | "usado" | "cancelado" | "reembolsado";
+/** Impulso comprado: fica no saldo da organização até ser usado num evento ou expirar. */
+export interface ImpulsoComprado {
+  id: string;
+  organizacaoId: string;
+  planoId: PlanoImpulsoId;
+  compradoPor: string;
+  /** Duração, preço e validade do tipo no momento da compra. */
+  duracaoHoras: number;
+  precoCentavos: number;
+  validadeDias: number;
+  status: StatusImpulso;
+  criadoEm: string;
+  pagoEm?: string | undefined;
+  /** Prazo para usar: pagamento + validade. */
+  expiraEm?: string | undefined;
+  /** Checkout Session e PaymentIntent no Stripe (só a administração vê). */
+  sessaoId?: string | undefined;
+  intencaoId?: string | undefined;
+  usadoEm?: string | undefined;
+  eventoId?: string | undefined;
+  impulsionamentoId?: string | undefined;
+  encerradoEm?: string | undefined;
 }

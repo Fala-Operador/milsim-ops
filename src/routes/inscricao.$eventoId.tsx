@@ -10,6 +10,8 @@ import { reservaVigente } from "@/lib/pagamentos";
 import { confirmarInscricao, previsualizarCupom } from "@/api/inscricoes.functions";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
+import { Preco } from "@/components/Preco";
+import { MSG_SEM_RECEBIMENTO, taxaPlataforma } from "@/lib/repasses";
 import { descontoDoBeneficio, descreverBeneficio, statusVoucher } from "@/lib/participacao";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,16 +22,18 @@ import { Campo, SkeletonPagina } from "@/components/ui";
 const novoId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
 
 export const Route = createFileRoute("/inscricao/$eventoId")({
-  validateSearch: (s: Record<string, unknown>): { cortesia: string | undefined; voucher: string | undefined; pagamento?: string | undefined } => ({
+  validateSearch: (s: Record<string, unknown>): { cortesia: string | undefined; voucher: string | undefined; pagamento?: string | undefined; comunidade?: string | undefined } => ({
     cortesia: typeof s["cortesia"] === "string" ? s["cortesia"] : undefined,
     voucher: typeof s["voucher"] === "string" ? s["voucher"] : undefined,
+    // Veio da comunidade sem ter acesso: explica que a comunidade é para inscritos.
+    comunidade: s["comunidade"] === "1" || s["comunidade"] === 1 ? "1" : undefined,
     // Volta do checkout do Stripe sem pagar.
     pagamento: typeof s["pagamento"] === "string" ? s["pagamento"] : undefined,
   }),
   loader: async ({ params }) => {
-    const { evento, pagamentoOnline } = await obterEventoFn({ data: { eventoId: params.eventoId } });
+    const { evento, pagamentoOnline, taxaCompradorPercentual, vendasAbertas } = await obterEventoFn({ data: { eventoId: params.eventoId } });
     if (!evento || evento.status !== "publicado") throw notFound();
-    return { evento, pagamentoOnline };
+    return { evento, pagamentoOnline, taxaCompradorPercentual, vendasAbertas };
   },
   head: ({ loaderData }) => ({
     meta: loaderData
@@ -52,9 +56,9 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
 });
 
 function PaginaInscricao() {
-  const { evento: eventoCarregado, pagamentoOnline } = Route.useLoaderData();
+  const { evento: eventoCarregado, pagamentoOnline, taxaCompradorPercentual, vendasAbertas } = Route.useLoaderData();
   const evento = useEventoAtual(eventoCarregado);
-  const { cortesia: codigoCortesia, voucher: voucherInicial, pagamento: retornoPagamento } = Route.useSearch();
+  const { cortesia: codigoCortesia, voucher: voucherInicial, pagamento: retornoPagamento, comunidade: vemDaComunidade } = Route.useSearch();
   const { usuario } = useAuth();
   const navigate = useNavigate();
   const base = carregarBase();
@@ -114,6 +118,8 @@ function PaginaInscricao() {
   const valorFinal = Math.max(0, preco - (voucherId ? descontoVoucher : desconto));
   // Com o Stripe ativo, valor a pagar passa pelo checkout; cortesia e valor zerado confirmam direto.
   const vaiPagar = pagamentoOnline && !cortesia && !!tipo && valorFinal > 0;
+  // Taxa de serviço somada no checkout (mesma conta do servidor na reserva).
+  const taxaServico = vaiPagar ? taxaPlataforma(valorFinal, taxaCompradorPercentual) : 0;
   const reservaAberta = base.inscricoes.find(
     (i) => i.eventoId === evento.id && i.usuarioId === usuario?.id && i.pagamento?.status === "aguardando" && reservaVigente(i),
   );
@@ -182,7 +188,9 @@ function PaginaInscricao() {
       ? "Inscrições indisponíveis no momento: não há lote de venda vigente para nenhum ingresso."
       : disp && !disp.disponivel
         ? `As inscrições deste ingresso estão indisponíveis porque ${TEXTO_MOTIVO[disp.motivo]}.`
-        : "";
+        : vaiPagar && !vendasAbertas
+          ? MSG_SEM_RECEBIMENTO
+          : "";
 
   const aoConfirmar = async () => {
     if (emAndamento.current || impedimento) return;
@@ -222,6 +230,12 @@ function PaginaInscricao() {
       </nav>
       <Card className="mt-3">
         <h1 className="font-display text-2xl font-semibold uppercase">Inscrição — {evento.nome}</h1>
+        {vemDaComunidade && (
+          <p role="status" className="mt-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent">
+            A comunidade desta operação é exclusiva para inscritos. Conclua a inscrição para entrar nos fóruns e
+            acompanhar os avisos da organização.
+          </p>
+        )}
         {cortesia && (
           <p className="mt-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent">
             Cortesia para {cortesia.nomeConvidado}. O resgate depende de disponibilidade e não
@@ -323,16 +337,22 @@ function PaginaInscricao() {
                 <dt>Ingresso</dt><dd className="text-right text-foreground">{tipo.nome}</dd>
                 {!cortesia && <><dt>Lote</dt><dd className="text-right text-foreground">{lote?.nome ?? "—"}</dd></>}
                 <dt>Exército</dt><dd className="text-right text-foreground">{evento.exercitos.find((x) => x.id === exercitoId)?.nome ?? "—"}</dd>
-                <dt>Valor original</dt><dd className="text-right font-mono">{impedimento ? "—" : formatarBRL(preco)}</dd>
+                <dt>Valor original</dt><dd className="text-right font-mono">{impedimento ? "—" : <Preco centavos={preco} />}</dd>
                 {!voucherId && cupomAplicado && !impedimento && (
-                  <><dt>Cupom {cupomAplicado.codigo} ({cupomAplicado.percentual}%)</dt><dd className="text-right font-mono">−{formatarBRL(desconto)}</dd></>
+                  <><dt>Cupom {cupomAplicado.codigo} ({cupomAplicado.percentual}%)</dt><dd className="text-right font-mono">−<Preco centavos={desconto} /></dd></>
                 )}
-                {descontoVoucher > 0 && <><dt>Benefício de recompensa</dt><dd className="text-right font-mono">−{formatarBRL(descontoVoucher)}</dd></>}
+                {descontoVoucher > 0 && <><dt>Benefício de recompensa</dt><dd className="text-right font-mono">−<Preco centavos={descontoVoucher} /></dd></>}
                 <dt className="font-medium text-foreground">Valor final</dt>
                 <dd className="text-right font-mono font-medium text-foreground">
-                  {impedimento ? "—" : formatarBRL(valorFinal)}
+                  {impedimento ? "—" : <Preco centavos={valorFinal} />}
                   {cortesia && " (cortesia)"}
                 </dd>
+                {!impedimento && taxaServico > 0 && (
+                  <>
+                    <dt>Taxa de serviço ({String(taxaCompradorPercentual).replace(".", ",")}%)</dt><dd className="text-right font-mono">+<Preco centavos={taxaServico} /></dd>
+                    <dt className="font-medium text-foreground">Total a pagar</dt><dd className="text-right font-mono font-medium text-foreground"><Preco centavos={valorFinal + taxaServico} /></dd>
+                  </>
+                )}
               </dl>
               {!impedimento && !cortesia && preco > 0 && desconto >= preco && <p className="mt-1 text-xs">Inscrição integralmente descontada.</p>}
             </div>

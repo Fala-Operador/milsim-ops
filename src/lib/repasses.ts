@@ -24,8 +24,8 @@ export type PerfilComercial = {
   url?: string | undefined;
 };
 
-/** Serviços de recreação (MCC 7999), onde o Stripe classifica eventos de airsoft. */
-export const MCC_EVENTOS = "7999";
+/** Setor "Ingressos para eventos" do cadastro do Stripe (MCC 7922, venda de ingressos). */
+export const MCC_EVENTOS = "7922";
 
 /**
  * Site, ramo e descrição da organização para o cadastro do Stripe, que senão pede "Seu site" à
@@ -50,7 +50,10 @@ export function perfilComercialPadrao(nome: string, origem: string): PerfilComer
 
 /** Conta ainda em cadastro e sem site nem descrição: a plataforma completa o perfil comercial. */
 export function precisaPerfilComercial(conta: ContaStripe): boolean {
-  return !conta.details_submitted && !conta.business_profile?.url && !conta.business_profile?.product_description;
+  const p = conta.business_profile;
+  // Sem o ramo (MCC) o cadastro do Stripe pede o "Setor"; contas criadas antes do envio pela v2
+  // podem ter site e descrição mas não o ramo, ou um ramo antigo.
+  return !conta.details_submitted && (p?.mcc !== MCC_EVENTOS || (!p.url && !p.product_description));
 }
 
 export interface CronogramaStripe {
@@ -98,6 +101,11 @@ export function recebimentoDaConta(conta: ContaStripe, agora = new Date()): Rece
 }
 
 /** A organização pode receber o repasse de uma venda agora (transferências ativas no Stripe). */
+/** Mostrado ao comprador quando a organização ainda não pode vender ingressos pagos. */
+export const MSG_SEM_RECEBIMENTO = "A venda de ingressos deste evento ainda não está aberta.";
+/** Mostrado à organização (painel e editor de evento) enquanto a conta de recebimento não está ativa. */
+export const MSG_ORG_SEM_RECEBIMENTO = "A organização precisa concluir a conta de recebimento para vender ingressos pagos.";
+
 export function contaParaRepasse(org: Organizacao | undefined): string | undefined {
   const r = org?.recebimento;
   return r?.transferenciasAtivas ? r.contaId : undefined;
@@ -106,6 +114,12 @@ export function contaParaRepasse(org: Organizacao | undefined): string | undefin
 /** Taxa da plataforma (%) configurada pela administração; sem configuração, zero. */
 export function taxaDaPlataforma(base: Pick<BaseDados, "configuracoes">): number {
   const v = base.configuracoes.find((c) => c.id === "plataforma")?.taxaPlataformaPercentual ?? 0;
+  return Number.isFinite(v) && v > 0 ? Math.min(v, 100) : 0;
+}
+
+/** Taxa de serviço do comprador (%) definida pela organização, somada ao ingresso no checkout. */
+export function taxaDoComprador(org: Pick<Organizacao, "taxaCompradorPercentual"> | undefined): number {
+  const v = org?.taxaCompradorPercentual ?? 0;
   return Number.isFinite(v) && v > 0 ? Math.min(v, 100) : 0;
 }
 
@@ -151,10 +165,12 @@ export function resumoRepasse(base: BaseDados, eventoId: string) {
   const pagas = base.inscricoes.filter((i) => i.eventoId === eventoId && i.status === "confirmada" && i.pagamento?.status === "pago");
   const cobrado = pagas.reduce((s, i) => s + (i.pagamento?.valorCentavos ?? 0), 0);
   const taxas = pagas.reduce((s, i) => s + (i.pagamento?.taxaCentavos ?? 0), 0);
-  const repassado = pagas.filter((i) => i.pagamento?.contaDestino).reduce((s, i) => s + i.pagamento!.valorCentavos - (i.pagamento!.taxaCentavos ?? 0), 0);
+  // Taxa de serviço paga pelos compradores além do ingresso: vai para a organização, fora do cobrado.
+  const taxasComprador = pagas.reduce((s, i) => s + (i.pagamento?.taxaCompradorCentavos ?? 0), 0);
+  const repassado = pagas.filter((i) => i.pagamento?.contaDestino).reduce((s, i) => s + i.pagamento!.valorCentavos + (i.pagamento!.taxaCompradorCentavos ?? 0) - (i.pagamento!.taxaCentavos ?? 0), 0);
   // Vendas feitas antes da conta ficar ativa ficaram na plataforma: repasse manual.
   const naPlataforma = pagas.filter((i) => !i.pagamento?.contaDestino).reduce((s, i) => s + i.pagamento!.valorCentavos, 0);
-  return { cobrado, taxas, repassado, naPlataforma };
+  return { cobrado, taxas, taxasComprador, repassado, naPlataforma };
 }
 
 // ---------- Saldo e saques da conta conectada (lidos do Stripe, nunca guardados na base) ----------

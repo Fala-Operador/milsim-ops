@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as CadastroRouteImport } from './routes/cadastro'
+import { Route as ComunidadesRouteImport } from './routes/comunidades'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ModalidadesRouteImport } from './routes/modalidades'
 import { Route as OrganizacaoRouteImport } from './routes/organizacao'
@@ -24,6 +25,7 @@ import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
 import { Route as AdminDivulgacaoRouteImport } from './routes/admin.divulgacao'
 import { Route as AdminGamificacaoRouteImport } from './routes/admin.gamificacao'
 import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
+import { Route as AdminLojaRouteImport } from './routes/admin.loja'
 import { Route as AdminMetricasRouteImport } from './routes/admin.metricas'
 import { Route as AdminNotificacoesRouteImport } from './routes/admin.notificacoes'
 import { Route as AdminPagamentosRouteImport } from './routes/admin.pagamentos'
@@ -48,6 +50,7 @@ import { Route as OrganizacaoIndexRouteImport } from './routes/organizacao.index
 import { Route as OrganizacaoCheckinRouteImport } from './routes/organizacao.checkin'
 import { Route as OrganizacaoComunidadeRouteImport } from './routes/organizacao.comunidade'
 import { Route as OrganizacaoFinanceiroRouteImport } from './routes/organizacao.financeiro'
+import { Route as OrganizacaoImpulsosRouteImport } from './routes/organizacao.impulsos'
 import { Route as OrganizacaoInscritosRouteImport } from './routes/organizacao.inscritos'
 import { Route as OrganizacaoMetricasRouteImport } from './routes/organizacao.metricas'
 import { Route as OrganizacaoMissoesRouteImport } from './routes/organizacao.missoes'
@@ -78,6 +81,11 @@ const AppRoute = AppRouteImport.update({
 const CadastroRoute = CadastroRouteImport.update({
   id: '/cadastro',
   path: '/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComunidadesRoute = ComunidadesRouteImport.update({
+  id: '/comunidades',
+  path: '/comunidades',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -133,6 +141,11 @@ const AdminGamificacaoRoute = AdminGamificacaoRouteImport.update({
 const AdminInsightsRoute = AdminInsightsRouteImport.update({
   id: '/insights',
   path: '/insights',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLojaRoute = AdminLojaRouteImport.update({
+  id: '/loja',
+  path: '/loja',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMetricasRoute = AdminMetricasRouteImport.update({
@@ -255,6 +268,11 @@ const OrganizacaoFinanceiroRoute = OrganizacaoFinanceiroRouteImport.update({
   path: '/financeiro',
   getParentRoute: () => OrganizacaoRoute,
 } as any)
+const OrganizacaoImpulsosRoute = OrganizacaoImpulsosRouteImport.update({
+  id: '/impulsos',
+  path: '/impulsos',
+  getParentRoute: () => OrganizacaoRoute,
+} as any)
 const OrganizacaoInscritosRoute = OrganizacaoInscritosRouteImport.update({
   id: '/inscritos',
   path: '/inscritos',
@@ -318,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/cadastro': typeof CadastroRoute
+  '/comunidades': typeof ComunidadesRoute
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/organizacao': typeof OrganizacaoRouteWithChildren
@@ -328,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/gamificacao': typeof AdminGamificacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/loja': typeof AdminLojaRoute
   '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
@@ -350,6 +370,7 @@ export interface FileRoutesByFullPath {
   '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
+  '/organizacao/impulsos': typeof OrganizacaoImpulsosRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/missoes': typeof OrganizacaoMissoesRoute
@@ -368,6 +389,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
+  '/comunidades': typeof ComunidadesRoute
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -377,6 +399,7 @@ export interface FileRoutesByTo {
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/gamificacao': typeof AdminGamificacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/loja': typeof AdminLojaRoute
   '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
@@ -398,6 +421,7 @@ export interface FileRoutesByTo {
   '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
+  '/organizacao/impulsos': typeof OrganizacaoImpulsosRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/missoes': typeof OrganizacaoMissoesRoute
@@ -419,6 +443,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/cadastro': typeof CadastroRoute
+  '/comunidades': typeof ComunidadesRoute
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/organizacao': typeof OrganizacaoRouteWithChildren
@@ -429,6 +454,7 @@ export interface FileRoutesById {
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/gamificacao': typeof AdminGamificacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/loja': typeof AdminLojaRoute
   '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
@@ -451,6 +477,7 @@ export interface FileRoutesById {
   '/organizacao/checkin': typeof OrganizacaoCheckinRoute
   '/organizacao/comunidade': typeof OrganizacaoComunidadeRoute
   '/organizacao/financeiro': typeof OrganizacaoFinanceiroRoute
+  '/organizacao/impulsos': typeof OrganizacaoImpulsosRoute
   '/organizacao/inscritos': typeof OrganizacaoInscritosRoute
   '/organizacao/metricas': typeof OrganizacaoMetricasRoute
   '/organizacao/missoes': typeof OrganizacaoMissoesRoute
@@ -473,6 +500,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/cadastro'
+    | '/comunidades'
     | '/login'
     | '/modalidades'
     | '/organizacao'
@@ -483,6 +511,7 @@ export interface FileRouteTypes {
     | '/admin/divulgacao'
     | '/admin/gamificacao'
     | '/admin/insights'
+    | '/admin/loja'
     | '/admin/metricas'
     | '/admin/notificacoes'
     | '/admin/pagamentos'
@@ -505,6 +534,7 @@ export interface FileRouteTypes {
     | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
+    | '/organizacao/impulsos'
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
     | '/organizacao/missoes'
@@ -523,6 +553,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/cadastro'
+    | '/comunidades'
     | '/login'
     | '/modalidades'
     | '/privacidade'
@@ -532,6 +563,7 @@ export interface FileRouteTypes {
     | '/admin/divulgacao'
     | '/admin/gamificacao'
     | '/admin/insights'
+    | '/admin/loja'
     | '/admin/metricas'
     | '/admin/notificacoes'
     | '/admin/pagamentos'
@@ -553,6 +585,7 @@ export interface FileRouteTypes {
     | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
+    | '/organizacao/impulsos'
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
     | '/organizacao/missoes'
@@ -573,6 +606,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/cadastro'
+    | '/comunidades'
     | '/login'
     | '/modalidades'
     | '/organizacao'
@@ -583,6 +617,7 @@ export interface FileRouteTypes {
     | '/admin/divulgacao'
     | '/admin/gamificacao'
     | '/admin/insights'
+    | '/admin/loja'
     | '/admin/metricas'
     | '/admin/notificacoes'
     | '/admin/pagamentos'
@@ -605,6 +640,7 @@ export interface FileRouteTypes {
     | '/organizacao/checkin'
     | '/organizacao/comunidade'
     | '/organizacao/financeiro'
+    | '/organizacao/impulsos'
     | '/organizacao/inscritos'
     | '/organizacao/metricas'
     | '/organizacao/missoes'
@@ -626,6 +662,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
   CadastroRoute: typeof CadastroRoute
+  ComunidadesRoute: typeof ComunidadesRoute
   LoginRoute: typeof LoginRoute
   ModalidadesRoute: typeof ModalidadesRoute
   OrganizacaoRoute: typeof OrganizacaoRouteWithChildren
@@ -667,6 +704,13 @@ declare module '@tanstack/react-router' {
       path: '/cadastro'
       fullPath: '/cadastro'
       preLoaderRoute: typeof CadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comunidades': {
+      id: '/comunidades'
+      path: '/comunidades'
+      fullPath: '/comunidades'
+      preLoaderRoute: typeof ComunidadesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -744,6 +788,13 @@ declare module '@tanstack/react-router' {
       path: '/insights'
       fullPath: '/admin/insights'
       preLoaderRoute: typeof AdminInsightsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/loja': {
+      id: '/admin/loja'
+      path: '/loja'
+      fullPath: '/admin/loja'
+      preLoaderRoute: typeof AdminLojaRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/metricas': {
@@ -914,6 +965,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizacaoFinanceiroRouteImport
       parentRoute: typeof OrganizacaoRoute
     }
+    '/organizacao/impulsos': {
+      id: '/organizacao/impulsos'
+      path: '/impulsos'
+      fullPath: '/organizacao/impulsos'
+      preLoaderRoute: typeof OrganizacaoImpulsosRouteImport
+      parentRoute: typeof OrganizacaoRoute
+    }
     '/organizacao/inscritos': {
       id: '/organizacao/inscritos'
       path: '/inscritos'
@@ -999,6 +1057,7 @@ interface AdminRouteChildren {
   AdminDivulgacaoRoute: typeof AdminDivulgacaoRoute
   AdminGamificacaoRoute: typeof AdminGamificacaoRoute
   AdminInsightsRoute: typeof AdminInsightsRoute
+  AdminLojaRoute: typeof AdminLojaRoute
   AdminMetricasRoute: typeof AdminMetricasRoute
   AdminNotificacoesRoute: typeof AdminNotificacoesRoute
   AdminPagamentosRoute: typeof AdminPagamentosRoute
@@ -1015,6 +1074,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDivulgacaoRoute: AdminDivulgacaoRoute,
   AdminGamificacaoRoute: AdminGamificacaoRoute,
   AdminInsightsRoute: AdminInsightsRoute,
+  AdminLojaRoute: AdminLojaRoute,
   AdminMetricasRoute: AdminMetricasRoute,
   AdminNotificacoesRoute: AdminNotificacoesRoute,
   AdminPagamentosRoute: AdminPagamentosRoute,
@@ -1058,6 +1118,7 @@ interface OrganizacaoRouteChildren {
   OrganizacaoCheckinRoute: typeof OrganizacaoCheckinRoute
   OrganizacaoComunidadeRoute: typeof OrganizacaoComunidadeRoute
   OrganizacaoFinanceiroRoute: typeof OrganizacaoFinanceiroRoute
+  OrganizacaoImpulsosRoute: typeof OrganizacaoImpulsosRoute
   OrganizacaoInscritosRoute: typeof OrganizacaoInscritosRoute
   OrganizacaoMetricasRoute: typeof OrganizacaoMetricasRoute
   OrganizacaoMissoesRoute: typeof OrganizacaoMissoesRoute
@@ -1071,6 +1132,7 @@ const OrganizacaoRouteChildren: OrganizacaoRouteChildren = {
   OrganizacaoCheckinRoute: OrganizacaoCheckinRoute,
   OrganizacaoComunidadeRoute: OrganizacaoComunidadeRoute,
   OrganizacaoFinanceiroRoute: OrganizacaoFinanceiroRoute,
+  OrganizacaoImpulsosRoute: OrganizacaoImpulsosRoute,
   OrganizacaoInscritosRoute: OrganizacaoInscritosRoute,
   OrganizacaoMetricasRoute: OrganizacaoMetricasRoute,
   OrganizacaoMissoesRoute: OrganizacaoMissoesRoute,
@@ -1104,6 +1166,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AppRoute: AppRouteWithChildren,
   CadastroRoute: CadastroRoute,
+  ComunidadesRoute: ComunidadesRoute,
   LoginRoute: LoginRoute,
   ModalidadesRoute: ModalidadesRoute,
   OrganizacaoRoute: OrganizacaoRouteWithChildren,

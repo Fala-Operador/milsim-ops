@@ -4,8 +4,10 @@ import { Crosshair, MapPin, Search } from "lucide-react";
 import { carregarBase } from "@/services/db";
 import { POSICAO_LISTAGEM, type BaseDados, type Evento } from "@/lib/domain/types";
 import { campanhasNaPosicao } from "@/lib/impulsionamento";
+import { idDoVisitante } from "@/services/analytics";
 import { vagasRestantes } from "@/services/inscricoes";
-import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
+import { formatarDataBR } from "@/lib/domain/money";
+import { Preco } from "@/components/Preco";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkeletonGrade } from "@/components/ui";
@@ -105,7 +107,8 @@ function PaginaInicial() {
   }, [versao]);
 
   const agora = new Date();
-  const secoes = base ? montarPaginaInicial(base, local, agora) : [];
+  const semente = base ? idDoVisitante() : "";
+  const secoes = base ? montarPaginaInicial(base, local, agora, { semente }) : [];
   const organizacaoDe = (id: string) => base?.organizacoes.find((o) => o.id === id)?.nome ?? "—";
   const publicados = base?.eventos.filter((e) => e.status === "publicado" && eventoElegivel(e, agora)) ?? [];
   const regionais = base ? filtrarEventos(publicados, local, aplicado, organizacaoDe, agora) : [];
@@ -115,8 +118,7 @@ function PaginaInicial() {
   // Bloco da listagem: só campanhas cujo evento já atende a todos os filtros explícitos.
   const idsResultados = new Set(resultados.map((e) => e.id));
   const impulsionados = base
-    ? campanhasNaPosicao(base, POSICAO_LISTAGEM, local, agora)
-        .filter((c) => idsResultados.has(c.eventoId))
+    ? campanhasNaPosicao(base, POSICAO_LISTAGEM, local, agora, { semente, filtro: (id) => idsResultados.has(id) })
         .map((c) => ({ ...resultados.find((e) => e.id === c.eventoId)!, campanhaId: c.id }))
     : [];
   const nacional = local.escopo === "nacional";
@@ -354,7 +356,7 @@ function CartaoEvento({ evento: e, base, organizacao }: { evento: Evento; base: 
         <p className="mt-2"><span className="inline-block rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{nomeModalidade(e.modalidade)}</span></p>
         <p className="mt-1.5 truncate text-sm text-muted-foreground">{organizacao}</p>
         <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-3">
-          <p className="text-sm">A partir de <span className="font-semibold text-accent">{formatarBRL(precoInicial(e))}</span></p>
+          <p className="text-sm">A partir de <Preco centavos={precoInicial(e)} className="font-semibold text-accent" /></p>
           <span className="text-sm font-medium text-primary group-hover:underline">Ver operação →</span>
         </div>
       </div>

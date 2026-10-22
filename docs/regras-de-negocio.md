@@ -53,12 +53,18 @@ escrita. As telas só refletem o resultado. Valores entre parênteses são os li
 Código: `src/services/auth.ts`, `src/server/auth.server.ts`, `src/lib/domain/validators.ts`.
 
 - Obrigatórios: CPF válido, nome, nascimento, e-mail válido, WhatsApp com DDD, endereço,
-  senha (mínimo **6** caracteres, com confirmação) e aceite dos termos e do aviso de privacidade.
+  senha (mínimo **6** caracteres, com letra minúscula, maiúscula, número e símbolo, e confirmação)
+  e aceite dos termos e do aviso de privacidade.
+- Requisitos de senha em `src/lib/domain/senha.ts`, espelhando a configuração do Supabase Auth
+  (Authentication → Email); se mudar lá, mude o módulo. O Supabase também recusa senhas vazadas
+  (HaveIBeenPwned) e o erro chega traduzido. As telas mostram a checklist ao vivo e todo campo de
+  senha tem o botão de olho (`InputSenha`).
 - **Idade mínima: 15 anos.** De 15 a 17 anos a conta nasce com `autorizacaoResponsavel = pendente`
   e **não pode se inscrever** até o admin aprovar. → [`aprovarAutorizacaoResponsavel`](api/admin/aprovarAutorizacaoResponsavel.md)
 - **CPF e e-mail são únicos.** Se o perfil não puder ser gravado, a conta criada no Auth é apagada.
 - A conta é criada com e-mail já confirmado (ver [lacunas](#19-lacunas-conhecidas)).
 - Recuperação de senha por link de e-mail de uso único; a resposta não revela se o e-mail existe.
+- Login, cadastro e pedido de redefinição de senha mostram o Cloudflare Turnstile (`src/components/Turnstile.tsx`); o token é conferido pelo CAPTCHA do Supabase Auth, e cada token vale uma tentativa.
 - Foto de perfil: JPEG, PNG ou WebP, recortada no navegador, até ~2,2 MB.
 - Tema: visitante sempre escuro; a conta guarda claro ou escuro.
 - Preferência de modalidades: `todas`, `selecionadas` (ids do catálogo) ou `pendente`; ordena a
@@ -87,6 +93,10 @@ Código: `src/services/organizador.ts`, `src/lib/eventoEditor.ts`, `src/lib/cont
 - **Publicar** exige: nome, modalidade, descrição resumida (até 200), enredo, local, imagem
   principal, ao menos um exército, um tipo de ingresso e uma atividade no cronograma, todas dentro
   do período do evento. Publicar cria os fóruns da comunidade.
+- Data e horário das atividades são lidos no **fuso do evento** (`src/lib/fusoHorario.ts`), nunca no
+  fuso de quem valida: o editor e o servidor (em UTC) chegam ao mesmo resultado. Início e término inclusos.
+- Erros de publicação aparecem por etapa no editor: cada pendência mostra a etapa, a etapa fica em
+  vermelho na navegação e há um atalho para ela (`etapaDaMensagem` em `src/lib/eventoEditor.ts`).
 - **Capacidade**: a total e a de cada exército nunca ficam abaixo da ocupação atual
   (confirmadas + reservas de pagamento vigentes). Nomes de exército não se repetem.
 - Troca de modalidade é auditada.
@@ -140,6 +150,22 @@ Resultado:
 - Uma nova tentativa da mesma pessoa **substitui** a reserva pendente anterior dela (que é
   liberada), salvo se aquele pagamento já estiver em processamento.
 
+### Inclusão manual (pagamento por fora)
+
+Código: `incluirParticipantes` em `src/services/inscricoes.ts`. → [API](api/inscricoes/incluirParticipantes.md)
+
+- Feita pela **gestão do evento** (organização dona ou admin), em Organização › Inscritos ou na
+  visão geral do evento no admin (aba Inscrições).
+- Só para **conta existente e ativa**. A organização localiza **uma** conta por e-mail ou CPF (ela não
+  recebe a lista de usuários); o admin escolhe **várias** pelo nome numa lista com busca (até 50 por vez),
+  com o mesmo tipo de ingresso e exército para todas.
+- Tudo ou nada: se uma pessoa não puder entrar, ninguém do lote é incluído e o erro diz quem foi.
+- Entra como **cortesia já resgatada** (valor zero; aparece em cortesias emitidas/resgatadas, não no bruto).
+- Valem as regras 2 a 5 acima (idade, inscrição única, tipo/exército, capacidade); **não** exige lote
+  aberto e também vale com o evento em `inscricoes_encerradas`.
+- Origem `organizador` ("Inclusão manual") ou `admin` ("Inclusão pela administração"); a ação vai
+  para a auditoria (com a observação opcional). Inclusão pelo admin notifica os organizadores do evento.
+
 ## 7. Pagamento online (Stripe)
 
 Código: `src/lib/pagamentos.ts`, `src/lib/stripe.ts`, `src/server/pagamentos.server.ts`. → [Fluxo](fluxos.md#3-inscrição-com-pagamento-stripe)
@@ -184,17 +210,25 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
 - Cada organização pode ter uma conta **Stripe Connect** com painel Express, criada pela Accounts v2
   como conta recebedora das vendas (a plataforma responde por perdas e taxas, como nas contas Express).
   Situação: `pendente`, `em_analise`, `ativa` ou `restrita`, espelhada do Stripe e visível só para quem gere a organização.
-  O site, o ramo (MCC 7999) e a descrição do negócio são enviados pela plataforma (`perfilComercialPadrao`),
-  então o organizador não precisa informar um site próprio.
+  O site, o ramo (MCC 7922, "Ingressos para eventos") e a descrição do negócio são enviados pela plataforma (`perfilComercialPadrao`),
+  então o organizador não precisa informar um site próprio nem escolher o setor no cadastro do Stripe
+  (na Accounts v2: `configuration.merchant.mcc` e `defaults.profile`).
 - Na reserva, se a conta tem **transferências ativas**, a cobrança nasce com destino a ela: o Stripe
-  transfere o valor menos a **taxa da plataforma**. Sem conta ativa, o valor fica com a plataforma
-  ("repasse à parte").
+  transfere o valor menos a **taxa da plataforma**. **Sem conta ativa, ingressos pagos
+  não são vendidos**: a inscrição mostra ao comprador que a venda ainda não está aberta, e o painel e o
+  editor de eventos avisam a organização que ela precisa concluir a conta de recebimento. Inscrições gratuitas e
+  cortesias seguem normais.
 - A **taxa** (%) é definida pelo admin e vale para reservas novas; cada venda guarda a taxa do momento.
+- A **taxa de serviço do comprador** (%, padrão 0%) é definida por **cada organização** no Financeiro:
+  é somada ao valor do ingresso no checkout como o item "Taxa de serviço", aparece na revisão da
+  inscrição e é repassada à organização junto com a venda. Ex.: ingresso de R$ 100,00 com 3,5% do
+  comprador e 3,5% da plataforma: o comprador paga R$ 103,50, a organização recebe R$ 100,00 e a
+  plataforma R$ 3,50.
 - Reembolso de venda repassada desfaz a transferência e devolve a taxa.
 - Ao trocar as chaves do Stripe de teste para produção, a conta de recebimento criada no modo de teste
   (ou numa sandbox, que é outra conta de plataforma) é esquecida na primeira consulta e a organização
   refaz o cadastro numa conta nova. O id descartado fica no log do servidor. Enquanto isso,
-  um checkout cujo destino o Stripe não reconhece vira venda na plataforma ("repasse à parte").
+  um checkout cujo destino o Stripe não reconhece é recusado até o novo cadastro ficar ativo.
 - Mensagens de erro do Stripe mostradas no site nunca trazem a chave de API, nem mascarada.
 - Com a conta ativa, o Financeiro mostra **saldo** disponível e a liberar, próximo saque, últimos
   saques, cronograma e banco (só os últimos dígitos), lidos do Stripe com cache de 60 s.
@@ -216,7 +250,8 @@ Código: `resumoFinanceiro` (`src/services/inscricoes.ts`), `src/lib/movimentaco
   - reservas aguardando pagamento aparecem à parte e **não** entram nos valores.
 - Movimentações: `inscricao` (entrada), `desconto_cupom` (registrada com valor 0; o valor real vem
   da inscrição), `estorno` (negativo) e `ajuste`.
-- Pagamentos online mostram cobrado, taxa da plataforma, repassado à organização e o que ficou com a plataforma.
+- Pagamentos online mostram cobrado, taxa da plataforma, repassado à organização, o que ficou com a plataforma
+  e, quando houver, a taxa de serviço paga pelos compradores.
 - A tela de movimentações tem abas por tipo, busca (descrição ou código `OP-…`), período, meio de
   pagamento e ordenação; os totais das abas respeitam os filtros.
 
@@ -286,6 +321,16 @@ Código: `src/lib/missoes.ts` (regras puras), `src/services/missoes.ts`. → [AP
 Código: `src/services/comunidade.ts`. → [APIs](api/README.md#comunidade)
 
 - Papéis: **gestão** (organização do evento ou admin) e **membro** (inscrição confirmada).
+- **Vitrine pública** (`/comunidades`, link "Comunidades" no menu para todos): mostra que a comunidade
+  existe (evento, data, cidade, nº de confirmados), nunca o conteúdo. Lista as comunidades de eventos
+  publicados ou com inscrições encerradas que ainda não terminaram, mais as que a pessoa já acessa
+  (as dela primeiro). Regras em `src/lib/comunidadePublica.ts` (`acessoAComunidade`):
+  - membro ou gestão → entra;
+  - visitante → login e, na volta, a mesma decisão;
+  - logado sem inscrição e inscrições abertas → página de inscrição com o aviso de que a comunidade é para inscritos;
+  - reserva aguardando pagamento → "Concluir pagamento" em Meus ingressos;
+  - inscrições encerradas → explicação, sem acesso.
+  O mesmo encaminhamento vale para links diretos da comunidade e de publicações.
 - Fóruns iniciais, criados ao publicar o evento: Avisos oficiais (só a gestão publica), Conversa
   geral, Dúvidas e preparação, Caronas e logística, Fotos e experiências.
 - Cada fórum tem público (`todos` ou um exército) e permissões separadas de publicar e responder
@@ -335,7 +380,28 @@ Código: `src/lib/divulgacao.ts`, `src/lib/impulsionamento.ts`.
   - Estado exibido: rascunho, agendado, ativo, pausado, pausado por esgotar (objetivo inscrições),
     suspenso (evento fora do ar) ou encerrado.
   - Campanhas entram antes da curadoria, ordenadas por prioridade e ordem; cada evento aparece **uma vez** por seção.
+  - **Rodízio dos impulsos comprados**: as campanhas da administração vêm primeiro; depois, no máximo
+    **8** impulsos comprados por bloco (seção ou listagem). Eventos da área escolhida pelo visitante têm
+    preferência e, entre eles, a ordem é sorteada por visitante e muda a cada 15 minutos (00, 15, 30 e 45 de cada hora), para
+    que todos os organizadores que pagaram tenham chances parecidas. Na listagem, só disputam as vagas os
+    eventos que atendem à busca e aos filtros.
   - Campanhas nunca são apagadas; encerrada não é editada.
+- **Impulsos comprados** (organização): `src/lib/impulsos.ts`, página `/organizacao/impulsos`.
+  - Seis tipos: 24h, 3, 5, 7, 15 e 30 dias. Preço, validade (padrão 30 dias) e venda de cada tipo
+    são definidos pela administração em **Loja da plataforma** (`/admin/loja`, seção Impulsos de operações);
+    a compra guarda os valores do momento.
+  - Cada tipo tem imagem (padrão tema airsoft em `public/impulsos`, trocável pela administração) e é um
+    produto do catálogo do Stripe da plataforma (`milsim_impulso_<tipo>`), atualizado ao salvar; valor novo
+    gera preço novo e arquiva o antigo.
+  - Só o organizador ativo compra, para a própria organização; o pagamento (Stripe Checkout) fica todo
+    com a plataforma. Preço 0 libera na hora. Checkout não pago em 60 minutos é descartado.
+  - Pago, o impulso fica no saldo da organização e precisa ser usado até `pagamento + validade`;
+    depois disso aparece como **expirado** e não pode mais ser usado.
+  - Usar = escolher uma operação publicada, não encerrada e com imagem: vira uma campanha ativa nas
+    seções de destaque e no topo da listagem, em todo o Brasil, com prioridade normal. Um segundo impulso
+    na mesma operação começa quando o anterior termina; o impulso termina no máximo no fim da operação.
+  - Reembolso integral no Stripe cancela o impulso e encerra a campanha. A organização vê as próprias
+    compras sem os ids do Stripe; o público não vê compras nem qual campanha veio de um impulso.
 
 ## 16. Métricas
 
@@ -380,6 +446,9 @@ Código: `src/lib/visaoGeralEvento.ts`, página `/admin/eventos/$eventoId` (bot�
 - Perfil do operador: cada bloco é `eu` ou `autenticados`; visitante deslogado vê só nome e foto.
 - Solicitações LGPD (acesso, correção, exportação, exclusão) vão para os admins, que respondem pela plataforma.
 - Listagens da gestão mostram CPF e telefone mascarados.
+- **CEP** (cadastro e local do evento): ao completar 8 dígitos, o navegador consulta o ViaCEP
+  (`consultarCep` em `src/services/geolocalizacao.ts`) enviando só o CEP, e preenche endereço, bairro,
+  cidade e UF; os campos continuam editáveis e o CEP com que o formulário abriu não é reconsultado.
 
 ## 19. Lacunas conhecidas
 
