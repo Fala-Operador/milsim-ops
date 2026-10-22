@@ -9,6 +9,7 @@ import type { PreferenciaModalidades } from "@/lib/modalidades";
 import type { SolicitacaoPrivacidade } from "@/lib/domain/types";
 import type { DadosChamado } from "@/services/conta";
 import type { Tema } from "@/lib/localizacao";
+import { esquemaFicha, type DadosFicha } from "@/lib/fichaEmergencia";
 
 const id = z.string().min(1).max(100);
 
@@ -56,6 +57,11 @@ export const salvarPreferenciaFn = createServerFn({ method: "POST" })
     mutar(({ usuario }) => conta.salvarPreferenciaModalidades(exigirUsuario(usuario), data as unknown as PreferenciaModalidades)),
   );
 
+/** Ficha de emergência da própria conta (opcional; vazio remove). */
+export const salvarFichaEmergenciaFn = createServerFn({ method: "POST" })
+  .validator(esquemaFicha.parse)
+  .handler(({ data }) => mutar(({ usuario }) => conta.salvarFichaEmergencia(exigirUsuario(usuario), data)));
+
 // ---------- Uso no navegador ----------
 export const enviarEntregaMissao = (missaoId: string, texto?: string) => chamar(enviarEntregaMissaoFn({ data: { missaoId, texto } }));
 export const solicitarPrivacidade = (tipo: SolicitacaoPrivacidade["tipo"], detalhes: string) =>
@@ -68,5 +74,6 @@ export const definirSilencio = (parcial: { todas?: boolean; comunidade?: boolean
 /** `null` remove a foto. */
 export const definirFoto = (foto: string | null) => chamar(definirFotoFn({ data: { foto } }));
 export const definirTema = (tema: Tema) => chamar(definirTemaFn({ data: { tema } }));
+export const salvarFichaEmergencia = (dados: DadosFicha) => chamar(salvarFichaEmergenciaFn({ data: dados }));
 export const salvarPreferenciaConta = (p: PreferenciaModalidades) =>
   chamar(salvarPreferenciaFn({ data: p as unknown as { estado: "pendente" | "todas" | "selecionadas"; modalidades: string[] } }));

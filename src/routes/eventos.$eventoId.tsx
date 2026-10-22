@@ -230,7 +230,7 @@ function PaginaEvento() {
       </Modal>
 
       {inscricoesAbertas && (
-        <div className="sticky bottom-0 z-30 -mx-4 mt-8 border-t border-border bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden">
+        <div className="sticky bottom-[var(--menu-inferior,0px)] z-30 -mx-4 mt-8 border-t border-border bg-background/95 px-4 pt-3 pb-[var(--folga-inferior,max(0.75rem,env(safe-area-inset-bottom)))] backdrop-blur md:hidden">
           <div className="mx-auto flex max-w-4xl items-center gap-3">
             <div className="min-w-0 flex-1 text-sm">
               {aPartirDe !== null && <p className="text-xs text-muted-foreground">A partir de</p>}

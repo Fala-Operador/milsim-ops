@@ -6,7 +6,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { mascararCpf } from "@/lib/domain/validators";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ModalTexto } from "@/components/ui";
+import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/admin/usuarios")({
@@ -24,14 +26,36 @@ export const Route = createFileRoute("/admin/usuarios")({
 function Usuarios() {
   const { usuario } = useAuth();
   const [, setVersao] = useState(0);
+  useVersaoBase(); // contadores e lista acompanham cadastros e desativações
   const [erro, setErro] = useState("");
   const [desativando, setDesativando] = useState<{ id: string; nome: string } | null>(null);
   if (!usuario) return null;
   const base = carregarBase();
+  const ativos = base.usuarios.filter((u) => u.ativo);
+  const porPerfil = (p: (typeof base.usuarios)[number]["perfil"]) => ativos.filter((u) => u.perfil === p).length;
 
   return (
     <section>
       <h2 className="font-display text-lg font-semibold uppercase">Usuários</h2>
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Contagem de usuários">
+        <Card className="col-span-2 sm:col-span-1">
+          <p className="text-xs uppercase text-muted-foreground">Usuários ativos</p>
+          <p className="font-display text-3xl font-semibold">{ativos.length}</p>
+          <p className="text-xs text-muted-foreground">de {base.usuarios.length} cadastrados</p>
+        </Card>
+        <Card>
+          <p className="text-xs uppercase text-muted-foreground">Participantes</p>
+          <p className="font-display text-2xl font-semibold">{porPerfil("participante")}</p>
+        </Card>
+        <Card>
+          <p className="text-xs uppercase text-muted-foreground">Organizadores</p>
+          <p className="font-display text-2xl font-semibold">{porPerfil("organizador")}</p>
+        </Card>
+        <Card className="col-span-2 sm:col-span-1">
+          <p className="text-xs uppercase text-muted-foreground">Admins · Inativos</p>
+          <p className="font-display text-2xl font-semibold">{porPerfil("admin")} · {base.usuarios.length - ativos.length}</p>
+        </Card>
+      </div>
       {erro && <p role="alert" className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
       <div className="mt-3 overflow-x-auto">
         <Table className="tabela-cards w-full text-sm">

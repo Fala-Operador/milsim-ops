@@ -23,6 +23,7 @@ import { LocalizacaoProvider } from "@/contexts/LocalizacaoContext";
 import { PreferenciasProvider } from "@/contexts/PreferenciasContext";
 import { PreferenciasModal } from "@/components/PreferenciasModalidade";
 import { Header } from "@/components/Header";
+import { MenuInferior } from "@/components/MenuInferior";
 import { Button } from "@/components/ui/button";
 
 function NotFoundComponent() {
@@ -171,6 +172,7 @@ function Providers({ children }: { children: ReactNode }) {
           <Link to="/privacidade" className="underline-offset-4 hover:underline">Privacidade</Link>
         </nav>
       </footer>
+      <MenuInferior />
      </SuporteProvider>
     </NotificationProvider>
   );

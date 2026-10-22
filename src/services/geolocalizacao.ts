@@ -56,3 +56,40 @@ export async function detectarCidade(): Promise<Localidade> {
   const { lat, lng } = await obterCoordenadas();
   return coordenadasParaCidade(lat, lng);
 }
+
+export interface EnderecoCep {
+  logradouro: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+}
+
+export type FalhaCep = "invalido" | "nao_encontrado" | "indisponivel";
+
+export class ErroCep extends Error {
+  constructor(public motivo: FalhaCep) {
+    super(motivo === "invalido" ? "CEP inválido." : motivo === "nao_encontrado" ? "CEP não encontrado." : "Não foi possível consultar o CEP agora.");
+  }
+}
+
+/**
+ * Endereço de um CEP pelo ViaCEP (público e gratuito, sem chave). Envia só os 8 dígitos do CEP.
+ * Os campos preenchidos continuam editáveis: o CEP é só um atalho.
+ */
+export async function consultarCep(cep: string, signal?: AbortSignal): Promise<EnderecoCep> {
+  const d = cep.replace(/\D/g, "");
+  if (d.length !== 8) throw new ErroCep("invalido");
+  let resposta: Response;
+  try {
+    resposta = await fetch(`https://viacep.com.br/ws/${d}/json/`, { signal: signal ?? null });
+  } catch (e) {
+    if (signal?.aborted) throw e;
+    throw new ErroCep("indisponivel");
+  }
+  // ViaCEP responde 400 para formato inválido e {"erro": true} para CEP inexistente.
+  if (resposta.status === 400) throw new ErroCep("nao_encontrado");
+  if (!resposta.ok) throw new ErroCep("indisponivel");
+  const r = (await resposta.json()) as { erro?: boolean | string; logradouro?: string; bairro?: string; localidade?: string; uf?: string };
+  if (r.erro) throw new ErroCep("nao_encontrado");
+  return { logradouro: r.logradouro ?? "", bairro: r.bairro ?? "", cidade: r.localidade ?? "", uf: r.uf ?? "" };
+}

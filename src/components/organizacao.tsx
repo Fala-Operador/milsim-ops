@@ -3,7 +3,7 @@ import { useEventoOrganizacao } from "@/contexts/OrganizationEventContext";
 import { carregarBase } from "@/services/db";
 import { disponibilidadeNaBase, resumoFinanceiro } from "@/services/inscricoes";
 import { TEXTO_MOTIVO } from "@/lib/vendas";
-import { resumoRepasse } from "@/lib/repasses";
+import { resumoRepasse, taxaDaPlataforma } from "@/lib/repasses";
 import { disputaEmAberto, ROTULO_DISPUTA } from "@/lib/stripe";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { Preco } from "@/components/Preco";
@@ -142,6 +142,8 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
     ["Cupons utilizados", String(r.cuponsUtilizados)],
     ["Integralmente descontadas", String(r.integralmenteDescontadas)],
     ["Reservas aguardando pagamento", String(r.reservasAguardando)],
+    // Taxa vigente (definida pela administração); cada venda guarda a do momento em que foi feita.
+    ["Taxa da plataforma", `${taxaDaPlataforma(carregarBase()).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`],
   ];
   // Vendas pagas online: quanto foi cobrado, a taxa retida e para onde foi o dinheiro.
   const rep = resumoRepasse(carregarBase(), eventoId);

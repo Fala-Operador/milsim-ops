@@ -8,6 +8,8 @@ import { ehModalidade, MODALIDADES } from "@/lib/modalidades";
 import { dataUrlParaBlobUrl, pdfParaDataUrl } from "@/lib/imagens";
 import type { Ocupacao } from "@/lib/eventoEditor";
 import { formatarContatoWhatsapp, normalizarContatoWhatsapp } from "@/lib/contatoEvento";
+import { mascaraCep } from "@/lib/domain/validators";
+import { textoBuscaCep, useBuscaCep } from "@/hooks/useBuscaCep";
 import { deCampoNoFuso, paraCampoNoFuso, trocarFuso } from "@/lib/fusoHorario";
 import { Ajuda, inval, MsgErro, Secao, type PropsEtapa } from "./comum";
 
@@ -87,6 +89,13 @@ export function EtapaLocal({ ev, set, erros }: PropsEtapa) {
     set("lotes", ev.lotes.map((l) => ({ ...l, inicioVendas: trocarFuso(l.inicioVendas, ev.fuso, fuso), fimVendas: trocarFuso(l.fimVendas, ev.fuso, fuso) })));
     set("fuso", fuso);
   };
+  // CEP novo preenche endereço, cidade e UF (campos seguem editáveis; vazio do ViaCEP não apaga nada).
+  const buscaCep = useBuscaCep(ev.cep, (r) => {
+    const endereco = [r.logradouro, r.bairro].filter(Boolean).join(", ");
+    if (endereco) set("endereco", endereco);
+    if (r.cidade) set("cidade", r.cidade);
+    if (UFS.includes(r.uf)) set("uf", r.uf);
+  });
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
@@ -111,8 +120,9 @@ export function EtapaLocal({ ev, set, erros }: PropsEtapa) {
       </Campo>
       <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
         <Campo rotulo="CEP (opcional)" htmlFor="ev-cep">
-          <Input id="ev-cep" inputMode="numeric" placeholder="00000-000" maxLength={9} value={ev.cep ?? ""} onChange={(e) => set("cep", e.target.value || undefined)} {...inval(erros, "ev-cep")} />
+          <Input id="ev-cep" inputMode="numeric" autoComplete="postal-code" placeholder="00000-000" maxLength={9} value={ev.cep ?? ""} onChange={(e) => set("cep", mascaraCep(e.target.value) || undefined)} {...inval(erros, "ev-cep")} />
           <MsgErro erros={erros} id="ev-cep" />
+          <p aria-live="polite" className={`mt-1 text-xs ${buscaCep.status === "erro" ? "text-destructive" : "text-muted-foreground"}`}>{textoBuscaCep(buscaCep)}</p>
         </Campo>
         <Campo rotulo="Endereço" htmlFor="ev-end">
           <Input id="ev-end" value={ev.endereco} onChange={(e) => set("endereco", e.target.value)} />

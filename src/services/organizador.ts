@@ -4,7 +4,7 @@ import { ehModalidade, erroModalidadeParaPublicar, nomeModalidade } from "@/lib/
 import { estornarEventoNaBase } from "@/services/inscricoes";
 import { ocupaVaga } from "@/lib/pagamentos";
 import { contatoParaGravar, errosContatoEvento } from "@/lib/contatoEvento";
-import { instanteNoFuso } from "@/lib/fusoHorario";
+import { atividadeNoPeriodo } from "@/lib/fusoHorario";
 import { carregarBase, mutarBase, latencia, ErroDominio, gerarId, gerarCodigo } from "./db";
 import { silenciado } from "./notificacoes";
 import { cnpjValido, normalizarEmail, somenteDigitos, telefoneValido } from "@/lib/domain/validators";
@@ -142,18 +142,13 @@ export function validarParaPublicacao(evento: Evento): string[] {
   if (evento.exercitos.length === 0) erros.push("Cadastre ao menos um exército.");
   if (evento.tipos.length === 0) erros.push("Cadastre ao menos um tipo de ingresso.");
   if (evento.cronograma.length === 0) erros.push("O cronograma precisa de ao menos uma atividade.");
-  const inicio = new Date(evento.inicioEm);
-  const fim = new Date(evento.fimEm);
+  // Data e horário da atividade valem no fuso do evento (o servidor roda em UTC).
   for (const at of evento.cronograma) {
-    const dataAt = instanteNoFuso(at.data, at.horario, evento.fuso);
-    if (Number.isNaN(dataAt.getTime()) || dataAt < inicio || dataAt > fim) {
-      erros.push(`Atividade "${at.titulo}" fora do período do evento.`);
-    }
+    if (!atividadeNoPeriodo(evento, at)) erros.push(`Atividade "${at.titulo}" fora do período do evento.`);
   }
+  const fim = new Date(evento.fimEm).getTime();
   for (const l of evento.lotes) {
-    if (l.status !== "arquivado" && new Date(l.fimVendas).getTime() > fim.getTime()) {
-      erros.push(`Lote "${l.nome}": as vendas devem terminar até o término da operação.`);
-    }
+    if (l.status !== "arquivado" && new Date(l.fimVendas).getTime() > fim) erros.push(`Lote "${l.nome}": as vendas devem terminar até o término da operação.`);
   }
   return erros;
 }
@@ -166,7 +161,8 @@ export async function publicarEvento(eventoId: string, usuarioId: string, perfil
     assertDono(evento, usuarioId, perfil);
     const erros = validarParaPublicacao(evento);
     if (new Date(evento.inicioEm).getTime() <= Date.now()) erros.unshift("O início da operação já passou.");
-    if (erros.length) throw new ErroDominio("validacao", erros.join(" "));
+    // Uma mensagem por linha: o editor separa e mostra cada uma na etapa certa.
+    if (erros.length) throw new ErroDominio("validacao", erros.join("\n"));
     evento.status = "publicado";
   });
 }
