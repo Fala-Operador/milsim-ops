@@ -219,6 +219,7 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
   editor de eventos avisam a organização que ela precisa concluir a conta de recebimento. Inscrições gratuitas e
   cortesias seguem normais.
 - A **taxa** (%) é definida pelo admin e vale para reservas novas; cada venda guarda a taxa do momento.
+  A organização vê a taxa vigente (só leitura) no Financeiro, com um exemplo do valor que recebe.
 - A **taxa de serviço do comprador** (%, padrão 0%) é definida por **cada organização** no Financeiro:
   é somada ao valor do ingresso no checkout como o item "Taxa de serviço", aparece na revisão da
   inscrição e é repassada à organização junto com a venda. Ex.: ingresso de R$ 100,00 com 3,5% do
@@ -446,6 +447,13 @@ Código: `src/lib/visaoGeralEvento.ts`, página `/admin/eventos/$eventoId` (bot�
 - Perfil do operador: cada bloco é `eu` ou `autenticados`; visitante deslogado vê só nome e foto.
 - Solicitações LGPD (acesso, correção, exportação, exclusão) vão para os admins, que respondem pela plataforma.
 - Listagens da gestão mostram CPF e telefone mascarados.
+- **Ficha de emergência** (opcional: tipo sanguíneo, alergias, contato de emergência; `src/lib/fichaEmergencia.ts`):
+  dado de saúde (LGPD, art. 11). Preenchida no cadastro ou em Meu perfil › Ficha de emergência; vazia = removida.
+  - O titular sempre vê e edita.
+  - A organização dona do evento e o admin só veem com a **autorização explícita** (guardada com data), inscrição
+    **confirmada** e de **7 dias antes do início até o fim** do evento — no detalhe do inscrito e no check-in
+    (inclusive offline). Fora disso a ficha nem chega ao navegador (filtrada na visão, mesmo para o admin).
+  - Contas existentes receberam uma notificação para preencher (migration `20261022100000_ficha_emergencia`).
 - **CEP** (cadastro e local do evento): ao completar 8 dígitos, o navegador consulta o ViaCEP
   (`consultarCep` em `src/services/geolocalizacao.ts`) enviando só o CEP, e preenche endereço, bairro,
   cidade e UF; os campos continuam editáveis e o CEP com que o formulário abriu não é reconsultado.

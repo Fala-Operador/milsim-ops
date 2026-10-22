@@ -129,6 +129,7 @@ Missões, privacidade, notificações, foto, tema e preferências. Arquivo: [`sr
 | [`definirSilencio`](conta/definirSilencio.md) | POST | Qualquer pessoa autenticada e ativa | Silencia notificações: todas (`todas`) ou só as da comunidade (`comunidade`). |
 | [`definirFoto`](conta/definirFoto.md) | POST | Qualquer pessoa autenticada e ativa | Troca ou remove a foto de perfil. |
 | [`definirTema`](conta/definirTema.md) | POST | Qualquer pessoa autenticada e ativa | Guarda o tema da conta (claro ou escuro). |
+| [`salvarFichaEmergencia`](conta/salvarFichaEmergencia.md) | POST | Qualquer pessoa autenticada e ativa | Grava (ou remove) a ficha de emergência da própria conta, com a autorização de compartilhar. |
 | [`salvarPreferenciaConta`](conta/salvarPreferenciaConta.md) | POST | Qualquer pessoa autenticada e ativa | Salva as modalidades favoritas da conta (usadas para ordenar a página inicial "Para você"). |
 
 ### Administração

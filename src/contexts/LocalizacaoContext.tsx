@@ -1,9 +1,9 @@
 // Localização da descoberta regional, compartilhada por cabeçalho, busca e seções.
-// Salva apenas cidade/UF e o modo (atual/manual/nacional) — nunca coordenadas.
+// Filtra por estado (UF). Salva apenas a UF e o modo (atual/manual/nacional) — nunca coordenadas.
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { storage } from "@/lib/storage";
 import type { Abrangencia } from "@/lib/domain/types";
-import { LOCAL_PADRAO, aplicarLeituraDoAparelho, type LocalSalvo, type ModoLocal } from "@/lib/localizacao";
+import { LOCAL_PADRAO, aplicarLeituraDoAparelho, paraEstado, type LocalSalvo, type ModoLocal } from "@/lib/localizacao";
 import { consultarPermissao, detectarCidade, ErroLocalizacao, type FalhaLocal } from "@/services/geolocalizacao";
 
 export type StatusLocal = "ocioso" | "obtendo" | "detectado" | FalhaLocal;
@@ -39,7 +39,7 @@ export function LocalizacaoProvider({ children }: { children: ReactNode }) {
     setStatus("obtendo");
     try {
       const c = await detectarCidade();
-      gravar(aplicarLeituraDoAparelho(salvoRef.current, { escopo: "cidade", cidade: c.cidade, uf: c.uf }, explicito));
+      gravar(aplicarLeituraDoAparelho(salvoRef.current, { escopo: "estado", uf: c.uf }, explicito));
       storage.gravar(CHAVE_NEGADA, false);
       setPedirPermissao(false);
       setStatus("detectado");
@@ -52,12 +52,15 @@ export function LocalizacaoProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const s = storage.ler<LocalSalvo>(CHAVE);
-    if (s?.modo && s.local?.escopo) { setSalvo(s); salvoRef.current = s; }
+    if (s?.modo && s.local?.escopo) {
+      const atual = { ...s, local: paraEstado(s.local) };
+      setSalvo(atual); salvoRef.current = atual;
+    }
     let vivo = true;
     void consultarPermissao().then((p) => {
       if (!vivo) return;
       if (p === "concedida") {
-        // Atualiza a cidade só fora do modo manual (escolha manual não é sobrescrita).
+        // Atualiza o estado só fora do modo manual (escolha manual não é sobrescrita).
         if (salvoRef.current.modo !== "manual") void detectar(false);
       } else if (p === "negada") {
         setStatus("negada");
@@ -69,7 +72,7 @@ export function LocalizacaoProvider({ children }: { children: ReactNode }) {
   }, [detectar]);
 
   const definirLocal = (a: Abrangencia) => {
-    gravar({ modo: a.escopo === "nacional" ? "nacional" : "manual", local: a });
+    gravar({ modo: a.escopo === "nacional" ? "nacional" : "manual", local: paraEstado(a) });
     setPedirPermissao(false);
   };
 
@@ -90,11 +93,11 @@ export function useLocalizacao(): Valor {
 export function mensagemStatus(s: StatusLocal): string | null {
   switch (s) {
     case "obtendo": return "Obtendo sua localização…";
-    case "negada": return "Permissão de localização negada. Escolha a cidade manualmente.";
-    case "indisponivel": return "Localização indisponível neste aparelho. Escolha a cidade manualmente.";
-    case "tempo": return "A localização demorou demais. Tente de novo ou escolha a cidade.";
-    case "sem_suporte": return "Este navegador não informa a localização. Escolha a cidade manualmente.";
-    case "cidade_nao_resolvida": return "Não conseguimos identificar sua cidade. Escolha manualmente.";
+    case "negada": return "Permissão de localização negada. Escolha o estado manualmente.";
+    case "indisponivel": return "Localização indisponível neste aparelho. Escolha o estado manualmente.";
+    case "tempo": return "A localização demorou demais. Tente de novo ou escolha o estado.";
+    case "sem_suporte": return "Este navegador não informa a localização. Escolha o estado manualmente.";
+    case "cidade_nao_resolvida": return "Não conseguimos identificar seu estado. Escolha manualmente.";
     default: return null;
   }
 }

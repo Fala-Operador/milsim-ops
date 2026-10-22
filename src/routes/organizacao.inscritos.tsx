@@ -18,7 +18,9 @@ import {
   FILTROS_VAZIOS, ROTULO_ORIGEM, ROTULO_STATUS_INSCRICAO, contarFiltrosAtivos, filtrarInscritos,
   indicadoresInscritos, ordenarEventos, type FiltrosInscritos,
 } from "@/lib/inscritos";
-import type { Evento, Inscricao } from "@/lib/domain/types";
+import type { Evento, FichaEmergencia, Inscricao } from "@/lib/domain/types";
+import { ResumoFichaEmergencia } from "@/components/perfil/FichaEmergencia";
+import { DIAS_ANTES_DO_EVENTO } from "@/lib/fichaEmergencia";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -91,7 +93,7 @@ function Indicador({ icone: Icone, rotulo, valor }: { icone: typeof Users; rotul
 }
 
 function ConteudoEvento({ evento, inscricoes, usuarios }: {
-  evento: Evento; inscricoes: Inscricao[]; usuarios: { id: string; nomeCompleto: string; cpf: string }[];
+  evento: Evento; inscricoes: Inscricao[]; usuarios: { id: string; nomeCompleto: string; cpf: string; fichaEmergencia?: FichaEmergencia | undefined }[];
 }) {
   const [filtros, setFiltros] = useState<FiltrosInscritos>(FILTROS_VAZIOS);
   const [filtrosMobile, setFiltrosMobile] = useState(false);
@@ -258,6 +260,7 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
           nome={nomeDe(detalhe)}
           cpf={(() => { const u = usuarios.find((x) => x.id === detalhe.usuarioId); return u ? mascararCpf(u.cpf) : "***"; })()}
           presenca={presencaDe(detalhe.id)}
+          ficha={usuarios.find((x) => x.id === detalhe.usuarioId)?.fichaEmergencia}
           onFechar={fecharDetalhe}
         />
       )}
@@ -278,8 +281,9 @@ function Participante({ nome, codigo }: { nome: string; codigo: string }) {
   );
 }
 
-function PainelDetalhes({ inscricao, evento, nome, cpf, presenca, onFechar }: {
-  inscricao: Inscricao; evento: Evento; nome: string; cpf: string; presenca: RegistroCheckin | undefined; onFechar: () => void;
+function PainelDetalhes({ inscricao, evento, nome, cpf, presenca, ficha, onFechar }: {
+  inscricao: Inscricao; evento: Evento; nome: string; cpf: string; presenca: RegistroCheckin | undefined;
+  ficha: FichaEmergencia | undefined; onFechar: () => void;
 }) {
   const tipo = evento.tipos.find((t) => t.id === inscricao.tipoId)?.nome ?? "—";
   const lote = inscricao.loteId ? evento.lotes.find((l) => l.id === inscricao.loteId)?.nome ?? "—" : "Sem lote (cortesia)";
@@ -325,6 +329,17 @@ function PainelDetalhes({ inscricao, evento, nome, cpf, presenca, onFechar }: {
             </dl>
             <p className="mt-1 text-xs text-muted-foreground">Mostra entradas já sincronizadas. A inscrição confirmada não significa presença.</p>
           </section>
+          {inscricao.status === "confirmada" && (
+            <section>
+              {/* Só chega aqui com autorização do participante e na semana do evento (visão). */}
+              <ResumoFichaEmergencia ficha={ficha} />
+              {!ficha && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  A ficha aparece de {DIAS_ANTES_DO_EVENTO} dias antes até o fim do evento, se o participante autorizou.
+                </p>
+              )}
+            </section>
+          )}
           <section>
             <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Dados pessoais</h3>
             <dl className="mt-1 divide-y divide-border/60">
