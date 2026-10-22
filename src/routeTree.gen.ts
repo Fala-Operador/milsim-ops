@@ -25,6 +25,7 @@ import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
 import { Route as AdminDivulgacaoRouteImport } from './routes/admin.divulgacao'
 import { Route as AdminGamificacaoRouteImport } from './routes/admin.gamificacao'
 import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
+import { Route as AdminLojaRouteImport } from './routes/admin.loja'
 import { Route as AdminMetricasRouteImport } from './routes/admin.metricas'
 import { Route as AdminNotificacoesRouteImport } from './routes/admin.notificacoes'
 import { Route as AdminPagamentosRouteImport } from './routes/admin.pagamentos'
@@ -140,6 +141,11 @@ const AdminGamificacaoRoute = AdminGamificacaoRouteImport.update({
 const AdminInsightsRoute = AdminInsightsRouteImport.update({
   id: '/insights',
   path: '/insights',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLojaRoute = AdminLojaRouteImport.update({
+  id: '/loja',
+  path: '/loja',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMetricasRoute = AdminMetricasRouteImport.update({
@@ -341,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/gamificacao': typeof AdminGamificacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/loja': typeof AdminLojaRoute
   '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
@@ -392,6 +399,7 @@ export interface FileRoutesByTo {
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/gamificacao': typeof AdminGamificacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/loja': typeof AdminLojaRoute
   '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
@@ -446,6 +454,7 @@ export interface FileRoutesById {
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/gamificacao': typeof AdminGamificacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
+  '/admin/loja': typeof AdminLojaRoute
   '/admin/metricas': typeof AdminMetricasRoute
   '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/pagamentos': typeof AdminPagamentosRoute
@@ -502,6 +511,7 @@ export interface FileRouteTypes {
     | '/admin/divulgacao'
     | '/admin/gamificacao'
     | '/admin/insights'
+    | '/admin/loja'
     | '/admin/metricas'
     | '/admin/notificacoes'
     | '/admin/pagamentos'
@@ -553,6 +563,7 @@ export interface FileRouteTypes {
     | '/admin/divulgacao'
     | '/admin/gamificacao'
     | '/admin/insights'
+    | '/admin/loja'
     | '/admin/metricas'
     | '/admin/notificacoes'
     | '/admin/pagamentos'
@@ -606,6 +617,7 @@ export interface FileRouteTypes {
     | '/admin/divulgacao'
     | '/admin/gamificacao'
     | '/admin/insights'
+    | '/admin/loja'
     | '/admin/metricas'
     | '/admin/notificacoes'
     | '/admin/pagamentos'
@@ -776,6 +788,13 @@ declare module '@tanstack/react-router' {
       path: '/insights'
       fullPath: '/admin/insights'
       preLoaderRoute: typeof AdminInsightsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/loja': {
+      id: '/admin/loja'
+      path: '/loja'
+      fullPath: '/admin/loja'
+      preLoaderRoute: typeof AdminLojaRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/metricas': {
@@ -1038,6 +1057,7 @@ interface AdminRouteChildren {
   AdminDivulgacaoRoute: typeof AdminDivulgacaoRoute
   AdminGamificacaoRoute: typeof AdminGamificacaoRoute
   AdminInsightsRoute: typeof AdminInsightsRoute
+  AdminLojaRoute: typeof AdminLojaRoute
   AdminMetricasRoute: typeof AdminMetricasRoute
   AdminNotificacoesRoute: typeof AdminNotificacoesRoute
   AdminPagamentosRoute: typeof AdminPagamentosRoute
@@ -1054,6 +1074,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDivulgacaoRoute: AdminDivulgacaoRoute,
   AdminGamificacaoRoute: AdminGamificacaoRoute,
   AdminInsightsRoute: AdminInsightsRoute,
+  AdminLojaRoute: AdminLojaRoute,
   AdminMetricasRoute: AdminMetricasRoute,
   AdminNotificacoesRoute: AdminNotificacoesRoute,
   AdminPagamentosRoute: AdminPagamentosRoute,
