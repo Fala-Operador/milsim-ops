@@ -78,7 +78,7 @@ function comparar(a: Impulsionamento, b: Impulsionamento): number {
 export const LIMITE_IMPULSOS_COMPRADOS = 8;
 
 export interface OpcoesExibicao {
-  /** Id do visitante: a ordem dos impulsos comprados é sorteada por visitante e por dia. */
+  /** Id do visitante: a ordem dos impulsos comprados é sorteada por visitante e a cada 15 minutos. */
   semente?: string | undefined;
   /** Só eventos que passam aqui disputam as vagas (ex.: busca e filtros da listagem). */
   filtro?: ((eventoId: string) => boolean) | undefined;
@@ -91,8 +91,11 @@ function sorteio(texto: string): number {
   return h >>> 0;
 }
 
-/** Dia no fuso de Brasília (o rodízio muda à meia-noite). */
-const diaDoRodizio = (agora: Date) => agora.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+/** Minutos de cada rodada do rodízio: a ordem dos impulsos comprados é sorteada de novo a cada rodada. */
+export const RODADA_RODIZIO_MIN = 15;
+
+/** Número da rodada atual (00, 15, 30 e 45 de cada hora). */
+const rodadaDoRodizio = (agora: Date) => Math.floor(agora.getTime() / (RODADA_RODIZIO_MIN * 60_000));
 
 /** O evento fica na área escolhida pelo visitante (preferência no rodízio; nacional não prefere ninguém). */
 function eventoNaArea(e: Evento | undefined, local: Abrangencia): boolean {
@@ -117,13 +120,13 @@ function candidatasNaPosicao(base: BaseDados, posicao: string, local: Abrangenci
  * Campanhas exibidas numa posição para o local escolhido; um evento aparece uma vez só.
  * As da administração vêm primeiro, na ordem estável. Os impulsos comprados entram num
  * rodízio: no máximo LIMITE_IMPULSOS_COMPRADOS por bloco, eventos da área do visitante
- * primeiro e, entre eles, ordem sorteada por visitante e por dia, para que todos os
+ * primeiro e, entre eles, ordem sorteada por visitante a cada 15 minutos, para que todos os
  * organizadores que pagaram tenham chances parecidas de aparecer.
  */
 export function campanhasNaPosicao(base: BaseDados, posicao: string, local: Abrangencia, agora: Date, opcoes: OpcoesExibicao = {}): Impulsionamento[] {
   const candidatas = candidatasNaPosicao(base, posicao, local, agora).filter((c) => !opcoes.filtro || opcoes.filtro(c.eventoId));
   const daAdministracao = candidatas.filter((c) => !c.impulsoId);
-  const chave = `${opcoes.semente ?? ""}:${diaDoRodizio(agora)}:${posicao}`;
+  const chave = `${opcoes.semente ?? ""}:${rodadaDoRodizio(agora)}:${posicao}`;
   const evento = (id: string) => base.eventos.find((e) => e.id === id);
   const compradas = candidatas
     .filter((c) => c.impulsoId)
@@ -195,7 +198,7 @@ export function diagnosticarPosicao(base: BaseDados, posicao: string, local: Abr
         const vencedora = exibidas.find((x) => x.eventoId === c.eventoId);
         motivos.push(
           vencedora ? "Outra campanha da mesma operação tem precedência (a operação aparece uma vez só)."
-            : c.impulsoId ? `Fora do rodízio desta prévia: até ${LIMITE_IMPULSOS_COMPRADOS} impulsos comprados por bloco, sorteados por visitante e por dia.`
+            : c.impulsoId ? `Fora do rodízio desta prévia: até ${LIMITE_IMPULSOS_COMPRADOS} impulsos comprados por bloco, sorteados por visitante a cada ${RODADA_RODIZIO_MIN} minutos.`
             : "Não atende às regras de exibição.",
         );
       }

@@ -3,7 +3,7 @@ import { restaurarBase } from "./baseTeste";
 import type { BaseDados, Usuario } from "@/lib/domain/types";
 import { POSICAO_LISTAGEM } from "@/lib/domain/types";
 import { impulsosDaOrganizacao, pendenciasUso, planosDeImpulso, statusDoImpulso } from "@/lib/impulsos";
-import { campanhasNaPosicao } from "@/lib/impulsionamento";
+import { RODADA_RODIZIO_MIN, campanhasNaPosicao } from "@/lib/impulsionamento";
 import { NACIONAL } from "@/lib/divulgacao";
 import { visaoParaUsuario } from "@/lib/visao";
 import {
@@ -173,12 +173,22 @@ describe("rodízio dos impulsos comprados", () => {
     expect(r.filter((c) => c.impulsoId)).toHaveLength(8);
   });
 
-  it("ordem muda por visitante e é estável para o mesmo visitante no mesmo dia", () => {
+  it("ordem muda por visitante e é estável para o mesmo visitante na mesma rodada", () => {
     comMuitosImpulsos(12);
     const ids = (s: string) => campanhasNaPosicao(base, POSICAO_LISTAGEM, NACIONAL, depois, { semente: s }).map((c) => c.eventoId).join();
     expect(ids("vis-a")).toBe(ids("vis-a"));
     const diferentes = new Set(["vis-a", "vis-b", "vis-c", "vis-d", "vis-e"].map(ids));
     expect(diferentes.size).toBeGreaterThan(1);
+  });
+
+  it("ordem é sorteada de novo a cada 15 minutos", () => {
+    comMuitosImpulsos(12);
+    const rodada = RODADA_RODIZIO_MIN * 60_000;
+    const inicio = new Date(Math.floor(depois.getTime() / rodada) * rodada);
+    const ids = (quando: Date) => campanhasNaPosicao(base, POSICAO_LISTAGEM, NACIONAL, quando, { semente: "vis-a" }).map((c) => c.eventoId).join();
+    expect(ids(new Date(inicio.getTime() + rodada - 1))).toBe(ids(inicio));
+    const rodadas = new Set([0, 1, 2, 3, 4].map((k) => ids(new Date(inicio.getTime() + k * rodada))));
+    expect(rodadas.size).toBeGreaterThan(1);
   });
 
   it("eventos da área do visitante vêm primeiro", () => {
