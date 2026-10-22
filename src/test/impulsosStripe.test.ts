@@ -82,6 +82,9 @@ describe("imagens e catálogo dos tipos", () => {
     expect(imagemPlanoValida("http://inseguro.com/a.png")).toBe(false);
     expect(imagemAbsoluta("/impulsos/7d.jpg", "https://milsimops.falaoperador.com.br")).toBe("https://milsimops.falaoperador.com.br/impulsos/7d.jpg");
     expect(imagemAbsoluta("/impulsos/7d.jpg", "http://localhost:3000")).toBeUndefined();
+    // Atrás do proxy o servidor vê http; o público acessa por https.
+    expect(imagemAbsoluta("/impulsos/7d.jpg", "http://milsimops.falaoperador.com.br")).toBe("https://milsimops.falaoperador.com.br/impulsos/7d.jpg");
+    expect(imagemAbsoluta("/impulsos/7d.jpg", "http://127.0.0.1:3000")).toBeUndefined();
   });
 
   it("preço do Stripe deixa de valer quando o tipo muda depois da sincronização", () => {
