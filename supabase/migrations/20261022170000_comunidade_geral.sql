@@ -186,6 +186,23 @@ begin
   end loop;
 end $$;
 
+-- Realtime: toda tabela de public fica na publicação supabase_realtime (ver
+-- 20261022153000_realtime_todas_as_tabelas.sql). O navegador continua sem ler nada: RLS sem
+-- policies e nenhum grant para anon/authenticated. "for all tables" já cobre (e não aceita add).
+do $$
+declare t text;
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not (select puballtables from pg_publication where pubname = 'supabase_realtime') then
+    foreach t in array array['social_posts', 'social_post_images', 'social_likes', 'social_follows', 'social_blocks', 'social_reports'] loop
+      if not exists (select 1 from pg_publication_tables p
+                      where p.pubname = 'supabase_realtime' and p.schemaname = 'public' and p.tablename = t) then
+        execute format('alter publication supabase_realtime add table public.%I', t);
+      end if;
+    end loop;
+  end if;
+end $$;
+
 -- users.social_private mudou por SQL (contas menores): invalida o cache dos servidores.
 update public.base_control set version = version + 1 where id = 1;
 
