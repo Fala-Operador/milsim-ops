@@ -1,4 +1,4 @@
-// Administração → Página inicial e divulgação → Impulsionamentos: preço, validade e venda
+// Administração → Loja da plataforma → Impulsos de operações: preço, validade e venda
 // dos tipos de impulso, e as compras feitas pelas organizações.
 import { useEffect, useState } from "react";
 import { ImageUp } from "lucide-react";

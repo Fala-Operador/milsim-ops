@@ -9,7 +9,7 @@
 | Método | `POST` |
 | Acesso | Somente admin |
 
-Cria ou atualiza no catálogo do Stripe da plataforma o produto de cada um dos seis tipos de impulso (botão "Sincronizar com o Stripe" em Página inicial e divulgação → Impulsionamentos).
+Cria ou atualiza no catálogo do Stripe da plataforma o produto de cada um dos seis tipos de impulso (botão "Sincronizar com o Stripe" em Loja da plataforma → Impulsos de operações).
 
 ## Entrada
 
