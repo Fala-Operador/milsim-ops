@@ -5,6 +5,7 @@
 // validação fica em `validacao`, só para uso interno.
 import { entradaAtiva } from "@/lib/checkin";
 import { CONTORNOS_UF } from "@/data/mapaBrasil";
+import { NOMES_UF } from "@/lib/localizacao";
 import type {
   BaseDados, CampanhaRecompensa, ConcessaoInsignia, CriterioInsignia, Evento, Insignia, Voucher,
 } from "@/lib/domain/types";
@@ -27,12 +28,7 @@ export interface Participacao {
 
 export const UFS_VALIDAS = new Set(Object.keys(CONTORNOS_UF));
 
-export const NOMES_UF: Record<string, string> = {
-  AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia", CE: "Ceará", DF: "Distrito Federal",
-  ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão", MT: "Mato Grosso", MS: "Mato Grosso do Sul", MG: "Minas Gerais",
-  PA: "Pará", PB: "Paraíba", PR: "Paraná", PE: "Pernambuco", PI: "Piauí", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte",
-  RS: "Rio Grande do Sul", RO: "Rondônia", RR: "Roraima", SC: "Santa Catarina", SP: "São Paulo", SE: "Sergipe", TO: "Tocantins",
-};
+export { NOMES_UF };
 
 /** UF do local registrado no evento (nunca do participante ou do aparelho). */
 export function ufDoEvento(evento: Pick<Evento, "uf">): string | undefined {
