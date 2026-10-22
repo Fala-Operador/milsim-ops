@@ -375,6 +375,9 @@ Código: `src/lib/divulgacao.ts`, `src/lib/impulsionamento.ts`.
 - Seções (admin): destaques, regional, patrocinadores, apoiadores e banner; cada uma com
   abrangência (nacional, região, estado ou cidade), agendamento e curadoria manual ou seleção
   automática. A elegibilidade é recalculada a cada carregamento (não há agendador).
+- "Operações em destaque" vem acima de qualquer outra lista da página inicial: primeiro o bloco de
+  impulsos da listagem, depois as seções do tipo destaques; só então "Operações para você", a
+  listagem comum e as demais seções.
 - Links de parceiros: só http/https; Instagram normalizado para `https://www.instagram.com/<perfil>/`;
   WhatsApp com DDI. Imagens precisam de texto alternativo.
 - **Impulsionamento** (admin): o evento ganha prioridade em seções escolhidas, num período e numa região.
