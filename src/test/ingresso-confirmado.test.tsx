@@ -5,6 +5,13 @@ import type { Inscricao } from "@/lib/domain/types";
 const consultarEntrada = vi.fn();
 vi.mock("@/api/checkin.functions", () => ({ consultarEntrada: (id: string) => consultarEntrada(id) }));
 vi.mock("@/services/checkin", () => ({ tokenDaInscricao: () => "Ttoken" }));
+const avisosTempoReal = new Set<(versao: number) => void>();
+vi.mock("@/services/tempoReal", () => ({
+  aoMudarBase: (o: (versao: number) => void) => {
+    avisosTempoReal.add(o);
+    return () => avisosTempoReal.delete(o);
+  },
+}));
 vi.mock("qrcode", () => ({ default: { toDataURL: vi.fn(async () => "data:image/png;base64,AAAA") } }));
 
 import { IngressoQr } from "@/components/IngressoQr";
@@ -30,7 +37,7 @@ describe("QR Code do ingresso", () => {
     expect(screen.getByAltText(/QR Code de entrada/)).toBeTruthy();
     expect(screen.queryByText("Entrada confirmada")).toBeNull();
 
-    await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
     expect(screen.getByText("Entrada confirmada")).toBeTruthy();
     expect(screen.queryByAltText(/QR Code de entrada/)).toBeNull();
 
@@ -38,6 +45,17 @@ describe("QR Code do ingresso", () => {
     expect(onFechar).not.toHaveBeenCalled();
     await act(async () => { await vi.advanceTimersByTimeAsync(1_000); });
     expect(onFechar).toHaveBeenCalledTimes(1);
+  });
+
+  it("confere a entrada na hora quando o tempo real avisa uma gravação", async () => {
+    consultarEntrada.mockResolvedValueOnce({ confirmada: false });
+    consultarEntrada.mockResolvedValue({ confirmada: true, em: "2026-10-22T14:00:00.000Z" });
+    render(<IngressoQr inscricao={inscricao} evento={undefined} usuarioId="u1" onFechar={() => {}} />);
+    await act(async () => {});
+    expect(screen.queryByText("Entrada confirmada")).toBeNull();
+
+    await act(async () => { avisosTempoReal.forEach((o) => o(42)); });
+    expect(screen.getByText("Entrada confirmada")).toBeTruthy();
   });
 
   it("segue mostrando o QR quando a consulta falha (ex.: sem sinal)", async () => {

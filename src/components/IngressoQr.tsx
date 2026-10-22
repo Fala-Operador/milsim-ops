@@ -7,18 +7,23 @@ import { Modal } from "@/components/ui";
 import { conteudoQr } from "@/lib/checkin";
 import { tokenDaInscricao } from "@/services/checkin";
 import { consultarEntrada } from "@/api/checkin.functions";
+import { aoMudarBase } from "@/services/tempoReal";
 import { guardarArquivosApp } from "@/lib/sw";
 import { storage } from "@/lib/storage";
 import { formatarDataBR } from "@/lib/domain/money";
 import type { Evento, Inscricao } from "@/lib/domain/types";
 
-/** A cada quantos ms o modal pergunta se a portaria já confirmou a entrada. */
-const INTERVALO_CONSULTA_MS = 3000;
+/**
+ * A cada quantos ms o modal pergunta se a portaria já confirmou a entrada. O tempo real
+ * avisa na hora (cada gravação na base); a consulta periódica cobre conexão do Realtime caída.
+ */
+const INTERVALO_CONSULTA_MS = 10_000;
 /** Depois da confirmação, o modal fecha sozinho após este tempo. */
 const FECHAR_APOS_S = 15;
 
 /**
- * Enquanto o QR Code está aberto, pergunta ao servidor se a entrada foi confirmada.
+ * Enquanto o QR Code está aberto, pergunta ao servidor se a entrada foi confirmada:
+ * na hora, a cada gravação avisada pelo tempo real, e periodicamente como reserva.
  * Só consulta com a aba visível; falhas (ex.: sem sinal no local) são ignoradas e a
  * próxima tentativa segue normalmente.
  */
@@ -28,24 +33,32 @@ function useEntradaConfirmada(inscricaoId: string): string | null {
     if (em) return;
     let ativo = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let emCurso = false;
+    let deNovo = false; // aviso chegou durante uma consulta: consulta outra vez em seguida
     const consultar = async () => {
+      if (emCurso) { deNovo = true; return; }
+      emCurso = true;
+      deNovo = false;
+      clearTimeout(timer);
       if (document.visibilityState === "visible" && navigator.onLine !== false) {
         try {
           const r = await consultarEntrada(inscricaoId);
           if (ativo && r.confirmada) return setEm(r.em ?? new Date().toISOString());
         } catch { /* sem conexão ou falha momentânea: tenta de novo */ }
       }
-      if (ativo) timer = setTimeout(consultar, INTERVALO_CONSULTA_MS);
+      emCurso = false;
+      if (ativo) timer = setTimeout(consultar, deNovo ? 0 : INTERVALO_CONSULTA_MS);
     };
     void consultar();
     const aoVoltar = () => {
       if (document.visibilityState !== "visible") return;
-      clearTimeout(timer);
       void consultar();
     };
     document.addEventListener("visibilitychange", aoVoltar);
+    const pararTempoReal = aoMudarBase(() => void consultar());
     return () => {
       ativo = false;
+      pararTempoReal();
       clearTimeout(timer);
       document.removeEventListener("visibilitychange", aoVoltar);
     };
