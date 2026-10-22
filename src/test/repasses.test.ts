@@ -5,7 +5,7 @@ import { restaurarBase } from "@/test/baseTeste";
 import { confirmarInscricao, confirmarPagamentoNaBase } from "@/services/inscricoes";
 import { definirTaxaCompradorNaBase, definirTaxaPlataformaNaBase, descartarContaDeOutroModoNaBase, registrarRecebimentoNaBase } from "@/services/repasses";
 import { contaDeOutroModo, contaInacessivel, destinoInvalido, mensagemDeFalhaStripe, MSG_FALHA_STRIPE, ocultarChaves } from "@/lib/stripe";
-import { contaParaRepasse, descreverCronograma, MCC_EVENTOS, MSG_SEM_RECEBIMENTO, perfilComercialPadrao, precisaPerfilComercial, recebimentoDaConta, resumoRepasse, resumoSaldo, taxaDaPlataforma, taxaDoComprador, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
+import { contaExistenteDaOrganizacao, contaParaRepasse, descreverCronograma, MCC_EVENTOS, MSG_SEM_RECEBIMENTO, perfilComercialPadrao, precisaPerfilComercial, recebimentoDaConta, resumoRepasse, resumoSaldo, taxaDaPlataforma, taxaDoComprador, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
 import { visaoParaUsuario } from "@/lib/visao";
 import type { BaseDados, Evento } from "@/lib/domain/types";
 
@@ -263,5 +263,21 @@ describe("troca do modo do Stripe (teste → produção)", () => {
     expect(org().recebimento?.contaId).toBe("acct_1");
     descartarContaDeOutroModoNaBase(base, org().id, "acct_1");
     expect(org().recebimento).toBeUndefined();
+  });
+});
+
+describe("uma conta de recebimento por organização", () => {
+  const conta = (id: string, org: string, created: number, extra: Partial<ContaStripe> = {}): ContaStripe => ({ id, metadata: { organizacaoId: org }, created, ...extra });
+
+  it("reaproveita a conta da própria organização, preferindo a que avançou no cadastro", () => {
+    const contas = [conta("acct_a", "org-1", 1), conta("acct_b", "org-1", 2, { details_submitted: true, charges_enabled: true }), conta("acct_c", "org-2", 0)];
+    expect(contaExistenteDaOrganizacao(contas, "org-1")?.id).toBe("acct_b");
+    expect(contaExistenteDaOrganizacao(contas.slice(0, 1).concat(conta("acct_d", "org-1", 3)), "org-1")?.id).toBe("acct_a");
+    expect(contaExistenteDaOrganizacao(contas, "org-3")).toBeUndefined();
+    expect(contaExistenteDaOrganizacao([{ id: "acct_x" }], "org-1")).toBeUndefined();
+  });
+
+  it("não volta para a conta que acabou de ser descartada", () => {
+    expect(contaExistenteDaOrganizacao([conta("acct_a", "org-1", 1)], "org-1", "acct_a")).toBeUndefined();
   });
 });

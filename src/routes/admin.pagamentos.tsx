@@ -76,7 +76,10 @@ function Pagamentos() {
             const Icone = r ? ICONE[r.status] : Clock;
             return (
               <li key={o.id} className="flex flex-col gap-1 rounded-md border border-border px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                <span className="min-w-0 break-words text-sm font-medium">{o.nome}</span>
+                <span className="min-w-0 break-words text-sm font-medium">
+                  {o.nome}
+                  {r && <span className="block font-mono text-xs font-normal text-muted-foreground">{r.contaId}</span>}
+                </span>
                 {r ? (
                   <Badge variant={TOM[r.status]} aria-label={`Recebimentos: ${ROTULO_RECEBIMENTO[r.status]}`}><Icone aria-hidden="true" />{ROTULO_RECEBIMENTO[r.status]}</Badge>
                 ) : (
