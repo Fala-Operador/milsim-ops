@@ -219,10 +219,11 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
   editor de eventos avisam a organização que ela precisa concluir a conta de recebimento. Inscrições gratuitas e
   cortesias seguem normais.
 - A **taxa** (%) é definida pelo admin e vale para reservas novas; cada venda guarda a taxa do momento.
-- A **taxa de serviço do comprador** (%, padrão 0%) também é definida pelo admin: é somada ao valor do
-  ingresso no checkout como o item "Taxa de serviço", aparece na revisão da inscrição e fica com a
-  plataforma, sem mudar o que a organização recebe. Ex.: ingresso de R$ 100,00 com 3,5% do comprador e
-  3,5% da organização: o comprador paga R$ 103,50, a organização recebe R$ 96,50 e a plataforma R$ 7,00.
+- A **taxa de serviço do comprador** (%, padrão 0%) é definida por **cada organização** no Financeiro:
+  é somada ao valor do ingresso no checkout como o item "Taxa de serviço", aparece na revisão da
+  inscrição e é repassada à organização junto com a venda. Ex.: ingresso de R$ 100,00 com 3,5% do
+  comprador e 3,5% da plataforma: o comprador paga R$ 103,50, a organização recebe R$ 100,00 e a
+  plataforma R$ 3,50.
 - Reembolso de venda repassada desfaz a transferência e devolve a taxa.
 - Ao trocar as chaves do Stripe de teste para produção, a conta de recebimento criada no modo de teste
   (ou numa sandbox, que é outra conta de plataforma) é esquecida na primeira consulta e a organização

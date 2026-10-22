@@ -50,6 +50,8 @@ export interface Organizacao {
   criadoEm: string;
   /** Conta conectada (Stripe Connect Express) que recebe o repasse das vendas. */
   recebimento?: RecebimentoOrganizacao | undefined;
+  /** Taxa de serviço (%) somada ao ingresso e paga pelo comprador; fica com a organização (vazio = 0). */
+  taxaCompradorPercentual?: number | undefined;
 }
 
 /**
@@ -238,7 +240,7 @@ export interface PagamentoInscricao {
   contaDestino?: string | undefined;
   /** Taxa da plataforma retida no repasse, em centavos. */
   taxaCentavos?: number | undefined;
-  /** Taxa de serviço paga pelo comprador além do valor do ingresso, em centavos (fica com a plataforma). */
+  /** Taxa de serviço paga pelo comprador além do valor do ingresso, em centavos (repassada à organização). */
   taxaCompradorCentavos?: number | undefined;
   /** Contestação (chargeback) aberta pelo comprador no banco do cartão. */
   disputa?: DisputaPagamento | undefined;
