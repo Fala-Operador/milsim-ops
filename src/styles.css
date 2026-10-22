@@ -292,3 +292,15 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Confirmação de entrada no QR Code do ingresso: círculo e "check" se desenhando */
+@keyframes desenhar-traco {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes pulso-confirmacao {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-success) 45%, transparent); }
+  100% { box-shadow: 0 0 0 28px transparent; }
+}
+.entrada-confirmada { animation: pulso-confirmacao 1.2s ease-out 0.5s 2; }
+.entrada-confirmada .circulo { stroke-dasharray: 160; stroke-dashoffset: 160; animation: desenhar-traco 0.6s ease-out forwards; }
+.entrada-confirmada .check { stroke-dasharray: 48; stroke-dashoffset: 48; animation: desenhar-traco 0.4s ease-out 0.5s forwards; }

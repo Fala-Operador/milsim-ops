@@ -113,7 +113,7 @@ const usuarioAtivo = (base: BaseDados, id: string | null) =>
   (id && base.usuarios.find((u) => u.id === id && u.ativo)) || null;
 
 /** Erros de regra chegam ao navegador com a mensagem; os demais viram mensagem genérica. */
-function tratarErro(e: unknown): never {
+export function tratarErro(e: unknown): never {
   if (e instanceof ErroDominio) throw new Error(e.message);
   console.error(e);
   throw new Error("Não foi possível concluir a operação. Tente novamente.");
