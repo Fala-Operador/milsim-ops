@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import * as auth from "@/server/auth.server";
+import { configRealtimeNavegador } from "@/server/supabase.server";
 import { consultar, contextoSomenteLeitura, ler } from "@/server/unidade.server";
 import { stripeConfigurado } from "@/server/stripe.server";
 import { chaveSiteTurnstile } from "@/server/turnstile.server";
@@ -31,6 +32,9 @@ export const obterEventoFn = createServerFn({ method: "GET" })
 
 // Token do Cloudflare Turnstile, repassado ao CAPTCHA do Supabase Auth.
 const captcha = z.string().max(4096).optional();
+
+// Canal público do sinal de versão (src/services/tempoReal.ts): só URL e chave publicável.
+export const obterConfigRealtimeFn = createServerFn({ method: "GET" }).handler(() => configRealtimeNavegador());
 
 export const obterConfigTurnstileFn = createServerFn({ method: "GET" }).handler(() => ({
   chaveSite: chaveSiteTurnstile(),
@@ -74,6 +78,7 @@ export const definirNovaSenhaFn = createServerFn({ method: "POST" })
 // ---------- Uso no navegador ----------
 export const recarregarVisao = () => chamar(obterVisaoFn());
 export const obterConfigTurnstile = () => obterConfigTurnstileFn();
+export const obterConfigRealtime = () => obterConfigRealtimeFn();
 export const entrar = (email: string, senha: string, captcha?: string) =>
   chamar(entrarFn({ data: { email, senha, captcha } }));
 export const sair = () => chamar(sairFn());

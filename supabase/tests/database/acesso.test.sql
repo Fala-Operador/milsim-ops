@@ -2,7 +2,7 @@
 -- banco, então anon e authenticated não podem ler nem gravar nada e só service_role executa
 -- as RPCs do servidor. Roda com `supabase test db` sobre todas as migrations aplicadas do zero.
 begin;
-select plan(11);
+select plan(14);
 
 select is(
   (select array_agg(t order by t) from unnest(public.base_tables()) t
@@ -73,6 +73,30 @@ select is(
   null,
   'nenhuma coluna json/jsonb em public: listas e objetos ficam em tabelas próprias'
 );
+
+-- Realtime: toda tabela de public publicada (o navegador continua sem ler nada, pelas regras
+-- acima); o site atualiza pelo sinal de versão de base_control.
+select is(
+  (select array_agg(c.relname::text order by c.relname) from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind = 'r'
+     and not exists (select 1 from pg_publication_tables p
+                      where p.pubname = 'supabase_realtime' and p.schemaname = 'public' and p.tablename = c.relname)),
+  null,
+  'toda tabela de public está na publicação supabase_realtime (inclua tabelas novas numa migration)'
+);
+
+select is(
+  (select array_agg(c.relname::text order by c.relname) from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind = 'r'
+     and (c.relreplident = 'n' or (c.relreplident = 'd'
+       and not exists (select 1 from pg_index i where i.indrelid = c.oid and i.indisprimary)))),
+  null,
+  'toda tabela de public tem chave primária ou replica identity (publicada sem ela, UPDATE/DELETE falham)'
+);
+
+select has_trigger('public', 'base_control', 'base_control_notify_version', 'base_control avisa o site a cada versão nova');
 
 select * from finish();
 rollback;
