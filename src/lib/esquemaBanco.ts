@@ -94,7 +94,7 @@ export const ESQUEMA = {
     tabela: "organizations", chave: ["id"],
     campos: {
       id: "id", nome: "name", cnpj: "cnpj", instagram: "instagram", telefone: "phone",
-      responsavelId: "owner_id", status: "status", criadoEm: "created_at",
+      responsavelId: "owner_id", status: "status", criadoEm: "created_at", taxaCompradorPercentual: "buyer_fee_percent",
       recebimento: objeto("organization_payout_accounts", ["organization_id"], {
         provedor: "provider", contaId: "account_id", status: "status", transferenciasAtivas: "transfers_enabled",
         saquesAtivos: "payouts_enabled", atualizadoEm: "updated_at",

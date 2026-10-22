@@ -207,12 +207,11 @@ function pagamentoInicial(
   valorCentavos: number,
   agora: Date,
 ): PagamentoInscricao {
-  const contaDestino = contaParaRepasse(
-    base.organizacoes.find((o) => o.id === evento.organizacaoId),
-  );
+  const org = base.organizacoes.find((o) => o.id === evento.organizacaoId);
+  const contaDestino = contaParaRepasse(org);
   if (!contaDestino) throw new ErroDominio("sem_recebimento", MSG_SEM_RECEBIMENTO);
-  // Taxa de serviço do comprador: somada ao ingresso no checkout, sempre fica com a plataforma.
-  const taxaComprador = taxaPlataforma(valorCentavos, taxaDoComprador(base));
+  // Taxa de serviço do comprador, definida pela organização: somada ao ingresso e repassada a ela.
+  const taxaComprador = taxaPlataforma(valorCentavos, taxaDoComprador(org));
   return {
     provedor: "stripe",
     status: "aguardando",

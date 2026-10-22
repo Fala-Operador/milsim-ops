@@ -114,26 +114,30 @@ describe("taxa configurada pela administração", () => {
     expect((await reservar()).pagamento?.taxaCentavos).toBe(1000);
   });
 
-  it("taxa do comprador começa em 0%, valida e audita", () => {
-    expect(taxaDoComprador(base)).toBe(0);
-    expect(() => definirTaxaCompradorNaBase(base, 60, "usr-admin")).toThrow(/entre 0% e 50%/);
-    definirTaxaCompradorNaBase(base, 3.5, "usr-admin");
-    expect(base.configuracoes).toHaveLength(1);
-    expect(taxaDoComprador(base)).toBe(3.5);
+  it("taxa do comprador é da organização: começa em 0%, valida, só quem gere altera e audita", () => {
+    expect(taxaDoComprador(org())).toBe(0);
+    expect(() => definirTaxaCompradorNaBase(base, org().id, 60, usuario("usr-organizador"))).toThrow(/entre 0% e 50%/);
+    expect(() => definirTaxaCompradorNaBase(base, org().id, 3.5, usuario("usr-participante"))).toThrow(/Apenas a organização/);
+    expect(() => definirTaxaCompradorNaBase(base, org().id, 3.5, null)).toThrow(/Apenas a organização/);
+    definirTaxaCompradorNaBase(base, org().id, 3.5, usuario("usr-organizador"));
+    expect(taxaDoComprador(org())).toBe(3.5);
+    expect(base.configuracoes[0]?.taxaCompradorPercentual).toBeUndefined();
     expect(taxaDaPlataforma(base)).toBe(10);
-    expect(base.auditoria.at(-1)).toMatchObject({ acao: "taxa_comprador", justificativa: "Taxa de serviço do comprador alterada de 0% para 3.5%." });
+    expect(base.auditoria.at(-1)).toMatchObject({ acao: "taxa_comprador", entidade: "organizacao", entidadeId: org().id, justificativa: "Taxa de serviço do comprador alterada de 0% para 3.5%." });
+    definirTaxaCompradorNaBase(base, org().id, 2, usuario("usr-admin"));
+    expect(taxaDoComprador(org())).toBe(2);
   });
 
-  it("taxa do comprador vai na reserva e não muda o repasse", async () => {
+  it("taxa do comprador vai na reserva e é repassada à organização", async () => {
     registrarRecebimentoNaBase(base, org().id, contaAtiva);
     expect((await reservar()).pagamento?.taxaCompradorCentavos).toBeUndefined();
     base.inscricoes = [];
-    definirTaxaCompradorNaBase(base, 5, "usr-admin");
+    definirTaxaCompradorNaBase(base, org().id, 5, usuario("usr-organizador"));
     const ins = await reservar();
     expect(ins.pagamento).toMatchObject({ valorCentavos: 20000, taxaCentavos: 2000, taxaCompradorCentavos: 1000, contaDestino: "acct_1" });
     Object.assign(ins, { status: "confirmada" });
     Object.assign(ins.pagamento!, { status: "pago" });
-    expect(resumoRepasse(base, EVT)).toMatchObject({ cobrado: 20000, taxas: 2000, taxasComprador: 1000, repassado: 18000 });
+    expect(resumoRepasse(base, EVT)).toMatchObject({ cobrado: 20000, taxas: 2000, taxasComprador: 1000, repassado: 19000 });
   });
 
   it("taxa chega à administração e aos organizadores, não aos participantes", () => {
