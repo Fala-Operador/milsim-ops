@@ -39,7 +39,7 @@ jobs:
       AMBIENTE: ${{ inputs.ambiente }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || (inputs.ambiente == 'production' && 'fezrmoyjsffufdjptamp' || '') }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF || (inputs.ambiente == 'production' && 'fezrmoyjsffufdjptamp' || '') }}
     steps:
       - uses: actions/checkout@v4
 
