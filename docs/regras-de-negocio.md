@@ -358,7 +358,8 @@ Código: `src/lib/divulgacao.ts`, `src/lib/impulsionamento.ts`.
   - Campanhas nunca são apagadas; encerrada não é editada.
 - **Impulsos comprados** (organização): `src/lib/impulsos.ts`, página `/organizacao/impulsos`.
   - Seis tipos: 24h, 3, 5, 7, 15 e 30 dias. Preço, validade (padrão 30 dias) e venda de cada tipo
-    são definidos pela administração; a compra guarda os valores do momento.
+    são definidos pela administração em **Loja da plataforma** (`/admin/loja`, seção Impulsos de operações);
+    a compra guarda os valores do momento.
   - Cada tipo tem imagem (padrão tema airsoft em `public/impulsos`, trocável pela administração) e é um
     produto do catálogo do Stripe da plataforma (`milsim_impulso_<tipo>`), atualizado ao salvar; valor novo
     gera preço novo e arquiva o antigo.

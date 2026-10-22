@@ -9,7 +9,7 @@
 | Método | `POST` |
 | Acesso | Somente admin |
 
-Define preço, validade, imagem e venda dos tipos de impulso (Administração → Página inicial e divulgação → Impulsionamentos).
+Define preço, validade, imagem e venda dos tipos de impulso (Administração → Loja da plataforma → Impulsos de operações).
 
 ## Entrada
 
