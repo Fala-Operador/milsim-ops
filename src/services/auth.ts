@@ -15,6 +15,7 @@ import {
 import { validarFoto } from "@/services/conta";
 import type { Usuario } from "@/lib/domain/types";
 import { erroSenha } from "@/lib/domain/senha";
+import { erroFicha, montarFicha, type DadosFicha } from "@/lib/fichaEmergencia";
 
 export interface DadosCadastro {
   cpf: string;
@@ -37,6 +38,8 @@ export interface DadosCadastro {
   aceiteTermos: boolean;
   cienciaPrivacidade: boolean;
   autorizacaoPromocional: boolean;
+  /** Opcional: pode ser preenchida depois em Meu perfil › Ficha de emergência. */
+  fichaEmergencia?: DadosFicha | undefined;
 }
 
 export { SENHA_MINIMA } from "@/lib/domain/senha";
@@ -62,6 +65,8 @@ export function validarCadastro(dados: DadosCadastro) {
   if (idade < IDADE_MINIMA) {
     throw new ErroDominio("idade", `É necessário ter ao menos ${IDADE_MINIMA} anos.`);
   }
+  const problemaFicha = dados.fichaEmergencia ? erroFicha(dados.fichaEmergencia) : "";
+  if (problemaFicha) throw new ErroDominio("ficha_emergencia", problemaFicha);
   return { email, cpf, whatsapp, idade };
 }
 
@@ -105,6 +110,7 @@ export function registrarPerfil(id: string, dados: DadosCadastro): Usuario {
       aceiteTermosEm: new Date().toISOString(),
       ativo: true,
       criadoEm: new Date().toISOString(),
+      fichaEmergencia: dados.fichaEmergencia ? montarFicha(dados.fichaEmergencia, undefined) : undefined,
     };
     base.usuarios.push(usuario);
     return usuario;

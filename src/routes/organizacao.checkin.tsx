@@ -24,6 +24,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Label } from "@/components/ui/label";
+import { ResumoFichaEmergencia } from "@/components/perfil/FichaEmergencia";
 
 export const Route = createFileRoute("/organizacao/checkin")({
   head: () => ({
@@ -249,6 +250,9 @@ function CartaoResultado({ r, offline }: { r: ResultadoValidacao; offline: boole
       {r.tipo === "ja_realizado" && <p className="mt-1 text-base">Entrada registrada às <strong>{hora(r.em)}</strong> ({dataHora(r.em)}).</p>}
       {r.tipo === "valido" && offline && <p className="mt-2 font-semibold">Entrada registrada neste aparelho — sincronização pendente.</p>}
       {(r.tipo === "valido" || r.tipo === "ja_realizado") && <PremioDoExercito ingresso={r.ingresso} />}
+      {(r.tipo === "valido" || r.tipo === "ja_realizado") && r.ingresso.emergencia && (
+        <div className="mt-3"><ResumoFichaEmergencia ficha={r.ingresso.emergencia} compacto /></div>
+      )}
     </div>
   );
 }
@@ -313,6 +317,7 @@ function ConferenciaManual({ ingresso, validacao, ocupado, onCancelar, onConfirm
         <div><dt className="text-xs text-muted-foreground">Exército</dt><dd>{ingresso.exercito}</dd></div>
       </dl>
       <PremioDoExercito ingresso={ingresso} />
+      {ingresso.emergencia && <ResumoFichaEmergencia ficha={ingresso.emergencia} compacto />}
       {validacao && !valido ? <CartaoResultado r={validacao} offline={false} /> : (
         <>
           <Textarea placeholder="Motivo do check-in manual (obrigatório) — ex.: celular sem bateria" value={motivo} onChange={(e) => setMotivo(e.target.value)} aria-label="Motivo do check-in manual" />

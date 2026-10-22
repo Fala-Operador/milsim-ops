@@ -6,6 +6,7 @@ import { enviarEntrega } from "@/services/missoes";
 import { normalizarPreferencia, type PreferenciaModalidades } from "@/lib/modalidades";
 import type { Chamado, SolicitacaoPrivacidade, Usuario } from "@/lib/domain/types";
 import type { Tema } from "@/lib/localizacao";
+import { erroFicha, montarFicha, type DadosFicha } from "@/lib/fichaEmergencia";
 
 const agoraIso = () => new Date().toISOString();
 
@@ -120,4 +121,12 @@ export function definirTema(usuario: Usuario, tema: Tema): void {
 
 export function salvarPreferenciaModalidades(usuario: Usuario, p: PreferenciaModalidades): void {
   usuario.preferenciasModalidade = normalizarPreferencia(p);
+}
+
+// ---------- Ficha de emergência ----------
+/** Grava (ou remove, se tudo vazio) a ficha da própria conta. Regras em lib/fichaEmergencia.ts. */
+export function salvarFichaEmergencia(usuario: Usuario, dados: DadosFicha): void {
+  const erro = erroFicha(dados);
+  if (erro) throw new ErroDominio("ficha_emergencia", erro);
+  usuario.fichaEmergencia = montarFicha(dados, usuario.fichaEmergencia);
 }

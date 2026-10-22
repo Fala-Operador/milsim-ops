@@ -26,6 +26,7 @@ Cria a conta de participante: valida os dados, cria o usuário no Supabase Auth 
 | `fotoUrl?` | string (data URL) | Foto opcional; vai para o Storage. |
 | `aceiteTermos, cienciaPrivacidade` | boolean | Obrigatórios (`true`). |
 | `autorizacaoPromocional` | boolean | Consentimento opcional para comunicações. |
+| `fichaEmergencia?` | objeto | Opcional; mesmos campos e regras de [`salvarFichaEmergencia`](../conta/salvarFichaEmergencia.md) (mensagens de erro iguais). |
 | `captcha?` | string | Token do Cloudflare Turnstile, repassado ao CAPTCHA do Supabase Auth (`captchaToken`). Obrigatório quando o CAPTCHA está ligado no Supabase. |
 
 ## Regras

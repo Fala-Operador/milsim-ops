@@ -1,5 +1,5 @@
 // Regras puras do check-in/credenciamento (sem armazenamento, sem React).
-import type { StatusInscricao } from "@/lib/domain/types";
+import type { FichaEmergencia, StatusInscricao } from "@/lib/domain/types";
 
 export type OrigemEntrada = "qr" | "codigo" | "manual";
 export type StatusSync = "pendente" | "sincronizado" | "conflito" | "falhou";
@@ -30,6 +30,8 @@ export interface IngressoCredenciamento {
   tipo: string;
   exercito: string;
   status: StatusInscricao;
+  /** Ficha de emergência, só quando a visão a liberou (autorização + janela do evento). */
+  emergencia?: FichaEmergencia | undefined;
 }
 
 export type ResultadoValidacao =
