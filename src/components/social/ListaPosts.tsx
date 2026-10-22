@@ -8,10 +8,12 @@ import { CartaoPost } from "./CartaoPost";
 
 export type CarregarPagina = (cursor: { antes?: string | undefined; antesId?: string | undefined }) => Promise<PaginaPosts>;
 
-export function ListaPosts({ chave, carregar, vazio }: {
+export function ListaPosts({ chave, carregar, vazio, moderar = false }: {
   chave: readonly unknown[];
   carregar: CarregarPagina;
-  vazio: { titulo: string; descricao?: string };
+  vazio: { titulo: string; descricao?: string | undefined };
+  /** Dono ou moderador do fórum listado: cada post ganha a opção de ocultar. */
+  moderar?: boolean;
 }) {
   const q = useInfiniteQuery({
     queryKey: chave,
@@ -29,7 +31,7 @@ export function ListaPosts({ chave, carregar, vazio }: {
     <div className="space-y-3">
       <ul className="space-y-3">
         {posts.map((p) => (
-          <li key={p.id}><CartaoPost post={p} onMudou={() => void q.refetch()} /></li>
+          <li key={p.id}><CartaoPost post={p} moderar={moderar} onMudou={() => void q.refetch()} /></li>
         ))}
       </ul>
       {q.hasNextPage && (

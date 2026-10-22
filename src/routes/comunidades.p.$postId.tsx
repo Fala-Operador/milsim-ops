@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
-import { lerPost, lerRespostas } from "@/api/social.functions";
+import { lerForum, lerPost, lerRespostas } from "@/api/social.functions";
+import { moderaForum } from "@/lib/comunidadeGeral";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { EstadoVazio, SkeletonCartao } from "@/components/ui";
@@ -27,6 +28,10 @@ function DetalhePost() {
   const qc = useQueryClient();
   const chave = ["social", "post", postId, usuario?.id ?? "visitante"] as const;
   const q = useQuery({ queryKey: chave, queryFn: () => lerPost(postId), retry: false });
+  // Post de fórum: quem modera o fórum pode ocultar o post e as respostas.
+  const forumId = q.data?.post.forumId;
+  const forum = useQuery({ queryKey: ["social", "forum", forumId, usuario?.id ?? "visitante"], queryFn: () => lerForum(forumId!), enabled: !!forumId && !!usuario });
+  const moderar = !!forum.data && moderaForum(forum.data.forum.meuPapel, forum.data.forum.minhaSituacao);
   const voltar = () => (window.history.length > 1 ? router.history.back() : router.navigate({ to: "/comunidades" }));
   const atualizar = () => void qc.invalidateQueries({ queryKey: ["social"] });
 
@@ -48,7 +53,12 @@ function DetalhePost() {
               <CartaoPost post={q.data.pai} onMudou={atualizar} />
             </div>
           )}
-          <CartaoPost post={q.data.post} onMudou={() => { atualizar(); if (q.data.post.proprio) void router.navigate({ to: "/comunidades" }); }} destaque />
+          {forum.data && (
+            <Link to="/comunidades/f/$forumId" params={{ forumId: forum.data.forum.id }} className="inline-block text-xs text-muted-foreground hover:underline">
+              Fórum: {forum.data.forum.nome}
+            </Link>
+          )}
+          <CartaoPost post={q.data.post} moderar={moderar} onMudou={() => { atualizar(); if (q.data.post.proprio) void router.navigate({ to: "/comunidades" }); }} destaque />
           {usuario ? (
             <Compositor respondendoA={postId} placeholder="Escreva sua resposta" onPublicado={atualizar} />
           ) : (
@@ -61,6 +71,7 @@ function DetalhePost() {
             <ListaPosts
               chave={["social", "respostas", postId, usuario?.id ?? "visitante"]}
               carregar={(c) => lerRespostas(postId, c)}
+              moderar={moderar}
               vazio={{ titulo: "Nenhuma resposta ainda" }}
             />
           </section>

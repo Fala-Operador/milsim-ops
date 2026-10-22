@@ -94,7 +94,7 @@ try {
 
 ## Índice
 
-144 server functions em 17 módulos, mais os [webhooks do Stripe](#webhooks).
+157 server functions em 17 módulos, mais os [webhooks do Stripe](#webhooks).
 
 ### Sessão e leitura
 <a id="sessao"></a>
@@ -226,7 +226,7 @@ Fóruns, publicações, respostas, curtidas, denúncias e moderação. Arquivo: 
 ### Comunidade geral
 <a id="social"></a>
 
-Feed estilo Twitter (posts de até 220 caracteres e 4 fotos), seguir, bloqueio, denúncia e moderação. **Fora da base**: leituras paginadas por `social_posts_page()` (sem visão nem `chamar`). Arquivo: [`src/api/social.functions.ts`](../../src/api/social.functions.ts).
+Feed estilo Twitter (posts de até 220 caracteres e 4 fotos), fóruns públicos e privados, seguir, bloqueio, denúncia e moderação. **Fora da base**: leituras paginadas por `social_posts_page()` (sem visão nem `chamar`). Arquivo: [`src/api/social.functions.ts`](../../src/api/social.functions.ts).
 
 | API | Método | Acesso | O que faz |
 |---|---|---|---|
@@ -247,6 +247,19 @@ Feed estilo Twitter (posts de até 220 caracteres e 4 fotos), seguir, bloqueio, 
 | [`denunciarPost`](social/denunciarPost.md) | POST | Qualquer pessoa autenticada e ativa | Denuncia uma publicação para a moderação do admin. |
 | [`resolverDenuncia`](social/resolverDenuncia.md) | POST | Admin | Oculta a publicação denunciada ou descarta a denúncia. |
 | [`definirPerfilComunidade`](social/definirPerfilComunidade.md) | POST | Qualquer pessoa autenticada e ativa | Define o perfil na comunidade geral como público ou privado. |
+| [`lerForuns`](social/lerForuns.md) | POST | Pública | Lista de fóruns ativos (os da pessoa primeiro, depois os mais movimentados). |
+| [`lerForum`](social/lerForum.md) | POST | Pública | Um fórum e se quem vê pode ler o conteúdo. |
+| [`lerPostsDoForum`](social/lerPostsDoForum.md) | POST | Pública (privado: só membros aprovados) | Página de publicações de um fórum. |
+| [`lerMembrosDoForum`](social/lerMembrosDoForum.md) | POST | Membros aprovados: quem lê o fórum; pedidos: dono e moderadores | Membros aprovados ou pedidos pendentes de um fórum. |
+| [`criarForum`](social/criarForum.md) | POST | Qualquer pessoa autenticada e ativa | Cria um fórum; quem cria vira o dono. |
+| [`editarForum`](social/editarForum.md) | POST | Dono do fórum | Altera nome, descrição e visibilidade. |
+| [`arquivarForum`](social/arquivarForum.md) | POST | Dono do fórum ou admin | Arquiva o fórum: some da lista e ninguém mais lê nem publica. |
+| [`entrarNoForum`](social/entrarNoForum.md) | POST | Qualquer pessoa autenticada e ativa | Entra num fórum público ou pede para entrar num privado. |
+| [`sairDoForum`](social/sairDoForum.md) | POST | Membro (ou quem pediu para entrar) | Sai do fórum ou cancela o pedido para entrar. |
+| [`responderEntrada`](social/responderEntrada.md) | POST | Dono ou moderador do fórum | Aprova ou recusa um pedido para entrar. |
+| [`removerMembro`](social/removerMembro.md) | POST | Dono ou moderador do fórum | Remove um membro do fórum. |
+| [`definirModerador`](social/definirModerador.md) | POST | Dono do fórum | Torna um membro aprovado moderador (ou tira a moderação). |
+| [`ocultarPostDoForum`](social/ocultarPostDoForum.md) | POST | Dono ou moderador do fórum do post | Oculta uma publicação (ou resposta) do fórum. |
 
 ### Perfil do operador
 <a id="perfil"></a>

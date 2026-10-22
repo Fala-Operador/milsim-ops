@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { listarMetricas } from "@/api/analytics.functions";
 import type { RegistroAnalytics } from "@/lib/analytics";
 import type { Abrangencia, BaseDados, Impulsionamento } from "@/lib/domain/types";
-import { POSICAO_LISTAGEM } from "@/lib/domain/types";
+import { POSICAO_COMUNIDADE, POSICAO_LISTAGEM } from "@/lib/domain/types";
 import { NACIONAL, REGIOES, UF_REGIAO, esgotado, rotuloAbrangencia } from "@/lib/divulgacao";
 import {
   ROTULO_OBJETIVO, ROTULO_STATUS_IMPULSIONAMENTO, pendenciasAtivacao, rotuloPosicao, secoesCompativeis,
@@ -195,6 +195,10 @@ function EditorImpulsionamento({ base, inicial, onFechar, irParaSecoes }: { base
               <Checkbox checked={d.posicoes.includes(POSICAO_LISTAGEM)} onCheckedChange={() => alternar(POSICAO_LISTAGEM)} />
               Listagem de eventos — bloco “Operações em destaque”
             </Label>
+            <Label className="flex items-center gap-2 text-sm font-normal text-inherit">
+              <Checkbox checked={d.posicoes.includes(POSICAO_COMUNIDADE)} onCheckedChange={() => alternar(POSICAO_COMUNIDADE)} />
+              Comunidade — lateral do feed e dos fóruns
+            </Label>
             {secoes.map((s) => (
               <Label key={s.id} className="flex items-center gap-2 text-sm font-normal text-inherit">
                 <Checkbox checked={d.posicoes.includes(s.id)} onCheckedChange={() => alternar(s.id)} />
@@ -348,6 +352,7 @@ function PreviaDiagnostico({ base, nomeEvento }: { base: BaseDados; nomeEvento: 
         <Campo rotulo="Local de divulgação" htmlFor="pv-pos">
           <NativeSelect id="pv-pos" value={posicao} onChange={(e) => setPosicao(e.target.value)}>
             <option value={POSICAO_LISTAGEM}>Listagem de eventos</option>
+            <option value={POSICAO_COMUNIDADE}>Lateral da comunidade</option>
             {secoesCompativeis(base).map((s) => <option key={s.id} value={s.id}>{s.titulo}</option>)}
           </NativeSelect>
         </Campo>

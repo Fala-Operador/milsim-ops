@@ -372,7 +372,22 @@ Código: `src/lib/comunidadeGeral.ts`, `src/lib/moderacao.ts`, `src/server/socia
   recebe por notificação) encerra todas as denúncias dela; descartar encerra só aquela.
 - **Notificações** (silenciáveis em "comunidade"): resposta ao seu post, pedido para seguir, novo seguidor,
   pedido aceito e publicação ocultada.
-- **Lateral** (banner, operações e patrocinadores impulsionados): fase 3, ainda não implementada.
+- **Fóruns** (Comunidades › Fóruns, `/comunidades/f/…`):
+  - qualquer conta cria até **3 fóruns ativos**; nome de 3 a 60 caracteres, único entre os ativos; descrição até 300;
+    nome e descrição passam pela mesma moderação de texto dos posts;
+  - **público**: qualquer pessoa (inclusive visitante) lê; entrar é imediato; **privado**: o nome aparece na lista,
+    mas só membros aprovados leem posts e membros; entrar vira pedido para o dono e os moderadores;
+  - só membros aprovados publicam e respondem; respostas herdam o fórum; posts de fórum **não** aparecem no feed
+    geral nem no perfil do autor (fórum público avisa quem tem perfil privado que o post fica visível a todos);
+  - **dono**: edita (tornar público aceita os pedidos), arquiva, nomeia/tira moderadores e não pode sair;
+    **dono e moderadores**: aprovam pedidos, ocultam posts do fórum (autor notificado) e removem membros
+    (moderador remove só membros; ninguém remove o dono); o admin também arquiva e recebe as denúncias;
+  - fórum arquivado some da lista e ninguém mais lê.
+- **Lateral** (feed, fóruns; no celular, um destaque no topo): `lateralDaComunidade` em `src/lib/divulgacao.ts`:
+  - **banners** da página inicial publicados, no período e na região, marcados "exibir também na comunidade";
+  - **operações impulsionadas** na posição **"Lateral da comunidade"** (até 3, com o mesmo rodízio); impulsos
+    comprados pelas organizações entram nessa posição automaticamente;
+  - **patrocinadores** ativos marcados pela administração "destacar na comunidade" (curadoria; venda fica para depois).
 
 ## 14. Central de Suporte
 
@@ -426,7 +441,7 @@ Código: `src/lib/divulgacao.ts`, `src/lib/impulsionamento.ts`.
   - Pago, o impulso fica no saldo da organização e precisa ser usado até `pagamento + validade`;
     depois disso aparece como **expirado** e não pode mais ser usado.
   - Usar = escolher uma operação publicada, não encerrada e com imagem: vira uma campanha ativa nas
-    seções de destaque e no topo da listagem, em todo o Brasil, com prioridade normal. Um segundo impulso
+    seções de destaque, no topo da listagem e na lateral da comunidade, em todo o Brasil, com prioridade normal. Um segundo impulso
     na mesma operação começa quando o anterior termina; o impulso termina no máximo no fim da operação.
   - Reembolso integral no Stripe cancela o impulso e encerra a campanha. A organização vê as próprias
     compras sem os ids do Stripe; o público não vê compras nem qual campanha veio de um impulso.

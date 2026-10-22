@@ -10,8 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AvatarAutor } from "./CartaoPost";
 
-export function Compositor({ respondendoA, onPublicado, placeholder }: {
+export function Compositor({ respondendoA, forumId, forumPublico = false, onPublicado, placeholder }: {
   respondendoA?: string | undefined;
+  /** Publica dentro deste fórum (post novo). Respostas herdam o fórum do post respondido. */
+  forumId?: string | undefined;
+  /** Fórum público: avisa quem tem perfil privado que o post fica visível a todos. */
+  forumPublico?: boolean;
   onPublicado: (post: PostDTO) => void;
   placeholder?: string | undefined;
 }) {
@@ -47,7 +51,7 @@ export function Compositor({ respondendoA, onPublicado, placeholder }: {
     setEnviando(true);
     setErro("");
     try {
-      const post = await publicarPost({ texto, fotos: lista, respondendoA });
+      const post = await publicarPost({ texto, fotos: lista, respondendoA, forumId: respondendoA ? undefined : forumId });
       setTexto("");
       setFotos([]);
       onPublicado(post);
@@ -83,6 +87,9 @@ export function Compositor({ respondendoA, onPublicado, placeholder }: {
                 </li>
               ))}
             </ul>
+          )}
+          {forumPublico && usuario.comunidadePrivada && (
+            <p className="mt-2 text-xs text-muted-foreground">Seu perfil é privado, mas publicações em fórum público ficam visíveis para todos que leem o fórum.</p>
           )}
           {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
           <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2">

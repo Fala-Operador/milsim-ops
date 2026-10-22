@@ -18,12 +18,14 @@ Publica no feed geral ou responde a uma publicação.
 | `texto` | string | Até 220 caracteres (emoji conta como 1). Pode ser vazio se houver foto. |
 | `fotos` | { dados, alt? }[] (até 4) | data URL JPG/PNG/WebP de até 5 MB; `alt` até 200. |
 | `respondendoA?` | string | Id do post respondido (precisa estar visível). |
+| `forumId?` | string | Publica neste fórum (ignorado em resposta, que herda o fórum do post respondido). |
 
 ## Regras
 
 - Texto passa por `moderarTexto` (sexo, drogas, morte/violência real são recusados).
 - Ritmo: 10 s entre posts e até 30 por hora.
 - Fotos vão para o bucket público `midia`; post e fotos são gravados juntos (`social_create_post`).
+- Em fórum (post novo ou resposta a post de fórum), só membro aprovado publica.
 - Resposta notifica o autor do post respondido.
 
 ## Resposta
@@ -45,6 +47,7 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - Espere alguns segundos antes de publicar de novo.
 - Você atingiu o limite de publicações por hora. Tente mais tarde.
 - Publicação indisponível.
+- Entre no fórum para publicar nele.
 - Entre na sua conta para continuar.
 
 ## Exemplo

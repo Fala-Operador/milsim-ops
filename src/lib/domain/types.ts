@@ -898,6 +898,8 @@ export interface Parceiro {
   textoAlt: string;
   links: LinkParceiro[];
   ativo: boolean;
+  /** Patrocinador destacado pela administração na lateral da comunidade geral. */
+  naComunidade?: boolean | undefined;
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -957,6 +959,8 @@ export interface SecaoInicial {
   mostrarDescricoes: boolean;
   superficieLogo: "nenhuma" | "clara" | "escura";
   banner?: ConfigBanner | undefined;
+  /** Banner: aparece também na lateral da comunidade geral. */
+  naComunidade?: boolean | undefined;
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -968,6 +972,8 @@ export type PrioridadeImpulsionamento = "normal" | "alta";
 export type StatusImpulsionamento = "rascunho" | "ativo" | "pausado" | "encerrado";
 /** Posição de divulgação: id de uma seção de eventos da página inicial ou o bloco da listagem. */
 export const POSICAO_LISTAGEM = "listagem";
+/** Lateral da comunidade geral (Comunidades › Geral e fóruns). */
+export const POSICAO_COMUNIDADE = "comunidade";
 export interface Impulsionamento {
   id: string;
   eventoId: string;
