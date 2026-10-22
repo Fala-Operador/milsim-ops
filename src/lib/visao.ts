@@ -190,7 +190,9 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
     return [{ ...c, nome: "", criadoPor: "", impulsoId: undefined }];
   });
   // Impulsos: preços públicos; compras só para a organização (sem ids do Stripe) e a administração.
-  v.planosImpulso = base.planosImpulso;
+  v.planosImpulso = admin
+    ? base.planosImpulso
+    : base.planosImpulso.map((p) => ({ ...p, stripeProdutoId: undefined, stripePrecoId: undefined, sincronizadoEm: undefined }));
   v.impulsosComprados = base.impulsosComprados.flatMap((i) => {
     if (admin) return [i];
     if (!gereImpulsos(eu, i.organizacaoId)) return [];

@@ -349,10 +349,18 @@ Código: `src/lib/divulgacao.ts`, `src/lib/impulsionamento.ts`.
   - Estado exibido: rascunho, agendado, ativo, pausado, pausado por esgotar (objetivo inscrições),
     suspenso (evento fora do ar) ou encerrado.
   - Campanhas entram antes da curadoria, ordenadas por prioridade e ordem; cada evento aparece **uma vez** por seção.
+  - **Rodízio dos impulsos comprados**: as campanhas da administração vêm primeiro; depois, no máximo
+    **8** impulsos comprados por bloco (seção ou listagem). Eventos da área escolhida pelo visitante têm
+    preferência e, entre eles, a ordem é sorteada por visitante e muda a cada dia (fuso de Brasília), para
+    que todos os organizadores que pagaram tenham chances parecidas. Na listagem, só disputam as vagas os
+    eventos que atendem à busca e aos filtros.
   - Campanhas nunca são apagadas; encerrada não é editada.
 - **Impulsos comprados** (organização): `src/lib/impulsos.ts`, página `/organizacao/impulsos`.
   - Seis tipos: 24h, 3, 5, 7, 15 e 30 dias. Preço, validade (padrão 30 dias) e venda de cada tipo
     são definidos pela administração; a compra guarda os valores do momento.
+  - Cada tipo tem imagem (padrão tema airsoft em `public/impulsos`, trocável pela administração) e é um
+    produto do catálogo do Stripe da plataforma (`milsim_impulso_<tipo>`), atualizado ao salvar; valor novo
+    gera preço novo e arquiva o antigo.
   - Só o organizador ativo compra, para a própria organização; o pagamento (Stripe Checkout) fica todo
     com a plataforma. Preço 0 libera na hora. Checkout não pago em 60 minutos é descartado.
   - Pago, o impulso fica no saldo da organização e precisa ser usado até `pagamento + validade`;

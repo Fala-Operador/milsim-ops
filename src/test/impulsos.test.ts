@@ -150,3 +150,46 @@ describe("visão", () => {
     expect(visaoParaUsuario(base, null).planosImpulso).toEqual(base.planosImpulso);
   });
 });
+
+describe("rodízio dos impulsos comprados", () => {
+  function comMuitosImpulsos(n: number) {
+    const modelo = base.eventos.find((e) => e.id === EVENTO)!;
+    base.impulsionamentos = [];
+    for (let k = 0; k < n; k++) {
+      const e = { ...structuredClone(modelo), id: `evt-imp-${k}`, uf: k < 3 ? "PE" : "SP", cidade: k < 3 ? "Recife" : "São Paulo" };
+      base.eventos.push(e);
+      const i = comprado("7d");
+      usarImpulsoNaBase(base, org, i.id, e.id, agora);
+    }
+  }
+  const depois = new Date(agora.getTime() + HORA);
+
+  it("mostra no máximo 8 por bloco; as campanhas da administração continuam na frente", () => {
+    comMuitosImpulsos(12);
+    const adm = { ...base.impulsionamentos[0]!, id: "adm-1", eventoId: "evt-cerrado", impulsoId: undefined, prioridade: "alta" as const };
+    base.impulsionamentos.push(adm);
+    const r = campanhasNaPosicao(base, POSICAO_LISTAGEM, NACIONAL, depois, { semente: "vis-a" });
+    expect(r[0]!.id).toBe("adm-1");
+    expect(r.filter((c) => c.impulsoId)).toHaveLength(8);
+  });
+
+  it("ordem muda por visitante e é estável para o mesmo visitante no mesmo dia", () => {
+    comMuitosImpulsos(12);
+    const ids = (s: string) => campanhasNaPosicao(base, POSICAO_LISTAGEM, NACIONAL, depois, { semente: s }).map((c) => c.eventoId).join();
+    expect(ids("vis-a")).toBe(ids("vis-a"));
+    const diferentes = new Set(["vis-a", "vis-b", "vis-c", "vis-d", "vis-e"].map(ids));
+    expect(diferentes.size).toBeGreaterThan(1);
+  });
+
+  it("eventos da área do visitante vêm primeiro", () => {
+    comMuitosImpulsos(12);
+    const r = campanhasNaPosicao(base, POSICAO_LISTAGEM, { escopo: "estado", uf: "PE" }, depois, { semente: "vis-a" });
+    expect(r.slice(0, 3).map((c) => c.eventoId).sort()).toEqual(["evt-imp-0", "evt-imp-1", "evt-imp-2"]);
+  });
+
+  it("filtro da listagem decide quem disputa as vagas", () => {
+    comMuitosImpulsos(12);
+    const r = campanhasNaPosicao(base, POSICAO_LISTAGEM, NACIONAL, depois, { semente: "vis-a", filtro: (id) => id === "evt-imp-11" });
+    expect(r.map((c) => c.eventoId)).toEqual(["evt-imp-11"]);
+  });
+});
