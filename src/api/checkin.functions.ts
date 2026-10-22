@@ -3,7 +3,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { aplicarSincronizacao } from "@/services/checkin";
 import { recalcularProgressao } from "@/services/progressao";
-import { exigirUsuario, mutar } from "@/server/unidade.server";
+import { exigirUsuario, mutar, tratarErro } from "@/server/unidade.server";
+import { situacaoEntrada } from "@/server/entrada.server";
 import { chamar } from "@/api/cliente";
 import type { RegistroCheckin } from "@/lib/checkin";
 
@@ -34,5 +35,17 @@ export const sincronizarCheckinsFn = createServerFn({ method: "POST" })
     }),
   );
 
+/** Participante: a portaria já confirmou a entrada deste ingresso? (consulta leve, sem visão) */
+export const situacaoEntradaFn = createServerFn({ method: "POST" })
+  .validator(z.object({ inscricaoId: curto }).parse)
+  .handler(async ({ data }) => {
+    try {
+      return await situacaoEntrada(data.inscricaoId);
+    } catch (e) {
+      return tratarErro(e);
+    }
+  });
+
 // ---------- Uso no navegador ----------
 export const enviarFilaCheckin = (ops: RegistroCheckin[]) => chamar(sincronizarCheckinsFn({ data: { ops } }));
+export const consultarEntrada = (inscricaoId: string) => situacaoEntradaFn({ data: { inscricaoId } });
