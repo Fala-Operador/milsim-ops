@@ -38,9 +38,14 @@ export function imagemPlanoValida(url: string): boolean {
   return /^data:image\/(jpeg|png|webp);base64,/.test(url) || /^https:\/\/\S+$/.test(url) || /^\/impulsos\/[\w-]+\.(jpg|png)$/.test(url);
 }
 
-/** URL absoluta para o Stripe (que só aceita https); caminhos do site ganham a origem. */
+/**
+ * URL absoluta para o Stripe (que só aceita https); caminhos do site ganham a origem. Atrás do
+ * proxy (Cloudflare/Dokploy) o servidor pode ver a requisição como http: fora do localhost a
+ * origem é tratada como https, que é como o site é servido ao público.
+ */
 export function imagemAbsoluta(url: string, origem: string): string | undefined {
-  const abs = url.startsWith("/") ? `${origem}${url}` : url;
+  const publica = /^http:\/\/(?!localhost[:/]|localhost$|127\.|\[::1\])/.test(origem) ? origem.replace(/^http:/, "https:") : origem;
+  const abs = url.startsWith("/") ? `${publica}${url}` : url;
   return /^https:\/\//.test(abs) ? abs : undefined;
 }
 
