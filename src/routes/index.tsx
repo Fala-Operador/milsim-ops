@@ -109,6 +109,9 @@ function PaginaInicial() {
   const agora = new Date();
   const semente = base ? idDoVisitante() : "";
   const secoes = base ? montarPaginaInicial(base, local, agora, { semente }) : [];
+  // "Operações em destaque" (seções de destaques e impulsos) vêm acima de qualquer outra lista.
+  const secoesDestaque = secoes.filter((s) => s.secao.tipo === "destaques");
+  const secoesDemais = secoes.filter((s) => s.secao.tipo !== "destaques");
   const organizacaoDe = (id: string) => base?.organizacoes.find((o) => o.id === id)?.nome ?? "—";
   const publicados = base?.eventos.filter((e) => e.status === "publicado" && eventoElegivel(e, agora)) ?? [];
   const regionais = base ? filtrarEventos(publicados, local, aplicado, organizacaoDe, agora) : [];
@@ -202,6 +205,29 @@ function PaginaInicial() {
         </div>
       </section>
 
+      {base && !falha && (impulsionados.length > 0 || secoesDestaque.length > 0) && (
+        <section className="mx-auto max-w-6xl px-4 pt-8" aria-label="Operações em destaque">
+          {impulsionados.length > 0 && (
+            <div className="rounded-lg border border-accent/40 p-4" aria-labelledby="t-impulsionados">
+              <h2 id="t-impulsionados" className="font-display text-2xl font-semibold uppercase tracking-wide">Operações em destaque</h2>
+              <p className="text-sm text-muted-foreground">Divulgação da plataforma, de acordo com a sua busca. As demais listas vêm abaixo.</p>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {impulsionados.map((e, i) => (
+                  <CardRastreado key={e.id} ativo eventoId={e.id} origem="destaques" secaoId="listagem" posicao={i + 1} visualizacaoId={visualizacaoId} campanhaId={e.campanhaId}>
+                    <CartaoEvento evento={e} base={base} organizacao={organizacaoDe(e.organizacaoId)} />
+                  </CardRastreado>
+                ))}
+              </div>
+            </div>
+          )}
+          {secoesDestaque.length > 0 && (
+            <div className={impulsionados.length > 0 ? "mt-8" : undefined}>
+              <SecoesPublicas secoes={secoesDestaque} base={base} local={local} rastrear visualizacaoId={visualizacaoId} />
+            </div>
+          )}
+        </section>
+      )}
+
       {base && pref.montado && pref.preferencia.estado === "selecionadas" && !modsSel.length && regionais.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pt-8" aria-label="Operações para você">
           {paraVoce.favoritas.length > 0 ? (
@@ -292,20 +318,6 @@ function PaginaInicial() {
             </div>
           </div>
         ) : (
-          <>
-          {impulsionados.length > 0 && (
-            <div className="mt-4 rounded-lg border border-accent/40 p-4" aria-labelledby="t-impulsionados">
-              <h3 id="t-impulsionados" className="font-display text-lg font-semibold uppercase">Operações em destaque</h3>
-              <p className="text-sm text-muted-foreground">Divulgação da plataforma, de acordo com a sua busca. Os resultados comuns vêm abaixo.</p>
-              <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {impulsionados.map((e, i) => (
-                  <CardRastreado key={e.id} ativo eventoId={e.id} origem="destaques" secaoId="listagem" posicao={i + 1} visualizacaoId={visualizacaoId} campanhaId={e.campanhaId}>
-                    <CartaoEvento evento={e} base={base} organizacao={organizacaoDe(e.organizacaoId)} />
-                  </CardRastreado>
-                ))}
-              </div>
-            </div>
-          )}
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {resultados.map((e, i) => (
               <CardRastreado key={e.id} ativo eventoId={e.id} origem="busca" posicao={i + 1} visualizacaoId={visualizacaoId}>
@@ -313,13 +325,12 @@ function PaginaInicial() {
               </CardRastreado>
             ))}
           </div>
-          </>
         )}
       </section>
 
-      {base && secoes.length > 0 && (
+      {base && secoesDemais.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pb-10" aria-label="Destaques e parceiros">
-          <SecoesPublicas secoes={secoes} base={base} local={local} rastrear visualizacaoId={visualizacaoId} />
+          <SecoesPublicas secoes={secoesDemais} base={base} local={local} rastrear visualizacaoId={visualizacaoId} />
         </section>
       )}
     </div>
