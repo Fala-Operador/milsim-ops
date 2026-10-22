@@ -30,6 +30,27 @@ export const PRECO_MAXIMO_CENTAVOS = 1_000_000;
 /** Preços iniciais (R$), usados enquanto a administração não grava o tipo. */
 const PRECO_PADRAO: Record<PlanoImpulsoId, number> = { "24h": 990, "3d": 2490, "5d": 3490, "7d": 4490, "15d": 8490, "30d": 14990 };
 
+/** Imagem padrão de cada tipo (arquivos em public/impulsos, gerados por scripts/imagens-impulsos.py). */
+export const imagemPadraoImpulso = (id: PlanoImpulsoId) => `/impulsos/${id}.jpg`;
+
+/** Imagem enviada pela administração (data URL, trocada pela URL do Storage ao gravar), https ou uma das padrão. */
+export function imagemPlanoValida(url: string): boolean {
+  return /^data:image\/(jpeg|png|webp);base64,/.test(url) || /^https:\/\/\S+$/.test(url) || /^\/impulsos\/[\w-]+\.(jpg|png)$/.test(url);
+}
+
+/** URL absoluta para o Stripe (que só aceita https); caminhos do site ganham a origem. */
+export function imagemAbsoluta(url: string, origem: string): string | undefined {
+  const abs = url.startsWith("/") ? `${origem}${url}` : url;
+  return /^https:\/\//.test(abs) ? abs : undefined;
+}
+
+/** Id fixo do produto no Stripe: repetir a sincronização nunca cria produto duplicado. */
+export const produtoStripeDoPlano = (id: PlanoImpulsoId) => `milsim_impulso_${id}`;
+
+/** Preço guardado no Stripe ainda é o atual do tipo (sincronizado depois da última alteração). */
+export const precoStripeEmDia = (p: Pick<PlanoImpulso, "stripePrecoId" | "sincronizadoEm" | "atualizadoEm">) =>
+  !!p.stripePrecoId && !!p.sincronizadoEm && p.sincronizadoEm >= p.atualizadoEm;
+
 /** Prazo para pagar no Stripe; depois disso a compra aguardando pagamento é descartada. */
 export const PRAZO_PAGAMENTO_MIN = 60;
 
@@ -47,6 +68,10 @@ export function planosDeImpulso(base: Pick<BaseDados, "planosImpulso">): PlanoEx
       precoCentavos: salvo?.precoCentavos ?? PRECO_PADRAO[t.id],
       validadeDias: salvo?.validadeDias ?? VALIDADE_PADRAO_DIAS,
       ativo: salvo?.ativo ?? true,
+      imagemUrl: salvo?.imagemUrl || imagemPadraoImpulso(t.id),
+      stripeProdutoId: salvo?.stripeProdutoId,
+      stripePrecoId: salvo?.stripePrecoId,
+      sincronizadoEm: salvo?.sincronizadoEm,
       atualizadoEm: salvo?.atualizadoEm ?? "",
       atualizadoPor: salvo?.atualizadoPor ?? "",
     };

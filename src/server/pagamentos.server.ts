@@ -44,6 +44,7 @@ import {
   criarReembolso,
   criarSessaoCheckout,
   criarSessaoCheckoutImpulso,
+  sincronizarProdutoImpulso,
   criarSessaoDeConta,
   ErroStripe,
   expirarSessaoCheckout,
@@ -65,8 +66,12 @@ import {
   marcarImpulsoProcessando,
   registrarReembolsoImpulsoNaBase,
   registrarSessaoImpulsoNaBase,
+  registrarSincronizacaoPlanoNaBase,
 } from "@/services/impulsos";
-import { PRAZO_PAGAMENTO_MIN, gereImpulsos, rotuloDuracao, statusDoImpulso } from "@/lib/impulsos";
+import {
+  PRAZO_PAGAMENTO_MIN, gereImpulsos, imagemAbsoluta, planosDeImpulso, precoStripeEmDia, produtoStripeDoPlano, rotuloDuracao,
+  statusDoImpulso, type PlanoExibido,
+} from "@/lib/impulsos";
 import type { ImpulsoComprado, Inscricao, PlanoImpulsoId } from "@/lib/domain/types";
 
 export { stripeConfigurado };
@@ -312,7 +317,7 @@ export async function abrirCheckoutImpulso(impulsoId: string): Promise<RespostaA
     const i = base.impulsosComprados.find((x) => x.id === impulsoId);
     if (!i || !gereImpulsos(usuario, i.organizacaoId)) throw new ErroDominio("impulso", "Impulso não encontrado.");
     if (statusDoImpulso(i, new Date()) !== "aguardando_pagamento") throw new ErroDominio("impulso", "Este impulso não está mais aguardando pagamento.");
-    return { impulso: i, email: usuario?.email };
+    return { impulso: i, email: usuario?.email, plano: planosDeImpulso(base).find((p) => p.id === i.planoId) };
   });
   let sessao: SessaoCheckout;
   try {
@@ -322,7 +327,12 @@ export async function abrirCheckoutImpulso(impulsoId: string): Promise<RespostaA
       throw new Error("Este pagamento já foi concluído ou expirou. Confira em Impulsionar.");
     }
     const origem = new URL(getRequestUrl()).origin;
+    // Produto do catálogo da plataforma; tipo ainda não sincronizado é sincronizado agora.
+    const catalogo = d.plano ? await produtoDoPlano(d.plano, origem) : undefined;
     sessao = existente ?? await criarSessaoCheckoutImpulso({
+      precoId: catalogo?.precoId && d.plano?.precoCentavos === d.impulso.precoCentavos ? catalogo.precoId : undefined,
+      produtoId: catalogo?.produtoId,
+      imagens: d.plano?.imagemUrl ? [imagemAbsoluta(d.plano.imagemUrl, origem)].filter((x): x is string => !!x) : undefined,
       impulsoId,
       descricao: `Impulso de ${rotuloDuracao(d.impulso.duracaoHoras)} — MilSim Ops`,
       valorCentavos: d.impulso.precoCentavos,
@@ -339,6 +349,65 @@ export async function abrirCheckoutImpulso(impulsoId: string): Promise<RespostaA
   if (!sessao.url) throw new Error(MSG_FALHA_STRIPE);
   const url = sessao.url;
   return mutar(({ base }) => ({ impulso: registrarSessaoImpulsoNaBase(base, impulsoId, sessao.id), urlPagamento: url }));
+}
+
+const dadosDoProduto = (p: PlanoExibido, origem: string) => ({
+  produtoId: produtoStripeDoPlano(p.id),
+  nome: `${p.rotulo} — MilSim Ops`,
+  descricao: `Destaque da operação na página inicial e no topo da listagem por ${rotuloDuracao(p.duracaoHoras)}. Use em até ${p.validadeDias} dias após a compra.`,
+  imagens: [imagemAbsoluta(p.imagemUrl ?? "", origem)].filter((x): x is string => !!x),
+  ativo: p.ativo,
+  precoCentavos: p.precoCentavos,
+  metadata: { planoImpulso: p.id, duracaoHoras: String(p.duracaoHoras), validadeDias: String(p.validadeDias) },
+});
+
+/**
+ * Produto e preço do tipo no catálogo: usa o que já está em dia ou sincroniza agora. Falha do
+ * Stripe aqui não impede a venda (o checkout cai no item avulso).
+ */
+async function produtoDoPlano(p: PlanoExibido, origem: string): Promise<{ produtoId: string; precoId?: string | undefined } | undefined> {
+  if (p.stripeProdutoId && precoStripeEmDia(p)) return { produtoId: p.stripeProdutoId, precoId: p.stripePrecoId };
+  try {
+    const r = await sincronizarProdutoImpulso(dadosDoProduto(p, origem));
+    await mutar(({ base }) => registrarSincronizacaoPlanoNaBase(base, p.id, r), { exigirLogin: false });
+    return r;
+  } catch (e) {
+    console.error("Stripe: falha ao sincronizar o produto do impulso", p.id, e);
+    return undefined;
+  }
+}
+
+export interface ResultadoSincronizacaoPlanos {
+  sincronizados: number;
+  /** Tipos que falharam, com a mensagem do Stripe (sem chaves). */
+  erros: string[];
+}
+
+/**
+ * Sincroniza os seis tipos de impulso com o catálogo do Stripe da plataforma (produto com
+ * nome, descrição, imagem e preço padrão; tipos fora de venda ficam arquivados). Só admin.
+ */
+export async function sincronizarPlanosNoStripe(): Promise<RespostaApi<ResultadoSincronizacaoPlanos>> {
+  const { resultado: planos } = await ler(({ base, usuario }) => {
+    if (usuario?.perfil !== "admin" || !usuario.ativo) throw new ErroDominio("permissao", "Somente a administração sincroniza os impulsos com o Stripe.");
+    return planosDeImpulso(base);
+  });
+  if (!stripeConfigurado()) throw new Error("Os pagamentos online ainda não estão ativados na plataforma.");
+  const origem = new URL(getRequestUrl()).origin;
+  const feitos: { id: PlanoImpulsoId; produtoId: string; precoId: string }[] = [];
+  const erros: string[] = [];
+  for (const p of planos) {
+    try {
+      feitos.push({ id: p.id, ...(await sincronizarProdutoImpulso(dadosDoProduto(p, origem))) });
+    } catch (e) {
+      console.error("Stripe: falha ao sincronizar o produto do impulso", p.id, e);
+      erros.push(`${p.rotulo}: ${e instanceof ErroStripe ? mensagemDeFalhaStripe(e.status, e.message) : MSG_FALHA_STRIPE}`);
+    }
+  }
+  return mutar(({ base }) => {
+    for (const f of feitos) registrarSincronizacaoPlanoNaBase(base, f.id, f);
+    return { sincronizados: feitos.length, erros };
+  });
 }
 
 /** Aplica o estado de uma Checkout Session de impulso (idempotente). */

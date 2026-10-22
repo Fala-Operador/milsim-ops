@@ -94,7 +94,7 @@ try {
 
 ## Índice
 
-121 server functions em 16 módulos, mais os [webhooks do Stripe](#webhooks).
+122 server functions em 16 módulos, mais os [webhooks do Stripe](#webhooks).
 
 ### Sessão e leitura
 <a id="sessao"></a>
@@ -345,7 +345,8 @@ Impulsos comprados pela organização (24h a 30 dias) e usados nas próprias ope
 | [`retomarPagamentoImpulso`](impulsos/retomarPagamentoImpulso.md) | POST | Organizador ativo | Volta à página de pagamento de um impulso que ainda aguarda pagamento. |
 | [`sincronizarPagamentoImpulso`](impulsos/sincronizarPagamentoImpulso.md) | POST | Organizador ativo | Retorno do checkout: consulta o Stripe e aplica o pagamento do impulso. |
 | [`usarImpulso`](impulsos/usarImpulso.md) | POST | Organizador ativo | Usa um impulso disponível numa operação publicada: cria a campanha de destaque. |
-| [`salvarPlanosImpulso`](impulsos/salvarPlanosImpulso.md) | POST | Somente admin | Define preço, validade e venda dos tipos de impulso. |
+| [`salvarPlanosImpulso`](impulsos/salvarPlanosImpulso.md) | POST | Somente admin | Define preço, validade, imagem e venda dos tipos de impulso e atualiza os produtos no Stripe. |
+| [`sincronizarPlanosImpulso`](impulsos/sincronizarPlanosImpulso.md) | POST | Somente admin | Cria ou atualiza no Stripe o produto e o preço de cada tipo de impulso. |
 
 ### Webhooks
 <a id="webhooks"></a>

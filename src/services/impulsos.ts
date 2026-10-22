@@ -4,7 +4,7 @@
 import { ErroDominio, gerarId } from "./db";
 import type { BaseDados, ImpulsoComprado, Impulsionamento, PlanoImpulsoId, Usuario } from "@/lib/domain/types";
 import {
-  ABRANGENCIA_IMPULSO, erroPlano, expiracaoDoImpulso, gereImpulsos, pendenciasUso, periodoDoImpulso,
+  ABRANGENCIA_IMPULSO, erroPlano, expiracaoDoImpulso, imagemPlanoValida, gereImpulsos, pendenciasUso, periodoDoImpulso,
   planosDeImpulso, posicoesDoImpulso, rotuloDuracao,
 } from "@/lib/impulsos";
 import { formatarBRL } from "@/lib/domain/money";
@@ -131,6 +131,8 @@ export interface DadosPlanoImpulso {
   precoCentavos: number;
   validadeDias: number;
   ativo: boolean;
+  /** Ausente mantém a imagem atual. */
+  imagemUrl?: string | undefined;
 }
 
 /** Administração define preço, validade e venda dos tipos. Vale para compras novas. */
@@ -142,13 +144,32 @@ export function salvarPlanosImpulsoNaBase(base: BaseDados, admin: Usuario, plano
     if (!antes) throw new ErroDominio("plano", "Tipo de impulso desconhecido.");
     const erro = erroPlano(d);
     if (erro) throw new ErroDominio("plano", `${antes.rotulo}: ${erro}`);
-    if (antes.precoCentavos === d.precoCentavos && antes.validadeDias === d.validadeDias && antes.ativo === d.ativo && antes.atualizadoEm) continue;
+    const imagemUrl = d.imagemUrl ?? antes.imagemUrl;
+    if (imagemUrl && !imagemPlanoValida(imagemUrl)) throw new ErroDominio("plano", `${antes.rotulo}: imagem inválida.`);
+    if (antes.precoCentavos === d.precoCentavos && antes.validadeDias === d.validadeDias && antes.ativo === d.ativo && antes.imagemUrl === imagemUrl && antes.atualizadoEm) continue;
     const salvo = base.planosImpulso.find((p) => p.id === d.id);
-    const novo = { id: d.id, precoCentavos: d.precoCentavos, validadeDias: d.validadeDias, ativo: d.ativo, atualizadoEm: iso, atualizadoPor: admin.id };
+    const novo = { id: d.id, precoCentavos: d.precoCentavos, validadeDias: d.validadeDias, ativo: d.ativo, imagemUrl, atualizadoEm: iso, atualizadoPor: admin.id };
     if (salvo) Object.assign(salvo, novo);
     else base.planosImpulso.push(novo);
     auditar(base, admin.id, "plano_impulso", d.id,
-      `${antes.rotulo}: ${formatarBRL(d.precoCentavos)}, validade ${d.validadeDias} dias, ${d.ativo ? "à venda" : "fora de venda"}.`);
+      `${antes.rotulo}: ${formatarBRL(d.precoCentavos)}, validade ${d.validadeDias} dias, ${d.ativo ? "à venda" : "fora de venda"}${antes.imagemUrl !== imagemUrl ? ", imagem trocada" : ""}.`);
+  }
+}
+
+/** Grava o produto e o preço do tipo no Stripe depois da sincronização (feita fora de `mutar`). */
+export function registrarSincronizacaoPlanoNaBase(
+  base: BaseDados, planoId: PlanoImpulsoId, stripe: { produtoId: string; precoId: string }, agora = new Date(),
+): void {
+  const atual = planosDeImpulso(base).find((p) => p.id === planoId);
+  if (!atual) return;
+  const salvo = base.planosImpulso.find((p) => p.id === planoId);
+  const campos = { stripeProdutoId: stripe.produtoId, stripePrecoId: stripe.precoId, sincronizadoEm: agora.toISOString() };
+  if (salvo) Object.assign(salvo, campos);
+  else {
+    base.planosImpulso.push({
+      id: atual.id, precoCentavos: atual.precoCentavos, validadeDias: atual.validadeDias, ativo: atual.ativo, imagemUrl: atual.imagemUrl,
+      atualizadoEm: agora.toISOString(), atualizadoPor: "sistema", ...campos,
+    });
   }
 }
 

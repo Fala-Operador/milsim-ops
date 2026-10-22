@@ -133,7 +133,9 @@ function Impulsos() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {planos.map((p) => (
-              <Card key={p.id} className="flex flex-col gap-3 p-4">
+              <Card key={p.id} className="flex flex-col gap-3 overflow-hidden p-0">
+                {p.imagemUrl && <img src={p.imagemUrl} alt={p.rotulo} loading="lazy" className="aspect-[3/2] w-full object-cover" />}
+                <div className="flex flex-1 flex-col gap-3 px-4 pb-4">
                 <div className="flex items-center gap-2">
                   <Rocket className="h-4 w-4 shrink-0 text-primary" />
                   <span className="font-semibold">{p.rotulo}</span>
@@ -143,6 +145,7 @@ function Impulsos() {
                 <Button className="mt-auto" disabled={ocupado !== null} onClick={() => void comprar(p.id)}>
                   {ocupado === p.id ? "Abrindo pagamento…" : "Comprar"}
                 </Button>
+                </div>
               </Card>
             ))}
           </div>

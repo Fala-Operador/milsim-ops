@@ -2,8 +2,10 @@
 // dos tipos de impulso, e as compras feitas pelas organizações.
 import { useEffect, useState } from "react";
 import type { BaseDados, PlanoImpulsoId } from "@/lib/domain/types";
-import { ROTULO_STATUS_IMPULSO, erroPlano, planosDeImpulso, rotuloDuracao, statusDoImpulso } from "@/lib/impulsos";
-import { salvarPlanosImpulso } from "@/api/impulsos.functions";
+import { ROTULO_STATUS_IMPULSO, erroPlano, imagemPadraoImpulso, planosDeImpulso, rotuloDuracao, statusDoImpulso } from "@/lib/impulsos";
+import { salvarPlanosImpulso, sincronizarPlanosImpulso } from "@/api/impulsos.functions";
+import { configuracaoRepasse } from "@/api/repasses.functions";
+import { arquivoParaDataUrl } from "@/lib/imagens";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,11 +15,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-interface Linha { id: PlanoImpulsoId; rotulo: string; preco: string; validade: string; ativo: boolean }
+interface Linha { id: PlanoImpulsoId; rotulo: string; preco: string; validade: string; ativo: boolean; imagem: string }
 
 const paraLinhas = (base: BaseDados): Linha[] =>
   planosDeImpulso(base).map((p) => ({
-    id: p.id, rotulo: p.rotulo, preco: (p.precoCentavos / 100).toFixed(2).replace(".", ","), validade: String(p.validadeDias), ativo: p.ativo,
+    id: p.id, rotulo: p.rotulo, preco: (p.precoCentavos / 100).toFixed(2).replace(".", ","), validade: String(p.validadeDias), ativo: p.ativo, imagem: p.imagemUrl ?? imagemPadraoImpulso(p.id),
   }));
 
 const centavos = (preco: string) => Math.round(Number(preco.trim().replace(/\./g, "").replace(",", ".")) * 100);
@@ -27,6 +29,8 @@ export function PlanosImpulso({ base }: { base: BaseDados }) {
   const [erro, setErro] = useState("");
   const [aviso, setAviso] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [stripeAtivo, setStripeAtivo] = useState(false);
+  useEffect(() => { configuracaoRepasse().then((c) => setStripeAtivo(c.pagamentoOnline)).catch(() => setStripeAtivo(false)); }, []);
   const chave = JSON.stringify(planosDeImpulso(base));
   // Mantém os campos em dia quando os preços mudam (outra aba, outro admin).
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -39,21 +43,41 @@ export function PlanosImpulso({ base }: { base: BaseDados }) {
 
   const salvar = async () => {
     setErro(""); setAviso("");
-    const planos = linhas.map((l) => ({ id: l.id, precoCentavos: centavos(l.preco), validadeDias: Number(l.validade), ativo: l.ativo }));
+    const planos = linhas.map((l) => ({ id: l.id, precoCentavos: centavos(l.preco), validadeDias: Number(l.validade), ativo: l.ativo, imagemUrl: l.imagem }));
     for (const [i, p] of planos.entries()) {
       const e = erroPlano(p);
       if (e) return setErro(`${linhas[i]!.rotulo}: ${e}`);
     }
     setSalvando(true);
     try {
-      await salvarPlanosImpulso(planos);
-      setAviso("Impulsos atualizados. Os novos valores valem para as próximas compras.");
+      const sinc = await salvarPlanosImpulso(planos);
+      if (sinc?.erros.length) setErro(`Salvo, mas o Stripe recusou: ${sinc.erros.join(" ")}`);
+      setAviso(`Impulsos atualizados. Os novos valores valem para as próximas compras.${sinc && !sinc.erros.length ? " Produtos do Stripe em dia." : ""}`);
     } catch (e) {
       setErro((e as Error).message);
     } finally {
       setSalvando(false);
     }
   };
+
+  const sincronizar = async () => {
+    setErro(""); setAviso(""); setSalvando(true);
+    try {
+      const r = await sincronizarPlanosImpulso();
+      if (r.erros.length) setErro(`O Stripe recusou: ${r.erros.join(" ")}`);
+      setAviso(`${r.sincronizados} de ${linhas.length} produtos sincronizados com o Stripe.`);
+    } catch (e) {
+      setErro((e as Error).message);
+    } finally {
+      setSalvando(false);
+    }
+  };
+  const trocarImagem = async (id: PlanoImpulsoId, arquivo: File | undefined) => {
+    if (!arquivo) return;
+    try { mudar(id, { imagem: await arquivoParaDataUrl(arquivo, 1200) }); } catch (e) { setErro((e as Error).message); }
+  };
+  const datas = planosDeImpulso(base).map((p) => p.sincronizadoEm);
+  const sincronizacao = datas.every(Boolean) ? (datas as string[]).sort().at(0) : undefined;
 
   return (
     <Card className="space-y-3">
@@ -65,13 +89,27 @@ export function PlanosImpulso({ base }: { base: BaseDados }) {
         </p>
       </div>
       <div className="overflow-x-auto">
-        <Table className="w-full min-w-[560px] text-sm">
+        <Table className="w-full min-w-[760px] text-sm">
           <TableHeader className="text-left text-xs uppercase text-muted-foreground">
-            <TableRow>{["Tipo", "Preço (R$)", "Validade (dias)", "À venda"].map((h) => <TableHead key={h} className="px-2 py-2">{h}</TableHead>)}</TableRow>
+            <TableRow>{["Imagem", "Tipo", "Preço (R$)", "Validade (dias)", "À venda"].map((h) => <TableHead key={h} className="px-2 py-2">{h}</TableHead>)}</TableRow>
           </TableHeader>
           <TableBody>
             {linhas.map((l) => (
               <TableRow key={l.id} className="border-t border-border">
+                <TableCell className="px-2 py-2">
+                  <div className="flex items-center gap-2">
+                    <img src={l.imagem} alt={`Imagem do ${l.rotulo}`} className="h-12 w-[72px] shrink-0 rounded object-cover" />
+                    <div className="flex flex-col gap-1">
+                      <Input type="file" accept="image/jpeg,image/png,image/webp" aria-label={`Trocar imagem do ${l.rotulo}`}
+                        className="h-8 max-w-48 text-xs" onChange={(e) => void trocarImagem(l.id, e.target.files?.[0])} />
+                      {l.imagem !== imagemPadraoImpulso(l.id) && (
+                        <Button type="button" variant="ghost" size="sm" className="h-6 justify-start px-1 text-xs" onClick={() => mudar(l.id, { imagem: imagemPadraoImpulso(l.id) })}>
+                          Usar a padrão
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </TableCell>
                 <TableCell className="px-2 py-2 font-medium">{l.rotulo}</TableCell>
                 <TableCell className="px-2 py-2">
                   <Input aria-label={`Preço do ${l.rotulo}`} inputMode="decimal" value={l.preco} onChange={(e) => mudar(l.id, { preco: e.target.value })} className="max-w-32" />
@@ -92,7 +130,15 @@ export function PlanosImpulso({ base }: { base: BaseDados }) {
       </div>
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
       {aviso && <p role="status" className="text-sm text-success">{aviso}</p>}
-      <Button type="button" disabled={salvando} onClick={() => void salvar()}>{salvando ? "Salvando…" : "Salvar impulsos"}</Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="button" disabled={salvando} onClick={() => void salvar()}>{salvando ? "Salvando…" : "Salvar impulsos"}</Button>
+        {stripeAtivo && <Button type="button" variant="outline" disabled={salvando} onClick={() => void sincronizar()}>Sincronizar com o Stripe</Button>}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {stripeAtivo
+          ? `Cada tipo é um produto do catálogo do Stripe da plataforma (nome, imagem e preço), atualizado ao salvar. ${sincronizacao ? `Última sincronização completa: ${new Date(sincronizacao).toLocaleString("pt-BR")}.` : "Ainda não sincronizado."}`
+          : "Com os pagamentos online desligados, os produtos do Stripe não são criados."}
+      </p>
       <VendasImpulso base={base} />
     </Card>
   );
