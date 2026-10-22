@@ -295,10 +295,7 @@ function PaginaInicial() {
           <>
           {impulsionados.length > 0 && (
             <div className="mt-4 rounded-lg border border-accent/40 p-4" aria-labelledby="t-impulsionados">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 id="t-impulsionados" className="font-display text-lg font-semibold uppercase">Operações em destaque</h3>
-                <Badge variant="warning">Em destaque</Badge>
-              </div>
+              <h3 id="t-impulsionados" className="font-display text-lg font-semibold uppercase">Operações em destaque</h3>
               <p className="text-sm text-muted-foreground">Divulgação da plataforma, de acordo com a sua busca. Os resultados comuns vêm abaixo.</p>
               <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {impulsionados.map((e, i) => (
