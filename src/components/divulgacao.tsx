@@ -138,10 +138,9 @@ export function CartaoEvento({ c }: { c: CartaoEventoResolvido }) {
             <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{e.cidade} · {e.uf}</span>
           </div>
         )}
-        {(c.selo || c.campanhaId) && (
+        {c.selo && (
           <span className="absolute left-2 top-2 flex gap-1">
-            {c.campanhaId && <Badge variant="warning">Em destaque</Badge>}
-            {c.selo && <Badge variant="warning">{c.selo}</Badge>}
+            <Badge variant="warning">{c.selo}</Badge>
           </span>
         )}
       </div>
