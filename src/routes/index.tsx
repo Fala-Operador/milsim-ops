@@ -4,6 +4,7 @@ import { Crosshair, MapPin, Search } from "lucide-react";
 import { carregarBase } from "@/services/db";
 import { POSICAO_LISTAGEM, type BaseDados, type Evento } from "@/lib/domain/types";
 import { campanhasNaPosicao } from "@/lib/impulsionamento";
+import { idDoVisitante } from "@/services/analytics";
 import { vagasRestantes } from "@/services/inscricoes";
 import { formatarDataBR } from "@/lib/domain/money";
 import { Preco } from "@/components/Preco";
@@ -106,7 +107,8 @@ function PaginaInicial() {
   }, [versao]);
 
   const agora = new Date();
-  const secoes = base ? montarPaginaInicial(base, local, agora) : [];
+  const semente = base ? idDoVisitante() : "";
+  const secoes = base ? montarPaginaInicial(base, local, agora, { semente }) : [];
   const organizacaoDe = (id: string) => base?.organizacoes.find((o) => o.id === id)?.nome ?? "—";
   const publicados = base?.eventos.filter((e) => e.status === "publicado" && eventoElegivel(e, agora)) ?? [];
   const regionais = base ? filtrarEventos(publicados, local, aplicado, organizacaoDe, agora) : [];
@@ -116,8 +118,7 @@ function PaginaInicial() {
   // Bloco da listagem: só campanhas cujo evento já atende a todos os filtros explícitos.
   const idsResultados = new Set(resultados.map((e) => e.id));
   const impulsionados = base
-    ? campanhasNaPosicao(base, POSICAO_LISTAGEM, local, agora)
-        .filter((c) => idsResultados.has(c.eventoId))
+    ? campanhasNaPosicao(base, POSICAO_LISTAGEM, local, agora, { semente, filtro: (id) => idsResultados.has(id) })
         .map((c) => ({ ...resultados.find((e) => e.id === c.eventoId)!, campanhaId: c.id }))
     : [];
   const nacional = local.escopo === "nacional";
