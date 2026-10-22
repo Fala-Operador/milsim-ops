@@ -19,32 +19,55 @@ def camo(seed):
         out.append(f'<polygon points="{" ".join(pts)}" fill="{r.choice(cores)}" opacity="0.9"/>')
     return "\n".join(out)
 # operator silhouette kneeling with rifle, right side
-OPERADOR='''<g transform="translate(820,120)" fill="#0b0e09">
- <!-- capacete com NVG e fone -->
- <path d="M120 60 q60 -50 125 -6 q14 14 12 44 l-150 0 q-2 -24 13 -38z"/>
- <rect x="104" y="92" width="160" height="14" rx="6"/>
- <rect x="150" y="28" width="26" height="30" rx="5"/>
- <circle cx="236" cy="118" r="22"/>
- <!-- rosto e pescoço -->
- <path d="M130 106 h96 v46 q-48 26 -96 0z"/>
- <!-- tronco com plate carrier -->
- <path d="M80 170 q110 -40 220 0 l34 250 q-144 40 -288 0z"/>
- <g fill="#161c12"><rect x="104" y="216" width="46" height="62" rx="6"/><rect x="160" y="216" width="46" height="62" rx="6"/><rect x="216" y="216" width="46" height="62" rx="6"/></g>
- <!-- braço de apoio -->
- <path d="M96 196 q-70 34 -96 96 l40 18 q30 -50 84 -76z"/>
- <!-- fuzil apontado para baixo, à esquerda -->
- <g transform="rotate(18 60 300)">
-  <rect x="-150" y="286" width="300" height="26" rx="6"/>
-  <rect x="-205" y="292" width="62" height="10" rx="3"/>
-  <rect x="-60" y="262" width="110" height="20" rx="5"/>
-  <rect x="-20" y="310" width="26" height="62" rx="5" transform="rotate(12 -7 310)"/>
-  <rect x="70" y="310" width="22" height="46" rx="5" transform="rotate(-10 81 310)"/>
-  <path d="M150 284 l90 -6 l12 52 l-102 -6z"/>
+OPERADOR='''<g fill="#0a0d08">
+ <!-- jogador de airsoft de perfil, em postura de tiro, fuzil no ombro apontando para a esquerda -->
+ <!-- mochila de hidratação -->
+ <path d="M1092 272 L1126 284 L1130 402 L1104 412 Z"/>
+ <!-- perna de trás, esticada -->
+ <path d="M1044 450 L1104 450 L1116 590 L1152 712 L1116 720 L1078 598 Z"/>
+ <path d="M1110 708 L1152 706 L1160 744 L1090 744 Q1090 722 1110 708 Z"/>
+ <!-- perna da frente, joelho flexionado -->
+ <path d="M1002 448 L1062 452 L1006 596 L998 714 L962 714 L966 592 Z"/>
+ <path d="M958 708 L1000 708 L1004 744 L936 744 Q934 724 958 708 Z"/>
+ <!-- tronco com colete -->
+ <path d="M990 262 L1068 256 Q1098 268 1102 310 L1108 432 Q1078 448 1040 450 L1000 448 Q984 360 990 262 Z"/>
+ <path d="M976 282 L998 270 L1004 422 L982 426 Z"/>
+ <!-- pescoço, rosto com máscara, capacete -->
+ <rect x="1004" y="236" width="46" height="34"/>
+ <path d="M974 172 L1064 172 L1062 224 Q1050 248 1020 250 L992 248 Q978 240 974 224 Z"/>
+ <path d="M964 204 L994 204 L998 246 L974 246 Q962 230 964 204 Z"/>
+ <path d="M962 168 C962 118 996 96 1030 98 C1066 100 1086 126 1084 166 L1076 176 L966 178 Z"/>
+ <rect x="954" y="144" width="14" height="20" rx="3"/>
+ <!-- fuzil -->
+ <path d="M1000 246 L1046 250 L1048 292 L1014 296 L996 270 Z"/>
+ <rect x="900" y="242" width="106" height="26" rx="3"/>
+ <rect x="938" y="222" width="52" height="16" rx="6"/>
+ <rect x="956" y="236" width="16" height="8"/>
+ <path d="M930 266 L956 266 L952 320 L928 316 Z"/>
+ <path d="M978 266 L994 266 L1002 304 L986 306 Z"/>
+ <rect x="818" y="244" width="84" height="22" rx="3"/>
+ <rect x="782" y="251" width="38" height="8"/>
+ <rect x="766" y="248" width="16" height="14" rx="2"/>
+ <path d="M842 264 L858 264 L856 294 L842 294 Z"/>
+ <!-- braços: apoio na empunhadura da frente e mão no gatilho -->
+ <path d="M1024 288 L936 308 L862 270" fill="none" stroke="#0a0d08" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+ <circle cx="854" cy="268" r="15"/>
+ <path d="M1056 290 L1046 336 L994 286" fill="none" stroke="#0a0d08" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+ <circle cx="990" cy="284" r="13"/>
+ <!-- detalhes: óculos, protetor auricular, trilho, bolsos, cinto, joelheiras -->
+ <g fill="#1b2216">
+  <rect x="970" y="186" width="36" height="16" rx="6"/>
+  <rect x="1004" y="190" width="60" height="6"/>
+  <circle cx="1044" cy="178" r="15"/>
+  <rect x="1000" y="136" width="62" height="7" rx="3"/>
+  <rect x="998" y="330" width="26" height="40" rx="4"/>
+  <rect x="1030" y="330" width="26" height="40" rx="4"/>
+  <rect x="1062" y="330" width="26" height="40" rx="4"/>
+  <rect x="998" y="434" width="108" height="14"/>
+  <ellipse cx="986" cy="592" rx="18" ry="24"/>
+  <ellipse cx="1096" cy="590" rx="17" ry="23"/>
+  <path d="M968 210 L992 210 L994 240 L976 240 Z" opacity="0.6"/>
  </g>
- <!-- braço do gatilho -->
- <path d="M300 200 q30 70 -40 128 l-28 -26 q40 -40 26 -84z"/>
- <!-- pernas -->
- <path d="M60 410 h270 l20 300 h-80 l-30 -220 h-50 l-30 220 h-80z"/>
 </g>'''
 for i,(id_,dur,titulo,cor,nivel) in enumerate(TIPOS):
     chevrons="".join(f'<path d="M{70+k*46} 640 l32 -36 l-32 -36 h22 l32 36 l-32 36z" fill="{cor if k<nivel else "#ffffff"}" opacity="{1 if k<nivel else 0.18}"/>' for k in range(6))
