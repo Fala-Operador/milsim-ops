@@ -381,7 +381,7 @@ Código: `src/lib/divulgacao.ts`, `src/lib/impulsionamento.ts`.
   - Campanhas entram antes da curadoria, ordenadas por prioridade e ordem; cada evento aparece **uma vez** por seção.
   - **Rodízio dos impulsos comprados**: as campanhas da administração vêm primeiro; depois, no máximo
     **8** impulsos comprados por bloco (seção ou listagem). Eventos da área escolhida pelo visitante têm
-    preferência e, entre eles, a ordem é sorteada por visitante e muda a cada dia (fuso de Brasília), para
+    preferência e, entre eles, a ordem é sorteada por visitante e muda a cada 15 minutos (00, 15, 30 e 45 de cada hora), para
     que todos os organizadores que pagaram tenham chances parecidas. Na listagem, só disputam as vagas os
     eventos que atendem à busca e aos filtros.
   - Campanhas nunca são apagadas; encerrada não é editada.
