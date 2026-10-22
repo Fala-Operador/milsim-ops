@@ -226,6 +226,11 @@ Código: `src/lib/repasses.ts`, `src/services/repasses.ts`.
   comprador e 3,5% da plataforma: o comprador paga R$ 103,50, a organização recebe R$ 100,00 e a
   plataforma R$ 3,50.
 - Reembolso de venda repassada desfaz a transferência e devolve a taxa.
+- **Uma conta de recebimento por organização**: antes de criar uma conta no Stripe, o servidor procura
+  as contas conectadas da plataforma com `metadata.organizacaoId` da organização e reaproveita a que
+  existir (a que mais avançou no cadastro, depois a mais antiga). Se duas pessoas criarem ao mesmo tempo,
+  vale a primeira gravada e o cadastro continua nela. A administração vê o id da conta de cada
+  organização em Pagamentos.
 - Ao trocar as chaves do Stripe de teste para produção, a conta de recebimento criada no modo de teste
   (ou numa sandbox, que é outra conta de plataforma) é esquecida na primeira consulta e a organização
   refaz o cadastro numa conta nova. O id descartado fica no log do servidor. Enquanto isso,
