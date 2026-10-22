@@ -6,10 +6,69 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui";
 import { conteudoQr } from "@/lib/checkin";
 import { tokenDaInscricao } from "@/services/checkin";
+import { consultarEntrada } from "@/api/checkin.functions";
 import { guardarArquivosApp } from "@/lib/sw";
 import { storage } from "@/lib/storage";
 import { formatarDataBR } from "@/lib/domain/money";
 import type { Evento, Inscricao } from "@/lib/domain/types";
+
+/** A cada quantos ms o modal pergunta se a portaria já confirmou a entrada. */
+const INTERVALO_CONSULTA_MS = 3000;
+/** Depois da confirmação, o modal fecha sozinho após este tempo. */
+const FECHAR_APOS_S = 15;
+
+/**
+ * Enquanto o QR Code está aberto, pergunta ao servidor se a entrada foi confirmada.
+ * Só consulta com a aba visível; falhas (ex.: sem sinal no local) são ignoradas e a
+ * próxima tentativa segue normalmente.
+ */
+function useEntradaConfirmada(inscricaoId: string): string | null {
+  const [em, setEm] = useState<string | null>(null);
+  useEffect(() => {
+    if (em) return;
+    let ativo = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const consultar = async () => {
+      if (document.visibilityState === "visible" && navigator.onLine !== false) {
+        try {
+          const r = await consultarEntrada(inscricaoId);
+          if (ativo && r.confirmada) return setEm(r.em ?? new Date().toISOString());
+        } catch { /* sem conexão ou falha momentânea: tenta de novo */ }
+      }
+      if (ativo) timer = setTimeout(consultar, INTERVALO_CONSULTA_MS);
+    };
+    void consultar();
+    const aoVoltar = () => {
+      if (document.visibilityState !== "visible") return;
+      clearTimeout(timer);
+      void consultar();
+    };
+    document.addEventListener("visibilitychange", aoVoltar);
+    return () => {
+      ativo = false;
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", aoVoltar);
+    };
+  }, [inscricaoId, em]);
+  return em;
+}
+
+function EntradaConfirmada({ em, restante }: { em: string; restante: number }) {
+  const hora = new Date(em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return (
+    <div className="space-y-3 py-4 text-center" role="status" aria-live="assertive">
+      <div className="entrada-confirmada mx-auto flex h-40 w-40 items-center justify-center rounded-full bg-success/10 text-success animate-in zoom-in-50 duration-300">
+        <svg viewBox="0 0 56 56" className="h-32 w-32" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle className="circulo" cx="28" cy="28" r="25" />
+          <path className="check" d="M16 29l8 8 16-17" />
+        </svg>
+      </div>
+      <p className="font-display text-2xl font-semibold uppercase text-success">Entrada confirmada</p>
+      <p className="text-sm text-muted-foreground">Check-in registrado às {hora}. Boa operação!</p>
+      <p className="text-xs text-muted-foreground">Esta janela fecha em {restante}s.</p>
+    </div>
+  );
+}
 
 export function IngressoQr({ inscricao, evento, usuarioId, onFechar }: {
   inscricao: Inscricao; evento: Evento | undefined; usuarioId: string; onFechar: () => void;
@@ -17,6 +76,20 @@ export function IngressoQr({ inscricao, evento, usuarioId, onFechar }: {
   const [qr, setQr] = useState("");
   const [erro, setErro] = useState("");
   const [msg, setMsg] = useState("");
+  const confirmadaEm = useEntradaConfirmada(inscricao.id);
+  const [restante, setRestante] = useState(FECHAR_APOS_S);
+
+  // Confirmada a entrada: contagem regressiva e fecha sozinho.
+  useEffect(() => {
+    if (!confirmadaEm) return;
+    setRestante(FECHAR_APOS_S);
+    const inicio = Date.now();
+    const t = setInterval(() => {
+      const falta = FECHAR_APOS_S - Math.floor((Date.now() - inicio) / 1000);
+      if (falta <= 0) { clearInterval(t); onFechar(); } else setRestante(falta);
+    }, 250);
+    return () => clearInterval(t);
+  }, [confirmadaEm]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     try {
@@ -58,7 +131,13 @@ export function IngressoQr({ inscricao, evento, usuarioId, onFechar }: {
 
   return (
     <Modal aberto titulo="QR Code de entrada" onFechar={onFechar}>
-      {erro ? <p role="alert" className="text-sm text-destructive">{erro}</p> : (
+      {confirmadaEm ? (
+        <div className="space-y-3 text-center">
+          <p className="font-medium">{evento?.nome}</p>
+          <EntradaConfirmada em={confirmadaEm} restante={restante} />
+          <p className="font-mono text-lg font-bold text-muted-foreground">{inscricao.codigo}</p>
+        </div>
+      ) : erro ? <p role="alert" className="text-sm text-destructive">{erro}</p> : (
         <div className="space-y-3 text-center">
           <p className="font-medium">{evento?.nome}</p>
           <div className="mx-auto w-fit rounded-lg bg-white p-2">
