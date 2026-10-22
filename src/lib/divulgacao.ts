@@ -130,9 +130,10 @@ export function eventosDaSecao(
   secao: SecaoInicial,
   local: Abrangencia,
   agora: Date,
+  semente?: string,
 ): CartaoEventoResolvido[] {
   const vistos = new Set<string>();
-  const impulsionados = campanhasNaPosicao(base, secao.id, local, agora).flatMap(
+  const impulsionados = campanhasNaPosicao(base, secao.id, local, agora, { semente }).flatMap(
     (c): CartaoEventoResolvido[] => {
       const e = base.eventos.find((x) => x.id === c.eventoId)!;
       vistos.add(e.id);
@@ -222,7 +223,7 @@ export function montarPaginaInicial(
   base: BaseDados,
   local: Abrangencia,
   agora: Date,
-  opcoes: { incluirRascunhos?: boolean } = {},
+  opcoes: { incluirRascunhos?: boolean; semente?: string } = {},
 ): SecaoResolvida[] {
   return base.secoesInicio
     .filter((s) => s.status === "publicada" || (opcoes.incluirRascunhos && s.status === "rascunho"))
@@ -231,7 +232,7 @@ export function montarPaginaInicial(
     .sort((a, b) => a.ordem - b.ordem)
     .flatMap((secao): SecaoResolvida[] => {
       if (secao.tipo === "destaques" || secao.tipo === "regional") {
-        const eventos = eventosDaSecao(base, secao, local, agora);
+        const eventos = eventosDaSecao(base, secao, local, agora, opcoes.semente);
         return eventos.length ? [{ secao, eventos, parceiros: [] }] : [];
       }
       if (secao.tipo === "patrocinadores" || secao.tipo === "apoiadores") {
