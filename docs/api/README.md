@@ -94,7 +94,7 @@ try {
 
 ## Índice
 
-122 server functions em 16 módulos, mais os [webhooks do Stripe](#webhooks).
+144 server functions em 17 módulos, mais os [webhooks do Stripe](#webhooks).
 
 ### Sessão e leitura
 <a id="sessao"></a>
@@ -222,6 +222,31 @@ Fóruns, publicações, respostas, curtidas, denúncias e moderação. Arquivo: 
 | [`excluirForum`](comunidade/excluirForum.md) | POST | Gestão do evento: organização dona ou admin | Exclui um fórum vazio. |
 | [`definirPreferenciaForum`](comunidade/definirPreferenciaForum.md) | POST | Quem vê o fórum | Segue, silencia ou volta ao padrão de notificações de um fórum. |
 | [`atualizarNomeExibicao`](comunidade/atualizarNomeExibicao.md) | POST | Qualquer pessoa autenticada | Define o nome exibido na comunidade (no lugar do nome completo). |
+
+### Comunidade geral
+<a id="social"></a>
+
+Feed estilo Twitter (posts de até 220 caracteres e 4 fotos), seguir, bloqueio, denúncia e moderação. **Fora da base**: leituras paginadas por `social_posts_page()` (sem visão nem `chamar`). Arquivo: [`src/api/social.functions.ts`](../../src/api/social.functions.ts).
+
+| API | Método | Acesso | O que faz |
+|---|---|---|---|
+| [`lerFeed`](social/lerFeed.md) | POST | Pública (visitante vê só perfis públicos) | Página do feed geral (posts sem as respostas), do mais novo para o mais antigo. |
+| [`lerPostsDoAutor`](social/lerPostsDoAutor.md) | POST | Pública (perfil privado: só seguidores aprovados) | Posts de uma pessoa (aba Publicações do perfil do operador). |
+| [`lerPost`](social/lerPost.md) | POST | Pública (respeita a visibilidade do autor) | Uma publicação, o post a que ela responde (se visível) e a primeira página de respostas. |
+| [`lerRespostas`](social/lerRespostas.md) | POST | Pública (respeita a visibilidade de cada autor) | Próximas páginas de respostas de uma publicação. |
+| [`lerPerfilSocial`](social/lerPerfilSocial.md) | POST | Pública | Cabeçalho social de um perfil: seguidores, seguindo, público/privado e a relação com quem vê. |
+| [`lerPedidosParaSeguir`](social/lerPedidosParaSeguir.md) | POST | Qualquer pessoa autenticada e ativa | Pedidos para seguir aguardando a aprovação da própria conta. |
+| [`lerDenunciasPendentes`](social/lerDenunciasPendentes.md) | POST | Admin | Fila de moderação: denúncias pendentes com a publicação denunciada. |
+| [`publicarPost`](social/publicarPost.md) | POST | Qualquer pessoa autenticada e ativa | Publica no feed geral ou responde a uma publicação. |
+| [`excluirPost`](social/excluirPost.md) | POST | Autor da publicação | Exclui a própria publicação (some do feed e do perfil). |
+| [`curtirPost`](social/curtirPost.md) | POST | Qualquer pessoa autenticada e ativa | Curte ou descurte uma publicação visível. |
+| [`seguir`](social/seguir.md) | POST | Qualquer pessoa autenticada e ativa | Segue uma pessoa (ou pede para seguir, se o perfil é privado). |
+| [`deixarDeSeguir`](social/deixarDeSeguir.md) | POST | Qualquer pessoa autenticada e ativa | Deixa de seguir (ou cancela o pedido para seguir). |
+| [`responderPedido`](social/responderPedido.md) | POST | Dono do perfil seguido | Aceita ou recusa um pedido para seguir. |
+| [`bloquear`](social/bloquear.md) | POST | Qualquer pessoa autenticada e ativa | Bloqueia ou desbloqueia uma pessoa na comunidade geral. |
+| [`denunciarPost`](social/denunciarPost.md) | POST | Qualquer pessoa autenticada e ativa | Denuncia uma publicação para a moderação do admin. |
+| [`resolverDenuncia`](social/resolverDenuncia.md) | POST | Admin | Oculta a publicação denunciada ou descarta a denúncia. |
+| [`definirPerfilComunidade`](social/definirPerfilComunidade.md) | POST | Qualquer pessoa autenticada e ativa | Define o perfil na comunidade geral como público ou privado. |
 
 ### Perfil do operador
 <a id="perfil"></a>

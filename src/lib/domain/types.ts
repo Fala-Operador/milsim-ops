@@ -43,6 +43,11 @@ export interface Usuario {
    * Regras em src/lib/fichaEmergencia.ts; filtrada na visão.
    */
   fichaEmergencia?: FichaEmergencia | undefined;
+  /**
+   * Perfil na comunidade geral: true = privado (só seguidores aprovados veem os posts);
+   * ausente/false = público. Contas de 15 a 17 anos começam privadas.
+   */
+  comunidadePrivada?: boolean | undefined;
 }
 
 export type TipoSanguineo = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";

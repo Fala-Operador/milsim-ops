@@ -1,0 +1,44 @@
+// Lista paginada de publicações ("carregar mais"), usada no feed, no perfil e nas respostas.
+// As leituras não passam pela visão: cada página vem pronta do servidor (social_posts_page).
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { EstadoVazio, ErroSecao, SkeletonCartao } from "@/components/ui";
+import type { PaginaPosts } from "@/lib/comunidadeGeral";
+import { CartaoPost } from "./CartaoPost";
+
+export type CarregarPagina = (cursor: { antes?: string | undefined; antesId?: string | undefined }) => Promise<PaginaPosts>;
+
+export function ListaPosts({ chave, carregar, vazio }: {
+  chave: readonly unknown[];
+  carregar: CarregarPagina;
+  vazio: { titulo: string; descricao?: string };
+}) {
+  const q = useInfiniteQuery({
+    queryKey: chave,
+    queryFn: ({ pageParam }) => carregar(pageParam),
+    initialPageParam: {} as { antes?: string | undefined; antesId?: string | undefined },
+    getNextPageParam: (ultima) => ultima.proximo,
+  });
+
+  if (q.isPending) return <div className="space-y-3"><SkeletonCartao /><SkeletonCartao /></div>;
+  if (q.isError) return <ErroSecao titulo="Não foi possível carregar as publicações" descricao={q.error.message} onTentar={() => void q.refetch()} />;
+  const posts = q.data.pages.flatMap((p) => p.posts);
+  if (!posts.length) return <EstadoVazio titulo={vazio.titulo} descricao={vazio.descricao ?? ""} />;
+
+  return (
+    <div className="space-y-3">
+      <ul className="space-y-3">
+        {posts.map((p) => (
+          <li key={p.id}><CartaoPost post={p} onMudou={() => void q.refetch()} /></li>
+        ))}
+      </ul>
+      {q.hasNextPage && (
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={() => void q.fetchNextPage()} disabled={q.isFetchingNextPage}>
+            {q.isFetchingNextPage ? "Carregando..." : "Carregar mais"}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}

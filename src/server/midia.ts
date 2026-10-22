@@ -14,7 +14,8 @@ const LIMITES: Record<string, { ext: string; max: number }> = {
   "application/pdf": { ext: "pdf", max: 5 * 1024 * 1024 },
 };
 
-async function enviar(admin: SupabaseClient, dataUrl: string): Promise<string> {
+/** Envia um data URL ao bucket público "midia" e devolve a URL pública. */
+export async function enviarArquivo(admin: SupabaseClient, dataUrl: string): Promise<string> {
   const m = DATA_URL.exec(dataUrl);
   const tipo = m?.[1] ?? "";
   const regra = LIMITES[tipo];
@@ -35,7 +36,7 @@ export async function enviarMidia(admin: SupabaseClient, registros: object[]): P
     for (const [k, v] of Object.entries(alvo)) {
       if (typeof v === "string") {
         if (v.startsWith("data:") && v.includes(";base64,")) {
-          pendentes.push(enviar(admin, v).then((url) => { alvo[k] = url; }));
+          pendentes.push(enviarArquivo(admin, v).then((url) => { alvo[k] = url; }));
         }
       } else if (v && typeof v === "object") {
         visitar(v as Record<string, unknown>);
