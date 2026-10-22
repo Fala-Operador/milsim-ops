@@ -347,6 +347,33 @@ Código: `src/services/comunidade.ts`. → [APIs](api/README.md#comunidade)
 - Publicação **importante** (só gestão) notifica todos com acesso; comum notifica quem segue o fórum.
 - Na comunidade aparece só o **nome de exibição** (até 40 caracteres; padrão: primeiro e último nome).
 
+### Comunidade geral (estilo Twitter)
+
+Código: `src/lib/comunidadeGeral.ts`, `src/lib/moderacao.ts`, `src/server/social.server.ts`, função SQL
+`social_posts_page()`. → [APIs](api/README.md#social). Página: Comunidades › Geral (`/comunidades`).
+
+- **Fora da base**: posts, fotos, curtidas, seguidores, bloqueios e denúncias ficam em tabelas `social_*`
+  lidas em páginas de 20 (exceção registrada no AGENTS.md). A visibilidade é aplicada no banco.
+- **Post**: até **220 caracteres** (emoji conta como 1) e/ou até **4 fotos** (JPG, PNG ou WebP, até 5 MB
+  cada, redimensionadas no navegador). Sem vídeo. Respostas são posts ligados a outro post.
+- **Ritmo**: no mínimo 10 s entre posts e até 30 por hora por conta.
+- **Visibilidade**:
+  - perfil **público** (padrão): qualquer pessoa vê, inclusive visitante sem login;
+  - perfil **privado**: só o próprio e **seguidores aprovados**; contas de **15 a 17 anos começam privadas**;
+  - **bloqueio** (em qualquer sentido) esconde os posts e desfaz o seguir; conta desativada some;
+  - post **ocultado** pela moderação ou **excluído** pelo autor não aparece para ninguém.
+- **Interagir** (publicar, curtir, responder, seguir, denunciar, bloquear) exige login.
+- **Seguir**: perfil público aprova na hora; privado vira pedido (Comunidades › Pedidos para seguir).
+  Tornar o perfil público aceita os pedidos pendentes.
+- **Conteúdo adulto** (sexo, drogas ilícitas, morte e violência real) é recusado ao publicar por uma lista de
+  termos (`moderarTexto`); jargão do jogo ("morri", "missão suicida", "Vale da Morte") passa. **Ainda sem IA**:
+  fotos e textos fora da lista dependem de **denúncia**. A IA entra depois no mesmo ponto (`moderarTexto`).
+- **Denúncias** vão para o admin (Administração › Comunidade): ocultar a publicação (com motivo, que o autor
+  recebe por notificação) encerra todas as denúncias dela; descartar encerra só aquela.
+- **Notificações** (silenciáveis em "comunidade"): resposta ao seu post, pedido para seguir, novo seguidor,
+  pedido aceito e publicação ocultada.
+- **Lateral** (banner, operações e patrocinadores impulsionados): fase 3, ainda não implementada.
+
 ## 14. Central de Suporte
 
 Código: `src/lib/suporte.ts`, `src/services/suporte.ts`. → [Fluxo](fluxos.md#7-suporte-com-encaminhamento)

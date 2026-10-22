@@ -1,3 +1,6 @@
+import { lerPerfilSocial, lerPostsDoAutor } from "@/api/social.functions";
+import { CabecalhoSocial, chavePerfilSocial } from "@/components/social/Relacoes";
+import { ListaPosts } from "@/components/social/ListaPosts";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -15,10 +18,10 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Label } from "@/components/ui/label";
 
-const ABAS = ["visao", "operacoes", "mapa", "insignias", "equipamentos", "fotos", "recompensas"] as const;
+const ABAS = ["visao", "publicacoes", "operacoes", "mapa", "insignias", "equipamentos", "fotos", "recompensas"] as const;
 type Aba = (typeof ABAS)[number];
 const ROTULOS: Record<Aba, string> = {
-  visao: "Visão geral", operacoes: "Operações", mapa: "Mapa", insignias: "Insígnias", equipamentos: "Equipamentos", fotos: "Fotos", recompensas: "Minhas recompensas",
+  visao: "Visão geral", publicacoes: "Publicações", operacoes: "Operações", mapa: "Mapa", insignias: "Insígnias", equipamentos: "Equipamentos", fotos: "Fotos", recompensas: "Minhas recompensas",
 };
 
 export const Route = createFileRoute("/operador/$usuarioId")({
@@ -90,6 +93,8 @@ function PaginaOperador() {
         )}
       </div>
       {p.social?.bio && <p className="mt-3 max-w-2xl whitespace-pre-wrap px-1 text-sm sm:px-4">{p.social.bio}</p>}
+      {/* Comunidade geral: seguidores, privacidade do perfil e seguir. */}
+      <div className="mt-3 px-1 sm:px-4"><CabecalhoSocial usuarioId={usuarioId} /></div>
 
       {p.restrito ? (
         <Card className="mt-6 text-center">
@@ -158,6 +163,7 @@ function PaginaOperador() {
                 </section>
               </div>
             )}
+            {aba === "publicacoes" && <PublicacoesDoOperador usuarioId={usuarioId} />}
             {aba === "operacoes" && <AbaOperacoes operacoes={p.operacoes} futuras={p.futuras} proprio={p.proprio} onMudou={recarregar} />}
             {aba === "mapa" && (p.mapa ? (
               <div className="space-y-8">
@@ -175,6 +181,30 @@ function PaginaOperador() {
 
       {p.proprio && editar && <EditarPerfil perfil={p} aberto onFechar={() => setEditar(false)} onSalvo={recarregar} />}
       {p.proprio && privacidade && <Privacidade perfil={p} aberto onFechar={() => setPrivacidade(false)} onSalvo={recarregar} />}
+    </div>
+  );
+}
+
+/** Publicações da pessoa na comunidade geral (perfil privado: só para seguidores aprovados). */
+function PublicacoesDoOperador({ usuarioId }: { usuarioId: string }) {
+  const { usuario } = useAuth();
+  const perfil = useQuery({ queryKey: chavePerfilSocial(usuarioId), queryFn: () => lerPerfilSocial(usuarioId) });
+  if (!perfil.data) return null;
+  if (!perfil.data.postsVisiveis) {
+    return (
+      <EstadoVazio
+        titulo={perfil.data.relacao === "bloqueado" ? "Publicações indisponíveis" : "Perfil privado"}
+        descricao={perfil.data.relacao === "bloqueado" ? "Há um bloqueio entre vocês." : "Só seguidores aprovados veem as publicações desta pessoa."}
+      />
+    );
+  }
+  return (
+    <div className="max-w-2xl">
+      <ListaPosts
+        chave={["social", "autor", usuarioId, usuario?.id ?? "visitante"]}
+        carregar={(c) => lerPostsDoAutor(usuarioId, c)}
+        vazio={{ titulo: "Nenhuma publicação ainda" }}
+      />
     </div>
   );
 }

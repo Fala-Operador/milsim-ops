@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as CadastroRouteImport } from './routes/cadastro'
-import { Route as ComunidadesRouteImport } from './routes/comunidades'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ModalidadesRouteImport } from './routes/modalidades'
 import { Route as OrganizacaoRouteImport } from './routes/organizacao'
@@ -22,6 +21,7 @@ import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAuditoriaRouteImport } from './routes/admin.auditoria'
+import { Route as AdminComunidadeRouteImport } from './routes/admin.comunidade'
 import { Route as AdminDivulgacaoRouteImport } from './routes/admin.divulgacao'
 import { Route as AdminGamificacaoRouteImport } from './routes/admin.gamificacao'
 import { Route as AdminInsightsRouteImport } from './routes/admin.insights'
@@ -43,6 +43,7 @@ import { Route as AppPerfilRouteImport } from './routes/app.perfil'
 import { Route as AppPrivacidadeRouteImport } from './routes/app.privacidade'
 import { Route as AppSuporteRouteImport } from './routes/app.suporte'
 import { Route as ComunidadeEventoIdRouteImport } from './routes/comunidade.$eventoId'
+import { Route as ComunidadesIndexRouteImport } from './routes/comunidades.index'
 import { Route as EventosEventoIdRouteImport } from './routes/eventos.$eventoId'
 import { Route as InscricaoEventoIdRouteImport } from './routes/inscricao.$eventoId'
 import { Route as OperadorUsuarioIdRouteImport } from './routes/operador.$usuarioId'
@@ -61,6 +62,7 @@ import { Route as AdminEventosEventoIdRouteImport } from './routes/admin.eventos
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as ComunidadeEventoIdIndexRouteImport } from './routes/comunidade.$eventoId.index'
 import { Route as ComunidadeEventoIdGerenciarRouteImport } from './routes/comunidade.$eventoId.gerenciar'
+import { Route as ComunidadesPPostIdRouteImport } from './routes/comunidades.p.$postId'
 import { Route as ComunidadeEventoIdPPostIdRouteImport } from './routes/comunidade.$eventoId.p.$postId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -81,11 +83,6 @@ const AppRoute = AppRouteImport.update({
 const CadastroRoute = CadastroRouteImport.update({
   id: '/cadastro',
   path: '/cadastro',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ComunidadesRoute = ComunidadesRouteImport.update({
-  id: '/comunidades',
-  path: '/comunidades',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -126,6 +123,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminAuditoriaRoute = AdminAuditoriaRouteImport.update({
   id: '/auditoria',
   path: '/auditoria',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminComunidadeRoute = AdminComunidadeRouteImport.update({
+  id: '/comunidade',
+  path: '/comunidade',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminDivulgacaoRoute = AdminDivulgacaoRouteImport.update({
@@ -233,6 +235,11 @@ const ComunidadeEventoIdRoute = ComunidadeEventoIdRouteImport.update({
   path: '/comunidade/$eventoId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ComunidadesIndexRoute = ComunidadesIndexRouteImport.update({
+  id: '/comunidades/',
+  path: '/comunidades/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EventosEventoIdRoute = EventosEventoIdRouteImport.update({
   id: '/eventos/$eventoId',
   path: '/eventos/$eventoId',
@@ -324,6 +331,11 @@ const ComunidadeEventoIdGerenciarRoute =
     path: '/gerenciar',
     getParentRoute: () => ComunidadeEventoIdRoute,
   } as any)
+const ComunidadesPPostIdRoute = ComunidadesPPostIdRouteImport.update({
+  id: '/comunidades/p/$postId',
+  path: '/comunidades/p/$postId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ComunidadeEventoIdPPostIdRoute =
   ComunidadeEventoIdPPostIdRouteImport.update({
     id: '/p/$postId',
@@ -336,7 +348,6 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/cadastro': typeof CadastroRoute
-  '/comunidades': typeof ComunidadesRoute
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/organizacao': typeof OrganizacaoRouteWithChildren
@@ -344,6 +355,7 @@ export interface FileRoutesByFullPath {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/comunidade': typeof AdminComunidadeRoute
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/gamificacao': typeof AdminGamificacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
@@ -379,23 +391,25 @@ export interface FileRoutesByFullPath {
   '/organizacao/suporte': typeof OrganizacaoSuporteRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/comunidades/': typeof ComunidadesIndexRoute
   '/organizacao/': typeof OrganizacaoIndexRoute
   '/admin/eventos/$eventoId': typeof AdminEventosEventoIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
+  '/comunidades/p/$postId': typeof ComunidadesPPostIdRoute
   '/comunidade/$eventoId/': typeof ComunidadeEventoIdIndexRoute
   '/comunidade/$eventoId/p/$postId': typeof ComunidadeEventoIdPPostIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
-  '/comunidades': typeof ComunidadesRoute
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/privacidade': typeof PrivacidadeRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/comunidade': typeof AdminComunidadeRoute
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/gamificacao': typeof AdminGamificacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
@@ -430,10 +444,12 @@ export interface FileRoutesByTo {
   '/organizacao/suporte': typeof OrganizacaoSuporteRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
+  '/comunidades': typeof ComunidadesIndexRoute
   '/organizacao': typeof OrganizacaoIndexRoute
   '/admin/eventos/$eventoId': typeof AdminEventosEventoIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
+  '/comunidades/p/$postId': typeof ComunidadesPPostIdRoute
   '/comunidade/$eventoId': typeof ComunidadeEventoIdIndexRoute
   '/comunidade/$eventoId/p/$postId': typeof ComunidadeEventoIdPPostIdRoute
 }
@@ -443,7 +459,6 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/cadastro': typeof CadastroRoute
-  '/comunidades': typeof ComunidadesRoute
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/organizacao': typeof OrganizacaoRouteWithChildren
@@ -451,6 +466,7 @@ export interface FileRoutesById {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/termos': typeof TermosRoute
   '/admin/auditoria': typeof AdminAuditoriaRoute
+  '/admin/comunidade': typeof AdminComunidadeRoute
   '/admin/divulgacao': typeof AdminDivulgacaoRoute
   '/admin/gamificacao': typeof AdminGamificacaoRoute
   '/admin/insights': typeof AdminInsightsRoute
@@ -486,10 +502,12 @@ export interface FileRoutesById {
   '/organizacao/suporte': typeof OrganizacaoSuporteRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/comunidades/': typeof ComunidadesIndexRoute
   '/organizacao/': typeof OrganizacaoIndexRoute
   '/admin/eventos/$eventoId': typeof AdminEventosEventoIdRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/comunidade/$eventoId/gerenciar': typeof ComunidadeEventoIdGerenciarRoute
+  '/comunidades/p/$postId': typeof ComunidadesPPostIdRoute
   '/comunidade/$eventoId/': typeof ComunidadeEventoIdIndexRoute
   '/comunidade/$eventoId/p/$postId': typeof ComunidadeEventoIdPPostIdRoute
 }
@@ -500,7 +518,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/cadastro'
-    | '/comunidades'
     | '/login'
     | '/modalidades'
     | '/organizacao'
@@ -508,6 +525,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/termos'
     | '/admin/auditoria'
+    | '/admin/comunidade'
     | '/admin/divulgacao'
     | '/admin/gamificacao'
     | '/admin/insights'
@@ -543,23 +561,25 @@ export interface FileRouteTypes {
     | '/organizacao/suporte'
     | '/admin/'
     | '/app/'
+    | '/comunidades/'
     | '/organizacao/'
     | '/admin/eventos/$eventoId'
     | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
+    | '/comunidades/p/$postId'
     | '/comunidade/$eventoId/'
     | '/comunidade/$eventoId/p/$postId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/cadastro'
-    | '/comunidades'
     | '/login'
     | '/modalidades'
     | '/privacidade'
     | '/recuperar-senha'
     | '/termos'
     | '/admin/auditoria'
+    | '/admin/comunidade'
     | '/admin/divulgacao'
     | '/admin/gamificacao'
     | '/admin/insights'
@@ -594,10 +614,12 @@ export interface FileRouteTypes {
     | '/organizacao/suporte'
     | '/admin'
     | '/app'
+    | '/comunidades'
     | '/organizacao'
     | '/admin/eventos/$eventoId'
     | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
+    | '/comunidades/p/$postId'
     | '/comunidade/$eventoId'
     | '/comunidade/$eventoId/p/$postId'
   id:
@@ -606,7 +628,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/cadastro'
-    | '/comunidades'
     | '/login'
     | '/modalidades'
     | '/organizacao'
@@ -614,6 +635,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/termos'
     | '/admin/auditoria'
+    | '/admin/comunidade'
     | '/admin/divulgacao'
     | '/admin/gamificacao'
     | '/admin/insights'
@@ -649,10 +671,12 @@ export interface FileRouteTypes {
     | '/organizacao/suporte'
     | '/admin/'
     | '/app/'
+    | '/comunidades/'
     | '/organizacao/'
     | '/admin/eventos/$eventoId'
     | '/api/stripe/webhook'
     | '/comunidade/$eventoId/gerenciar'
+    | '/comunidades/p/$postId'
     | '/comunidade/$eventoId/'
     | '/comunidade/$eventoId/p/$postId'
   fileRoutesById: FileRoutesById
@@ -662,7 +686,6 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
   CadastroRoute: typeof CadastroRoute
-  ComunidadesRoute: typeof ComunidadesRoute
   LoginRoute: typeof LoginRoute
   ModalidadesRoute: typeof ModalidadesRoute
   OrganizacaoRoute: typeof OrganizacaoRouteWithChildren
@@ -673,7 +696,9 @@ export interface RootRouteChildren {
   EventosEventoIdRoute: typeof EventosEventoIdRoute
   InscricaoEventoIdRoute: typeof InscricaoEventoIdRoute
   OperadorUsuarioIdRoute: typeof OperadorUsuarioIdRoute
+  ComunidadesIndexRoute: typeof ComunidadesIndexRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
+  ComunidadesPPostIdRoute: typeof ComunidadesPPostIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -704,13 +729,6 @@ declare module '@tanstack/react-router' {
       path: '/cadastro'
       fullPath: '/cadastro'
       preLoaderRoute: typeof CadastroRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/comunidades': {
-      id: '/comunidades'
-      path: '/comunidades'
-      fullPath: '/comunidades'
-      preLoaderRoute: typeof ComunidadesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -767,6 +785,13 @@ declare module '@tanstack/react-router' {
       path: '/auditoria'
       fullPath: '/admin/auditoria'
       preLoaderRoute: typeof AdminAuditoriaRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/comunidade': {
+      id: '/admin/comunidade'
+      path: '/comunidade'
+      fullPath: '/admin/comunidade'
+      preLoaderRoute: typeof AdminComunidadeRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/divulgacao': {
@@ -916,6 +941,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComunidadeEventoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/comunidades/': {
+      id: '/comunidades/'
+      path: '/comunidades'
+      fullPath: '/comunidades/'
+      preLoaderRoute: typeof ComunidadesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/eventos/$eventoId': {
       id: '/eventos/$eventoId'
       path: '/eventos/$eventoId'
@@ -1042,6 +1074,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComunidadeEventoIdGerenciarRouteImport
       parentRoute: typeof ComunidadeEventoIdRoute
     }
+    '/comunidades/p/$postId': {
+      id: '/comunidades/p/$postId'
+      path: '/comunidades/p/$postId'
+      fullPath: '/comunidades/p/$postId'
+      preLoaderRoute: typeof ComunidadesPPostIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/comunidade/$eventoId/p/$postId': {
       id: '/comunidade/$eventoId/p/$postId'
       path: '/p/$postId'
@@ -1054,6 +1093,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminAuditoriaRoute: typeof AdminAuditoriaRoute
+  AdminComunidadeRoute: typeof AdminComunidadeRoute
   AdminDivulgacaoRoute: typeof AdminDivulgacaoRoute
   AdminGamificacaoRoute: typeof AdminGamificacaoRoute
   AdminInsightsRoute: typeof AdminInsightsRoute
@@ -1071,6 +1111,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditoriaRoute: AdminAuditoriaRoute,
+  AdminComunidadeRoute: AdminComunidadeRoute,
   AdminDivulgacaoRoute: AdminDivulgacaoRoute,
   AdminGamificacaoRoute: AdminGamificacaoRoute,
   AdminInsightsRoute: AdminInsightsRoute,
@@ -1166,7 +1207,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AppRoute: AppRouteWithChildren,
   CadastroRoute: CadastroRoute,
-  ComunidadesRoute: ComunidadesRoute,
   LoginRoute: LoginRoute,
   ModalidadesRoute: ModalidadesRoute,
   OrganizacaoRoute: OrganizacaoRouteWithChildren,
@@ -1177,7 +1217,9 @@ const rootRouteChildren: RootRouteChildren = {
   EventosEventoIdRoute: EventosEventoIdRoute,
   InscricaoEventoIdRoute: InscricaoEventoIdRoute,
   OperadorUsuarioIdRoute: OperadorUsuarioIdRoute,
+  ComunidadesIndexRoute: ComunidadesIndexRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
+  ComunidadesPPostIdRoute: ComunidadesPPostIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
