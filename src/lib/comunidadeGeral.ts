@@ -145,6 +145,8 @@ export interface ForumDTO {
   nome: string;
   descricao?: string | undefined;
   visibilidade: VisibilidadeForum;
+  /** Foto do fórum (quadrada, opcional). */
+  fotoUrl?: string | undefined;
   dono: AutorDTO;
   criadoEm: string;
   membros: number;
@@ -171,6 +173,13 @@ export function erroForum(nome: string, descricao: string | undefined, visibilid
   if (!ehVisibilidadeForum(visibilidade)) return "Escolha se o fórum é público ou privado.";
   const m = moderarTexto(`${n} ${descricao ?? ""}`);
   if (!m.aprovado) return m.motivo;
+  return "";
+}
+
+/** Foto do fórum enviada pelo navegador (data URL JPG/PNG/WebP de até 5 MB); vazio = válida. */
+export function erroFotoForum(dados: string): string {
+  if (!DATA_URL.test(dados)) return "Formato de foto inválido. Use JPG, PNG ou WebP.";
+  if (tamanhoDataUrl(dados) > TAMANHO_MAXIMO_FOTO) return "A foto pode ter no máximo 5 MB.";
   return "";
 }
 

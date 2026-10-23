@@ -24,7 +24,7 @@ import { EstadoVazio, Modal, SkeletonCartao } from "@/components/ui";
 import { AvatarAutor } from "@/components/social/CartaoPost";
 import { Compositor } from "@/components/social/Compositor";
 import { ListaPosts } from "@/components/social/ListaPosts";
-import { ModalForum, SeloVisibilidade } from "@/components/social/Foruns";
+import { FotoForum, ModalForum, SeloVisibilidade } from "@/components/social/Foruns";
 import { LateralComunidade } from "@/components/social/LateralComunidade";
 
 type Aba = "publicacoes" | "membros" | "pedidos" | "config";
@@ -78,6 +78,8 @@ function PaginaForum() {
         <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Fóruns
       </Link>
       <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-4">
+        <FotoForum nome={forum.nome} fotoUrl={forum.fotoUrl} tamanho="h-16 w-16 sm:h-20 sm:w-20" texto="text-3xl" />
         <div className="min-w-0">
           <h1 className="flex flex-wrap items-center gap-2 font-display text-2xl font-semibold uppercase">{forum.nome} <SeloVisibilidade v={forum.visibilidade} /></h1>
           {forum.descricao && <p className="mt-1 max-w-2xl whitespace-pre-wrap text-sm text-muted-foreground">{forum.descricao}</p>}
@@ -86,15 +88,17 @@ function PaginaForum() {
             <Link to="/operador/$usuarioId" params={{ usuarioId: forum.dono.id }} search={{ aba: undefined }} className="hover:underline">{forum.dono.nome}</Link>
           </p>
         </div>
+        </div>
         <AcaoParticipacao forum={forum} onMudou={atualizar} />
       </header>
 
       <Tabs value={aba} onValueChange={(v) => irPara(v as Aba)}>
-        <TabsList className="flex-wrap gap-2">
+        <TabsList aria-label="Seções do fórum" className="abas-rolaveis flex w-full gap-1 border-b border-border">
           {abas.map((a) => (
-            <TabsTrigger key={a.id} value={a.id} asChild>
-              <Button variant={aba === a.id ? "default" : "outline"}>{a.rotulo}</Button>
-            </TabsTrigger>
+            <TabsTrigger key={a.id} value={a.id}
+                className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring ${aba === a.id ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                {a.rotulo}
+              </TabsTrigger>
           ))}
         </TabsList>
       </Tabs>

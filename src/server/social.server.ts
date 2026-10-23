@@ -26,6 +26,7 @@ import {
   type PostDTO,
   type RelacaoSeguir,
   erroForum,
+  erroFotoForum,
   LIMITE_FORUNS_POR_CONTA,
   moderaForum,
   podeRemoverMembro,
@@ -434,6 +435,7 @@ interface LinhaForum {
   name: string;
   description: string | null;
   visibility: VisibilidadeForum;
+  photo_url: string | null;
   created_at: string;
   member_count: number | string;
   pending_count: number | string;
@@ -449,6 +451,7 @@ function forumDTO(base: BaseDados, l: LinhaForum): ForumDTO {
     nome: l.name,
     descricao: l.description ?? undefined,
     visibilidade: l.visibility,
+    fotoUrl: l.photo_url ?? undefined,
     dono: autorDTO(base, l.owner_id),
     criadoEm: l.created_at,
     membros: Number(l.member_count),
@@ -544,7 +547,14 @@ export const lerMembrosDoForum = (forumId: string, situacao: SituacaoMembro) =>
       .sort((a, b) => ordem[a.papel] - ordem[b.papel]);
   });
 
-export const criarForum = (d: { nome: string; descricao?: string | undefined; visibilidade: VisibilidadeForum }) =>
+/** Foto nova (data URL) vai ao Storage; devolve a URL pública. */
+async function enviarFotoForum(dados: string): Promise<string> {
+  const erro = erroFotoForum(dados);
+  if (erro) throw new ErroDominio("forum_foto", erro);
+  return enviarArquivo(supabaseAdmin(), dados);
+}
+
+export const criarForum = (d: { nome: string; descricao?: string | undefined; visibilidade: VisibilidadeForum; foto?: string | null | undefined }) =>
   comSessao(async (base, u) => {
     const eu = exigirUsuario(u);
     const erro = erroForum(d.nome, d.descricao, d.visibilidade);
@@ -556,16 +566,20 @@ export const criarForum = (d: { nome: string; descricao?: string | undefined; vi
       throw new ErroDominio("forum_limite", `Você já tem ${LIMITE_FORUNS_POR_CONTA} fóruns ativos. Arquive um para criar outro.`);
     }
     const id = gerarId("frm");
+    const foto = d.foto ? await enviarFotoForum(d.foto) : null;
     const { error } = await db.rpc("social_create_forum", {
-      p_id: id, p_owner: eu.id, p_name: d.nome.trim(), p_description: (d.descricao ?? "").trim(), p_visibility: d.visibilidade,
+      p_id: id, p_owner: eu.id, p_name: d.nome.trim(), p_description: (d.descricao ?? "").trim(), p_visibility: d.visibilidade, p_photo: foto,
     });
     if (error?.code === "23505") throw new ErroDominio("forum_nome", "Já existe um fórum ativo com esse nome.");
     if (error) falha("Falha ao criar fórum", error);
     return forumAtivo(base, eu.id, id);
   });
 
-/** Só o dono edita. Tornar público aceita os pedidos pendentes. */
-export const editarForum = (forumId: string, d: { nome: string; descricao?: string | undefined; visibilidade: VisibilidadeForum }) =>
+/**
+ * Só o dono edita. Tornar público aceita os pedidos pendentes.
+ * `foto`: data URL = trocar; null = remover; ausente = manter.
+ */
+export const editarForum = (forumId: string, d: { nome: string; descricao?: string | undefined; visibilidade: VisibilidadeForum; foto?: string | null | undefined }) =>
   comSessao(async (base, u) => {
     const eu = exigirUsuario(u);
     const p = await participacao(forumId, eu.id);
@@ -573,8 +587,9 @@ export const editarForum = (forumId: string, d: { nome: string; descricao?: stri
     const erro = erroForum(d.nome, d.descricao, d.visibilidade);
     if (erro) throw new ErroDominio("forum", erro);
     const db = supabaseAdmin();
+    const foto = d.foto === undefined ? {} : { photo_url: d.foto === null ? null : await enviarFotoForum(d.foto) };
     const { error } = await db.from("social_forums").update({
-      name: d.nome.trim(), description: (d.descricao ?? "").trim() || null, visibility: d.visibilidade, updated_at: new Date().toISOString(),
+      name: d.nome.trim(), description: (d.descricao ?? "").trim() || null, visibility: d.visibilidade, updated_at: new Date().toISOString(), ...foto,
     }).eq("id", forumId).eq("status", "ativo");
     if (error?.code === "23505") throw new ErroDominio("forum_nome", "Já existe um fórum ativo com esse nome.");
     if (error) falha("Falha ao editar fórum", error);

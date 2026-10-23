@@ -1,13 +1,15 @@
 // Fóruns da comunidade geral: lista (busca, "meus fóruns", criar) e formulário de criar/editar.
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Globe, Lock, Plus, Search, Users } from "lucide-react";
+import { Globe, ImagePlus, Lock, Plus, Search, Users } from "lucide-react";
 import { criarForum, editarForum, lerForuns } from "@/api/social.functions";
 import { useAuth } from "@/contexts/AuthContext";
+import { arquivoParaDataUrl } from "@/lib/imagens";
 import {
   DESCRICAO_FORUM_MAX,
   erroForum,
+  erroFotoForum,
   LIMITE_FORUNS_POR_CONTA,
   NOME_FORUM_MAX,
   type ForumDTO,
@@ -21,6 +23,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Campo, EstadoVazio, ErroSecao, Modal, SkeletonCartao } from "@/components/ui";
+
+/** Foto do fórum (quadrada) ou a inicial do nome. */
+export function FotoForum({ nome, fotoUrl, tamanho = "h-12 w-12", texto = "text-lg" }: { nome: string; fotoUrl?: string | undefined; tamanho?: string; texto?: string }) {
+  if (fotoUrl) return <img src={fotoUrl} alt="" className={`${tamanho} shrink-0 rounded-lg object-cover`} />;
+  return (
+    <span aria-hidden="true" className={`${tamanho} ${texto} flex shrink-0 items-center justify-center rounded-lg bg-secondary font-display font-semibold uppercase text-secondary-foreground`}>
+      {nome.trim().slice(0, 1)}
+    </span>
+  );
+}
 
 export function SeloVisibilidade({ v }: { v: VisibilidadeForum }) {
   return v === "privado"
@@ -40,9 +52,12 @@ export function CartaoForum({ f }: { f: ForumDTO }) {
   return (
     <Link to="/comunidades/f/$forumId" params={{ forumId: f.id }}
       className="block h-full rounded-lg border border-border bg-card p-4 transition-colors hover:bg-card/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="min-w-0 break-words font-semibold">{f.nome}</h3>
-        <SeloVisibilidade v={f.visibilidade} />
+      <div className="flex items-start gap-3">
+        <FotoForum nome={f.nome} fotoUrl={f.fotoUrl} />
+        <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+          <h3 className="min-w-0 break-words font-semibold">{f.nome}</h3>
+          <SeloVisibilidade v={f.visibilidade} />
+        </div>
       </div>
       {f.descricao && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{f.descricao}</p>}
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -62,6 +77,10 @@ export function ModalForum({ aberto, forum, onFechar, onSalvo }: {
   const [nome, setNome] = useState(forum?.nome ?? "");
   const [descricao, setDescricao] = useState(forum?.descricao ?? "");
   const [visibilidade, setVisibilidade] = useState<VisibilidadeForum>(forum?.visibilidade ?? "publico");
+  // Prévia: URL atual, data URL nova ou vazio (sem foto). Só é enviada se mudou.
+  const [foto, setFoto] = useState<string | undefined>(forum?.fotoUrl);
+  const fotoMudou = foto !== forum?.fotoUrl;
+  const entradaFoto = useRef<HTMLInputElement>(null);
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
 
@@ -71,7 +90,11 @@ export function ModalForum({ aberto, forum, onFechar, onSalvo }: {
     setSalvando(true);
     setErro("");
     try {
-      const dados = { nome, descricao: descricao.trim() || undefined, visibilidade };
+      const dados = {
+        nome, descricao: descricao.trim() || undefined, visibilidade,
+        // Editar: null remove; criar: só manda se escolheu uma foto.
+        foto: fotoMudou ? (foto ?? null) : undefined,
+      };
       onSalvo(forum ? await editarForum(forum.id, dados) : await criarForum(dados));
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível salvar o fórum.");
@@ -83,6 +106,30 @@ export function ModalForum({ aberto, forum, onFechar, onSalvo }: {
   return (
     <Modal aberto={aberto} titulo={forum ? "Editar fórum" : "Criar fórum"} onFechar={onFechar}>
       <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <FotoForum nome={nome || "?"} fotoUrl={foto} tamanho="h-16 w-16" texto="text-2xl" />
+          <div className="flex flex-wrap gap-2">
+            <input ref={entradaFoto} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" tabIndex={-1}
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (!f) return;
+                try {
+                  const dados = await arquivoParaDataUrl(f, 512);
+                  const problema = erroFotoForum(dados);
+                  if (problema) return setErro(problema);
+                  setFoto(dados);
+                  setErro("");
+                } catch (er) {
+                  setErro(er instanceof Error ? er.message : "Não foi possível ler a imagem.");
+                }
+              }} />
+            <Button variant="outline" type="button" onClick={() => entradaFoto.current?.click()}>
+              <ImagePlus className="h-4 w-4" /> {foto ? "Trocar foto" : "Adicionar foto"}
+            </Button>
+            {foto && <Button variant="ghost" type="button" onClick={() => setFoto(undefined)}>Remover</Button>}
+          </div>
+        </div>
         <Campo rotulo="Nome" htmlFor="frm-nome">
           <Input id="frm-nome" maxLength={NOME_FORUM_MAX} value={nome} onChange={(e) => { setNome(e.target.value); setErro(""); }} autoFocus />
         </Campo>

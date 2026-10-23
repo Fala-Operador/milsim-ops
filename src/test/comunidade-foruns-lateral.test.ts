@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { restaurarBase } from "./baseTeste";
 import { POSICAO_COMUNIDADE, POSICAO_LISTAGEM, type BaseDados, type Impulsionamento, type SecaoInicial } from "@/lib/domain/types";
-import { erroForum, moderaForum, podeRemoverMembro, situacaoAoEntrar } from "@/lib/comunidadeGeral";
+import { erroForum, erroFotoForum, moderaForum, podeRemoverMembro, situacaoAoEntrar } from "@/lib/comunidadeGeral";
 import { lateralDaComunidade, NACIONAL } from "@/lib/divulgacao";
 import { pendenciasAtivacao, rotuloPosicao } from "@/lib/impulsionamento";
 import { posicoesDoImpulso } from "@/lib/impulsos";
@@ -15,6 +15,12 @@ describe("fóruns", () => {
     expect(erroForum("Time", "x".repeat(301), "publico")).toMatch(/até 300/);
     expect(erroForum("Time", undefined, "secreto")).toMatch(/público ou privado/);
     expect(erroForum("Venda de maconha", undefined, "publico")).toMatch(/drogas/);
+  });
+
+  it("foto do fórum: JPG, PNG ou WebP de até 5 MB", () => {
+    expect(erroFotoForum("data:image/jpeg;base64,/9j/4AAQ")).toBe("");
+    expect(erroFotoForum("data:image/gif;base64,R0lGOD")).toMatch(/Formato/);
+    expect(erroFotoForum(`data:image/png;base64,${"A".repeat(7_000_000)}`)).toMatch(/5 MB/);
   });
 
   it("público entra na hora; privado vira pedido", () => {

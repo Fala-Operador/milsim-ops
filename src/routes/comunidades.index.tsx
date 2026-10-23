@@ -120,10 +120,11 @@ function Comunidades() {
           <MessagesSquare className="size-6" aria-hidden="true" /> Comunidades
         </h1>
         <Tabs value={aba} onValueChange={(v) => irPara(v as Aba)}>
-          <TabsList className="flex-wrap gap-2">
+          <TabsList aria-label="Seções da comunidade" className="abas-rolaveis flex w-full gap-1 border-b border-border">
             {ABAS.filter((a) => !a.logado || usuario).map((a) => (
-              <TabsTrigger key={a.id} value={a.id} asChild>
-                <Button variant={aba === a.id ? "default" : "outline"}>{a.rotulo}</Button>
+              <TabsTrigger key={a.id} value={a.id}
+                className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring ${aba === a.id ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                {a.rotulo}
               </TabsTrigger>
             ))}
           </TabsList>
