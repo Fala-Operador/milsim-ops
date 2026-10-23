@@ -17,7 +17,8 @@ interface AuthContextValue {
   carga: EstadoCarga;
   login: (email: string, senha: string, captcha?: string) => Promise<Usuario>;
   logout: () => Promise<void>;
-  registrar: (dados: DadosCadastro, captcha?: string) => Promise<Usuario>;
+  /** Cria a conta. Sem usuário de volta = precisa confirmar o e-mail antes de entrar. */
+  registrar: (dados: DadosCadastro, captcha?: string) => Promise<Usuario | null>;
   /** Busca a visão mais recente no servidor. */
   recarregar: () => Promise<void>;
   podeGerenciarEvento: (organizacaoId: string) => boolean;
@@ -94,7 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const registrar = useCallback(async (dados: DadosCadastro, captcha?: string) => {
-    await cadastrar(dados, captcha);
+    const r = await cadastrar(dados, captcha);
+    if (r.precisaConfirmar) return null;
     const u = usuarioDaVisao();
     if (!u) throw new Error("Não foi possível carregar a conta.");
     return u;

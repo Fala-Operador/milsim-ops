@@ -33,6 +33,7 @@ Login com e-mail e senha (Supabase Auth). A sessão fica em cookies HTTP.
 Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 
 - E-mail ou senha incorretos.
+- Confirme seu e-mail para entrar. Abra o link que enviamos ou peça um novo.
 - Não conseguimos confirmar que você não é um robô. Refaça a verificação e tente de novo.
 - Conta inativa.
 

@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { InputSenha } from "@/components/ui/input-senha";
 import { Campo } from "@/components/ui";
 import { useTurnstile } from "@/components/Turnstile";
+import { ReenviarConfirmacao } from "@/components/ReenviarConfirmacao";
+import { MSG_EMAIL_NAO_CONFIRMADO } from "@/lib/confirmacaoEmail";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -78,6 +80,7 @@ function PaginaLogin() {
               {erro}
             </p>
           )}
+          {erro === MSG_EMAIL_NAO_CONFIRMADO && <ReenviarConfirmacao email={email} />}
           {turnstile.elemento}
           <Button type="submit" disabled={carregando || !turnstile.pronto} className="w-full">
             {carregando ? "Entrando..." : "Entrar"}
