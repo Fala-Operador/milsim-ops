@@ -7,6 +7,7 @@ import {
   type EstadoParticipacao, type ProgressoInsignia, type ResumoProgressao,
 } from "@/lib/participacao";
 import { missoesConcluidas } from "@/lib/missoes";
+import { perfilVisivel, type RelacaoSeguir } from "@/lib/comunidadeGeral";
 import type {
   BaseDados, BeneficioVoucher, PerfilOperador, PrivacidadePerfil, TipoEquipamento, Usuario, VisibilidadeBloco,
 } from "@/lib/domain/types";
@@ -89,6 +90,11 @@ export interface PerfilDTO {
   proprio: boolean;
   /** Visitante deslogado: só nome e foto. */
   restrito: boolean;
+  /**
+   * Perfil privado visto por quem não é seguidor aprovado (`privado`) ou bloqueio entre as
+   * contas (`bloqueio`): só o cabeçalho, nenhum bloco.
+   */
+  fechado?: "privado" | "bloqueio" | undefined;
   social?: Pick<PerfilOperador, "callsign" | "bio" | "squad" | "instagram" | "capaUrl"> | undefined;
   destaque?: { icone: string; nome: string } | undefined;
   /**
@@ -132,7 +138,14 @@ export function completudePerfil(u: Usuario, p: PerfilOperador): { percentual: n
   return { percentual: Math.round((feitos / itens.length) * 100), sugestoes: itens.filter(([ok]) => !ok).map(([, s]) => s) };
 }
 
-export function montarPerfil(base: BaseDados, alvoId: string, quem: Usuario | null, agora = new Date()): PerfilDTO | null {
+/**
+ * `relacao` (seguir/bloqueio, lida pelo servidor em social_follows/social_blocks): perfil
+ * privado só abre os blocos para o próprio e seguidores aprovados; bloqueio fecha sempre.
+ */
+export function montarPerfil(
+  base: BaseDados, alvoId: string, quem: Usuario | null,
+  relacao: RelacaoSeguir = quem?.id === alvoId ? "eu" : "nenhuma", agora = new Date(),
+): PerfilDTO | null {
   const alvo = base.usuarios.find((u) => u.id === alvoId && u.ativo);
   if (!alvo) return null;
   const proprio = quem?.id === alvo.id;
@@ -143,6 +156,10 @@ export function montarPerfil(base: BaseDados, alvoId: string, quem: Usuario | nu
   const perfil = base.perfisOperador.find((p) => p.usuarioId === alvo.id) ?? perfilPadrao(alvo.id);
   const priv = perfil.privacidade;
   if (perfil.callsign) dto.nome = perfil.callsign;
+  if (!proprio && !perfilVisivel(relacao, !!alvo.comunidadePrivada)) {
+    dto.fechado = relacao === "bloqueado" ? "bloqueio" : "privado";
+    return dto;
+  }
   dto.social = { callsign: perfil.callsign, bio: perfil.bio, squad: perfil.squad, instagram: perfil.instagram, capaUrl: perfil.capaUrl };
 
   const todas = participacoesDoUsuario(base, alvo.id, agora);

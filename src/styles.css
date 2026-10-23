@@ -328,6 +328,31 @@
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 
+/* Seta dos seletores nativos (NativeSelect): a mesma ChevronDown (lucide) dos outros
+ * seletores, na cor muted-foreground de cada tema. Fora de @layer para valer sobre
+ * px-* passados em className e manter espaço para a seta à direita. */
+:root,
+.tema-claro {
+  --seta-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23645948' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+.dark,
+.tema-escuro {
+  --seta-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23adb599' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+select.campo-select:not([multiple]):not([size]) {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: var(--seta-select);
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem 1rem;
+  padding-right: 2.25rem;
+}
+select.campo-select:not([multiple]):not([size]):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Menu inferior do celular (logado, MenuInferior.tsx): reserva o espaço no fim da página e
    informa a altura para barras fixas (ex.: "Inscrever-se" do evento) ficarem logo acima dele. */
 @media (max-width: 767px) {

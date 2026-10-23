@@ -16,6 +16,7 @@ import {
   ehMotivoDenuncia,
   erroPost,
   erroRitmo,
+  perfilVisivel,
   POSTS_POR_PAGINA,
   statusAoSeguir,
   type AutorDTO,
@@ -184,16 +185,7 @@ export const lerPerfilSocial = (usuarioId: string) =>
       if (error) falha("Falha ao contar seguidores", error);
       return count ?? 0;
     };
-    let relacao: RelacaoSeguir = "nenhuma";
-    if (u?.id === usuarioId) relacao = "eu";
-    else if (u) {
-      if (await bloqueioEntre(u.id, usuarioId)) relacao = "bloqueado";
-      else {
-        const { data, error } = await db.from("social_follows").select("status").eq("follower_id", u.id).eq("followed_id", usuarioId).maybeSingle();
-        if (error) falha("Falha ao ler seguidor", error);
-        relacao = data?.status === "aprovado" ? "seguindo" : data?.status === "pendente" ? "pendente" : "nenhuma";
-      }
-    }
+    const relacao = await relacaoCom(u?.id ?? null, usuarioId);
     const privado = !!alvo.comunidadePrivada;
     return {
       autor: autorDTO(base, usuarioId),
@@ -201,9 +193,19 @@ export const lerPerfilSocial = (usuarioId: string) =>
       seguidores: await contar("followed_id"),
       seguindo: await contar("follower_id"),
       relacao,
-      postsVisiveis: relacao === "eu" || (relacao !== "bloqueado" && (!privado || relacao === "seguindo")),
+      postsVisiveis: perfilVisivel(relacao, privado),
     };
   });
+
+/** Relação de quem vê (null = visitante) com o dono do perfil: seguir, pedido ou bloqueio. */
+export async function relacaoCom(quemVe: string | null, alvoId: string): Promise<RelacaoSeguir> {
+  if (quemVe === alvoId) return "eu";
+  if (!quemVe) return "nenhuma";
+  if (await bloqueioEntre(quemVe, alvoId)) return "bloqueado";
+  const { data, error } = await supabaseAdmin().from("social_follows").select("status").eq("follower_id", quemVe).eq("followed_id", alvoId).maybeSingle();
+  if (error) falha("Falha ao ler seguidor", error);
+  return data?.status === "aprovado" ? "seguindo" : data?.status === "pendente" ? "pendente" : "nenhuma";
+}
 
 /** Pedidos para seguir aguardando a aprovação da pessoa logada. */
 export const lerPedidosParaSeguir = () =>

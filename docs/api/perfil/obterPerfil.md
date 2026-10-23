@@ -21,6 +21,7 @@ Monta o perfil social de um operador (callsign, bio, histórico, mapa, insígnia
 
 - Visitante deslogado recebe só nome e foto (`restrito: true`).
 - Cada bloco tem visibilidade `eu` (só o dono) ou `autenticados` (qualquer conta logada).
+- Perfil **privado** (`comunidadePrivada`): os blocos `autenticados` só abrem para **seguidores aprovados**. Quem não segue ou tem pedido pendente recebe só nome, foto e `fechado: "privado"` (sem bio, resumo nem blocos). Bloqueio entre as contas, em qualquer sentido, devolve `fechado: "bloqueio"`. A relação vem de `social_follows`/`social_blocks` (`relacaoCom`, `src/server/social.server.ts`) e a regra é `perfilVisivel` (`src/lib/comunidadeGeral.ts`), a mesma das publicações.
 - Privacidade, completude, operações futuras e recompensas só vão para o próprio dono.
 - Nunca inclui CPF, nascimento, endereço, telefone, e-mail, notas fiscais ou o exército das inscrições (`montarPerfil`, `src/lib/perfilSocial.ts`).
 - Quando o dono abre o próprio perfil, a progressão (insígnias e recompensas) é recalculada antes (idempotente).
