@@ -31,14 +31,13 @@ export function ListaPosts({ chave, carregar, vazio, moderar = false }: {
     <div className="space-y-3">
       <ul className="space-y-3">
         {posts.map((p) => (
-          <li key={p.id}><CartaoPost post={p} moderar={moderar} onMudou={() => void q.refetch()} /></li>
+          <li key={p.id} className="surgir"><CartaoPost post={p} moderar={moderar} onMudou={() => void q.refetch()} /></li>
         ))}
       </ul>
-      {q.hasNextPage && (
+      {q.isFetchingNextPage && <div className="space-y-3"><SkeletonCartao /><SkeletonCartao /></div>}
+      {q.hasNextPage && !q.isFetchingNextPage && (
         <div className="flex justify-center">
-          <Button variant="outline" onClick={() => void q.fetchNextPage()} disabled={q.isFetchingNextPage}>
-            {q.isFetchingNextPage ? "Carregando..." : "Carregar mais"}
-          </Button>
+          <Button variant="outline" onClick={() => void q.fetchNextPage()}>Carregar mais</Button>
         </div>
       )}
     </div>

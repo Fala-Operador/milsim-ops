@@ -5,6 +5,7 @@ import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type R
 import {
   AlertCircle,
   ArrowDown,
+  Download,
   FileText,
   Loader2,
   Paperclip,
@@ -24,7 +25,10 @@ import {
   TIPOS_ANEXO,
 } from "@/lib/suporte";
 import type { BaseDados, Chamado, MensagemChamado } from "@/lib/domain/types";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
@@ -89,10 +93,115 @@ export function validarArquivo(f: File): string | null {
   return null;
 }
 
+/** Baixa o anexo pelo link assinado (o arquivo nunca fica em cache do app). */
+async function baixarAnexo(chamadoId: string, mensagemId: string) {
+  window.location.assign(await linkAnexo(chamadoId, mensagemId, true));
+}
+
+/** Imagem ampliada dentro do site, com opção de baixar (como no WhatsApp). */
+function VisualizadorImagem({ aberto, onFechar, url, nome, onBaixar }: {
+  aberto: boolean; onFechar: () => void; url: string; nome: string; onBaixar: () => Promise<void>;
+}) {
+  const [baixando, setBaixando] = useState(false);
+  const [erro, setErro] = useState("");
+  const baixar = async () => {
+    setBaixando(true);
+    setErro("");
+    try { await onBaixar(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha ao baixar."); } finally { setBaixando(false); }
+  };
+  return (
+    <Dialog open={aberto} onOpenChange={(a) => !a && onFechar()}>
+      <DialogContent
+        showCloseButton={false}
+        aria-describedby={undefined}
+        className="flex h-[100dvh] max-h-none w-screen max-w-none flex-col gap-0 rounded-none border-0 bg-black/95 p-0 text-white sm:h-[90vh] sm:w-[calc(100%-2rem)] sm:max-w-5xl sm:rounded-lg"
+      >
+        <div className="flex items-center gap-2 px-3 py-2">
+          <DialogTitle className="min-w-0 flex-1 truncate text-sm font-medium normal-case text-white">{nome}</DialogTitle>
+          {url && (
+            <Button type="button" variant="ghost" className="shrink-0 text-white hover:bg-white/10 hover:text-white" onClick={() => void baixar()} disabled={baixando}>
+              {baixando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              <span className="hidden sm:inline">Baixar</span>
+            </Button>
+          )}
+          <Button type="button" variant="ghost" className="shrink-0 text-white hover:bg-white/10 hover:text-white" onClick={onFechar} aria-label="Fechar">
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+        {erro && <p role="alert" className="px-3 text-xs text-red-300">{erro}</p>}
+        <div className="flex min-h-0 flex-1 items-center justify-center p-2">
+          <img src={url} alt={nome} className="max-h-full max-w-full object-contain" />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Imagem anexada aparece no balão. O link assinado (60 s) só é pedido quando a imagem
+ * chega perto da tela; se expirar antes de carregar, pede outro uma vez.
+ */
+function ImagemAnexo({ chamadoId, m }: { chamadoId: string; m: MensagemChamado }) {
+  const caixa = useRef<HTMLButtonElement>(null);
+  const [visivel, setVisivel] = useState(false);
+  const [ampliada, setAmpliada] = useState(false);
+  const [tentativas, setTentativas] = useState(0);
+  const [carregada, setCarregada] = useState(false);
+  const q = useQuery({
+    queryKey: ["suporte", "anexo", chamadoId, m.id, tentativas],
+    queryFn: () => linkAnexo(chamadoId, m.id),
+    enabled: visivel,
+    staleTime: Infinity,
+    gcTime: 50_000,
+    retry: 1,
+  });
+  useEffect(() => {
+    const el = caixa.current;
+    if (!el || visivel) return;
+    const obs = new IntersectionObserver(([e]) => e?.isIntersecting && setVisivel(true), { rootMargin: "200px" });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [visivel]);
+  if (!m.anexo) return null;
+  const falhou = q.isError || tentativas > 1;
+  return (
+    <div className="mt-1 min-w-0">
+      <Button variant="plain" size="none" ref={caixa} type="button"
+        onClick={() => q.data && setAmpliada(true)}
+        disabled={!q.data || falhou}
+        aria-label={`Ampliar imagem ${m.anexo.nome}`}
+        className="relative block overflow-hidden rounded-xl bg-background/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-100"
+      >
+        {q.data && !falhou && (
+          <img
+            src={q.data}
+            alt={m.anexo.nome}
+            onLoad={() => setCarregada(true)}
+            onError={() => setTentativas((t) => t + 1)}
+            className={carregada ? "surgir block max-h-72 w-auto max-w-full object-cover" : "hidden"}
+          />
+        )}
+        {!carregada && (falhou ? (
+          <span className="flex h-48 w-64 max-w-full items-center justify-center px-3 text-center text-xs text-muted-foreground">
+            Não foi possível carregar a imagem.
+          </span>
+        ) : (
+          <Skeleton className="block h-48 w-64 max-w-full rounded-xl" />
+        ))}
+      </Button>
+      {q.data && (
+        <VisualizadorImagem aberto={ampliada} onFechar={() => setAmpliada(false)} url={q.data} nome={m.anexo.nome}
+          onBaixar={() => baixarAnexo(chamadoId, m.id)} />
+      )}
+    </div>
+  );
+}
+
 function BotaoAnexo({ chamadoId, m }: { chamadoId: string; m: MensagemChamado }) {
   const [abrindo, setAbrindo] = useState(false);
   const [erro, setErro] = useState("");
   if (!m.anexo) return null;
+  if (m.anexo.tipo.startsWith("image/")) return <ImagemAnexo chamadoId={chamadoId} m={m} />;
   const abrir = async () => {
     setAbrindo(true);
     setErro("");
@@ -382,7 +491,9 @@ export function Conversa({
                 {p.corpo && (
                   <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{p.corpo}</p>
                 )}
-                {p.anexo && (
+                {p.anexo?.dataUrl.startsWith("data:image/") ? (
+                  <img src={p.anexo.dataUrl} alt={p.anexo.nome} className="mt-1 block max-h-72 w-auto max-w-full rounded-xl object-cover" />
+                ) : p.anexo && (
                   <p className="mt-1 flex min-w-0 items-center gap-1 text-xs">
                     <FileText className="h-3.5 w-3.5 shrink-0" />
                     <span className="truncate">{p.anexo.nome}</span>
@@ -446,7 +557,11 @@ export function Conversa({
         <div className="border-t border-border bg-card px-3 py-2.5 sm:px-4">
           {anexo && (
             <p className="mb-2 inline-flex max-w-full items-center gap-2 rounded-md border border-border px-2 py-1 text-xs">
-              <Paperclip className="h-3.5 w-3.5 shrink-0" />
+              {anexo.dataUrl.startsWith("data:image/") ? (
+                <img src={anexo.dataUrl} alt="" className="h-10 w-10 shrink-0 rounded object-cover" />
+              ) : (
+                <Paperclip className="h-3.5 w-3.5 shrink-0" />
+              )}
               <span className="min-w-0 truncate">{anexo.nome}</span>
               <Button variant="plain" size="none"
                 type="button"

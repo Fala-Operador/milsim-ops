@@ -427,7 +427,8 @@ Código: `src/lib/suporte.ts`, `src/services/suporte.ts`. → [Fluxo](fluxos.md#
   - Participante em `resolvido` precisa reabrir para escrever.
 - Responsável, solução e vínculos são derivados de mensagens "sistema" **imutáveis** (o histórico nunca é reescrito).
 - Envios com `clienteId` não duplicam. Anexos ficam no bucket privado, abertos por link assinado
-  depois de conferir o acesso. O "lido até" de cada pessoa fica no servidor (vale em todos os aparelhos).
+  depois de conferir o acesso; imagens aparecem dentro da conversa (o link é pedido quando a imagem chega
+  perto da tela) e abrem ampliadas com opção de baixar, PDFs abrem em outra aba. O "lido até" de cada pessoa fica no servidor (vale em todos os aparelhos).
 
 ## 15. Página inicial, divulgação e impulsionamento
 
