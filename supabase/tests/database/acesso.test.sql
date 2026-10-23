@@ -2,7 +2,7 @@
 -- banco, então anon e authenticated não podem ler nem gravar nada e só service_role executa
 -- as RPCs do servidor. Roda com `supabase test db` sobre todas as migrations aplicadas do zero.
 begin;
-select plan(16);
+select plan(17);
 
 select is(
   (select array_agg(t order by t) from unnest(public.base_tables()) t
@@ -76,12 +76,28 @@ select throws_ok(
   'ficha compartilhada sem data de autorização é rejeitada'
 );
 
-select throws_ok(
-  $$insert into public.user_emergency_records (user_id, blood_type, share_with_organizers, updated_at)
-    values ('00000000-0000-0000-0000-000000000001', 'Z+', false, now())$$,
-  '23514',
+-- Dados pessoais cifrados (src/server/cifraDados.ts): o banco só vê texto cifrado nessas
+-- colunas, então nenhuma restrição pode depender do valor; CPF único fica no índice cego.
+select is(
+  (select array_agg(c.conrelid::regclass::text || '.' || c.conname order by 1) from pg_catalog.pg_constraint c
+    join pg_catalog.pg_attribute a on a.attrelid = c.conrelid and a.attnum = any (c.conkey)
+   where c.contype in ('u', 'c')
+     and (c.conrelid::regclass::text, a.attname::text) in (
+       ('users', 'cpf'), ('users', 'email'), ('users', 'birth_date'), ('user_emergency_records', 'blood_type'),
+       ('user_emergency_records', 'allergies'), ('user_emergency_records', 'contact_phone'))),
   null,
-  'tipo sanguíneo fora da lista é rejeitado'
+  'colunas cifradas sem restrição unique/check sobre o valor'
+);
+
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000000c1', 'c1@teste.local'), ('00000000-0000-0000-0000-0000000000c2', 'c2@teste.local');
+select throws_ok(
+  $$insert into public.users (id, role, full_name, cpf, birth_date, email, whatsapp, terms_version, terms_accepted_at, active, cpf_hash)
+    values ('00000000-0000-0000-0000-0000000000c1', 'participante', 'x', 'x', 'x', 'a', 'x', 'v1', now(), true, 'h'),
+           ('00000000-0000-0000-0000-0000000000c2', 'participante', 'x', 'x', 'x', 'b', 'x', 'v1', now(), true, 'h')$$,
+  '23505',
+  null,
+  'CPF repetido (mesmo índice cego) é rejeitado'
 );
 
 select is(

@@ -7,13 +7,15 @@
 //  4. envia imagens/PDFs recebidos como data URL para o Storage;
 //  5. grava as diferenças numa única transação (RPC apply_changes) com controle
 //     otimista de versão — se outra escrita aconteceu no meio, repete do passo 2;
+//     dados pessoais saem cifrados e voltam decifrados aqui (src/server/cifraDados.ts);
 //  6. devolve o resultado e a visão atualizada para o navegador.
 import "@tanstack/react-start/server-only";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
 import { registrarProvedorContexto, ErroDominio, gerarId, type ContextoBase } from "@/services/db";
 import { concluirEventosEncerrados, eventosParaConcluir } from "@/lib/cicloEvento";
-import { baseDasTabelas, calcularMudancas, objetosAlterados, type TabelasExportadas } from "@/lib/persistencia";
+import { baseDasTabelas, calcularMudancas, linhasDaBase, objetosAlterados, type TabelasExportadas } from "@/lib/persistencia";
+import { chaveiroDoAmbiente, cifrarLote, decifrarTabelas, incluirPendentes, totalPendentes, type Pendentes } from "@/server/cifraDados";
 import { visaoParaUsuario, type Visao } from "@/lib/visao";
 import { enviarMidia } from "@/server/midia";
 import { recalcularProgressao } from "@/services/progressao";
@@ -53,8 +55,10 @@ export async function idDaSessao(): Promise<string | null> {
 // mínima); relê tudo apenas quando algo mudou. A validade curta cobre alterações feitas
 // fora da aplicação (SQL manual), que não incrementam a versão.
 const VALIDADE_CACHE_MS = 60_000;
-let cache: { versao: number; base: BaseDados; lidoEm: number } | null = null;
-let exportando: Promise<{ base: BaseDados; versao: number }> | null = null;
+// `pendentes`: linhas com dado pessoal ainda em texto puro ou com chave antiga (regravadas cifradas).
+interface BaseLida { base: BaseDados; versao: number; pendentes: Pendentes }
+let cache: (BaseLida & { lidoEm: number }) | null = null;
+let exportando: Promise<BaseLida> | null = null;
 
 // Respostas que não são JSON (ex.: 521/525 da Cloudflare quando a API do Supabase oscila)
 // chegam sem `message`; o status HTTP diz o que houve.
@@ -84,31 +88,32 @@ async function versaoAtual(): Promise<number> {
   return Number(data.version);
 }
 
-async function exportarBase(): Promise<{ base: BaseDados; versao: number }> {
+async function exportarBase(): Promise<BaseLida> {
   // Requisições simultâneas na mesma instância compartilham uma única exportação.
   exportando ??= (async () => {
     try {
       const { data, error, status } = await lerComRetentativa(() => supabaseAdmin().rpc("export_base"));
       if (error) throw falhaBanco("Falha ao ler a base", error, status);
       const r = data as { version: number; tables: TabelasExportadas };
-      const base = baseDasTabelas(r.tables);
-      cache = { versao: r.version, base, lidoEm: Date.now() };
-      return { base, versao: r.version };
+      const { tabelas, pendentes } = await decifrarTabelas(r.tables, await chaveiroDoAmbiente());
+      const base = baseDasTabelas(tabelas);
+      cache = { versao: r.version, base, pendentes, lidoEm: Date.now() };
+      return { base, versao: r.version, pendentes };
     } finally {
       exportando = null;
     }
   })();
   const r = await exportando;
-  return { base: structuredClone(r.base), versao: r.versao };
+  return { ...r, base: structuredClone(r.base) };
 }
 
 /** Cópia da base atual (cada requisição pode mutar a sua à vontade). */
-async function lerBase(): Promise<{ base: BaseDados; versao: number }> {
+async function lerBase(): Promise<BaseLida> {
   // Referência local: uma gravação concorrente pode invalidar `cache` durante o await.
   const emMemoria = cache;
   if (emMemoria && Date.now() - emMemoria.lidoEm < VALIDADE_CACHE_MS) {
     const versao = await versaoAtual();
-    if (versao === emMemoria.versao) return { base: structuredClone(emMemoria.base), versao };
+    if (versao === emMemoria.versao) return { base: structuredClone(emMemoria.base), versao, pendentes: emMemoria.pendentes };
   }
   return exportarBase();
 }
@@ -118,15 +123,24 @@ async function lerBase(): Promise<{ base: BaseDados; versao: number }> {
  * evento já terminou e ainda não foi concluído, a primeira leitura depois disso conclui (grava,
  * recalculando insígnias e recompensas) e lê de novo. Se a gravação falhar, a leitura segue
  * com a base como estava — a próxima leitura ou gravação tenta outra vez.
+ * Do mesmo jeito, dados pessoais ainda em texto puro (ou com chave antiga) são regravados
+ * cifrados com a chave atual na primeira leitura em que aparecem.
  */
-async function lerBaseEmDia(): Promise<{ base: BaseDados; versao: number }> {
+let recifraFalhouEm = 0;
+async function lerBaseEmDia(): Promise<BaseLida> {
   const atual = await lerBase();
-  if (!eventosParaConcluir(atual.base).length) return atual;
+  const concluir = eventosParaConcluir(atual.base).length > 0;
+  // Se a cifra falhou, espera 5 min antes de tentar de novo numa leitura (gravações sempre tentam).
+  const recifrar = totalPendentes(atual.pendentes) > 0 && (await chaveiroDoAmbiente()).atual !== null &&
+    Date.now() - recifraFalhouEm > 5 * 60_000;
+  if (!concluir && !recifrar) return atual;
   try {
-    await mutar(() => null, { exigirLogin: false }); // mutar aplica a conclusão (veja abaixo)
+    await mutar(() => null, { exigirLogin: false }); // mutar aplica a conclusão e a cifra (veja abaixo)
+    if (recifrar) console.info(`[cifra] ${totalPendentes(atual.pendentes)} registro(s) com dados pessoais cifrados com a chave atual.`);
     return await lerBase();
   } catch (e) {
-    console.error("[ciclo] não foi possível concluir eventos encerrados agora", e);
+    if (recifrar) recifraFalhouEm = Date.now();
+    console.error(recifrar ? "[cifra] não foi possível cifrar os dados pessoais pendentes agora" : "[ciclo] não foi possível concluir eventos encerrados agora", e);
     return atual;
   }
 }
@@ -212,7 +226,7 @@ export async function mutar<T>(
   try {
     const id = await idDaSessao();
     for (let tentativa = 0; tentativa < TENTATIVAS; tentativa++) {
-      const { base, versao } = await lerBase();
+      const { base, versao, pendentes } = await lerBase();
       const usuario = usuarioAtivo(base, id);
       if (opcoes.exigirLogin !== false && !usuario) {
         throw new ErroDominio("sem_sessao", "Entre na sua conta para continuar.");
@@ -229,9 +243,14 @@ export async function mutar<T>(
         recalcularProgressao(base);
       }
       await enviarMidia(supabaseAdmin(), objetosAlterados(antes, base));
-      const lote = calcularMudancas(antes, base);
+      // O lote é calculado em texto puro; linhas pendentes de cifra vão junto, e só então cifra.
+      const chaveiro = await chaveiroDoAmbiente();
+      const diferencas = calcularMudancas(antes, base);
+      const lote = chaveiro.atual && totalPendentes(pendentes) > 0
+        ? incluirPendentes(diferencas, pendentes, linhasDaBase(base))
+        : diferencas;
       if (Object.keys(lote).length > 0) {
-        const { error, status } = await supabaseAdmin().rpc("apply_changes", { p_changes: lote, p_version: versao });
+        const { error, status } = await supabaseAdmin().rpc("apply_changes", { p_changes: await cifrarLote(lote, chaveiro), p_version: versao });
         invalidarCache(); // gravou (ou outra escrita entrou antes): a base em memória ficou velha
         // MS409 = conflito de versão (supabase/migrations/20261014193000_conflito_sem_retentativa.sql).
         // 40001 só em bancos sem essa migração — e lá o PostgREST repete sozinho, sem limite.

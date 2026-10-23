@@ -150,6 +150,18 @@ ver a causa real. As telas mostram `e.message`.
 - **RLS ativo em todas as tabelas, sem policies**: `anon` e `authenticated` não leem nem gravam
   nada (verificado: a chave publicável recebe `42501`).
 - Privilégios só para `service_role`, usado pelo servidor com `SUPABASE_SECRET_KEY`.
+- **Dados pessoais cifrados** (`COLUNAS_CIFRADAS` em `src/lib/esquemaBanco.ts`: nome, CPF,
+  nascimento, e-mail e WhatsApp da conta, endereço, ficha de emergência, CNPJ/telefone de
+  organizações e pedidos, nome/e-mail de convidados): AES-256-GCM no servidor
+  (`src/server/cifraDados.ts`), nonce aleatório por valor e texto cifrado preso à tabela, coluna
+  e chave primária da linha. O banco, os backups e o Realtime só veem `cifra:v1:<chave>:…`. A chave
+  mestra é `PERSONAL_DATA_ENCRYPTION_KEY` (só no ambiente do servidor); dela saem por HKDF a chave
+  da cifra e a dos índices cegos `users.cpf_hash`/`users.email_hash` (HMAC-SHA256, únicos no
+  banco). Rotação: chave nova em `PERSONAL_DATA_ENCRYPTION_KEY`, antiga em
+  `PERSONAL_DATA_ENCRYPTION_PREVIOUS_KEYS`; linhas com chave antiga ou em texto puro são regravadas
+  com a atual na primeira leitura. Buscas e filtros continuam no servidor, sobre a base decifrada;
+  nenhum SQL pode filtrar, validar (check/unique) ou ordenar por essas colunas. O e-mail também
+  fica em `auth.users`, que é do Supabase Auth e não é cifrado por nós.
 - RPCs `export_base`, `apply_changes` e `base_tables`: `EXECUTE` só para `service_role`,
   `search_path` vazio, `SECURITY INVOKER`.
 - Bucket `midia`: leitura pública por URL; upload só pelo servidor. Tipos permitidos: jpeg,
