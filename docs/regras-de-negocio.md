@@ -508,6 +508,12 @@ Código: `src/lib/visaoGeralEvento.ts`, página `/admin/eventos/$eventoId` (bot�
 - Perfil do operador: cada bloco é `eu` ou `autenticados`; visitante deslogado vê só nome e foto.
 - Solicitações LGPD (acesso, correção, exportação, exclusão) vão para os admins, que respondem pela plataforma.
 - Listagens da gestão mostram CPF e telefone mascarados.
+- **Cifra no banco**: nome completo, CPF, data de nascimento, e-mail e WhatsApp da conta, endereço,
+  ficha de emergência, CNPJ e telefone de organizações e pedidos de organizador, e nome/e-mail de
+  convidados de cortesia ficam gravados cifrados (AES-256-GCM, `src/server/cifraDados.ts`). Só o
+  servidor, com `PERSONAL_DATA_ENCRYPTION_KEY`, lê esses valores; o que cada pessoa vê continua
+  decidido pela visão. CPF e e-mail seguem únicos (índice cego). Sem a chave, nenhuma gravação que
+  envolva esses dados é aceita.
 - **Ficha de emergência** (opcional: tipo sanguíneo, alergias, contato de emergência; `src/lib/fichaEmergencia.ts`):
   dado de saúde (LGPD, art. 11). Preenchida no cadastro ou em Meu perfil › Ficha de emergência; vazia = removida.
   - O titular sempre vê e edita.
