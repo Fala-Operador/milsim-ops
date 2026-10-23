@@ -12,6 +12,7 @@ import { aleatorioSeguro } from "@/lib/checkin";
 import { baseDasTabelas, calcularMudancas, objetosAlterados, paraLinha, type TabelasExportadas } from "@/lib/persistencia";
 import { CAMPANHAS_METRICAS, REGISTROS_METRICAS } from "@/lib/esquemaBanco";
 import { enviarMidia } from "@/server/midia";
+import { chaveiroDoAmbiente, cifrarLote, decifrarTabelas } from "@/server/cifraDados";
 import type { BaseDados } from "@/lib/domain/types";
 
 async function todasAsContas(admin: SupabaseClient): Promise<User[]> {
@@ -71,7 +72,10 @@ export async function semearBase(admin: SupabaseClient, opcoes: OpcoesSemeadura 
   const { data: atual, error: erroLeitura } = await admin.rpc("export_base");
   if (erroLeitura) throw new Error(`Falha ao ler a base: ${erroLeitura.message}`);
   const r = atual as { version: number; tables: TabelasExportadas };
-  const lote = calcularMudancas(baseDasTabelas(r.tables), base);
+  // Mesma chave do servidor (PERSONAL_DATA_ENCRYPTION_KEY): os dados pessoais são gravados cifrados.
+  const chaveiro = await chaveiroDoAmbiente();
+  const { tabelas } = await decifrarTabelas(r.tables, chaveiro);
+  const lote = await cifrarLote(calcularMudancas(baseDasTabelas(tabelas), base), chaveiro);
   const { error: erroGravacao } = await admin.rpc("apply_changes", { p_changes: lote, p_version: r.version });
   if (erroGravacao) throw new Error(`Falha ao gravar a seed: ${erroGravacao.message}`);
   log("Tabelas da aplicação substituídas pela base demonstrativa.");

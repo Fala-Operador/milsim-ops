@@ -508,3 +508,21 @@ export const REGISTROS_METRICAS: Tabela = {
     inscricaoId: "registration_id", em: "occurred_at_ms",
   },
 };
+
+// ===== Dados pessoais cifrados no banco =====
+// Colunas gravadas cifradas (AES-256-GCM, src/server/cifraDados.ts): o banco, backups e
+// exportações só veem o texto cifrado; o servidor decifra ao ler a base e cifra o lote antes
+// de apply_changes. Nenhuma regra em SQL pode depender destas colunas (filtro, check, unique).
+export const COLUNAS_CIFRADAS: Readonly<Record<string, readonly string[]>> = {
+  users: ["full_name", "cpf", "birth_date", "email", "whatsapp"],
+  user_addresses: ["postal_code", "street", "number", "complement", "district", "city", "state"],
+  user_emergency_records: ["blood_type", "allergies", "contact_name", "contact_phone"],
+  organizations: ["cnpj", "phone"],
+  organizer_requests: ["cnpj", "phone"],
+  complimentary_tickets: ["guest_name", "guest_email"],
+};
+
+/** Índices cegos (HMAC-SHA256 do valor) para unicidade no banco: tabela → coluna cifrada → coluna do índice. */
+export const INDICES_CEGOS: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  users: { cpf: "cpf_hash", email: "email_hash" },
+};
