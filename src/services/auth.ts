@@ -111,6 +111,8 @@ export function registrarPerfil(id: string, dados: DadosCadastro): Usuario {
       ativo: true,
       criadoEm: new Date().toISOString(),
       fichaEmergencia: dados.fichaEmergencia ? montarFicha(dados.fichaEmergencia, undefined) : undefined,
+      // Comunidade geral: menores começam com perfil privado (podem mudar depois).
+      comunidadePrivada: menor ? true : undefined,
     };
     base.usuarios.push(usuario);
     return usuario;

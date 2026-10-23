@@ -43,6 +43,11 @@ export interface Usuario {
    * Regras em src/lib/fichaEmergencia.ts; filtrada na visão.
    */
   fichaEmergencia?: FichaEmergencia | undefined;
+  /**
+   * Perfil na comunidade geral: true = privado (só seguidores aprovados veem os posts);
+   * ausente/false = público. Contas de 15 a 17 anos começam privadas.
+   */
+  comunidadePrivada?: boolean | undefined;
 }
 
 export type TipoSanguineo = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
@@ -893,6 +898,8 @@ export interface Parceiro {
   textoAlt: string;
   links: LinkParceiro[];
   ativo: boolean;
+  /** Patrocinador destacado pela administração na lateral da comunidade geral. */
+  naComunidade?: boolean | undefined;
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -952,6 +959,8 @@ export interface SecaoInicial {
   mostrarDescricoes: boolean;
   superficieLogo: "nenhuma" | "clara" | "escura";
   banner?: ConfigBanner | undefined;
+  /** Banner: aparece também na lateral da comunidade geral. */
+  naComunidade?: boolean | undefined;
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -963,6 +972,8 @@ export type PrioridadeImpulsionamento = "normal" | "alta";
 export type StatusImpulsionamento = "rascunho" | "ativo" | "pausado" | "encerrado";
 /** Posição de divulgação: id de uma seção de eventos da página inicial ou o bloco da listagem. */
 export const POSICAO_LISTAGEM = "listagem";
+/** Lateral da comunidade geral (Comunidades › Geral e fóruns). */
+export const POSICAO_COMUNIDADE = "comunidade";
 export interface Impulsionamento {
   id: string;
   eventoId: string;

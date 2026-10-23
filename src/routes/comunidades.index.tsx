@@ -12,12 +12,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EstadoVazio } from "@/components/ui";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQueryClient } from "@tanstack/react-query";
+import { lerFeed } from "@/api/social.functions";
+import { LIMITE_POST, MAX_FOTOS } from "@/lib/comunidadeGeral";
+import { Compositor } from "@/components/social/Compositor";
+import { ListaPosts } from "@/components/social/ListaPosts";
+import { CartaoPerfilComunidade, PedidosParaSeguir } from "@/components/social/Relacoes";
+import { ListaForuns } from "@/components/social/Foruns";
+import { LateralComunidade } from "@/components/social/LateralComunidade";
 
-export const Route = createFileRoute("/comunidades")({
+export const Route = createFileRoute("/comunidades/")({
+  validateSearch: (s: Record<string, unknown>): { aba?: "geral" | "foruns" | "operacoes" | "pedidos" | undefined } => ({
+    aba: s["aba"] === "foruns" || s["aba"] === "operacoes" || s["aba"] === "pedidos" ? s["aba"] : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Comunidades — MilSim Ops" },
-      { name: "description", content: "Comunidades das operações: fóruns, avisos e conversas exclusivas para quem está inscrito." },
+      { name: "description", content: "Comunidade geral do airsoft e milsim e comunidades exclusivas de cada operação." },
       { property: "og:title", content: "Comunidades — MilSim Ops" },
       { property: "og:description", content: "Inscreva-se numa operação e entre na comunidade dela." },
       { property: "og:type", content: "website" },
@@ -86,7 +98,85 @@ function Cartao({ item }: { item: ItemVitrine }) {
   );
 }
 
+type Aba = "geral" | "foruns" | "operacoes" | "pedidos";
+const ABAS: { id: Aba; rotulo: string; logado?: boolean }[] = [
+  { id: "geral", rotulo: "Geral" },
+  { id: "foruns", rotulo: "Fóruns" },
+  { id: "operacoes", rotulo: "Operações" },
+  { id: "pedidos", rotulo: "Pedidos para seguir", logado: true },
+];
+
 function Comunidades() {
+  const { usuario } = useAuth();
+  const { aba: abaUrl } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const aba: Aba = abaUrl === "pedidos" && !usuario ? "geral" : (abaUrl ?? "geral");
+  const irPara = (a: Aba) => navigate({ search: { aba: a === "geral" ? undefined : a }, replace: true, resetScroll: false });
+
+  return (
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
+      <header className="space-y-3">
+        <h1 className="flex items-center gap-2 font-display text-2xl font-semibold uppercase">
+          <MessagesSquare className="size-6" aria-hidden="true" /> Comunidades
+        </h1>
+        <Tabs value={aba} onValueChange={(v) => irPara(v as Aba)}>
+          <TabsList aria-label="Seções da comunidade" className="abas-rolaveis flex w-full gap-1 border-b border-border">
+            {ABAS.filter((a) => !a.logado || usuario).map((a) => (
+              <TabsTrigger key={a.id} value={a.id}
+                className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring ${aba === a.id ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                {a.rotulo}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </header>
+      {aba === "geral" && <FeedGeral />}
+      {aba === "foruns" && <ListaForuns />}
+      {aba === "operacoes" && <VitrineOperacoes />}
+      {aba === "pedidos" && <div className="max-w-xl"><PedidosParaSeguir /></div>}
+    </div>
+  );
+}
+
+/** Comunidade geral: todos veem todos (perfis públicos); interagir pede login. */
+function FeedGeral() {
+  const { usuario } = useAuth();
+  const qc = useQueryClient();
+  return (
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div className="min-w-0 space-y-4">
+        <LateralComunidade compacta />
+        {usuario ? (
+          <Compositor onPublicado={() => void qc.invalidateQueries({ queryKey: ["social", "feed"] })} />
+        ) : (
+          <div className="rounded-lg border border-border bg-card p-4 text-sm">
+            <p>Veja o que a galera do airsoft e do milsim está publicando.</p>
+            <p className="mt-1 text-muted-foreground">
+              <Link to="/login" search={{ redirect: "/comunidades" }} className="text-accent hover:underline">Entre</Link> ou{" "}
+              <Link to="/cadastro" search={{ redirect: "/comunidades" }} className="text-accent hover:underline">cadastre-se</Link> para publicar, curtir, responder e seguir.
+            </p>
+          </div>
+        )}
+        <ListaPosts
+          chave={["social", "feed", usuario?.id ?? "visitante"]}
+          carregar={(c) => lerFeed(c)}
+          vazio={{ titulo: "Nenhuma publicação ainda", descricao: usuario ? "Seja o primeiro a publicar." : "Volte mais tarde." }}
+        />
+      </div>
+      {/* Lateral: conta na comunidade, depois banners, operações impulsionadas e patrocinadores. */}
+      <aside className="space-y-4" aria-label="Sua conta na comunidade e destaques">
+        <CartaoPerfilComunidade />
+        <PedidosParaSeguir compacto />
+        <div className="hidden lg:block"><LateralComunidade /></div>
+        <p className="px-1 text-xs text-muted-foreground">
+          Até {LIMITE_POST} caracteres e {MAX_FOTOS} fotos por publicação. Conteúdo sexual, de drogas ou de morte e violência real não é permitido.
+        </p>
+      </aside>
+    </div>
+  );
+}
+
+function VitrineOperacoes() {
   const { usuario } = useAuth();
   const versao = useVersaoBase();
   const [busca, setBusca] = useState("");
@@ -99,11 +189,8 @@ function Comunidades() {
   const outras = filtrados.filter((i) => i.acesso !== "entrar");
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
+    <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="flex items-center gap-2 font-display text-2xl font-semibold uppercase">
-          <MessagesSquare className="size-6" aria-hidden="true" /> Comunidades
-        </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
           Cada operação tem uma comunidade com fóruns, avisos da organização e conversa entre os participantes.
           {usuario ? " Inscreva-se numa operação para entrar na comunidade dela." : " Entre na sua conta para acessar as comunidades das operações em que você está inscrito."}

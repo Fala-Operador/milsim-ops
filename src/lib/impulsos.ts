@@ -3,7 +3,7 @@
 // O impulso usado vira uma campanha de src/lib/impulsionamento.ts (mesma exibição e ordem).
 // Não há agendador: validade e prazo do pagamento são recalculados a cada carregamento.
 import type { BaseDados, Evento, ImpulsoComprado, PlanoImpulso, PlanoImpulsoId, Usuario } from "@/lib/domain/types";
-import { POSICAO_LISTAGEM } from "@/lib/domain/types";
+import { POSICAO_COMUNIDADE, POSICAO_LISTAGEM } from "@/lib/domain/types";
 import { NACIONAL } from "@/lib/divulgacao";
 import { secoesCompativeis } from "@/lib/impulsionamento";
 
@@ -188,9 +188,9 @@ export function pendenciasUso(base: BaseDados, i: ImpulsoComprado, evento: Event
   return erros;
 }
 
-/** Onde o impulso aparece: seções de destaque da página inicial e topo da listagem, em todo o Brasil. */
+/** Onde o impulso aparece: seções de destaque da página inicial, topo da listagem e lateral da comunidade, em todo o Brasil. */
 export function posicoesDoImpulso(base: BaseDados): string[] {
-  return [...secoesCompativeis(base).filter((s) => s.tipo === "destaques").map((s) => s.id), POSICAO_LISTAGEM];
+  return [...secoesCompativeis(base).filter((s) => s.tipo === "destaques").map((s) => s.id), POSICAO_LISTAGEM, POSICAO_COMUNIDADE];
 }
 
 export const ABRANGENCIA_IMPULSO = NACIONAL;

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { restaurarBase } from "./baseTeste";
 import type { BaseDados, Usuario } from "@/lib/domain/types";
-import { POSICAO_LISTAGEM } from "@/lib/domain/types";
+import { POSICAO_COMUNIDADE, POSICAO_LISTAGEM } from "@/lib/domain/types";
 import { impulsosDaOrganizacao, pendenciasUso, planosDeImpulso, statusDoImpulso } from "@/lib/impulsos";
 import { RODADA_RODIZIO_MIN, campanhasNaPosicao } from "@/lib/impulsionamento";
 import { NACIONAL } from "@/lib/divulgacao";
@@ -91,10 +91,10 @@ describe("compra", () => {
 });
 
 describe("uso", () => {
-  it("cria campanha ativa nos destaques e na listagem pelo período do impulso", () => {
+  it("cria campanha ativa nos destaques, na listagem e na lateral da comunidade pelo período do impulso", () => {
     const i = comprado("7d");
     const c = usarImpulsoNaBase(base, org, i.id, EVENTO, agora);
-    expect(c.posicoes).toEqual(["sec-destaques", POSICAO_LISTAGEM]);
+    expect(c.posicoes).toEqual(["sec-destaques", POSICAO_LISTAGEM, POSICAO_COMUNIDADE]);
     expect(c.abrangencia).toEqual(NACIONAL);
     expect(new Date(c.fimEm).getTime() - new Date(c.inicioEm).getTime()).toBe(7 * DIA);
     expect(i.status).toBe("usado");

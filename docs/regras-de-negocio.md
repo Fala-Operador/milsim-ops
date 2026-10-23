@@ -352,6 +352,49 @@ Código: `src/services/comunidade.ts`. → [APIs](api/README.md#comunidade)
 - Publicação **importante** (só gestão) notifica todos com acesso; comum notifica quem segue o fórum.
 - Na comunidade aparece só o **nome de exibição** (até 40 caracteres; padrão: primeiro e último nome).
 
+### Comunidade geral (estilo Twitter)
+
+Código: `src/lib/comunidadeGeral.ts`, `src/lib/moderacao.ts`, `src/server/social.server.ts`, função SQL
+`social_posts_page()`. → [APIs](api/README.md#social). Página: Comunidades › Geral (`/comunidades`).
+
+- **Fora da base**: posts, fotos, curtidas, seguidores, bloqueios e denúncias ficam em tabelas `social_*`
+  lidas em páginas de 20 (exceção registrada no AGENTS.md). A visibilidade é aplicada no banco.
+- **Post**: até **220 caracteres** (emoji conta como 1) e/ou até **4 fotos** (JPG, PNG ou WebP, até 5 MB
+  cada, redimensionadas no navegador). Sem vídeo. Respostas são posts ligados a outro post.
+- **Ritmo**: no mínimo 10 s entre posts e até 30 por hora por conta.
+- **Visibilidade**:
+  - perfil **público** (padrão): qualquer pessoa vê, inclusive visitante sem login;
+  - perfil **privado**: só o próprio e **seguidores aprovados**; contas de **15 a 17 anos começam privadas**;
+  - **bloqueio** (em qualquer sentido) esconde os posts e desfaz o seguir; conta desativada some;
+  - post **ocultado** pela moderação ou **excluído** pelo autor não aparece para ninguém.
+- **Interagir** (publicar, curtir, responder, seguir, denunciar, bloquear) exige login.
+- **Seguir**: perfil público aprova na hora; privado vira pedido (Comunidades › Pedidos para seguir).
+  Tornar o perfil público aceita os pedidos pendentes.
+- **Conteúdo adulto** (sexo, drogas ilícitas, morte e violência real) é recusado ao publicar por uma lista de
+  termos (`moderarTexto`); jargão do jogo ("morri", "missão suicida", "Vale da Morte") passa. **Ainda sem IA**:
+  fotos e textos fora da lista dependem de **denúncia**. A IA entra depois no mesmo ponto (`moderarTexto`).
+- **Denúncias** vão para o admin (Administração › Comunidade): ocultar a publicação (com motivo, que o autor
+  recebe por notificação) encerra todas as denúncias dela; descartar encerra só aquela.
+- **Notificações** (silenciáveis em "comunidade"): resposta ao seu post, pedido para seguir, novo seguidor,
+  pedido aceito e publicação ocultada.
+- **Fóruns** (Comunidades › Fóruns, `/comunidades/f/…`):
+  - qualquer conta cria até **3 fóruns ativos**; nome de 3 a 60 caracteres, único entre os ativos; descrição até 300;
+    **foto** opcional (JPG, PNG ou WebP até 5 MB), mostrada na lista e no topo do fórum (o dono troca ou remove);
+    nome e descrição passam pela mesma moderação de texto dos posts;
+  - **público**: qualquer pessoa (inclusive visitante) lê; entrar é imediato; **privado**: o nome aparece na lista,
+    mas só membros aprovados leem posts e membros; entrar vira pedido para o dono e os moderadores;
+  - só membros aprovados publicam e respondem; respostas herdam o fórum; posts de fórum **não** aparecem no feed
+    geral nem no perfil do autor (fórum público avisa quem tem perfil privado que o post fica visível a todos);
+  - **dono**: edita (tornar público aceita os pedidos), arquiva, nomeia/tira moderadores e não pode sair;
+    **dono e moderadores**: aprovam pedidos, ocultam posts do fórum (autor notificado) e removem membros
+    (moderador remove só membros; ninguém remove o dono); o admin também arquiva e recebe as denúncias;
+  - fórum arquivado some da lista e ninguém mais lê.
+- **Lateral** (feed, fóruns; no celular, um destaque no topo): `lateralDaComunidade` em `src/lib/divulgacao.ts`:
+  - **banners** da página inicial publicados, no período e na região, marcados "exibir também na comunidade";
+  - **operações impulsionadas** na posição **"Lateral da comunidade"** (até 3, com o mesmo rodízio); impulsos
+    comprados pelas organizações entram nessa posição automaticamente;
+  - **patrocinadores** ativos marcados pela administração "destacar na comunidade" (curadoria; venda fica para depois).
+
 ## 14. Central de Suporte
 
 Código: `src/lib/suporte.ts`, `src/services/suporte.ts`. → [Fluxo](fluxos.md#7-suporte-com-encaminhamento)
@@ -407,7 +450,7 @@ Código: `src/lib/divulgacao.ts`, `src/lib/impulsionamento.ts`.
   - Pago, o impulso fica no saldo da organização e precisa ser usado até `pagamento + validade`;
     depois disso aparece como **expirado** e não pode mais ser usado.
   - Usar = escolher uma operação publicada, não encerrada e com imagem: vira uma campanha ativa nas
-    seções de destaque e no topo da listagem, em todo o Brasil, com prioridade normal. Um segundo impulso
+    seções de destaque, no topo da listagem e na lateral da comunidade, em todo o Brasil, com prioridade normal. Um segundo impulso
     na mesma operação começa quando o anterior termina; o impulso termina no máximo no fim da operação.
   - Reembolso integral no Stripe cancela o impulso e encerra a campanha. A organização vê as próprias
     compras sem os ids do Stripe; o público não vê compras nem qual campanha veio de um impulso.
