@@ -197,10 +197,12 @@
   --accent-foreground: oklch(0.97 0.01 90);
   --destructive: oklch(0.5 0.17 27);
   --destructive-foreground: oklch(0.98 0.005 90);
-  --success: oklch(0.5 0.1 145);
+  /* success/warning escurecidos no tema claro: ícones e textos nessas cores ficavam apagados
+     sobre o fundo TAN (aviso tinha contraste ~2.4:1). */
+  --success: oklch(0.46 0.1 145);
   --success-foreground: oklch(0.98 0.005 90);
-  --warning: oklch(0.62 0.12 70);
-  --warning-foreground: oklch(0.2 0.02 80);
+  --warning: oklch(0.5 0.11 65);
+  --warning-foreground: oklch(0.98 0.005 90);
   --border: oklch(0.72 0.035 85);
   --input: oklch(0.72 0.035 85);
   --ring: oklch(0.45 0.055 125); --focus-ring: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
@@ -349,3 +351,28 @@
 .entrada-confirmada { animation: pulso-confirmacao 1.2s ease-out 0.5s 2; }
 .entrada-confirmada .circulo { stroke-dasharray: 160; stroke-dashoffset: 160; animation: desenhar-traco 0.6s ease-out forwards; }
 .entrada-confirmada .check { stroke-dasharray: 48; stroke-dashoffset: 48; animation: desenhar-traco 0.4s ease-out 0.5s forwards; }
+
+/* Seta dos seletores nativos (NativeSelect): a mesma ChevronDown (lucide) dos outros
+ * seletores, na cor muted-foreground de cada tema. Fora de @layer para valer sobre
+ * px-* passados em className e manter espaço para a seta à direita. */
+:root,
+.tema-claro {
+  --seta-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23645948' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+.dark,
+.tema-escuro {
+  --seta-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23adb599' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+select.campo-select:not([multiple]):not([size]) {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: var(--seta-select);
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem 1rem;
+  padding-right: 2.25rem;
+}
+select.campo-select:not([multiple]):not([size]):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
