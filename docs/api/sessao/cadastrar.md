@@ -33,13 +33,15 @@ Cria a conta de participante: valida os dados, cria o usuário no Supabase Auth 
 
 - CPF e e-mail são únicos.
 - Menores de 18 anos (15 a 17) ficam com `autorizacaoResponsavel = "pendente"` e só se inscrevem depois da aprovação do admin.
-- A conta é criada pelo admin (que não passa pelo CAPTCHA) e logo em seguida entra com o token do Turnstile; se o CAPTCHA recusar o token, a conta recém-criada é apagada.
+- Antes de criar, confere duplicidade de e-mail e CPF na base (quem já tem conta não recebe e-mail de confirmação).
+- A conta é criada pelo cadastro do Supabase Auth (`signUp`), que valida o CAPTCHA e envia o e-mail de confirmação (modelo `supabase/templates/confirmar-email.html`). A pessoa só entra depois de abrir o link ([`confirmarEmail`](confirmarEmail.md)).
+- Projeto sem confirmação obrigatória (ex.: local): a conta já entra logada.
 - Se a gravação do perfil falhar, a conta criada no Auth é apagada (não fica conta órfã).
 - Perfil, papel e organização ficam na tabela `usuarios`, nunca em `user_metadata`.
 
 ## Resposta
 
-`null`; a pessoa já sai logada (visão aplicada).
+`{ precisaConfirmar: boolean, email: string }`. Com `precisaConfirmar = true` a pessoa **não** sai logada e a tela mostra "Confirme seu e-mail"; com `false`, já sai logada (visão aplicada).
 
 ## Erros
 
@@ -57,6 +59,7 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - Já existe um cadastro com este e-mail.
 - Esta senha já apareceu em vazamentos de dados e não pode ser usada. Escolha outra.
 - Senha fraca. Escolha uma senha mais difícil de adivinhar.
+- Muitos cadastros neste momento. Tente de novo em alguns minutos.
 - Não foi possível criar a conta. Tente novamente.
 - Não conseguimos confirmar que você não é um robô. Refaça a verificação e tente de novo.
 

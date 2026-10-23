@@ -7,7 +7,15 @@ import { ErroDominio } from "@/services/db";
 import { registrarPerfil, validarCadastro, type DadosCadastro } from "@/services/auth";
 import { erroSenha, mensagemSenhaFraca } from "@/lib/domain/senha";
 import { normalizarEmail } from "@/lib/domain/validators";
-import { ler, mutar, type RespostaApi } from "@/server/unidade.server";
+import { contextoSomenteLeitura, ler, mutar, type RespostaApi } from "@/server/unidade.server";
+import {
+  CAMINHO_CONFIRMACAO,
+  MSG_AGUARDE_REENVIO,
+  MSG_EMAIL_NAO_CONFIRMADO,
+  MSG_LINK_CONFIRMACAO_INVALIDO,
+  type LinkConfirmacao,
+} from "@/lib/confirmacaoEmail";
+import { somenteDigitos } from "@/lib/domain/validators";
 import { supabaseAdmin, supabaseSessao } from "@/server/supabase.server";
 import { ERRO_CAPTCHA, erroDeCaptcha } from "@/server/turnstile.server";
 
@@ -25,6 +33,8 @@ export async function entrar(email: string, senha: string, captchaToken?: string
     email: normalizarEmail(email), password: senha, options: comCaptcha(captchaToken),
   });
   if (erroDeCaptcha(error)) throw new Error(ERRO_CAPTCHA);
+  // Senha certa, mas a conta ainda não abriu o link do e-mail (a tela oferece o reenvio).
+  if (error?.code === "email_not_confirmed") throw new Error(MSG_EMAIL_NAO_CONFIRMADO);
   if (error || !data.user) throw new Error("E-mail ou senha incorretos.");
   const { data: perfil } = await supabaseAdmin().from("users").select("active").eq("id", data.user.id).maybeSingle();
   if (!perfil?.active) {
@@ -39,43 +49,82 @@ export async function sair(): Promise<RespostaApi<null>> {
   return ler(() => null, { usuarioId: null });
 }
 
-export async function cadastrar(dados: DadosCadastro, captchaToken?: string): Promise<RespostaApi<null>> {
+export interface ResultadoCadastro {
+  /** true: a conta foi criada e precisa abrir o link do e-mail antes de entrar. */
+  precisaConfirmar: boolean;
+  email: string;
+}
+
+/** Endereço que o Supabase usa no link do modelo padrão (o modelo próprio usa {{ .SiteURL }}). */
+const urlConfirmacao = () => new URL(CAMINHO_CONFIRMACAO, getRequestUrl()).toString();
+
+/**
+ * Cria a conta pelo cadastro normal do Supabase, que envia o e-mail de confirmação (com o
+ * CAPTCHA validado pelo próprio Supabase). Antes, confere duplicidade de e-mail e CPF na base,
+ * para não mandar e-mail de confirmação a quem já tem conta. Se o projeto estiver sem
+ * confirmação obrigatória (ex.: ambiente local), a conta já entra logada, como antes.
+ */
+export async function cadastrar(dados: DadosCadastro, captchaToken?: string): Promise<RespostaApi<ResultadoCadastro>> {
   let email: string;
   try {
     email = validarCadastro(dados).email;
   } catch (e) {
     mensagem(e);
   }
-  // Protótipo: e-mail confirmado na criação (sem envio). Em produção, exigir confirmação.
-  const admin = supabaseAdmin();
-  const { data, error } = await admin.auth.admin.createUser({ email, password: dados.senha, email_confirm: true });
-  if (error || !data.user) {
-    if (error?.code === "email_exists" || /already/i.test(error?.message ?? "")) {
-      throw new Error("Já existe um cadastro com este e-mail.");
-    }
-    if (error?.code === "weak_password") throw new Error(mensagemSenhaFraca(motivosSenhaFraca(error)));
-    console.error(error);
-    throw new Error("Não foi possível criar a conta. Tente novamente.");
-  }
-  const id = data.user.id;
-  // A criação pelo admin não passa pelo CAPTCHA do Supabase; o login logo em seguida passa. Se o
-  // token não valer, a conta recém-criada é desfeita.
+  const { base } = await contextoSomenteLeitura();
+  if (base.usuarios.some((u) => u.email === email)) throw new Error("Já existe um cadastro com este e-mail.");
+  if (base.usuarios.some((u) => u.cpf === somenteDigitos(dados.cpf))) throw new Error("Já existe um cadastro com este CPF.");
+
   const sessao = supabaseSessao();
-  const login = await sessao.auth.signInWithPassword({ email, password: dados.senha, options: comCaptcha(captchaToken) });
-  if (login.error) {
-    await admin.auth.admin.deleteUser(id);
-    if (erroDeCaptcha(login.error)) throw new Error(ERRO_CAPTCHA);
-    console.error(login.error);
+  const { data, error } = await sessao.auth.signUp({
+    email, password: dados.senha, options: { emailRedirectTo: urlConfirmacao(), ...comCaptcha(captchaToken) },
+  });
+  if (erroDeCaptcha(error)) throw new Error(ERRO_CAPTCHA);
+  if (error?.code === "weak_password") throw new Error(mensagemSenhaFraca(motivosSenhaFraca(error)));
+  if (error?.code === "user_already_exists" || error?.code === "email_exists") throw new Error("Já existe um cadastro com este e-mail.");
+  if (error?.code === "over_email_send_rate_limit") throw new Error("Muitos cadastros neste momento. Tente de novo em alguns minutos.");
+  if (error || !data.user) {
+    console.error("cadastrar:", error);
     throw new Error("Não foi possível criar a conta. Tente novamente.");
   }
+  // Conta já existente no Auth: o Supabase responde sem identidades (e sem enviar e-mail). Não
+  // é uma conta nova — nunca apagar.
+  if (!data.user.identities?.length) throw new Error("Já existe um cadastro com este e-mail.");
+  const id = data.user.id;
   try {
     await mutar(() => registrarPerfil(id, dados), { exigirLogin: false });
   } catch (e) {
-    await sessao.auth.signOut();
-    await admin.auth.admin.deleteUser(id); // desfaz a conta do Auth se o perfil não foi criado
+    if (data.session) await sessao.auth.signOut();
+    await supabaseAdmin().auth.admin.deleteUser(id); // desfaz a conta do Auth se o perfil não foi criado
     throw e;
   }
-  return ler(() => null, { usuarioId: id });
+  if (data.session) return ler(() => ({ precisaConfirmar: false, email }), { usuarioId: id });
+  return ler(() => ({ precisaConfirmar: true, email }), { usuarioId: null });
+}
+
+/** Abre a sessão a partir do link do e-mail de confirmação (token_hash ou code). */
+export async function confirmarEmail(link: LinkConfirmacao): Promise<RespostaApi<null>> {
+  const sessao = supabaseSessao();
+  const { data, error } = "tokenHash" in link
+    ? await sessao.auth.verifyOtp({ type: "email", token_hash: link.tokenHash })
+    : await sessao.auth.exchangeCodeForSession(link.codigo);
+  if (error || !data.user) throw new Error(MSG_LINK_CONFIRMACAO_INVALIDO);
+  const { data: perfil } = await supabaseAdmin().from("users").select("active").eq("id", data.user.id).maybeSingle();
+  if (!perfil?.active) {
+    await sessao.auth.signOut();
+    throw new Error("Conta inativa.");
+  }
+  return ler(() => null, { usuarioId: data.user.id });
+}
+
+/** Reenvia o e-mail de confirmação (sempre responde sucesso para não revelar contas). */
+export async function reenviarConfirmacao(email: string, captchaToken?: string): Promise<void> {
+  const { error } = await supabaseSessao().auth.resend({
+    type: "signup", email: normalizarEmail(email), options: { emailRedirectTo: urlConfirmacao(), ...comCaptcha(captchaToken) },
+  });
+  if (erroDeCaptcha(error)) throw new Error(ERRO_CAPTCHA);
+  if (error?.code === "over_email_send_rate_limit" || error?.status === 429) throw new Error(MSG_AGUARDE_REENVIO);
+  if (error) console.error("reenviarConfirmacao:", error.message);
 }
 
 /** Envia o e-mail de redefinição (sempre responde sucesso para não revelar contas). */
