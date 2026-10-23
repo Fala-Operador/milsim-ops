@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Campo, Modal, SkeletonPagina } from "@/components/ui";
+import { useConfirmacao } from "@/contexts/ConfirmacaoContext";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import type { Forum } from "@/lib/domain/types";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,6 +54,7 @@ function Gerenciar() {
   const [editando, setEditando] = useState<Forum | "novo" | null>(null);
   const [suspender, setSuspender] = useState<string | null>(null);
   const [ocultarAlvo, setOcultarAlvo] = useState<{ alvo: "publicacao" | "resposta"; id: string } | null>(null);
+  const { confirmar } = useConfirmacao();
   const [erro, setErro] = useState("");
 
   if (!montado || !usuario) return <SkeletonPagina />;
@@ -101,7 +103,7 @@ function Gerenciar() {
                     <Button variant="outline" onClick={() => setEditando(f)}>Editar</Button>
                     <Button variant="outline" onClick={() => run(() => alternarArquivoForum(f.id))}>{f.status === "ativo" ? "Arquivar" : "Reativar"}</Button>
                     {qtd === 0 && (
-                      <Button variant="destructive" onClick={() => window.confirm(`Excluir o fórum "${f.nome}"?`) && run(() => excluirForum(f.id))}>Excluir</Button>
+                      <Button variant="destructive" onClick={async () => (await confirmar({ titulo: "Excluir fórum?", descricao: `O fórum "${f.nome}" será excluído.`, confirmar: "Excluir", destrutivo: true })) && run(() => excluirForum(f.id))}>Excluir</Button>
                     )}
                   </div>
                 </div>

@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Campo, EstadoVazio, Modal } from "@/components/ui";
+import { useConfirmacao } from "@/contexts/ConfirmacaoContext";
 import { IconeInsignia } from "./IconeInsignia";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
@@ -188,6 +189,7 @@ function FormEquipamento({ inicial, onFechar }: { inicial: Equipamento | null; o
 const TIPOS_NOTA = "application/pdf,image/jpeg,image/png,image/webp";
 
 function NotaFiscal({ eq, onMudou }: { eq: Equipamento; onMudou: () => void }) {
+  const { confirmar } = useConfirmacao();
   const [erro, setErro] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const run = async (fn: () => Promise<unknown>) => {
@@ -219,7 +221,7 @@ function NotaFiscal({ eq, onMudou }: { eq: Equipamento; onMudou: () => void }) {
             }));
           }} />
         </Label>
-        {eq.nota && <Button variant="ghost" className="text-xs" disabled={ocupado} onClick={() => window.confirm("Excluir a nota fiscal?") && run(() => excluirNota(eq.id))}>Excluir</Button>}
+        {eq.nota && <Button variant="ghost" className="text-xs" disabled={ocupado} onClick={async () => (await confirmar({ titulo: "Excluir a nota fiscal?", confirmar: "Excluir", destrutivo: true })) && run(() => excluirNota(eq.id))}>Excluir</Button>}
       </div>
       <p className="mt-2 text-muted-foreground">PDF, JPEG, PNG ou WebP, até 5 MB. Só você acessa este arquivo — ele não aparece no perfil, para organizadores nem para a administração. Anexar não torna o equipamento "verificado".</p>
       {erro && <p role="alert" className="mt-1 text-destructive">{erro}</p>}
@@ -231,6 +233,7 @@ export function AbaEquipamentos({ equipamentos, proprio, onMudou }: { equipament
   const versao = useVersaoBase();
   const [editando, setEditando] = useState<Equipamento | null | "novo">(null);
   const [meus, setMeus] = useState<Equipamento[]>([]);
+  const { confirmar } = useConfirmacao();
   useEffect(() => { if (proprio) setMeus(carregarBase().equipamentos); }, [proprio, versao]);
 
   if (!proprio) {
@@ -262,7 +265,7 @@ export function AbaEquipamentos({ equipamentos, proprio, onMudou }: { equipament
                   <Badge variant={e.visivel ? "success" : "secondary"}>{e.visivel ? "Visível no perfil" : "Privado"}</Badge>
                   <Button variant="ghost" className="text-xs" onClick={() => setEditando(e)}><Pencil className="h-3 w-3" /> Editar</Button>
                   <Button variant="ghost" className="text-xs" onClick={async () => {
-                    if (!window.confirm("Excluir este equipamento e sua nota fiscal?")) return;
+                    if (!(await confirmar({ titulo: "Excluir este equipamento?", descricao: "A nota fiscal anexada também será excluída.", confirmar: "Excluir", destrutivo: true }))) return;
                     await excluirEquipamento(e.id); onMudou();
                   }}><Trash2 className="h-3 w-3" /> Excluir</Button>
                 </div>
@@ -327,6 +330,7 @@ export function AbaFotos({ fotos, proprio, onMudou }: { fotos?: FotoDTO[] | unde
   const [nova, setNova] = useState<{ dataUrl: string; legenda: string; alt: string } | null>(null);
   const [erro, setErro] = useState("");
   const [visiveis, setVisiveis] = useState<Map<string, boolean>>(new Map());
+  const { confirmar } = useConfirmacao();
   useEffect(() => { if (proprio) setVisiveis(new Map(carregarBase().fotosPerfil.map((f) => [f.id, f.visivel]))); }, [proprio, versao]);
   if (!fotos) return <Restrito />;
   return (
@@ -361,7 +365,7 @@ export function AbaFotos({ fotos, proprio, onMudou }: { fotos?: FotoDTO[] | unde
                         try { await editarFoto({ id: f.id, legenda: f.legenda, alt: f.alt, visivel: !visiveis.get(f.id) }); onMudou(); } catch (e) { setErro(msg(e)); }
                       }}>{visiveis.get(f.id) ? <><Eye className="h-3 w-3" /> Visível</> : <><EyeOff className="h-3 w-3" /> Privada</>}</Button>
                       <Button variant="ghost" className="text-xs" aria-label="Excluir foto" onClick={async () => {
-                        if (!window.confirm("Excluir esta foto?")) return;
+                        if (!(await confirmar({ titulo: "Excluir esta foto?", confirmar: "Excluir", destrutivo: true }))) return;
                         await excluirFoto(f.id); onMudou();
                       }}><Trash2 className="h-3 w-3" /></Button>
                     </div>

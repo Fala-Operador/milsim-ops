@@ -2,6 +2,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useConfirmacao } from "@/contexts/ConfirmacaoContext";
 import { carregarBase } from "@/services/db";
 import { acessoAComunidade } from "@/lib/comunidadePublica";
 import type { BaseDados, Forum, ImagemPost, MotivoDenuncia, Publicacao, Resposta, Usuario } from "@/lib/domain/types";
@@ -311,6 +312,7 @@ export function CartaoPublicacao({
   const forum = foruns.find((f) => f.id === pub.forumId);
   const [modal, setModal] = useState<null | "editar" | "denunciar" | "ocultar" | "mover">(null);
   const [menu, setMenu] = useState(false);
+  const { confirmar } = useConfirmacao();
   const [aviso, setAviso] = useState("");
   const proprio = pub.autorId === usuario.id;
   const curtido = curtiu(base, pub.id, usuario.id);
@@ -359,7 +361,7 @@ export function CartaoPublicacao({
                   <ItemMenu onClick={copiarLink}>Copiar link</ItemMenu>
                   {proprio && !pub.removidaPeloAutor && <ItemMenu onClick={() => { setModal("editar"); setMenu(false); }}>Editar</ItemMenu>}
                   {proprio && (
-                    <ItemMenu onClick={() => window.confirm("Excluir esta publicação?") && executar(() => excluirPublicacao(pub.id))}>Excluir</ItemMenu>
+                    <ItemMenu onClick={async () => { setMenu(false); if (await confirmar({ titulo: "Excluir esta publicação?", confirmar: "Excluir", destrutivo: true })) executar(() => excluirPublicacao(pub.id)); }}>Excluir</ItemMenu>
                   )}
                   {!proprio && <ItemMenu onClick={() => { setModal("denunciar"); setMenu(false); }}>Denunciar</ItemMenu>}
                   {gestao && (
@@ -452,6 +454,7 @@ function ItemMenu({ onClick, children }: { onClick: () => void; children: React.
 // ---------- Resposta ----------
 export function ItemResposta({ base, r, usuario, gestao, eventoId, arquivado, onMudou }: { base: BaseDados; r: Resposta; usuario: Usuario; gestao: boolean; eventoId: string; arquivado: boolean; onMudou: () => void }) {
   const [modal, setModal] = useState<null | "editar" | "denunciar" | "ocultar">(null);
+  const { confirmar } = useConfirmacao();
   const [erro, setErro] = useState("");
   const proprio = r.autorId === usuario.id;
   const run = async (fn: () => Promise<unknown>) => {
@@ -466,7 +469,7 @@ export function ItemResposta({ base, r, usuario, gestao, eventoId, arquivado, on
         {r.imagem && <Galeria imagens={[r.imagem]} />}
         <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
           {proprio && !arquivado && <Button variant="plain" size="none" className="hover:text-foreground" onClick={() => setModal("editar")}>Editar</Button>}
-          {proprio && <Button variant="plain" size="none" className="hover:text-foreground" onClick={() => window.confirm("Excluir esta resposta?") && run(() => excluirResposta(r.id))}>Excluir</Button>}
+          {proprio && <Button variant="plain" size="none" className="hover:text-foreground" onClick={async () => (await confirmar({ titulo: "Excluir esta resposta?", confirmar: "Excluir", destrutivo: true })) && run(() => excluirResposta(r.id))}>Excluir</Button>}
           {!proprio && <Button variant="plain" size="none" className="hover:text-foreground" onClick={() => setModal("denunciar")}>Denunciar</Button>}
           {gestao && (r.oculta
             ? <Button variant="plain" size="none" className="hover:text-foreground" onClick={() => run(() => ocultarConteudo("resposta", r.id, "", false))}>Restaurar</Button>

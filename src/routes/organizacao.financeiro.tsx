@@ -5,6 +5,7 @@ import { criarCortesia } from "@/api/organizador.functions";
 import { useNavigate } from "@tanstack/react-router";
 import { CuponsEvento } from "@/components/CuponsEvento";
 import { useAuth } from "@/contexts/AuthContext";
+import { useConfirmacao } from "@/contexts/ConfirmacaoContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -41,6 +42,7 @@ function PaginaFinanceiro() {
   const [, setVersao] = useState(0);
   const [erro, setErro] = useState("");
   const [cortesiaForm, setCortesiaForm] = useState({ nome: "", email: "", tipoId: "", validade: "" });
+  const { avisar } = useConfirmacao();
 
   const evento = eventos.find((e) => e.id === eventoId) ?? null;
   // Troca de evento limpa formulários e mensagens do evento anterior.
@@ -60,7 +62,7 @@ function PaginaFinanceiro() {
         tipoId: cortesiaForm.tipoId,
         validade: cortesiaForm.validade ? new Date(cortesiaForm.validade).toISOString() : new Date(Date.now() + 15 * 86400000).toISOString(),
       });
-      alert(`Cortesia criada. Link de uso único: /inscricao/${evento.id}?cortesia=${codigo}`);
+      void avisar({ titulo: "Cortesia criada", descricao: `Link de uso único: /inscricao/${evento.id}?cortesia=${codigo}` });
       setCortesiaForm({ nome: "", email: "", tipoId: "", validade: "" });
       setVersao((v) => v + 1);
     } catch (err) {
