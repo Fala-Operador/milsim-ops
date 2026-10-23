@@ -94,7 +94,7 @@ try {
 
 ## Índice
 
-157 server functions em 17 módulos, mais os [webhooks do Stripe](#webhooks).
+159 server functions em 17 módulos, mais os [webhooks do Stripe](#webhooks).
 
 ### Sessão e leitura
 <a id="sessao"></a>
@@ -107,7 +107,9 @@ Login, cadastro, recuperação de senha e a visão da pessoa. Arquivo: [`src/api
 | [`obterEvento`](sessao/obterEvento.md) | GET | Pública | Carrega um evento e a organização dele para os carregadores de rota (`/eventos/$eventoId`, `/inscricao/$eventoId`, `/comunidade/$eventoId`), inclusive no SSR (título e metatags reais). |
 | [`entrar`](sessao/entrar.md) | POST | Pública | Login com e-mail e senha (Supabase Auth). |
 | [`sair`](sessao/sair.md) | POST | Pública | Encerra a sessão (`signOut`) e limpa os cookies. |
-| [`cadastrar`](sessao/cadastrar.md) | POST | Pública | Cria a conta de participante: valida os dados, cria o usuário no Supabase Auth (e-mail já confirmado), grava o perfil e faz login. |
+| [`cadastrar`](sessao/cadastrar.md) | POST | Pública | Cria a conta de participante: valida os dados, cria o usuário no Supabase Auth, grava o perfil e envia o e-mail de confirmação (sem confirmação ligada, já faz login). |
+| [`confirmarEmail`](sessao/confirmarEmail.md) | POST | Pública | Confirma o e-mail pelo link do cadastro e abre a sessão. |
+| [`reenviarConfirmacao`](sessao/reenviarConfirmacao.md) | POST | Pública | Reenvia o e-mail de confirmação de cadastro. |
 | [`recuperarSenha`](sessao/recuperarSenha.md) | POST | Pública | Envia o e-mail de recuperação de senha (`resetPasswordForEmail`) com o template em português `supabase/templates/recuperar-senha.html`. |
 | [`trocarCodigoRecuperacao`](sessao/trocarCodigoRecuperacao.md) | POST | Pública | Troca o `code` do link de recuperação por uma sessão (PKCE, `exchangeCodeForSession`). |
 | [`validarTokenRecuperacao`](sessao/validarTokenRecuperacao.md) | POST | Pública (quem tem o link do e-mail) | Valida o link do e-mail de recuperação (`?token_hash=…&type=recovery`) e abre a sessão de recuperação (`verifyOtp`). |

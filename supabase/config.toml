@@ -183,7 +183,7 @@ enable_manual_linking = false
 minimum_password_length = 6
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
-password_requirements = ""
+password_requirements = "lower_upper_letters_digits_symbols"
 
 # Configure passkey sign-ins.
 # [auth.passkey]
@@ -250,6 +250,13 @@ sender_name = "MilSim Ops"
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
+
+# E-mail "Confirm signup" em português: confirmação obrigatória do cadastro (contas antigas já
+# nasceram confirmadas). O link usa token_hash (src/routes/confirmar-email.tsx); publique com
+# `npx supabase config push` (o deploy do GitHub Actions não envia este arquivo).
+[auth.email.template.confirmation]
+subject = "Confirme seu e-mail — MilSim Ops"
+content_path = "./supabase/templates/confirmar-email.html"
 
 # E-mail "Reset password" em português. O link usa token_hash (src/routes/recuperar-senha.tsx);
 # publique com `npx supabase config push` (o deploy do GitHub Actions não envia este arquivo).

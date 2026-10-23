@@ -62,7 +62,12 @@ Código: `src/services/auth.ts`, `src/server/auth.server.ts`, `src/lib/domain/va
 - **Idade mínima: 15 anos.** De 15 a 17 anos a conta nasce com `autorizacaoResponsavel = pendente`
   e **não pode se inscrever** até o admin aprovar. → [`aprovarAutorizacaoResponsavel`](api/admin/aprovarAutorizacaoResponsavel.md)
 - **CPF e e-mail são únicos.** Se o perfil não puder ser gravado, a conta criada no Auth é apagada.
-- A conta é criada com e-mail já confirmado (ver [lacunas](#19-lacunas-conhecidas)).
+- **Confirmação de e-mail obrigatória** para contas novas (`src/lib/confirmacaoEmail.ts`): o cadastro cria a conta e
+  envia um link (modelo `supabase/templates/confirmar-email.html`, link por `token_hash`, vale 1 hora e em qualquer
+  aparelho). Até abrir o link a pessoa não entra ("Confirme seu e-mail para entrar…") e pode pedir outro e-mail
+  (no login, na tela pós-cadastro ou em `/confirmar-email`), sem revelar se a conta existe. Ao confirmar, entra e
+  volta para onde o cadastro começou (ex.: inscrição do evento). **Contas criadas antes** já nasceram confirmadas e
+  não precisam fazer nada. Sem a confirmação ligada no Supabase (ex.: ambiente local), a conta entra logada como antes.
 - Recuperação de senha por link de e-mail de uso único; a resposta não revela se o e-mail existe.
 - Login, cadastro e pedido de redefinição de senha mostram o Cloudflare Turnstile (`src/components/Turnstile.tsx`); o token é conferido pelo CAPTCHA do Supabase Auth, e cada token vale uma tentativa.
 - Foto de perfil: JPEG, PNG ou WebP, recortada no navegador, até ~2,2 MB.
@@ -520,7 +525,6 @@ Código: `src/lib/visaoGeralEvento.ts`, página `/admin/eventos/$eventoId` (bot�
 |---|---|---|
 | Encerramento de inscrições | Nada muda o evento para `inscricoes_encerradas` nem `arquivado` automaticamente (a conclusão no término já é automática). | Sem impacto na participação; as vendas já fecham pelo período dos lotes. |
 | Exclusão de contas | Não há exclusão definitiva nem em massa; só desativação. | Pedido em andamento: exclusão em massa com backup restaurável por 6 meses. |
-| Confirmação de e-mail | Conta nasce com e-mail confirmado. | Em produção, exigir confirmação. |
 | Mensagens externas | Sem e-mail transacional nem WhatsApp automático. | Avisos só pelo sino. |
 | Storage | Arquivos substituídos ou de dados removidos não são apagados. | Ocupa espaço; sem dado sensível exposto (bucket privado protegido). |
 | APIs legadas | `abrirChamado`/`responderChamado` (`conta`) não são usadas pelas telas. | Candidatas a remoção. |
