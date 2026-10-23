@@ -4,6 +4,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import * as social from "@/server/social.server";
+import type { FiltroAuditoria } from "@/server/social.server";
 import { mutar, exigirUsuario } from "@/server/unidade.server";
 import { chamar } from "@/api/cliente";
 import { LIMITE_ALT, MAX_FOTOS, MOTIVOS_DENUNCIA, type MotivoDenunciaSocial } from "@/lib/comunidadeGeral";
@@ -37,6 +38,10 @@ export const perfilSocialFn = createServerFn({ method: "POST" })
 export const pedidosParaSeguirFn = createServerFn({ method: "POST" }).handler(() => social.lerPedidosParaSeguir());
 
 export const denunciasPendentesFn = createServerFn({ method: "POST" }).handler(() => social.lerDenunciasPendentes());
+
+export const postsAuditoriaFn = createServerFn({ method: "POST" })
+  .validator(cursor.extend({ filtro: z.enum(["todos", "publicado", "oculto", "removido"]) }).parse)
+  .handler(({ data }) => social.lerPostsAuditoria(data.filtro, data));
 
 // ---------- Escritas ----------
 export const publicarPostFn = createServerFn({ method: "POST" })
@@ -74,6 +79,10 @@ export const denunciarPostFn = createServerFn({ method: "POST" })
 export const resolverDenunciaFn = createServerFn({ method: "POST" })
   .validator(z.object({ denunciaId: idPost, acao: z.enum(["ocultar", "descartar"]), motivo: z.string().max(300).optional() }).parse)
   .handler(({ data }) => social.resolverDenuncia(data.denunciaId, data.acao, data.motivo));
+
+export const moderarPostFn = createServerFn({ method: "POST" })
+  .validator(z.object({ postId: idPost, acao: z.enum(["ocultar", "restaurar"]), motivo: z.string().max(300).optional() }).parse)
+  .handler(({ data }) => social.moderarPost(data.postId, data.acao, data.motivo));
 
 /** Perfil público ou privado na comunidade (dado da conta: volta com a visão). */
 export const definirPerfilComunidadeFn = createServerFn({ method: "POST" })
@@ -155,6 +164,10 @@ export const lerRespostas = (postId: string, c: { antes?: string | undefined; an
 export const lerPerfilSocial = (usuarioId: string) => perfilSocialFn({ data: { usuarioId } });
 export const lerPedidosParaSeguir = () => pedidosParaSeguirFn();
 export const lerDenunciasPendentes = () => denunciasPendentesFn();
+export const lerPostsAuditoria = (filtro: FiltroAuditoria, c: { antes?: string | undefined; antesId?: string | undefined } = {}) =>
+  postsAuditoriaFn({ data: { filtro, ...c } });
+export const moderarPost = (postId: string, acao: "ocultar" | "restaurar", motivo?: string) =>
+  moderarPostFn({ data: { postId, acao, motivo } });
 export const publicarPost = (d: { texto: string; fotos: { dados: string; alt?: string | undefined }[]; respondendoA?: string | undefined; forumId?: string | undefined }) =>
   publicarPostFn({ data: d });
 export const excluirPost = (postId: string) => excluirPostFn({ data: { postId } });

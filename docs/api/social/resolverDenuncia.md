@@ -34,6 +34,7 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 
 - Denúncia não encontrada ou já resolvida.
 - Informe o motivo para ocultar a publicação.
+- Publicação indisponível. (ocultar uma publicação que já não está publicada)
 - Apenas administradores podem fazer isso.
 
 ## Exemplo

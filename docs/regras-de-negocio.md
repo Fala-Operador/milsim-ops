@@ -385,6 +385,10 @@ Código: `src/lib/comunidadeGeral.ts`, `src/lib/moderacao.ts`, `src/server/socia
   fotos e textos fora da lista dependem de **denúncia**. A IA entra depois no mesmo ponto (`moderarTexto`).
 - **Denúncias** vão para o admin (Administração › Comunidade): ocultar a publicação (com motivo, que o autor
   recebe por notificação) encerra todas as denúncias dela; descartar encerra só aquela.
+- **Auditoria** (Administração › Comunidade › Últimas publicações): o admin vê todas as publicações e respostas,
+  da mais nova para a mais antiga, sem filtro de visibilidade (perfis e fóruns privados, ocultas e removidas pelo
+  autor), com o fórum, o nº de denúncias e o motivo da ocultação. Daí pode ocultar (mesma regra das denúncias:
+  motivo obrigatório, autor avisado, denúncias pendentes encerradas) ou restaurar uma publicação ocultada.
 - **Notificações** (silenciáveis em "comunidade"): resposta ao seu post, pedido para seguir, novo seguidor,
   pedido aceito e publicação ocultada.
 - **Fóruns** (Comunidades › Fóruns, `/comunidades/f/…`):
