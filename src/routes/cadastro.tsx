@@ -22,6 +22,9 @@ import { TIPOS_FOTO, erroArquivoFoto } from "@/lib/recorteFoto";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { CamposFicha, FICHA_VAZIA } from "@/components/perfil/FichaEmergencia";
+import { ReenviarConfirmacao } from "@/components/ReenviarConfirmacao";
+import { CHAVE_DESTINO_CONFIRMACAO } from "@/lib/confirmacaoEmail";
+import { MailCheck } from "lucide-react";
 import { fichaPreenchida, type DadosFicha } from "@/lib/fichaEmergencia";
 
 export const Route = createFileRoute("/cadastro")({
@@ -70,6 +73,7 @@ function PaginaCadastro() {
   const [privacidade, setPrivacidade] = useState(false);
   const [promocional, setPromocional] = useState(false);
   const [ficha, setFicha] = useState<DadosFicha>(FICHA_VAZIA);
+  const [aguardandoConfirmacao, setAguardandoConfirmacao] = useState<string | null>(null);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
   const turnstile = useTurnstile("cadastro");
@@ -109,7 +113,7 @@ function PaginaCadastro() {
     if (!senhaValida) return setErro(erroSenha(f.senha) ?? "A confirmação de senha não confere.");
     setCarregando(true);
     try {
-      await registrar({
+      const conta = await registrar({
         ...f,
         fotoUrl: fotoUrl === FOTO_PADRAO ? undefined : fotoUrl,
         aceiteTermos: aceite,
@@ -118,6 +122,12 @@ function PaginaCadastro() {
         // Só envia a ficha se algo foi preenchido ou autorizado.
         fichaEmergencia: fichaPreenchida(ficha) || ficha.compartilhar ? ficha : undefined,
       }, turnstile.token);
+      if (!conta) {
+        // Precisa confirmar o e-mail: guarda para onde voltar depois de abrir o link (mesmo aparelho).
+        try { localStorage.setItem(CHAVE_DESTINO_CONFIRMACAO, redirectSeguro(redirect)); } catch { /* sem armazenamento: vai para /app */ }
+        setAguardandoConfirmacao(f.email.trim().toLowerCase());
+        return;
+      }
       // Retorna ao fluxo de inscrição quando o cadastro começou em um evento
       navigate({ ...destinoDoLink(redirectSeguro(redirect)) } as { to: string });
     } catch (err) {
@@ -127,6 +137,27 @@ function PaginaCadastro() {
       setCarregando(false);
     }
   };
+
+  if (aguardandoConfirmacao) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-12">
+        <Card className="space-y-4">
+          <h1 className="flex items-center gap-2 font-display text-2xl font-semibold uppercase tracking-wide">
+            <MailCheck className="h-6 w-6" aria-hidden="true" /> Confirme seu e-mail
+          </h1>
+          <p className="text-sm">
+            Sua conta foi criada. Enviamos um link de confirmação para <strong className="break-all">{aguardandoConfirmacao}</strong>.
+            Abra o link para ativar o acesso — ele vale por 1 hora.
+          </p>
+          <p className="text-sm text-muted-foreground">Não chegou? Confira a caixa de spam ou peça outro e-mail.</p>
+          <ReenviarConfirmacao email={aguardandoConfirmacao} />
+          <p className="text-sm">
+            Já confirmou? <Link to="/login" search={{ redirect }} className="text-accent hover:underline">Entrar</Link>
+          </p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">

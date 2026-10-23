@@ -72,6 +72,14 @@ export const validarTokenRecuperacaoFn = createServerFn({ method: "POST" })
   .validator(z.object({ tokenHash: z.string().min(1).max(500) }).parse)
   .handler(({ data }) => auth.validarTokenRecuperacao(data.tokenHash));
 
+export const confirmarEmailFn = createServerFn({ method: "POST" })
+  .validator(z.union([z.object({ tokenHash: z.string().min(1).max(500) }), z.object({ codigo: z.string().min(1).max(500) })]).parse)
+  .handler(({ data }) => auth.confirmarEmail(data));
+
+export const reenviarConfirmacaoFn = createServerFn({ method: "POST" })
+  .validator(z.object({ email: z.string().max(200), captcha }).parse)
+  .handler(({ data }) => auth.reenviarConfirmacao(data.email, data.captcha));
+
 export const definirNovaSenhaFn = createServerFn({ method: "POST" })
   .validator(z.object({ senha: z.string().max(200) }).parse)
   .handler(({ data }) => auth.definirNovaSenha(data.senha));
@@ -88,3 +96,5 @@ export const recuperarSenha = (email: string, captcha?: string) => recuperarSenh
 export const trocarCodigoRecuperacao = (codigo: string) => trocarCodigoFn({ data: { codigo } });
 export const validarTokenRecuperacao = (tokenHash: string) => validarTokenRecuperacaoFn({ data: { tokenHash } });
 export const definirNovaSenha = (senha: string) => chamar(definirNovaSenhaFn({ data: { senha } }));
+export const confirmarEmail = (link: { tokenHash: string } | { codigo: string }) => chamar(confirmarEmailFn({ data: link }));
+export const reenviarConfirmacao = (email: string, captcha?: string) => reenviarConfirmacaoFn({ data: { email, captcha } });
