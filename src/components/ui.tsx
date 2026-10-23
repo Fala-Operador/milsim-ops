@@ -1,6 +1,7 @@
 // Composições do app sobre os componentes shadcn/ui de `src/components/ui/`.
 import { useEffect, useId, useState, type ReactNode } from "react";
 
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -138,6 +139,47 @@ export function ModalTexto({
         </Button>
       </div>
     </Modal>
+  );
+}
+
+/**
+ * Confirmação ou aviso no padrão do app, no lugar de `window.confirm`/`alert`. Sem
+ * `cancelar`, vira um aviso com um único botão. Use pelo `useConfirmacao()`.
+ */
+export function DialogoConfirmacao({
+  aberto,
+  titulo,
+  descricao,
+  confirmar,
+  cancelar,
+  destrutivo = false,
+  onResponder,
+}: {
+  aberto: boolean;
+  titulo: string;
+  descricao?: ReactNode;
+  confirmar: string;
+  cancelar?: string | undefined;
+  destrutivo?: boolean;
+  onResponder: (sim: boolean) => void;
+}) {
+  return (
+    <AlertDialog open={aberto} onOpenChange={(a) => !a && onResponder(false)}>
+      <AlertDialogContent className="block w-[calc(100%-2rem)] max-w-md rounded-lg bg-card p-5 text-card-foreground">
+        <AlertDialogTitle className="text-base uppercase">{titulo}</AlertDialogTitle>
+        {descricao ? (
+          <AlertDialogDescription className="mt-1 break-words">{descricao}</AlertDialogDescription>
+        ) : (
+          <AlertDialogDescription className="sr-only">{titulo}</AlertDialogDescription>
+        )}
+        <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          {cancelar && <Button type="button" variant="outline" onClick={() => onResponder(false)}>{cancelar}</Button>}
+          <Button type="button" variant={destrutivo ? "destructive" : "default"} autoFocus={!destrutivo} onClick={() => onResponder(true)}>
+            {confirmar}
+          </Button>
+        </div>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

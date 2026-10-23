@@ -21,6 +21,7 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import { SuporteProvider } from "@/contexts/SuporteContext";
 import { LocalizacaoProvider } from "@/contexts/LocalizacaoContext";
 import { PreferenciasProvider } from "@/contexts/PreferenciasContext";
+import { ConfirmacaoProvider } from "@/contexts/ConfirmacaoContext";
 import { PreferenciasModal } from "@/components/PreferenciasModalidade";
 import { Header } from "@/components/Header";
 import { MenuInferior } from "@/components/MenuInferior";
@@ -162,6 +163,7 @@ function Providers({ children }: { children: ReactNode }) {
   return (
     <NotificationProvider usuarioId={usuario?.id}>
      <SuporteProvider usuarioId={usuario?.id}>
+     <ConfirmacaoProvider>
       <Header />
       <main>{conteudo}</main>
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
@@ -173,6 +175,7 @@ function Providers({ children }: { children: ReactNode }) {
         </nav>
       </footer>
       <MenuInferior />
+     </ConfirmacaoProvider>
      </SuporteProvider>
     </NotificationProvider>
   );

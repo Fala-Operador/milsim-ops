@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Campo, EstadoVazio, Modal } from "@/components/ui";
+import { useConfirmacao } from "@/contexts/ConfirmacaoContext";
 import type { EntregaMissao, Evento, Missao, TipoEntregaMissao } from "@/lib/domain/types";
 
 export const Route = createFileRoute("/organizacao/missoes")({
@@ -80,6 +81,7 @@ function PaginaMissoesOrg() {
 
 function AbaMissoes({ evento, missoes, entregas, encerrada }: { evento: Evento; missoes: Missao[]; entregas: EntregaMissao[]; encerrada: boolean }) {
   const [editando, setEditando] = useState<Missao | "nova" | null>(null);
+  const { confirmar } = useConfirmacao();
   const [erro, setErro] = useState("");
   const acao = async (fn: () => Promise<unknown>) => { setErro(""); try { await fn(); } catch (e) { setErro(msg(e)); } };
   const nomeExercito = (id: string) => (id === "todos" ? "Todos os exércitos" : evento.exercitos.find((x) => x.id === id)?.nome ?? id);
@@ -109,7 +111,7 @@ function AbaMissoes({ evento, missoes, entregas, encerrada }: { evento: Evento; 
                   <div className="mt-2 flex flex-wrap gap-1">
                     <Button variant="outline" className="text-xs" onClick={() => setEditando(m)}>Editar</Button>
                     {s === "rascunho" && <Button className="text-xs" onClick={() => acao(() => publicarMissao(m.id))}><Send className="size-3" aria-hidden="true" />Publicar e avisar</Button>}
-                    {doMissao.length === 0 && <Button variant="ghost" className="text-xs" aria-label={`Excluir ${m.titulo}`} onClick={() => window.confirm(`Excluir a missão "${m.titulo}"?`) && acao(() => excluirMissao(m.id))}><Trash2 className="size-3" aria-hidden="true" /></Button>}
+                    {doMissao.length === 0 && <Button variant="ghost" className="text-xs" aria-label={`Excluir ${m.titulo}`} onClick={async () => (await confirmar({ titulo: "Excluir missão?", descricao: `A missão "${m.titulo}" será excluída.`, confirmar: "Excluir", destrutivo: true })) && acao(() => excluirMissao(m.id))}><Trash2 className="size-3" aria-hidden="true" /></Button>}
                   </div>
                 )}
               </li>
@@ -284,6 +286,7 @@ function CartaoEntrega({ entrega: e, missao: m, evento, encerrada }: { entrega: 
 function AbaPlacar({ evento, versao }: { evento: Evento; versao: unknown }) {
   const campanha = carregarBase().campanhasMissoes.find((c) => c.eventoId === evento.id);
   const encerrada = !!campanha?.encerradaEm;
+  const { confirmar } = useConfirmacao();
   const [premios, setPremios] = useState<string[]>(() => evento.exercitos.map((_, i) => campanha?.premios.find((p) => p.colocacao === i + 1)?.descricao ?? ""));
   const [erro, setErro] = useState("");
   const [ok, setOk] = useState("");
@@ -304,7 +307,7 @@ function AbaPlacar({ evento, versao }: { evento: Evento; versao: unknown }) {
         {!encerrada && (
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => acao(() => salvarPremios(evento.id, premios.map((d, i) => ({ colocacao: i + 1, descricao: d }))), "Prêmios salvos.")}>Salvar prêmios</Button>
-            <Button variant="outline" onClick={() => window.confirm("Encerrar a campanha? O placar congela, os prêmios são definidos e o resultado vai para a comunidade. Não dá para desfazer.") && acao(() => encerrarCampanha(evento.id), "Campanha encerrada e resultado publicado.")}>
+            <Button variant="outline" onClick={async () => (await confirmar({ titulo: "Encerrar a campanha?", descricao: "O placar congela, os prêmios são definidos e o resultado vai para a comunidade. Não dá para desfazer.", confirmar: "Encerrar e anunciar" })) && acao(() => encerrarCampanha(evento.id), "Campanha encerrada e resultado publicado.")}>
               Encerrar campanha e anunciar resultado
             </Button>
           </div>
