@@ -24,6 +24,7 @@ import { formatarDataBR } from "@/lib/domain/money";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const UFS = Object.keys(UF_REGIAO).sort();
 const FUSO = "America/Sao_Paulo";
@@ -98,7 +99,9 @@ export function GestaoImpulsionamentos({ base, eventoInicial, irParaSecoes }: { 
                     <TableCell className="px-3 py-2 whitespace-nowrap">{formatarDataBR(c.inicioEm)} → {formatarDataBR(c.fimEm)}</TableCell>
                     <TableCell className="px-3 py-2">{c.prioridade === "alta" ? "Alta" : "Normal"}{c.ordem ? ` · ordem ${c.ordem}` : ""}</TableCell>
                     <TableCell className="px-3 py-2"><StatusImpulsionamento s={st} />{dup && <div className="mt-1 text-xs text-warning">Sobrepõe outra campanha da mesma operação</div>}</TableCell>
-                    <TableCell className="px-3 py-2 whitespace-nowrap text-xs">{regs === null ? "Carregando…" : (() => {
+                    <TableCell className="px-3 py-2 whitespace-nowrap text-xs">{regs === null ? (
+                      <div className="space-y-1.5" role="status" aria-label="Carregando métricas"><Skeleton className="h-3 w-36" /><Skeleton className="h-3 w-28" /></div>
+                    ) : (() => {
                       const m = metricasCampanha(regs, c.id);
                       return <>{m.exibicoes} exibições · {m.cliques} cliques<br />CTR {m.ctr === null ? "—" : `${m.ctr.toFixed(1)}%`} · {m.visitas} visitas · {m.inscricoes} inscrições</>;
                     })()}</TableCell>

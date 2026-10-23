@@ -313,6 +313,83 @@
   }
 }
 
+/* ---------- Movimento ----------
+ * Uma curva e poucas durações para o app inteiro: entradas rápidas que desaceleram no fim.
+ * Tudo cai para ~0 com prefers-reduced-motion (regras acima e abaixo). */
+:root {
+  --ease-saida: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-rapida: 150ms;
+  --dur-media: 240ms;
+}
+
+/* Hover/foco suaves em tudo que é clicável (links de menu, itens de lista, abas). `:where`
+ * não pesa na especificidade: qualquer transition-* da tela continua valendo. */
+@layer base {
+  :where(a, button, summary, [role="tab"], [role="menuitem"], [role="option"]) {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-duration: var(--dur-rapida);
+    transition-timing-function: var(--ease-saida);
+  }
+}
+
+@keyframes surgir {
+  from { opacity: 0; transform: translateY(6px); }
+}
+@keyframes sumir {
+  to { opacity: 0; }
+}
+
+/* Conteúdo que chega no lugar do skeleton (listas, cartões, estados vazios). */
+@utility surgir {
+  animation: surgir var(--dur-media) var(--ease-saida) both;
+}
+
+/* Troca de página (View Transitions, ligada no router): o conteúdo sai rápido e o novo
+ * surge; cabeçalho, menu inferior e menu lateral da área ficam parados. Navegador sem
+ * suporte troca na hora, como antes. */
+::view-transition-old(root) {
+  animation: sumir 120ms ease-out both;
+}
+::view-transition-new(root) {
+  animation: surgir var(--dur-media) var(--ease-saida) both;
+}
+.vt-cabecalho { view-transition-name: cabecalho; }
+.vt-menu-inferior { view-transition-name: menu-inferior; }
+.vt-menu-area { view-transition-name: menu-area; }
+::view-transition-old(cabecalho),
+::view-transition-new(cabecalho),
+::view-transition-old(menu-inferior),
+::view-transition-new(menu-inferior),
+::view-transition-old(menu-area),
+::view-transition-new(menu-area) {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* Skeleton: brilho que atravessa o bloco (mais suave que piscar). */
+@keyframes brilho {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+@utility skeleton-brilho {
+  background-color: var(--color-secondary);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklch, var(--color-foreground) 7%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: brilho 1.4s ease-in-out infinite;
+}
+
 /* Textura topográfica discreta para heróis e cabeçalhos */
 @utility topo-bg {
   background-image: repeating-radial-gradient(

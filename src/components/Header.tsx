@@ -157,7 +157,7 @@ export function Header() {
   const pendenciasArea = menuArea ? totalPendencias(menuArea.grupos) : 0;
 
   return (
-    <header className={`sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur transition-shadow motion-reduce:transition-none ${rolado ? "shadow-md" : ""}`}>
+    <header className={`vt-cabecalho sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur transition-shadow motion-reduce:transition-none ${rolado ? "shadow-md" : ""}`}>
       <div className="mx-auto flex h-[60px] max-w-6xl items-center gap-3 px-4 lg:grid lg:h-[72px] lg:grid-cols-[1fr_auto_1fr]">
         {/* Esquerda: marca */}
         <Link to="/" aria-label="MILSIM OPS — página inicial" className={`flex min-w-0 items-center gap-2.5 justify-self-start rounded-md ${foco}`}>
