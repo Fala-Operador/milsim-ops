@@ -33,7 +33,7 @@ export function MenuInferior() {
   return (
     <nav
       aria-label="Atalhos"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      className="vt-menu-inferior fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
       <ul className="mx-auto flex h-16 max-w-md items-stretch gap-1 px-2 py-1.5">
         {ITENS.map(({ to, rotulo, icone: Icone, exato }) => (

@@ -9,6 +9,7 @@ import type { PerfilSocialDTO } from "@/lib/comunidadeGeral";
 import { tempoRelativo } from "@/lib/tempoRelativo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { AvatarAutor } from "./CartaoPost";
@@ -64,10 +65,23 @@ export function BotaoSeguir({ perfil }: { perfil: PerfilSocialDTO }) {
 /** Cabeçalho social de um perfil: contagens, privacidade e o botão de seguir. */
 export function CabecalhoSocial({ usuarioId }: { usuarioId: string }) {
   const q = useQuery({ queryKey: chavePerfilSocial(usuarioId), queryFn: () => lerPerfilSocial(usuarioId) });
+  // Mesma altura enquanto carrega: o perfil não "pula" quando os números chegam.
+  if (q.isPending) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3" role="status" aria-label="Carregando seguidores">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-28" />
+        </div>
+        <Skeleton className="h-9 w-28" />
+      </div>
+    );
+  }
   if (!q.data) return null;
   const p = q.data;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="surgir flex flex-wrap items-center justify-between gap-3">
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
         <span><strong className="text-foreground">{p.seguidores}</strong> seguidores</span>
         <span><strong className="text-foreground">{p.seguindo}</strong> seguindo</span>

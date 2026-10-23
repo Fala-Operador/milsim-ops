@@ -28,6 +28,7 @@ import type { BaseDados, Chamado, MensagemChamado } from "@/lib/domain/types";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
@@ -177,14 +178,16 @@ function ImagemAnexo({ chamadoId, m }: { chamadoId: string; m: MensagemChamado }
             alt={m.anexo.nome}
             onLoad={() => setCarregada(true)}
             onError={() => setTentativas((t) => t + 1)}
-            className={carregada ? "block max-h-72 w-auto max-w-full object-cover" : "hidden"}
+            className={carregada ? "surgir block max-h-72 w-auto max-w-full object-cover" : "hidden"}
           />
         )}
-        {!carregada && (
+        {!carregada && (falhou ? (
           <span className="flex h-48 w-64 max-w-full items-center justify-center px-3 text-center text-xs text-muted-foreground">
-            {falhou ? "Não foi possível carregar a imagem." : <Loader2 className="h-5 w-5 animate-spin" />}
+            Não foi possível carregar a imagem.
           </span>
-        )}
+        ) : (
+          <Skeleton className="block h-48 w-64 max-w-full rounded-xl" />
+        ))}
       </Button>
       {q.data && (
         <VisualizadorImagem aberto={ampliada} onFechar={() => setAmpliada(false)} url={q.data} nome={m.anexo.nome}
