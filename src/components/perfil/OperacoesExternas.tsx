@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Campo, EstadoVazio, Modal } from "@/components/ui";
+import { useConfirmacao } from "@/contexts/ConfirmacaoContext";
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : "Algo deu errado.");
 const UFS = Object.keys(NOMES_UF).sort((a, b) => NOMES_UF[a]!.localeCompare(NOMES_UF[b]!));
@@ -40,6 +41,7 @@ const doDTO = (o: OperacaoExternaDTO): Formulario => ({
 
 export function OperacoesExternas({ externas, proprio, onMudou }: { externas?: OperacaoExternaDTO[] | undefined; proprio: boolean; onMudou: () => void }) {
   const [form, setForm] = useState<Formulario | null>(null);
+  const { confirmar } = useConfirmacao();
   const [erro, setErro] = useState("");
   if (!externas) return null;
   if (!proprio && externas.length === 0) return null;
@@ -49,7 +51,7 @@ export function OperacoesExternas({ externas, proprio, onMudou }: { externas?: O
     try { await salvarOperacaoExterna({ ...doDTO(o), visivel: !o.visivel }); onMudou(); } catch (e) { setErro(msg(e)); }
   };
   const excluir = async (o: OperacaoExternaDTO) => {
-    if (!window.confirm(`Excluir "${o.nome}" das suas operações?`)) return;
+    if (!(await confirmar({ titulo: "Excluir operação?", descricao: `"${o.nome}" sairá das suas operações.`, confirmar: "Excluir", destrutivo: true }))) return;
     setErro("");
     try { await excluirOperacaoExterna(o.id); onMudou(); } catch (e) { setErro(msg(e)); }
   };

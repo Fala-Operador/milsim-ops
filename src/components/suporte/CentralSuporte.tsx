@@ -50,6 +50,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Label } from "@/components/ui/label";
+import { useConfirmacao } from "@/contexts/ConfirmacaoContext";
 
 const TOM: Record<StatusExibido, "secondary" | "success" | "warning" | "accent"> = {
   aberto: "accent",
@@ -666,6 +667,7 @@ function PainelDetalhes({
   const [resolvendo, setResolvendo] = useState(false);
   const [textoSolucao, setTextoSolucao] = useState("");
   const [atribuir, setAtribuir] = useState("");
+  const { confirmar } = useConfirmacao();
   const fechar = useRef<HTMLButtonElement>(null);
   const atende = podeAtender(base, usuario, c);
   const solicitante = c.solicitanteId === usuario.id;
@@ -902,12 +904,8 @@ function PainelDetalhes({
               variant="ghost"
               className="w-full"
               disabled={ocupado}
-              onClick={() => {
-                if (
-                  window.confirm(
-                    "Fechar este chamado? Depois de fechado, ele fica somente para leitura.",
-                  )
-                )
+              onClick={async () => {
+                if (await confirmar({ titulo: "Fechar este chamado?", descricao: "Depois de fechado, ele fica somente para leitura.", confirmar: "Fechar chamado" }))
                   void acao("fechar");
               }}
             >

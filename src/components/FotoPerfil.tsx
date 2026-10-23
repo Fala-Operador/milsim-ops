@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { Camera, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useConfirmacao } from "@/contexts/ConfirmacaoContext";
 import { definirFoto } from "@/api/conta.functions";
 import { nomeExibicao } from "@/services/comunidade";
 import { EditorFoto } from "@/components/EditorFoto";
@@ -14,6 +15,7 @@ export function FotoPerfil() {
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [aviso, setAviso] = useState<{ tom: "ok" | "erro"; texto: string } | null>(null);
   const [removendo, setRemovendo] = useState(false);
+  const { confirmar } = useConfirmacao();
   if (!usuario) return null;
 
   const aoEscolher = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,7 +29,7 @@ export function FotoPerfil() {
   };
 
   const remover = async () => {
-    if (!window.confirm("Remover a sua foto de perfil?")) return;
+    if (!(await confirmar({ titulo: "Remover a sua foto de perfil?", confirmar: "Remover", destrutivo: true }))) return;
     setRemovendo(true);
     try {
       await definirFoto(null);

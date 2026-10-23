@@ -7,6 +7,7 @@ import { inscricoesAtivasDoEvento } from "@/services/inscricoes";
 import { validarParaPublicacao } from "@/services/organizador";
 import { cancelarEvento, excluirEvento, publicarEvento } from "@/api/organizador.functions";
 import { useAuth } from "@/contexts/AuthContext";
+import { useConfirmacao } from "@/contexts/ConfirmacaoContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,7 @@ function PainelEventos() {
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<"todos" | Evento["status"]>("todos");
   const [focarLotes, setFocarLotes] = useState(false);
+  const { avisar } = useConfirmacao();
   const { lotes: lotesDe } = Route.useSearch();
   const abrirEditor = (e: Evento, lotes: boolean) => {
     setAviso("");
@@ -126,7 +128,7 @@ function PainelEventos() {
     setErro("");
     try {
       const r = await cancelarEvento(cancelarEvt.id, justificativa);
-      alert(`Evento cancelado. ${r.canceladas} inscrições estornadas e participantes notificados.`);
+      void avisar({ titulo: "Evento cancelado", descricao: `${r.canceladas} inscrições estornadas e participantes notificados.` });
       setCancelarEvt(null);
       setJustificativa("");
       setVersao((v) => v + 1);
