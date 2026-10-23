@@ -379,6 +379,7 @@ Código: `src/lib/comunidadeGeral.ts`, `src/lib/moderacao.ts`, `src/server/socia
   pedido aceito e publicação ocultada.
 - **Fóruns** (Comunidades › Fóruns, `/comunidades/f/…`):
   - qualquer conta cria até **3 fóruns ativos**; nome de 3 a 60 caracteres, único entre os ativos; descrição até 300;
+    **foto** opcional (JPG, PNG ou WebP até 5 MB), mostrada na lista e no topo do fórum (o dono troca ou remove);
     nome e descrição passam pela mesma moderação de texto dos posts;
   - **público**: qualquer pessoa (inclusive visitante) lê; entrar é imediato; **privado**: o nome aparece na lista,
     mas só membros aprovados leem posts e membros; entrar vira pedido para o dono e os moderadores;

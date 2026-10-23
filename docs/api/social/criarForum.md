@@ -18,6 +18,7 @@ Cria um fórum; quem cria vira o dono.
 | `nome` | string | 3 a 60 caracteres; único entre os fóruns ativos. |
 | `descricao?` | string | Até 300 caracteres. |
 | `visibilidade` | "publico" \| "privado" |  |
+| `foto?` | string (data URL) | Foto quadrada opcional: JPG, PNG ou WebP de até 5 MB (enviada ao bucket `midia`). |
 
 ## Regras
 
@@ -38,6 +39,8 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - Escolha se o fórum é público ou privado.
 - Conteúdo sexual não é permitido na comunidade. (e as demais mensagens de moderação de texto)
 - Já existe um fórum ativo com esse nome.
+- Formato de foto inválido. Use JPG, PNG ou WebP.
+- A foto pode ter no máximo 5 MB.
 - Você já tem 3 fóruns ativos. Arquive um para criar outro.
 - Entre na sua conta para continuar.
 

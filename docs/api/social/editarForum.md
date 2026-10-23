@@ -19,6 +19,7 @@ Altera nome, descrição e visibilidade.
 | `nome` | string | 3 a 60 caracteres; único entre os fóruns ativos. |
 | `descricao?` | string | Até 300 caracteres. |
 | `visibilidade` | "publico" \| "privado" |  |
+| `foto?` | string (data URL) \| null | Nova foto (JPG, PNG ou WebP de até 5 MB); `null` remove; ausente mantém a atual. |
 
 ## Regras
 
@@ -39,6 +40,8 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - Escolha se o fórum é público ou privado.
 - Conteúdo sexual não é permitido na comunidade. (e as demais mensagens de moderação de texto)
 - Já existe um fórum ativo com esse nome.
+- Formato de foto inválido. Use JPG, PNG ou WebP.
+- A foto pode ter no máximo 5 MB.
 - Entre na sua conta para continuar.
 
 ## Exemplo

@@ -89,7 +89,11 @@ export const definirPerfilComunidadeFn = createServerFn({ method: "POST" })
   });
 
 // ---------- Fóruns ----------
-const dadosForum = z.object({ nome: z.string().max(200), descricao: z.string().max(1000).optional(), visibilidade: z.enum(["publico", "privado"]) });
+// foto: data URL nova (~5 MB em base64), null remove, ausente mantém.
+const dadosForum = z.object({
+  nome: z.string().max(200), descricao: z.string().max(1000).optional(), visibilidade: z.enum(["publico", "privado"]),
+  foto: z.string().max(7_200_000).nullable().optional(),
+});
 
 export const forunsFn = createServerFn({ method: "POST" })
   .validator(z.object({ busca: z.string().max(60).optional(), meus: z.boolean().optional(), offset: z.number().int().min(0).max(10000).optional() }).parse)
@@ -165,7 +169,7 @@ export const resolverDenuncia = (denunciaId: string, acao: "ocultar" | "descarta
   resolverDenunciaFn({ data: { denunciaId, acao, motivo } });
 export const definirPerfilComunidade = (privado: boolean) => chamar(definirPerfilComunidadeFn({ data: { privado } }));
 
-type DadosForum = { nome: string; descricao?: string | undefined; visibilidade: "publico" | "privado" };
+type DadosForum = { nome: string; descricao?: string | undefined; visibilidade: "publico" | "privado"; foto?: string | null | undefined };
 export const lerForuns = (f: { busca?: string | undefined; meus?: boolean | undefined; offset?: number | undefined } = {}) => forunsFn({ data: f });
 export const lerForum = (forumId: string) => forumFn({ data: { forumId } });
 export const lerPostsDoForum = (forumId: string, c: { antes?: string | undefined; antesId?: string | undefined } = {}) =>
