@@ -374,7 +374,7 @@ Código: `src/lib/comunidadeGeral.ts`, `src/lib/moderacao.ts`, `src/server/socia
 - **Ritmo**: no mínimo 10 s entre posts e até 30 por hora por conta.
 - **Visibilidade**:
   - perfil **público** (padrão): qualquer pessoa vê, inclusive visitante sem login;
-  - perfil **privado**: só o próprio e **seguidores aprovados**; contas de **15 a 17 anos começam privadas**;
+  - perfil **privado**: só o próprio e **seguidores aprovados** (vale também para a ficha do operador); contas de **15 a 17 anos começam privadas**;
   - **bloqueio** (em qualquer sentido) esconde os posts e desfaz o seguir; conta desativada some;
   - post **ocultado** pela moderação ou **excluído** pelo autor não aparece para ninguém.
 - **Interagir** (publicar, curtir, responder, seguir, denunciar, bloquear) exige login.
@@ -506,6 +506,9 @@ Código: `src/lib/visaoGeralEvento.ts`, página `/admin/eventos/$eventoId` (bot�
 - **Notas fiscais** de equipamentos: bucket privado, **só o dono** acessa (nem organizador, nem admin),
   por link assinado de 60 s. Nunca entram na visão nem no perfil.
 - Perfil do operador: cada bloco é `eu` ou `autenticados`; visitante deslogado vê só nome e foto.
+- Perfil **privado** (Comunidades): os blocos `autenticados` (visão geral, operações, mapa, insígnias, equipamentos,
+  fotos) e as publicações só aparecem para **seguidores aprovados**; quem não segue (ou aguarda aprovação) vê só nome
+  e foto. Bloqueio entre as contas fecha o perfil. Blocos `eu` continuam só do dono, mesmo para seguidores.
 - Solicitações LGPD (acesso, correção, exportação, exclusão) vão para os admins, que respondem pela plataforma.
 - Listagens da gestão mostram CPF e telefone mascarados.
 - **Cifra no banco**: nome completo, CPF, data de nascimento, e-mail e WhatsApp da conta, endereço,

@@ -125,6 +125,9 @@ export function Privacidade({ perfil, aberto, onFechar, onSalvo }: { perfil: Per
           </div>
         ))}
       </div>
+      <p className="mt-3 text-xs text-muted-foreground">
+        Com o perfil privado (Comunidades), os blocos abertos a participantes com conta só aparecem para seguidores que você aprovar.
+      </p>
       {erro && <p role="alert" className="mt-3 text-sm text-destructive">{erro}</p>}
       <div className="mt-4 flex justify-end gap-2">
         <Button variant="outline" onClick={onFechar}>Cancelar</Button>

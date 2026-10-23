@@ -122,6 +122,13 @@ export function podeVerAutor(p: {
   return !p.autor.privado || (!!p.quemVe && p.seguidorAprovado);
 }
 
+/**
+ * Quem vê o perfil (posts e ficha do operador): o próprio; perfil público; ou seguidor aprovado
+ * de perfil privado. Bloqueio, em qualquer sentido, esconde.
+ */
+export const perfilVisivel = (relacao: RelacaoSeguir, privado: boolean): boolean =>
+  relacao === "eu" || (relacao !== "bloqueado" && (!privado || relacao === "seguindo"));
+
 /** Seguir perfil público aprova na hora; privado vira pedido para o dono aprovar. */
 export const statusAoSeguir = (perfilPrivado: boolean): "pendente" | "aprovado" => (perfilPrivado ? "pendente" : "aprovado");
 
