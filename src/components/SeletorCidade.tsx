@@ -107,7 +107,7 @@ export function SeletorCidade({ compacto = false, className = "" }: { compacto?:
     >
       {obtendo ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-accent motion-reduce:animate-none" /> : <MapPin className="h-4 w-4 shrink-0 text-accent" />}
       <span className={`truncate font-medium text-foreground ${compacto ? "max-w-[11rem]" : ""}`}>{obtendo ? "Localizando…" : rotulo}</span>
-      <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none ${aberto ? "rotate-180" : ""}`} aria-hidden="true" />
+      <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none ${aberto ? "rotate-180" : ""}`} aria-hidden="true" />
     </Button>
   );
 
