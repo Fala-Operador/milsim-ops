@@ -30,7 +30,8 @@ export function BotaoSeguir({ perfil }: { perfil: PerfilSocialDTO }) {
     setErro("");
     try {
       await acao();
-      await qc.invalidateQueries({ queryKey: ["social"] });
+      // Seguir/deixar de seguir/desbloquear muda o que a ficha do operador mostra.
+      await Promise.all([qc.invalidateQueries({ queryKey: ["social"] }), qc.invalidateQueries({ queryKey: ["perfil-operador", perfil.autor.id] })]);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível concluir.");
     } finally {
@@ -113,7 +114,7 @@ export function CartaoPerfilComunidade() {
           </span>
           <span className="mt-0.5 block text-xs text-muted-foreground">
             {privado
-              ? "Só seguidores que você aprovar veem suas publicações."
+              ? "Só seguidores que você aprovar veem suas publicações e os blocos do seu perfil."
               : "Qualquer pessoa vê suas publicações, inclusive visitantes."}
           </span>
         </span>

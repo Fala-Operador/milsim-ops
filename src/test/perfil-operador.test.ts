@@ -165,6 +165,36 @@ describe("privacidade do perfil", () => {
     expect(json).not.toContain("exercito");
   });
 
+  it("perfil privado: só seguidor aprovado vê os blocos; pedido pendente e bloqueio veem só o cabeçalho", () => {
+    base.perfisOperador.push({ usuarioId: PART, bio: "Bio", privacidade: { historico: "autenticados", mapa: "autenticados", insignias: "autenticados", equipamentos: "autenticados", fotos: "autenticados" }, operacoesOcultas: [], introVista: true, atualizadoEm: "" });
+    expect(montarPerfil(base, PART, outro(), "nenhuma")!.operacoes).toHaveLength(1);
+    u(PART).comunidadePrivada = true;
+    for (const relacao of ["nenhuma", "pendente"] as const) {
+      const p = montarPerfil(base, PART, outro(), relacao)!;
+      expect(p.fechado).toBe("privado");
+      expect(p.operacoes ?? p.mapa ?? p.insignias ?? p.equipamentos ?? p.fotos ?? p.social).toBeUndefined();
+      expect(p.resumo).toEqual({});
+    }
+    const seguidor = montarPerfil(base, PART, outro(), "seguindo")!;
+    expect(seguidor.fechado).toBeUndefined();
+    expect(seguidor.operacoes).toHaveLength(1);
+    expect(seguidor.social?.bio).toBe("Bio");
+    expect(montarPerfil(base, PART, outro(), "bloqueado")!.fechado).toBe("bloqueio");
+    expect(montarPerfil(base, PART, u(PART))!.fechado).toBeUndefined();
+  });
+
+  it("seguidor aprovado não vê bloco \"Somente eu\"", () => {
+    u(PART).comunidadePrivada = true;
+    base.perfisOperador.push({ usuarioId: PART, privacidade: { historico: "autenticados", mapa: "eu", insignias: "eu", equipamentos: "eu", fotos: "eu" }, operacoesOcultas: [], introVista: true, atualizadoEm: "" });
+    const p = montarPerfil(base, PART, outro(), "seguindo")!;
+    expect(p.operacoes).toHaveLength(1);
+    expect(p.mapa).toBeUndefined();
+  });
+
+  it("perfil público com bloqueio entre as contas fica fechado", () => {
+    expect(montarPerfil(base, PART, outro(), "bloqueado")!.fechado).toBe("bloqueio");
+  });
+
   it("nota fiscal e equipamentos de outra pessoa não chegam ao navegador (nem para admin)", () => {
     base.equipamentos.push({ id: "eq1", usuarioId: PART, marca: "M", tipo: "aeg", modelo: "X", fotos: [], visivel: true, nota: { nome: "nf.pdf", tipo: "application/pdf", tamanho: 1, enviadaEm: "" }, criadoEm: "", atualizadoEm: "" });
     expect(visaoParaUsuario(base, outro()).equipamentos).toEqual([]);

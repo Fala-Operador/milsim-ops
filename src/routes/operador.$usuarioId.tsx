@@ -101,6 +101,14 @@ function PaginaOperador() {
           <p className="font-medium">Entre na sua conta para ver o perfil completo deste operador.</p>
           <Link to="/login" search={{ redirect: `/operador/${usuarioId}` }} className="mt-3 inline-block"><Button>Entrar</Button></Link>
         </Card>
+      ) : p.fechado ? (
+        <div className="mt-6">
+          {p.fechado === "bloqueio" ? (
+            <EstadoVazio titulo="Perfil indisponível" descricao="Há um bloqueio entre vocês." />
+          ) : (
+            <EstadoVazio titulo="Perfil privado" descricao="Siga este operador para ver operações, mapa, insígnias, equipamentos, fotos e publicações. O acesso vale depois que ele aprovar o pedido." />
+          )}
+        </div>
       ) : (
         <>
           <dl className="mt-5 grid grid-cols-3 gap-2 sm:max-w-lg">

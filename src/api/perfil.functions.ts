@@ -7,6 +7,7 @@ import { recalcularProgressao } from "@/services/progressao";
 import { montarPerfil, type PerfilDTO } from "@/lib/perfilSocial";
 import { contextoSomenteLeitura, exigirUsuario, idDaSessao, ler, mutar } from "@/server/unidade.server";
 import { gravarNota, lerArquivoNota, removerNota, urlDaNota } from "@/server/documentos.server";
+import { relacaoCom } from "@/server/social.server";
 import { chamar } from "@/api/cliente";
 import type { PrivacidadePerfil } from "@/lib/domain/types";
 
@@ -25,7 +26,8 @@ export const obterPerfilFn = createServerFn({ method: "POST" })
         return montarPerfil(base, data.usuarioId, usuario);
       });
     }
-    return ler(({ base, usuario }) => montarPerfil(base, data.usuarioId, usuario));
+    // Perfil privado: os blocos dependem de seguir (aprovado) e de bloqueio, lidos fora da base.
+    return ler(async ({ base, usuario }) => montarPerfil(base, data.usuarioId, usuario, await relacaoCom(usuario?.id ?? null, data.usuarioId)));
   });
 
 export const salvarPerfilFn = createServerFn({ method: "POST" })
