@@ -25,7 +25,7 @@ os avisos ficam nas notificações do app.
 - **Vite 8** via `@lovable.dev/vite-tanstack-config` (build com Nitro: servidor Node em `.output/`; dentro do Lovable o alvo continua Cloudflare)
 - **Stripe** (Checkout, reembolsos e Connect Express) por `fetch`, sem SDK; webhooks pela Edge Function `supabase/functions/stripe-webhook`
 - **Tailwind CSS 4**, `lucide-react`, `recharts`; **Vitest** + Testing Library
-- Apoio: `qrcode` / `jsqr` (check-in), `jspdf` (relatórios), `zod` (validação das APIs), `ai` (insights)
+- Apoio: `qrcode` / `jsqr` (check-in), `jspdf` (relatórios), `zod` (validação das APIs)
 
 ## Execução
 
@@ -52,7 +52,6 @@ bun run start                # servidor Node gerado pelo build (.output/server/i
 | `STRIPE_SERVER_API_KEY` | opcional, **somente servidor**: liga a venda pelo Stripe Checkout e o Stripe Connect (sem ela, inscrição confirmada sem cobrança) |
 | `STRIPE_WEBHOOK_FORWARD_SECRET` | segredo compartilhado entre a Edge Function `stripe-webhook` e o site (mesmo valor nos dois lados) |
 | `STRIPE_BROWSER_PUBLIC_KEY` | opcional (`pk_...`): o cadastro e a gestão do recebimento da organização acontecem dentro do site (componentes embutidos do Stripe) |
-| `LOVABLE_API_KEY` | opcional, habilita Admin › Insights IA |
 | `TURNSTILE_SITE_KEY` | chave pública (site key) do Cloudflare Turnstile, mostrado no login, cadastro e pedido de redefinição de senha. A chave secreta fica só no Supabase (Authentication → Attack Protection → CAPTCHA). Com o CAPTCHA ligado no Supabase, sem esta variável ninguém entra |
 
 Na publicação, configure as variáveis do Supabase (e as do Stripe, se usar) como **segredos** do
@@ -145,7 +144,7 @@ Stripe em modo live.
 | Participante | `/app/*` | Ingressos com QR Code, missões pré-evento com placar, pagamento pendente ("Concluir pagamento"), grupo do WhatsApp do evento, comunidades, missões, notificações, Central de Suporte, perfil do operador (arsenal, galeria, notas fiscais privadas, insígnias e recompensas) e privacidade (LGPD) |
 | Comunidade | `/comunidade/$eventoId/*` | Fóruns com feed social, imagens no Storage, curtidas, denúncias, moderação e gestão de fóruns |
 | Organizador | `/organizacao/*`, `/app/organizador` | Eventos (editor em etapas, contato no WhatsApp), missões pré-evento (avaliação, placar por exército, prêmios no check-in, temporada), inscritos, check-in (QR/manual/offline com sincronização), comunidade, financeiro (resumo, movimentações com abas e filtros, recebimentos pelo Stripe Connect), cupons e cortesias, métricas e campanhas, recompensas, suporte encaminhado |
-| Admin | `/admin/*` | Dashboard, Insights IA, métricas, divulgação e impulsionamento, solicitações, usuários, pagamentos (taxa da plataforma), gamificação, Central de Suporte (triagem), privacidade e auditoria |
+| Admin | `/admin/*` | Dashboard, métricas, divulgação e impulsionamento, solicitações, usuários, pagamentos (taxa da plataforma), gamificação, Central de Suporte (triagem), privacidade e auditoria |
 
 ## Documentação
 

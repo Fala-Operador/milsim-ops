@@ -1,7 +1,7 @@
-import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { useAbaAtivaVisivel } from "@/hooks/useAbaAtivaVisivel";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { LayoutMenuLateral, type GrupoMenuLateral } from "@/components/MenuLateral";
 import { useExigirLogin } from "@/hooks/useExigirLogin";
 import { useSuporte } from "@/contexts/SuporteContext";
 import { ErroSecao, SkeletonPagina } from "@/components/ui";
@@ -32,19 +32,6 @@ export const Route = createFileRoute("/organizacao")({
   errorComponent: ErroOrganizacao,
 });
 
-const itens = [
-  { to: "/organizacao", rotulo: "Painel", icone: LayoutDashboard, exato: true },
-  { to: "/organizacao/inscritos", rotulo: "Inscritos", icone: Users },
-  { to: "/organizacao/checkin", rotulo: "Check-in", icone: QrCode },
-  { to: "/organizacao/comunidade", rotulo: "Comunidade", icone: MessagesSquare },
-  { to: "/organizacao/missoes", rotulo: "Missões", icone: Target },
-  { to: "/organizacao/financeiro", rotulo: "Financeiro", icone: Wallet },
-  { to: "/organizacao/metricas", rotulo: "Métricas", icone: BarChart3 },
-  { to: "/organizacao/impulsos", rotulo: "Impulsionar", icone: Rocket },
-  { to: "/organizacao/recompensas", rotulo: "Recompensas", icone: Gift },
-  { to: "/organizacao/suporte", rotulo: "Suporte", icone: LifeBuoy },
-] as const;
-
 function LayoutOrganizacao() {
   const { usuario } = useAuth();
   const { atencaoEquipe } = useSuporte();
@@ -52,9 +39,6 @@ function LayoutOrganizacao() {
   const [montado, setMontado] = useState(false);
 
   useEffect(() => setMontado(true), []);
-  const endereco = useRouterState({ select: (s) => s.location.href });
-  const navRef = useRef<HTMLElement>(null);
-  useAbaAtivaVisivel(navRef, `${endereco}|${montado && !!usuario}`);
   // Sem sessão: pede login e volta ao mesmo endereço (permissão revalidada depois).
   useExigirLogin("/organizacao");
   useEffect(() => {
@@ -66,35 +50,30 @@ function LayoutOrganizacao() {
   if (!montado || !usuario) return <SkeletonPagina />;
   if (usuario.perfil !== "organizador" && usuario.perfil !== "admin") return null;
 
+  const grupos: GrupoMenuLateral[] = [
+    { titulo: "Evento", itens: [
+      { to: "/organizacao", rotulo: "Painel", icone: LayoutDashboard, exato: true },
+      { to: "/organizacao/inscritos", rotulo: "Inscritos", icone: Users },
+      { to: "/organizacao/checkin", rotulo: "Check-in", icone: QrCode },
+    ] },
+    { titulo: "Engajamento", itens: [
+      { to: "/organizacao/comunidade", rotulo: "Comunidade", icone: MessagesSquare },
+      { to: "/organizacao/missoes", rotulo: "Missões", icone: Target },
+      { to: "/organizacao/recompensas", rotulo: "Recompensas", icone: Gift },
+    ] },
+    { titulo: "Vendas", itens: [
+      { to: "/organizacao/financeiro", rotulo: "Financeiro", icone: Wallet },
+      { to: "/organizacao/metricas", rotulo: "Métricas", icone: BarChart3 },
+      { to: "/organizacao/impulsos", rotulo: "Impulsionar", icone: Rocket },
+    ] },
+    { titulo: "Ajuda", itens: [
+      { to: "/organizacao/suporte", rotulo: "Suporte", icone: LifeBuoy, contador: atencaoEquipe, rotuloContador: `${atencaoEquipe} chamados exigem atenção` },
+    ] },
+  ];
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="font-display text-2xl font-semibold uppercase">Minha organização</h1>
-      <div className="mt-4 flex flex-col gap-6 md:flex-row">
-        <nav
-          ref={navRef}
-          aria-label="Seções da organização"
-          className="abas-rolaveis relative -mx-4 flex gap-1 border-b border-border px-4 md:mx-0 md:w-48 md:shrink-0 md:flex-col md:overflow-visible md:border-b-0 md:border-r md:px-0 md:pr-3"
-        >
-          {itens.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              activeOptions={{ exact: "exato" in item }}
-              className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
-              activeProps={{ className: "bg-secondary !text-foreground shadow-[inset_3px_0_0_var(--color-primary)]", "aria-current": "page" }}
-            >
-              <item.icone className="h-4 w-4" />
-              {item.rotulo}
-              {item.rotulo === "Suporte" && atencaoEquipe > 0 && (
-                <span className="ml-auto rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">{atencaoEquipe}</span>
-              )}
-            </Link>
-          ))}
-        </nav>
-        <div className="min-w-0 flex-1">
-          <Outlet />
-        </div>
-      </div>
-    </div>
+    <LayoutMenuLateral titulo="Minha organização" rotuloNav="Seções da organização" grupos={grupos}>
+      <Outlet />
+    </LayoutMenuLateral>
   );
 }
