@@ -88,8 +88,13 @@ Código: `src/services/organizador.ts`, `src/lib/eventoEditor.ts`, `src/lib/cont
 **Status**: `rascunho` → `publicado` → (`cancelado`). Também existem `inscricoes_encerradas`,
 `concluido` e `arquivado` no modelo, mas nenhuma tela muda para eles hoje (ver [lacunas](#19-lacunas-conhecidas)).
 
-- Evento novo nasce em **rascunho** e só a gestão o vê. O status só muda por publicar ou cancelar;
-  a organização dona e a data de criação nunca mudam numa edição.
+- Evento novo nasce em **rascunho** e só a gestão o vê. O status muda por publicar, cancelar ou
+  **conclusão automática**; a organização dona e a data de criação nunca mudam numa edição.
+- **Conclusão automática** (`src/lib/cicloEvento.ts`): evento `publicado` ou `inscricoes_encerradas` cujo
+  término já passou vira `concluido` (rascunho, cancelado e arquivado não mudam). Sem tarefa agendada: a
+  unidade de trabalho do servidor aplica na primeira leitura ou gravação depois do término, registra na
+  auditoria (autor "sistema", ação `conclusao_automatica_evento`) e recalcula participação, insígnias e
+  recompensas na mesma gravação. Evento concluído não pode mais ser editado.
 - **Publicar** exige: nome, modalidade, descrição resumida (até 200), enredo, local, imagem
   principal, ao menos um exército, um tipo de ingresso e uma atividade no cronograma, todas dentro
   do período do evento. Publicar cria os fóruns da comunidade.
@@ -513,7 +518,7 @@ Código: `src/lib/visaoGeralEvento.ts`, página `/admin/eventos/$eventoId` (bot�
 
 | Ponto | Situação | Impacto |
 |---|---|---|
-| Fim do evento | Nenhuma tela ou API muda o evento para `concluido` (nem `inscricoes_encerradas`/`arquivado`). | "Participou", insígnias e recompensas dependem de `concluido`: hoje eventos reais nunca contam. |
+| Encerramento de inscrições | Nada muda o evento para `inscricoes_encerradas` nem `arquivado` automaticamente (a conclusão no término já é automática). | Sem impacto na participação; as vendas já fecham pelo período dos lotes. |
 | Exclusão de contas | Não há exclusão definitiva nem em massa; só desativação. | Pedido em andamento: exclusão em massa com backup restaurável por 6 meses. |
 | Confirmação de e-mail | Conta nasce com e-mail confirmado. | Em produção, exigir confirmação. |
 | Mensagens externas | Sem e-mail transacional nem WhatsApp automático. | Avisos só pelo sino. |
