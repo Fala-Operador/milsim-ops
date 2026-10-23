@@ -36,7 +36,7 @@ export function Campo({
 
 export function EstadoVazio({ titulo, descricao }: { titulo: string; descricao?: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-border p-8 text-center">
+    <div className="surgir rounded-lg border border-dashed border-border p-8 text-center">
       <p className="font-medium text-foreground">{titulo}</p>
       {descricao && <p className="mt-1 text-sm text-muted-foreground">{descricao}</p>}
     </div>
@@ -194,6 +194,21 @@ export function SkeletonCartao() {
   );
 }
 
+/** Lista/tabela carregando: linhas com avatar ou posição, texto e valor à direita. */
+export function SkeletonLista({ linhas = 5, rotulo = "Carregando lista" }: { linhas?: number; rotulo?: string }) {
+  return (
+    <div className="divide-y divide-border rounded-md border border-border" role="status" aria-label={rotulo}>
+      {Array.from({ length: linhas }, (_, i) => (
+        <div key={i} className="flex items-center gap-3 px-3 py-2.5">
+          <Skeleton className="h-7 w-7 shrink-0 rounded-full" />
+          <Skeleton className="h-4 flex-1" style={{ maxWidth: `${70 - (i % 3) * 15}%` }} />
+          <Skeleton className="ml-auto h-4 w-12 shrink-0" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function SkeletonGrade({ quantidade = 6 }: { quantidade?: number }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -230,7 +245,7 @@ export function ErroSecao({
   onTentar?: () => void;
 }) {
   return (
-    <div role="alert" className="rounded-lg border border-border bg-card p-8 text-center">
+    <div role="alert" className="surgir rounded-lg border border-border bg-card p-8 text-center">
       <h2 className="font-display text-lg font-semibold text-foreground">{titulo}</h2>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">{descricao}</p>
       <div className="mt-5 flex flex-wrap justify-center gap-2">

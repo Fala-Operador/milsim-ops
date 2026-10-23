@@ -7,7 +7,7 @@ import { Medal, Trophy } from "lucide-react";
 import { placarMissoes, temporadaMissoes, type PlacarMissoes } from "@/api/missoes.functions";
 import { Badge } from "@/components/ui/badge";
 import { NativeSelect } from "@/components/ui/native-select";
-import { ErroSecao, Spinner } from "@/components/ui";
+import { ErroSecao, SkeletonLista } from "@/components/ui";
 
 export function usePlacar(eventoId: string, versao: unknown) {
   return useQuery({ queryKey: ["placar-missoes", eventoId, versao], queryFn: () => placarMissoes(eventoId) });
@@ -68,10 +68,17 @@ export function RankingIndividual({ placar }: { placar: PlacarMissoes }) {
 
 export function PlacarCompleto({ eventoId, versao }: { eventoId: string; versao: unknown }) {
   const q = usePlacar(eventoId, versao);
-  if (q.isPending) return <Spinner texto="Carregando placar..." />;
+  if (q.isPending) {
+    return (
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SkeletonLista linhas={4} rotulo="Carregando placar" />
+        <SkeletonLista linhas={6} rotulo="Carregando ranking" />
+      </div>
+    );
+  }
   if (q.isError || !q.data) return <ErroSecao titulo="Placar indisponível" onTentar={() => q.refetch()} />;
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="surgir grid gap-6 lg:grid-cols-2">
       <PlacarExercitos placar={q.data} />
       <RankingIndividual placar={q.data} />
     </div>
@@ -96,12 +103,12 @@ export function Temporada({ organizacaoId }: { organizacaoId: string }) {
           </NativeSelect>
         </label>
       </div>
-      {q.isPending ? <Spinner texto="Carregando temporada..." /> : q.isError || !q.data ? (
+      {q.isPending ? <SkeletonLista rotulo="Carregando temporada" /> : q.isError || !q.data ? (
         <ErroSecao titulo="Temporada indisponível" onTentar={() => q.refetch()} />
       ) : q.data.ranking.length === 0 ? (
         <p className="text-sm text-muted-foreground">Sem pontos nesta temporada.</p>
       ) : (
-        <ol className="divide-y divide-border rounded-md border border-border text-sm">
+        <ol className="surgir divide-y divide-border rounded-md border border-border text-sm">
           {q.data.ranking.map((l) => (
             <li key={l.posicao} className={`flex items-center gap-3 px-3 py-2 ${l.eu ? "bg-primary/10" : ""}`}>
               <span className="w-6 text-right font-mono text-muted-foreground">{l.posicao}</span>

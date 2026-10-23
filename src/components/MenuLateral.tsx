@@ -131,7 +131,7 @@ export function LayoutMenuLateral({ titulo, rotuloNav, grupos, children }: {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 lg:py-8">
       <div className="lg:flex lg:gap-8">
-        <aside className="hidden w-56 shrink-0 lg:block">
+        <aside className="vt-menu-area hidden w-56 shrink-0 lg:block">
           <div className="sticky top-[88px] max-h-[calc(100dvh-104px)] overflow-y-auto pb-4">
             <h1 className="sticky top-0 z-10 bg-background px-3 pb-3 font-display text-lg font-semibold uppercase">{titulo}</h1>
             <nav aria-label={rotuloNav}>

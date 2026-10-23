@@ -13,7 +13,7 @@ import { AbaEquipamentos, AbaFotos, AbaInsignias, AbaOperacoes, AbaRecompensas, 
 import { EditarPerfil, Privacidade } from "@/components/perfil/edicao";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ErroSecao, EstadoVazio, SkeletonPagina } from "@/components/ui";
+import { ErroSecao, EstadoVazio, SkeletonCartao, SkeletonPagina } from "@/components/ui";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Label } from "@/components/ui/label";
@@ -197,6 +197,7 @@ function PaginaOperador() {
 function PublicacoesDoOperador({ usuarioId }: { usuarioId: string }) {
   const { usuario } = useAuth();
   const perfil = useQuery({ queryKey: chavePerfilSocial(usuarioId), queryFn: () => lerPerfilSocial(usuarioId) });
+  if (perfil.isPending) return <div className="max-w-2xl space-y-3"><SkeletonCartao /><SkeletonCartao /></div>;
   if (!perfil.data) return null;
   if (!perfil.data.postsVisiveis) {
     return (

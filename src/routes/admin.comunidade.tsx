@@ -114,7 +114,7 @@ function Denuncias({ q }: { q: UseQueryResult<DenunciaDTO[]> }) {
       ) : (
         <ul className="space-y-3">
           {q.data.map((d) => (
-            <li key={d.id}>
+            <li key={d.id} className="surgir">
               <Card className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <Badge variant="warning">{MOTIVOS_DENUNCIA[d.motivo]}</Badge>
@@ -208,7 +208,7 @@ function Auditoria() {
         <>
           <ul className="space-y-3">
             {posts.map((p) => (
-              <li key={p.id}>
+              <li key={p.id} className="surgir">
                 <Card className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <Badge variant={SITUACAO[p.status].variante}>{SITUACAO[p.status].rotulo}</Badge>
@@ -234,11 +234,10 @@ function Auditoria() {
               </li>
             ))}
           </ul>
-          {q.hasNextPage && (
+          {q.isFetchingNextPage && <div className="space-y-3"><SkeletonCartao /><SkeletonCartao /></div>}
+          {q.hasNextPage && !q.isFetchingNextPage && (
             <div className="flex justify-center">
-              <Button variant="outline" onClick={() => void q.fetchNextPage()} disabled={q.isFetchingNextPage}>
-                {q.isFetchingNextPage ? "Carregando..." : "Carregar mais"}
-              </Button>
+              <Button variant="outline" onClick={() => void q.fetchNextPage()}>Carregar mais</Button>
             </div>
           )}
         </>

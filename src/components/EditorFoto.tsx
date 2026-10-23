@@ -10,6 +10,7 @@ import {
   type Ajustes,
 } from "@/lib/recorteFoto";
 import { Slider } from "@/components/ui/slider";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const LADO_PREVIA = 288; // px na tela (cabe em celulares de 320 px)
 const PASSO_TECLADO = 0.02;
@@ -161,7 +162,7 @@ export function EditorFoto({ arquivo, onConfirmar, onCancelar }: {
             {/* Máscara: escurece o que fica fora do círculo exibido no perfil */}
             <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(circle closest-side, transparent 98.5%, rgba(0,0,0,0.6) 100%)" }} />
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-white/80" />
-            {!img && !erro && <p className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">Carregando…</p>}
+            {!img && !erro && <Skeleton className="absolute inset-0 rounded-none" />}
           </div>
           <p className="mt-2 text-center text-xs text-muted-foreground">Arraste para posicionar · role ou faça pinça para o zoom</p>
         </div>

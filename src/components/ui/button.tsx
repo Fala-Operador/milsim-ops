@@ -6,8 +6,9 @@ import { cn } from "@/lib/utils";
 
 // Identidade do Milsim Ops: hover por opacidade, foco pelo contorno global (styles.css)
 // e sem tamanho fixo de ícone, para manter os ícones que cada tela já define.
+// Hover e toque com transição curta (cor, fundo, borda, opacidade) e leve afundar ao toque.
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-[color,background-color,border-color,opacity,box-shadow,transform] duration-150 ease-[var(--ease-saida)] enabled:active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       variant: {
@@ -20,7 +21,7 @@ const buttonVariants = cva(
         // Sem aparência própria: desfaz a base acima e deixa a tela definir tudo (linhas de lista,
         // miniaturas, links de ação). Use com size="none".
         plain:
-          "inline-block items-stretch justify-start gap-0 rounded-none text-[length:inherit] font-normal disabled:cursor-default disabled:opacity-100",
+          "inline-block items-stretch justify-start gap-0 rounded-none text-[length:inherit] font-normal enabled:active:scale-100 disabled:cursor-default disabled:opacity-100",
       },
       size: {
         default: "px-4 py-2",
