@@ -11,7 +11,8 @@
 import "@tanstack/react-start/server-only";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
-import { registrarProvedorContexto, ErroDominio, type ContextoBase } from "@/services/db";
+import { registrarProvedorContexto, ErroDominio, gerarId, type ContextoBase } from "@/services/db";
+import { concluirEventosEncerrados, eventosParaConcluir } from "@/lib/cicloEvento";
 import { baseDasTabelas, calcularMudancas, objetosAlterados, type TabelasExportadas } from "@/lib/persistencia";
 import { visaoParaUsuario, type Visao } from "@/lib/visao";
 import { enviarMidia } from "@/server/midia";
@@ -112,6 +113,24 @@ async function lerBase(): Promise<{ base: BaseDados; versao: number }> {
   return exportarBase();
 }
 
+/**
+ * Base atual com o ciclo dos eventos em dia. Não há tarefa agendada no servidor: se algum
+ * evento já terminou e ainda não foi concluído, a primeira leitura depois disso conclui (grava,
+ * recalculando insígnias e recompensas) e lê de novo. Se a gravação falhar, a leitura segue
+ * com a base como estava — a próxima leitura ou gravação tenta outra vez.
+ */
+async function lerBaseEmDia(): Promise<{ base: BaseDados; versao: number }> {
+  const atual = await lerBase();
+  if (!eventosParaConcluir(atual.base).length) return atual;
+  try {
+    await mutar(() => null, { exigirLogin: false }); // mutar aplica a conclusão (veja abaixo)
+    return await lerBase();
+  } catch (e) {
+    console.error("[ciclo] não foi possível concluir eventos encerrados agora", e);
+    return atual;
+  }
+}
+
 /** Depois de gravar, a próxima leitura busca a base nova no banco. */
 function invalidarCache(): void {
   cache = null;
@@ -146,7 +165,7 @@ export async function ler<T>(
 ): Promise<RespostaApi<T>> {
   try {
     const id = opcoes.usuarioId !== undefined ? opcoes.usuarioId : await idDaSessao();
-    const { base, versao } = await lerBase();
+    const { base, versao } = await lerBaseEmDia();
     const usuario = usuarioAtivo(base, id);
     const resultado = await armazenamento.run({ base }, () => fn({ base, usuario }));
     return { resultado, visao: { base: visaoParaUsuario(base, usuario), usuarioId: usuario?.id ?? null, versao } };
@@ -161,7 +180,7 @@ export async function ler<T>(
  */
 export async function contextoSomenteLeitura(): Promise<Contexto> {
   const id = await idDaSessao();
-  const { base } = await lerBase();
+  const { base } = await lerBaseEmDia();
   return { base, usuario: usuarioAtivo(base, id) };
 }
 
@@ -172,7 +191,7 @@ export async function contextoSomenteLeitura(): Promise<Contexto> {
 export async function consultar<T>(fn: (visao: BaseDados, usuario: Usuario | null) => T): Promise<T> {
   try {
     const id = await idDaSessao();
-    const { base } = await lerBase();
+    const { base } = await lerBaseEmDia();
     const usuario = usuarioAtivo(base, id);
     return fn(visaoParaUsuario(base, usuario), usuario);
   } catch (e) {
@@ -199,6 +218,9 @@ export async function mutar<T>(
         throw new ErroDominio("sem_sessao", "Entre na sua conta para continuar.");
       }
       const antes = structuredClone(base);
+      // Ciclo do evento: toda gravação também conclui eventos já terminados (mesma transação;
+      // a mudança em "eventos" dispara o recálculo de participação logo abaixo).
+      concluirEventosEncerrados(base, new Date(), () => gerarId("aud"));
       const resultado = await armazenamento.run({ base }, () => fn({ base, usuario }));
 
       // Inscrições, eventos, check-ins (inclusive sincronização offline) e correções
