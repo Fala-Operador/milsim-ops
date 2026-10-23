@@ -401,6 +401,112 @@ export const lerDenunciasPendentes = () =>
     });
   });
 
+/** Oculta como admin: encerra as denúncias pendentes do post como procedentes e avisa o autor. */
+async function ocultarComoAdmin(adminId: string, postId: string, motivo: string | undefined): Promise<void> {
+  const razao = motivo?.trim();
+  if (!razao) throw new ErroDominio("denuncia", "Informe o motivo para ocultar a publicação.");
+  const db = supabaseAdmin();
+  const { data: post, error: e1 } = await db.from("social_posts").update({ status: "oculto", hidden_reason: razao.slice(0, 300) })
+    .eq("id", postId).eq("status", "publicado").select("author_id").maybeSingle();
+  if (e1) falha("Falha ao ocultar", e1);
+  if (!post) throw new ErroDominio("post_indisponivel", "Publicação indisponível.");
+  const { error: e2 } = await db.from("social_reports").update({ status: "procedente", resolved_by: adminId, resolved_at: new Date().toISOString() })
+    .eq("post_id", postId).eq("status", "pendente");
+  if (e2) falha("Falha ao resolver denúncias", e2);
+  await notificar(post.author_id as string, "Publicação ocultada", `Sua publicação na comunidade foi ocultada pela moderação: ${razao}`, "/comunidades");
+}
+
+export interface PostAuditoriaDTO {
+  id: string;
+  autor: AutorDTO;
+  texto: string;
+  imagens: { url: string; alt: string }[];
+  status: "publicado" | "oculto" | "removido";
+  motivoOculto?: string | undefined;
+  /** Resposta a outro post (id do post respondido). */
+  respostaA?: string | undefined;
+  forum?: { id: string; nome: string } | undefined;
+  criadoEm: string;
+  editadoEm?: string | undefined;
+  denuncias: { total: number; pendentes: number };
+}
+
+export type FiltroAuditoria = "todos" | PostAuditoriaDTO["status"];
+
+/**
+ * Auditoria (admin): as publicações mais recentes de toda a comunidade, sem filtro de
+ * visibilidade (perfis privados, fóruns privados, respostas, ocultas e removidas).
+ */
+export const lerPostsAuditoria = (filtro: FiltroAuditoria, cursor: Cursor) =>
+  comSessao(async (base, u): Promise<{ posts: PostAuditoriaDTO[]; proximo?: Cursor | undefined }> => {
+    exigirAdmin(u);
+    const db = supabaseAdmin();
+    let q = db.from("social_posts")
+      .select("id, author_id, parent_id, forum_id, body, status, hidden_reason, created_at, edited_at, social_post_images(url, alt, position)")
+      .order("created_at", { ascending: false }).order("id", { ascending: false }).limit(POSTS_POR_PAGINA);
+    if (filtro !== "todos") q = q.eq("status", filtro);
+    // O cursor entra num filtro `or` do PostgREST: só aceita data ISO e id simples.
+    if (cursor.antes && cursor.antesId && /^[\d\-T:.+Z ]+$/.test(cursor.antes) && /^[\w-]+$/.test(cursor.antesId)) {
+      q = q.or(`created_at.lt."${cursor.antes}",and(created_at.eq."${cursor.antes}",id.lt."${cursor.antesId}")`);
+    }
+    const { data, error } = await q;
+    if (error) falha("Falha ao ler publicações", error);
+    type Img = { url: string; alt: string | null; position: number };
+    type L = {
+      id: string; author_id: string; parent_id: string | null; forum_id: string | null; body: string; status: PostAuditoriaDTO["status"];
+      hidden_reason: string | null; created_at: string; edited_at: string | null; social_post_images: Img[];
+    };
+    const linhas = (data ?? []) as unknown as L[];
+    const ids = linhas.map((l) => l.id);
+    const forumIds = [...new Set(linhas.flatMap((l) => (l.forum_id ? [l.forum_id] : [])))];
+    const [den, foruns] = await Promise.all([
+      ids.length ? db.from("social_reports").select("post_id, status").in("post_id", ids) : Promise.resolve({ data: [], error: null }),
+      forumIds.length ? db.from("social_forums").select("id, name").in("id", forumIds) : Promise.resolve({ data: [], error: null }),
+    ]);
+    if (den.error) falha("Falha ao contar denúncias", den.error);
+    if (foruns.error) falha("Falha ao ler fóruns", foruns.error);
+    const contagem = new Map<string, { total: number; pendentes: number }>();
+    for (const r of (den.data ?? []) as { post_id: string; status: string }[]) {
+      const c = contagem.get(r.post_id) ?? { total: 0, pendentes: 0 };
+      c.total++;
+      if (r.status === "pendente") c.pendentes++;
+      contagem.set(r.post_id, c);
+    }
+    const nomeForum = new Map(((foruns.data ?? []) as { id: string; name: string }[]).map((f) => [f.id, f.name]));
+    const ultima = linhas.at(-1);
+    return {
+      posts: linhas.map((l) => ({
+        id: l.id,
+        autor: autorDTO(base, l.author_id),
+        texto: l.body,
+        imagens: [...(l.social_post_images ?? [])].sort((a, b) => a.position - b.position).map((i) => ({ url: i.url, alt: i.alt ?? "" })),
+        status: l.status,
+        motivoOculto: l.hidden_reason ?? undefined,
+        respostaA: l.parent_id ?? undefined,
+        forum: l.forum_id ? { id: l.forum_id, nome: nomeForum.get(l.forum_id) ?? "Fórum" } : undefined,
+        criadoEm: l.created_at,
+        editadoEm: l.edited_at ?? undefined,
+        denuncias: contagem.get(l.id) ?? { total: 0, pendentes: 0 },
+      })),
+      proximo: linhas.length === POSTS_POR_PAGINA && ultima ? { antes: ultima.created_at, antesId: ultima.id } : undefined,
+    };
+  });
+
+/** Admin oculta (com motivo, avisando o autor) ou restaura uma publicação ocultada. */
+export const moderarPost = (postId: string, acao: "ocultar" | "restaurar", motivo?: string) =>
+  comSessao(async (_base, u) => {
+    const admin = exigirAdmin(u);
+    if (acao === "ocultar") {
+      await ocultarComoAdmin(admin.id, postId, motivo);
+      return null;
+    }
+    const { data, error } = await supabaseAdmin().from("social_posts").update({ status: "publicado", hidden_reason: null })
+      .eq("id", postId).eq("status", "oculto").select("id").maybeSingle();
+    if (error) falha("Falha ao restaurar", error);
+    if (!data) throw new ErroDominio("post_indisponivel", "Só publicações ocultadas podem ser restauradas.");
+    return null;
+  });
+
 /** Ocultar a publicação encerra todas as denúncias dela como procedentes; descartar só esta. */
 export const resolverDenuncia = (denunciaId: string, acao: "ocultar" | "descartar", motivo?: string) =>
   comSessao(async (_base, u) => {
@@ -411,17 +517,7 @@ export const resolverDenuncia = (denunciaId: string, acao: "ocultar" | "descarta
     if (!den || den.status !== "pendente") throw new ErroDominio("denuncia", "Denúncia não encontrada ou já resolvida.");
     const agora = new Date().toISOString();
     if (acao === "ocultar") {
-      const razao = motivo?.trim();
-      if (!razao) throw new ErroDominio("denuncia", "Informe o motivo para ocultar a publicação.");
-      const { data: post, error: e1 } = await db.from("social_posts").update({ status: "oculto", hidden_reason: razao.slice(0, 300) })
-        .eq("id", den.post_id).select("author_id").maybeSingle();
-      if (e1) falha("Falha ao ocultar", e1);
-      const { error: e2 } = await db.from("social_reports").update({ status: "procedente", resolved_by: admin.id, resolved_at: agora })
-        .eq("post_id", den.post_id).eq("status", "pendente");
-      if (e2) falha("Falha ao resolver denúncias", e2);
-      if (post?.author_id) {
-        await notificar(post.author_id as string, "Publicação ocultada", `Sua publicação na comunidade foi ocultada pela moderação: ${razao}`, "/comunidades");
-      }
+      await ocultarComoAdmin(admin.id, den.post_id as string, motivo);
     } else {
       const { error: e3 } = await db.from("social_reports").update({ status: "descartada", resolved_by: admin.id, resolved_at: agora }).eq("id", denunciaId);
       if (e3) falha("Falha ao descartar", e3);

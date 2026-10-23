@@ -248,6 +248,8 @@ Feed estilo Twitter (posts de até 220 caracteres e 4 fotos), fóruns públicos 
 | [`bloquear`](social/bloquear.md) | POST | Qualquer pessoa autenticada e ativa | Bloqueia ou desbloqueia uma pessoa na comunidade geral. |
 | [`denunciarPost`](social/denunciarPost.md) | POST | Qualquer pessoa autenticada e ativa | Denuncia uma publicação para a moderação do admin. |
 | [`resolverDenuncia`](social/resolverDenuncia.md) | POST | Admin | Oculta a publicação denunciada ou descarta a denúncia. |
+| [`lerPostsAuditoria`](social/lerPostsAuditoria.md) | POST | Admin | Auditoria: últimas publicações de toda a comunidade, da mais nova para a mais antiga. |
+| [`moderarPost`](social/moderarPost.md) | POST | Admin | Oculta uma publicação (sem precisar de denúncia) ou restaura uma ocultada. |
 | [`definirPerfilComunidade`](social/definirPerfilComunidade.md) | POST | Qualquer pessoa autenticada e ativa | Define o perfil na comunidade geral como público ou privado. |
 | [`lerForuns`](social/lerForuns.md) | POST | Pública | Lista de fóruns ativos (os da pessoa primeiro, depois os mais movimentados). |
 | [`lerForum`](social/lerForum.md) | POST | Pública | Um fórum e se quem vê pode ler o conteúdo. |
