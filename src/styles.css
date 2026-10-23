@@ -349,3 +349,28 @@
 .entrada-confirmada { animation: pulso-confirmacao 1.2s ease-out 0.5s 2; }
 .entrada-confirmada .circulo { stroke-dasharray: 160; stroke-dashoffset: 160; animation: desenhar-traco 0.6s ease-out forwards; }
 .entrada-confirmada .check { stroke-dasharray: 48; stroke-dashoffset: 48; animation: desenhar-traco 0.4s ease-out 0.5s forwards; }
+
+/* Seta dos seletores nativos (NativeSelect): a mesma ChevronDown (lucide) dos outros
+ * seletores, na cor muted-foreground de cada tema. Fora de @layer para valer sobre
+ * px-* passados em className e manter espaço para a seta à direita. */
+:root,
+.tema-claro {
+  --seta-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23645948' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+.dark,
+.tema-escuro {
+  --seta-select: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23adb599' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+select.campo-select:not([multiple]):not([size]) {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: var(--seta-select);
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem 1rem;
+  padding-right: 2.25rem;
+}
+select.campo-select:not([multiple]):not([size]):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
