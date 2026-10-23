@@ -10,7 +10,7 @@ REF_PRODUCAO="fezrmoyjsffufdjptamp"
 faltando=()
 [ -n "${SUPABASE_ACCESS_TOKEN:-}" ] || faltando+=("segredo SUPABASE_ACCESS_TOKEN")
 [ -n "${SUPABASE_DB_PASSWORD:-}" ] || faltando+=("segredo SUPABASE_DB_PASSWORD")
-[ -n "${SUPABASE_PROJECT_REF:-}" ] || faltando+=("variável SUPABASE_PROJECT_REF")
+[ -n "${SUPABASE_PROJECT_REF:-}" ] || faltando+=("SUPABASE_PROJECT_REF (variável ou segredo)")
 if [ ${#faltando[@]} -gt 0 ]; then
   for item in "${faltando[@]}"; do
     echo "::error::Ambiente ${AMBIENTE}: falta $item (Settings → Environments → ${AMBIENTE})."

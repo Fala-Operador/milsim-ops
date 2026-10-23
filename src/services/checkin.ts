@@ -56,6 +56,8 @@ export function ingressosDoEvento(base: BaseDados, eventoId: string): IngressoCr
     token: i.tokenEntrada ?? "",
     codigo: i.codigo,
     nome: base.usuarios.find((u) => u.id === i.usuarioId)?.nomeCompleto ?? "Participante",
+    // Já filtrada pela visão: só com autorização do participante e na janela do evento.
+    emergencia: i.status === "confirmada" ? base.usuarios.find((u) => u.id === i.usuarioId)?.fichaEmergencia : undefined,
     tipo: evento.tipos.find((t) => t.id === i.tipoId)?.nome ?? "—",
     exercito: evento.exercitos.find((x) => x.id === i.exercitoId)?.nome ?? "—",
     status: i.status,

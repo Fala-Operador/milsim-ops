@@ -18,6 +18,7 @@ import { Campo, Modal } from "@/components/ui";
 import { eventoVazio } from "@/components/editorEvento/eventoVazio";
 import { EventEditorDrawer } from "@/components/editorEvento/EventEditorDrawer";
 import { AvisoLotes, useEventosOrg } from "@/components/organizacao";
+import { AvisoRecebimento } from "@/components/AvisoRecebimento";
 import type { Evento } from "@/lib/domain/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -152,7 +153,7 @@ function PainelEventos() {
       </div>
 
       {aviso && <p role="status" className="mt-3 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm">{aviso}</p>}
-      {erro && <p role="alert" className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
+      {erro && <p role="alert" className="mt-3 whitespace-pre-line rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
 
       <section aria-label="Visão geral" className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {([
@@ -168,6 +169,8 @@ function PainelEventos() {
           </Card>
         ))}
       </section>
+
+      <AvisoRecebimento organizacaoId={orgId} className="mt-6" />
 
       <Card className="mt-6">
         <div className="flex flex-wrap items-center justify-between gap-3">

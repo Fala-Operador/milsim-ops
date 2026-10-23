@@ -1,6 +1,9 @@
 // Componentes de interface da comunidade (feed social). Regras ficam no serviço.
-import { Link } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { carregarBase } from "@/services/db";
+import { acessoAComunidade } from "@/lib/comunidadePublica";
 import type { BaseDados, Forum, ImagemPost, MotivoDenuncia, Publicacao, Resposta, Usuario } from "@/lib/domain/types";
 import {
   LIMITE_IMAGENS,
@@ -33,7 +36,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { Campo, Modal } from "@/components/ui";
+import { Campo, Modal, SkeletonPagina } from "@/components/ui";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
@@ -55,6 +58,42 @@ export function SemAcesso({ eventoId }: { eventoId: string }) {
       </Link>
     </div>
   );
+}
+
+/**
+ * Quem chega à comunidade sem acesso (pelo menu, pela vitrine ou por um link compartilhado):
+ * com inscrições abertas vai direto para a inscrição; com reserva em aberto, para o pagamento;
+ * sem como entrar, recebe a explicação. O conteúdo nunca é mostrado.
+ */
+export function PortaComunidade({ eventoId }: { eventoId: string }) {
+  const { usuario } = useAuth();
+  const navigate = useNavigate();
+  const acesso = acessoAComunidade(carregarBase(), usuario ?? null, eventoId);
+  useEffect(() => {
+    if (acesso === "inscrever") {
+      navigate({ to: "/inscricao/$eventoId", params: { eventoId }, search: { cortesia: undefined, voucher: undefined, comunidade: "1" }, replace: true });
+    }
+  }, [acesso, eventoId, navigate]);
+
+  if (acesso === "inscrever") return <SkeletonPagina />;
+  if (acesso === "pagamento_pendente" || acesso === "encerrada") {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-16 text-center">
+        <h1 className="font-display text-2xl font-semibold">Comunidade exclusiva para inscritos</h1>
+        <p className="mt-2 text-muted-foreground">
+          {acesso === "pagamento_pendente"
+            ? "Sua vaga está reservada, mas o pagamento ainda não foi concluído. Conclua o pagamento para entrar na comunidade."
+            : "As inscrições desta operação estão encerradas, e a comunidade é exclusiva para quem tem inscrição confirmada."}
+        </p>
+        {acesso === "pagamento_pendente" ? (
+          <Link to="/app/ingressos" className="mt-4 inline-block text-accent hover:underline">Concluir pagamento em Meus ingressos →</Link>
+        ) : (
+          <Link to="/comunidades" className="mt-4 inline-block text-accent hover:underline">Ver outras comunidades →</Link>
+        )}
+      </div>
+    );
+  }
+  return <SemAcesso eventoId={eventoId} />;
 }
 
 export function Avatar({ usuario }: { usuario: Usuario | undefined }) {

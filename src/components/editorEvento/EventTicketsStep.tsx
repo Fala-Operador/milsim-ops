@@ -8,7 +8,8 @@ import { Campo } from "@/components/ui";
 import type { Evento, Lote } from "@/lib/domain/types";
 import { situacaoIngresso, TEXTO_SITUACAO, type SituacaoIngresso } from "@/lib/eventoEditor";
 import type { OcupacaoLote } from "@/lib/vendas";
-import { inval, MsgErro, paraLocal, Secao, type PropsEtapa } from "./comum";
+import { deCampoNoFuso, paraCampoNoFuso } from "@/lib/fusoHorario";
+import { inval, MsgErro, Secao, type PropsEtapa } from "./comum";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
@@ -32,10 +33,10 @@ function CamposLote({ ev, lote, onChange, erros }: { ev: Evento; lote: Lote; onC
           </NativeSelect>
         </Campo>
         <Campo rotulo="Início das vendas" htmlFor={`lt-ini-${lote.id}`}>
-          <Input id={`lt-ini-${lote.id}`} type="datetime-local" value={paraLocal(lote.inicioVendas)} onChange={(e) => e.target.value && m({ inicioVendas: new Date(e.target.value).toISOString() })} />
+          <Input id={`lt-ini-${lote.id}`} type="datetime-local" value={paraCampoNoFuso(lote.inicioVendas, ev.fuso)} onChange={(e) => { const iso = deCampoNoFuso(e.target.value, ev.fuso); if (iso) m({ inicioVendas: iso }); }} />
         </Campo>
         <Campo rotulo="Fim das vendas" htmlFor={`lt-fim-${lote.id}`}>
-          <Input id={`lt-fim-${lote.id}`} type="datetime-local" value={paraLocal(lote.fimVendas)} onChange={(e) => e.target.value && m({ fimVendas: new Date(e.target.value).toISOString() })} {...inval(erros, `lt-fim-${lote.id}`)} />
+          <Input id={`lt-fim-${lote.id}`} type="datetime-local" value={paraCampoNoFuso(lote.fimVendas, ev.fuso)} onChange={(e) => { const iso = deCampoNoFuso(e.target.value, ev.fuso); if (iso) m({ fimVendas: iso }); }} {...inval(erros, `lt-fim-${lote.id}`)} />
         </Campo>
       </div>
       <MsgErro erros={erros} id={`lt-nome-${lote.id}`} />

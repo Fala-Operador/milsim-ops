@@ -12,6 +12,10 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Campo } from "@/components/ui";
 import { RecebimentosOrganizacao } from "@/components/RecebimentosOrganizacao";
+import { CardTaxa } from "@/components/CardTaxa";
+import { definirTaxaComprador } from "@/api/repasses.functions";
+import { taxaDaPlataforma, taxaDoComprador, taxaPlataforma } from "@/lib/repasses";
+import { formatarBRL } from "@/lib/domain/money";
 import { AvisoLotes, Financeiro, useEventoSelecionado, useEventosOrg } from "@/components/organizacao";
 
 export const Route = createFileRoute("/organizacao/financeiro")({
@@ -94,6 +98,19 @@ function PaginaFinanceiro() {
         </Card>
       )}
 
+      {organizacao && <CardTaxaPlataforma percentual={taxaDaPlataforma(base)} taxaComprador={taxaDoComprador(organizacao)} />}
+
+      {organizacao && (
+        <CardTaxa
+          id="taxa-comprador"
+          titulo="Taxa de serviço (comprador)"
+          descricao="Percentual somado ao valor do ingresso e pago pelo comprador, que aparece como um item separado no pagamento. O valor é repassado à organização junto com a venda. Use 0% para não cobrar."
+          atual={taxaDoComprador(organizacao)}
+          salvar={(p) => definirTaxaComprador(organizacao.id, p).then(() => setVersao((v) => v + 1))}
+          exemplo={(p) => `Exemplo: num ingresso de ${formatarBRL(15000)}, o comprador paga ${formatarBRL(15000 + taxaPlataforma(15000, p))} (${formatarBRL(taxaPlataforma(15000, p))} de taxa de serviço).`}
+        />
+      )}
+
       {evento && (
         <>
           <Card>
@@ -146,5 +163,46 @@ function PaginaFinanceiro() {
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * Taxa da plataforma, só leitura (quem define é a administração, em /admin/pagamentos).
+ * Incide sobre o valor do ingresso já com descontos; a taxa de serviço do comprador fica fora
+ * da conta e vai inteira para a organização.
+ */
+function CardTaxaPlataforma({ percentual, taxaComprador }: { percentual: number; taxaComprador: number }) {
+  const exemplo = 15000;
+  const taxa = taxaPlataforma(exemplo, percentual);
+  const servico = taxaPlataforma(exemplo, taxaComprador);
+  const pct = (p: number) => `${p.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+  return (
+    <Card>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="font-medium">Taxa da plataforma</h3>
+          <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+            Retida pela MilSim Ops em cada ingresso pago online. É calculada sobre o valor do ingresso, já com
+            descontos de cupom; cortesias e ingressos gratuitos não pagam taxa.
+          </p>
+        </div>
+        <p className="shrink-0 font-display text-3xl font-semibold" aria-label={`Taxa da plataforma: ${pct(percentual)}`}>{pct(percentual)}</p>
+      </div>
+      <p className="mt-3 rounded-md border border-border bg-elevated px-3 py-2 text-sm">
+        {percentual > 0 ? (
+          <>
+            Exemplo: num ingresso de {formatarBRL(exemplo)}, a plataforma retém {formatarBRL(taxa)} e a organização recebe{" "}
+            <strong>{formatarBRL(exemplo - taxa)}</strong>
+            {servico > 0 && <>, mais {formatarBRL(servico)} da taxa de serviço paga pelo comprador</>}.
+          </>
+        ) : (
+          <>No momento não há taxa: a organização recebe o valor integral dos ingressos.</>
+        )}
+      </p>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Definida pela administração da plataforma. Uma mudança vale só para as vendas seguintes: cada venda guarda a taxa do
+        momento em que foi feita.
+      </p>
+    </Card>
   );
 }

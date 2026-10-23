@@ -88,13 +88,19 @@ export const ESQUEMA = {
       autorizacaoResponsavel: "guardian_authorization", autorizacaoPromocional: "marketing_consent",
       aceiteTermosVersao: "terms_version", aceiteTermosEm: "terms_accepted_at",
       organizacaoId: "organization_id", ativo: "active", criadoEm: "created_at",
+      comunidadePrivada: "social_private",
+      fichaEmergencia: objeto("user_emergency_records", ["user_id"], {
+        tipoSanguineo: "blood_type", alergias: "allergies", contatoNome: "contact_name",
+        contatoTelefone: "contact_phone", compartilhar: "share_with_organizers",
+        consentimentoEm: "consent_at", atualizadoEm: "updated_at",
+      }),
     },
   },
   organizacoes: {
     tabela: "organizations", chave: ["id"],
     campos: {
       id: "id", nome: "name", cnpj: "cnpj", instagram: "instagram", telefone: "phone",
-      responsavelId: "owner_id", status: "status", criadoEm: "created_at",
+      responsavelId: "owner_id", status: "status", criadoEm: "created_at", taxaCompradorPercentual: "buyer_fee_percent",
       recebimento: objeto("organization_payout_accounts", ["organization_id"], {
         provedor: "provider", contaId: "account_id", status: "status", transferenciasAtivas: "transfers_enabled",
         saquesAtivos: "payouts_enabled", atualizadoEm: "updated_at",
@@ -153,7 +159,7 @@ export const ESQUEMA = {
       pagamento: objeto("registration_payments", ["registration_id"], {
         provedor: "provider", status: "status", valorCentavos: "amount_cents", expiraEm: "expires_at",
         sessaoId: "checkout_session_id", intencaoId: "payment_intent_id", pagoEm: "paid_at", reembolsoId: "refund_id",
-        erro: "error", contaDestino: "destination_account_id", taxaCentavos: "fee_cents",
+        erro: "error", contaDestino: "destination_account_id", taxaCentavos: "fee_cents", taxaCompradorCentavos: "buyer_fee_cents",
         disputa: objeto("registration_payment_disputes", ["registration_id"], {
           status: "status", valorCentavos: "amount_cents", motivo: "reason", abertaEm: "opened_at", atualizadaEm: "updated_at",
         }),
@@ -324,7 +330,7 @@ export const ESQUEMA = {
       links: lista("partner_links", ["partner_id"], {
         id: "id", tipo: "type", url: "url", rotulo: "label", telefone: "phone", mensagem: "message", principal: "is_primary",
       }),
-      ativo: "active", criadoEm: "created_at", atualizadoEm: "updated_at",
+      ativo: "active", naComunidade: "show_in_community", criadoEm: "created_at", atualizadoEm: "updated_at",
     },
   },
   secoesInicio: {
@@ -334,7 +340,7 @@ export const ESQUEMA = {
       abrangencia: objeto("home_section_geo_scopes", ["section_id"], abrangencia),
       ordem: "sort_order", status: "status",
       agendamento: objeto("home_section_schedules", ["section_id"], { inicioEm: "starts_at", fimEm: "ends_at" }),
-      layout: "layout", modo: "mode",
+      layout: "layout", modo: "mode", naComunidade: "show_in_community",
       destaques: lista("home_section_highlights", ["section_id"], {
         id: "id", eventoId: "event_id", posicao: "slot", imagemPromocional: "promo_image_url", selo: "badge",
         chamada: "headline", agendamento: embutido({ inicioEm: "starts_at", fimEm: "ends_at" }),
@@ -361,7 +367,25 @@ export const ESQUEMA = {
       abrangencia: objeto("event_boost_geo_scopes", ["boost_id"], abrangencia),
       inicioEm: "starts_at", fimEm: "ends_at", fuso: "time_zone", prioridade: "priority", ordem: "sort_order",
       imagemPromocional: "promo_image_url", chamada: "headline", status: "status", criadoPor: "created_by",
-      criadoEm: "created_at", atualizadoEm: "updated_at",
+      criadoEm: "created_at", atualizadoEm: "updated_at", impulsoId: "purchase_id",
+    },
+  },
+  planosImpulso: {
+    tabela: "boost_plans", chave: ["id"],
+    campos: {
+      id: "id", precoCentavos: "price_cents", validadeDias: "validity_days", ativo: "active", imagemUrl: "image_url",
+      stripeProdutoId: "stripe_product_id", stripePrecoId: "stripe_price_id", sincronizadoEm: "stripe_synced_at",
+      atualizadoEm: "updated_at", atualizadoPor: "updated_by",
+    },
+  },
+  impulsosComprados: {
+    tabela: "boost_purchases", chave: ["id"],
+    campos: {
+      id: "id", organizacaoId: "organization_id", planoId: "plan_id", compradoPor: "purchased_by",
+      duracaoHoras: "duration_hours", precoCentavos: "price_cents", validadeDias: "validity_days", status: "status",
+      criadoEm: "created_at", pagoEm: "paid_at", expiraEm: "expires_at", sessaoId: "checkout_session_id",
+      intencaoId: "payment_intent_id", usadoEm: "used_at", eventoId: "event_id", impulsionamentoId: "boost_id",
+      encerradoEm: "closed_at",
     },
   },
   checkins: {
@@ -459,7 +483,7 @@ export const ESQUEMA = {
   },
   configuracoes: {
     tabela: "platform_settings", chave: ["id"],
-    campos: { id: "id", taxaPlataformaPercentual: "platform_fee_percent", atualizadoEm: "updated_at", atualizadoPor: "updated_by" },
+    campos: { id: "id", taxaPlataformaPercentual: "platform_fee_percent", taxaCompradorPercentual: "buyer_fee_percent", atualizadoEm: "updated_at", atualizadoPor: "updated_by" },
   },
 } satisfies Record<string, Tabela>;
 

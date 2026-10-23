@@ -7,7 +7,9 @@ import { baseVazia } from "@/lib/persistencia";
 import { pagamentoAnonimo, pagamentoSemIds } from "@/lib/pagamentos";
 import { organizacaoVisivel } from "@/lib/repasses";
 import { podeVerGrupo } from "@/lib/contatoEvento";
+import { podeVerFicha } from "@/lib/fichaEmergencia";
 import { destinadaA, exercitoDaPessoa } from "@/lib/missoes";
+import { gereImpulsos } from "@/lib/impulsos";
 import {
   forunsVisiveis,
   nomeExibicao,
@@ -20,6 +22,8 @@ import type { BaseDados, Evento, Inscricao, Usuario } from "@/lib/domain/types";
 export interface Visao {
   base: BaseDados;
   usuarioId: string | null;
+  /** Versão da base (base_control) de onde a visão saiu; o tempo real compara com ela. */
+  versao?: number;
 }
 
 /** Status de evento visíveis para qualquer visitante. */
@@ -85,7 +89,7 @@ export function gereEvento(usuario: Usuario | null, evento: Evento): boolean {
   );
 }
 
-export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): BaseDados {
+export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null, agora: Date = new Date()): BaseDados {
   const v = baseVazia();
   const eu = usuario?.ativo ? usuario : null;
   const admin = eu?.perfil === "admin";
@@ -186,7 +190,16 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
   v.impulsionamentos = base.impulsionamentos.flatMap((c) => {
     if (admin || geridos.has(c.eventoId)) return [c];
     if (c.status !== "ativo") return [];
-    return [{ ...c, nome: "", criadoPor: "" }];
+    return [{ ...c, nome: "", criadoPor: "", impulsoId: undefined }];
+  });
+  // Impulsos: preços públicos; compras só para a organização (sem ids do Stripe) e a administração.
+  v.planosImpulso = admin
+    ? base.planosImpulso
+    : base.planosImpulso.map((p) => ({ ...p, stripeProdutoId: undefined, stripePrecoId: undefined, sincronizadoEm: undefined }));
+  v.impulsosComprados = base.impulsosComprados.flatMap((i) => {
+    if (admin) return [i];
+    if (!gereImpulsos(eu, i.organizacaoId)) return [];
+    return [{ ...i, sessaoId: undefined, intencaoId: undefined }];
   });
 
   // ----- Perfil do operador e gamificação -----
@@ -223,8 +236,12 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null): Base
   for (const c of v.comentarios) referenciados.add(c.autorId);
   for (const r of v.restricoesComunidade) referenciados.add(r.usuarioId);
   for (const c of v.chamados) for (const m of c.mensagens) referenciados.add(m.autorId);
+  // Ficha de emergência (dado de saúde): nem admin nem gestão a recebem por terem os dados
+  // completos; só o titular e, com autorização dele, a gestão na janela do evento.
+  const comFicha = (u: Usuario): Usuario =>
+    !u.fichaEmergencia || podeVerFicha(base, eu, u, agora) ? u : { ...u, fichaEmergencia: undefined };
   v.usuarios = base.usuarios.flatMap((u) => {
-    if (admin || completos.has(u.id)) return [u];
+    if (admin || completos.has(u.id)) return [comFicha(u)];
     if (referenciados.has(u.id)) return [perfilPublico(u)];
     return [];
   });

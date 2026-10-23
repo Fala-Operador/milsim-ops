@@ -37,6 +37,32 @@ export interface Usuario {
   organizacaoId?: string | undefined; // quando organizador aprovado
   ativo: boolean;
   criadoEm: string;
+  /**
+   * Ficha de emergência (opcional). Dado de saúde (LGPD, art. 11): só o titular e, com a
+   * autorização dele, a gestão dos eventos em que está confirmado, na janela do evento.
+   * Regras em src/lib/fichaEmergencia.ts; filtrada na visão.
+   */
+  fichaEmergencia?: FichaEmergencia | undefined;
+  /**
+   * Perfil na comunidade geral: true = privado (só seguidores aprovados veem os posts);
+   * ausente/false = público. Contas de 15 a 17 anos começam privadas.
+   */
+  comunidadePrivada?: boolean | undefined;
+}
+
+export type TipoSanguineo = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
+
+export interface FichaEmergencia {
+  tipoSanguineo?: TipoSanguineo | undefined;
+  alergias?: string | undefined;
+  contatoNome?: string | undefined;
+  /** Somente dígitos (com DDD). */
+  contatoTelefone?: string | undefined;
+  /** Autorização explícita para a organização ver a ficha (sem ela, só o titular vê). */
+  compartilhar: boolean;
+  /** Quando a autorização foi dada (vazio quando não autorizada). */
+  consentimentoEm?: string | undefined;
+  atualizadoEm: string;
 }
 
 export interface Organizacao {
@@ -50,6 +76,8 @@ export interface Organizacao {
   criadoEm: string;
   /** Conta conectada (Stripe Connect Express) que recebe o repasse das vendas. */
   recebimento?: RecebimentoOrganizacao | undefined;
+  /** Taxa de serviço (%) somada ao ingresso e paga pelo comprador; fica com a organização (vazio = 0). */
+  taxaCompradorPercentual?: number | undefined;
 }
 
 /**
@@ -238,6 +266,8 @@ export interface PagamentoInscricao {
   contaDestino?: string | undefined;
   /** Taxa da plataforma retida no repasse, em centavos. */
   taxaCentavos?: number | undefined;
+  /** Taxa de serviço paga pelo comprador além do valor do ingresso, em centavos (repassada à organização). */
+  taxaCompradorCentavos?: number | undefined;
   /** Contestação (chargeback) aberta pelo comprador no banco do cartão. */
   disputa?: DisputaPagamento | undefined;
 }
@@ -535,6 +565,10 @@ export interface BaseDados {
   secoesInicio: SecaoInicial[];
   /** Campanhas de impulsionamento concedidas pela administração. */
   impulsionamentos: Impulsionamento[];
+  /** Preço e validade dos tipos de impulso (sem registro = valor padrão de src/lib/impulsos.ts). */
+  planosImpulso: PlanoImpulso[];
+  /** Impulsos comprados pelas organizações. */
+  impulsosComprados: ImpulsoComprado[];
   /** Base de referência do credenciamento (registros já aceitos pelo servidor). */
   checkins: RegistroCheckin[];
   // ===== Perfil do operador e gamificação =====
@@ -555,6 +589,8 @@ export interface ConfiguracaoPlataforma {
   id: "plataforma";
   /** Taxa retida nas vendas repassadas às organizações (Stripe Connect), em % (ex.: 8.5). */
   taxaPlataformaPercentual: number;
+  /** Taxa de serviço somada ao ingresso e paga pelo comprador, em % (vazio = 0). */
+  taxaCompradorPercentual?: number | undefined;
   atualizadoEm: string;
   atualizadoPor: string;
 }
@@ -862,6 +898,8 @@ export interface Parceiro {
   textoAlt: string;
   links: LinkParceiro[];
   ativo: boolean;
+  /** Patrocinador destacado pela administração na lateral da comunidade geral. */
+  naComunidade?: boolean | undefined;
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -921,6 +959,8 @@ export interface SecaoInicial {
   mostrarDescricoes: boolean;
   superficieLogo: "nenhuma" | "clara" | "escura";
   banner?: ConfigBanner | undefined;
+  /** Banner: aparece também na lateral da comunidade geral. */
+  naComunidade?: boolean | undefined;
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -932,6 +972,8 @@ export type PrioridadeImpulsionamento = "normal" | "alta";
 export type StatusImpulsionamento = "rascunho" | "ativo" | "pausado" | "encerrado";
 /** Posição de divulgação: id de uma seção de eventos da página inicial ou o bloco da listagem. */
 export const POSICAO_LISTAGEM = "listagem";
+/** Lateral da comunidade geral (Comunidades › Geral e fóruns). */
+export const POSICAO_COMUNIDADE = "comunidade";
 export interface Impulsionamento {
   id: string;
   eventoId: string;
@@ -950,4 +992,51 @@ export interface Impulsionamento {
   criadoPor: string;
   criadoEm: string;
   atualizadoEm: string;
+  /** Impulso comprado pela organização que gerou esta campanha (ausente = concedida pela administração). */
+  impulsoId?: string | undefined;
+}
+
+// ===== Impulsos comprados pelas organizações =====
+/** Tipos de impulso à venda (id fixo de cada duração). */
+export type PlanoImpulsoId = "24h" | "3d" | "5d" | "7d" | "15d" | "30d";
+/** Preço, validade e venda de cada tipo, editados pela administração. */
+export interface PlanoImpulso {
+  id: PlanoImpulsoId;
+  precoCentavos: number;
+  /** Dias, a partir do pagamento, para usar o impulso num evento. */
+  validadeDias: number;
+  ativo: boolean;
+  /** Imagem do tipo (vitrine da organização e produto no Stripe); sem ela vale a padrão. */
+  imagemUrl?: string | undefined;
+  /** Produto e preço do tipo no Stripe (catálogo da plataforma; só a administração vê). */
+  stripeProdutoId?: string | undefined;
+  stripePrecoId?: string | undefined;
+  sincronizadoEm?: string | undefined;
+  atualizadoEm: string;
+  atualizadoPor: string;
+}
+/** Estado gravado; "expirado" é derivado na leitura (disponível depois da validade). */
+export type StatusImpulso = "aguardando_pagamento" | "processando" | "disponivel" | "usado" | "cancelado" | "reembolsado";
+/** Impulso comprado: fica no saldo da organização até ser usado num evento ou expirar. */
+export interface ImpulsoComprado {
+  id: string;
+  organizacaoId: string;
+  planoId: PlanoImpulsoId;
+  compradoPor: string;
+  /** Duração, preço e validade do tipo no momento da compra. */
+  duracaoHoras: number;
+  precoCentavos: number;
+  validadeDias: number;
+  status: StatusImpulso;
+  criadoEm: string;
+  pagoEm?: string | undefined;
+  /** Prazo para usar: pagamento + validade. */
+  expiraEm?: string | undefined;
+  /** Checkout Session e PaymentIntent no Stripe (só a administração vê). */
+  sessaoId?: string | undefined;
+  intencaoId?: string | undefined;
+  usadoEm?: string | undefined;
+  eventoId?: string | undefined;
+  impulsionamentoId?: string | undefined;
+  encerradoEm?: string | undefined;
 }

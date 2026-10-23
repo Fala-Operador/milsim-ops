@@ -48,8 +48,10 @@ const { inscricao, urlPagamento } = await confirmarInscricao({ eventoId, tipoId,
 - Regra de negócio violada lança `ErroDominio`: a **mensagem chega ao navegador** em
   `error.message` e pode ser mostrada como está. As listas "Erros" de cada página trazem essas
   mensagens, extraídas do código.
-- Qualquer outro erro é registrado no log do servidor e vira a mensagem genérica
-  "Não foi possível concluir a operação. Tente novamente."
+- Qualquer outro erro é registrado no log do servidor como `[erro CÓDIGO]` e vira a mensagem
+  genérica "Não foi possível concluir a operação. Tente novamente. (código CÓDIGO)". Quando o
+  banco não responde (5xx ou rede), a mensagem é "O servidor de dados não respondeu. Tente
+  novamente em instantes. (código CÓDIGO)". O código liga a mensagem ao log com a causa real.
 - Escritas concorrentes: a gravação usa versão otimista (`MS409`) e o servidor repete sozinho
   até 4 vezes; se ainda assim falhar, a mensagem é "Muitas alterações ao mesmo tempo. Tente novamente."
 
@@ -92,7 +94,7 @@ try {
 
 ## Índice
 
-116 server functions em 15 módulos, mais os [webhooks do Stripe](#webhooks).
+157 server functions em 17 módulos, mais os [webhooks do Stripe](#webhooks).
 
 ### Sessão e leitura
 <a id="sessao"></a>
@@ -127,6 +129,7 @@ Missões, privacidade, notificações, foto, tema e preferências. Arquivo: [`sr
 | [`definirSilencio`](conta/definirSilencio.md) | POST | Qualquer pessoa autenticada e ativa | Silencia notificações: todas (`todas`) ou só as da comunidade (`comunidade`). |
 | [`definirFoto`](conta/definirFoto.md) | POST | Qualquer pessoa autenticada e ativa | Troca ou remove a foto de perfil. |
 | [`definirTema`](conta/definirTema.md) | POST | Qualquer pessoa autenticada e ativa | Guarda o tema da conta (claro ou escuro). |
+| [`salvarFichaEmergencia`](conta/salvarFichaEmergencia.md) | POST | Qualquer pessoa autenticada e ativa | Grava (ou remove) a ficha de emergência da própria conta, com a autorização de compartilhar. |
 | [`salvarPreferenciaConta`](conta/salvarPreferenciaConta.md) | POST | Qualquer pessoa autenticada e ativa | Salva as modalidades favoritas da conta (usadas para ordenar a página inicial "Para você"). |
 
 ### Administração
@@ -169,6 +172,7 @@ Inscrição, checkout do Stripe, cancelamento e prévia de cupom. Arquivo: [`src
 | [`retomarPagamento`](inscricoes/retomarPagamento.md) | POST | Titular da reserva | Volta à página de pagamento de uma reserva ainda aberta (botão "Concluir pagamento" em Meus ingressos). |
 | [`sincronizarPagamento`](inscricoes/sincronizarPagamento.md) | POST | Titular da sessão de checkout | Chamada no retorno do Stripe Checkout (`/app/ingressos?pagamento=sucesso&sessao=cs_…`): consulta o Stripe e aplica o resultado, sem depender do webhook. |
 | [`cancelarInscricao`](inscricoes/cancelarInscricao.md) | POST | Titular, organização do evento ou admin | Cancela uma inscrição confirmada (estorno integral) ou libera uma reserva pendente. |
+| [`incluirParticipantes`](inscricoes/incluirParticipantes.md) | POST | Organização do evento ou admin (lista de contas: só admin) | Inclui pessoas com conta no evento (pagamento por fora), como cortesia confirmada. |
 | [`previsualizarCupom`](inscricoes/previsualizarCupom.md) | POST | Pública | Valida um cupom para mostrar o desconto na tela de inscrição. |
 
 ### Repasse (Stripe Connect)
@@ -180,6 +184,7 @@ Conta de recebimento das organizações e taxa da plataforma. Arquivo: [`src/api
 |---|---|---|---|
 | [`configuracaoRepasse`](repasses/configuracaoRepasse.md) | GET | Pública | Informa se os pagamentos online (Stripe) e os painéis embutidos do Stripe estão ativos. |
 | [`definirTaxaPlataforma`](repasses/definirTaxaPlataforma.md) | POST | Somente admin | Define a taxa da plataforma (%) retida em cada venda repassada às organizações. |
+| [`definirTaxaComprador`](repasses/definirTaxaComprador.md) | POST | Organizador da própria organização ou admin | Define a taxa de serviço (%) que a organização cobra do comprador, somada ao ingresso e repassada a ela (padrão 0%). |
 | [`cadastrarRecebimento`](repasses/cadastrarRecebimento.md) | POST | Quem gere a organização (organizador dela ou admin) | Cria (ou reaproveita) a conta Stripe Connect Express da organização e devolve o link do cadastro hospedado pelo Stripe. |
 | [`atualizarRecebimento`](repasses/atualizarRecebimento.md) | POST | Quem gere a organização | Consulta a conta Connect no Stripe e atualiza a situação do recebimento (`organizacao.recebimento`). |
 | [`abrirPainelStripe`](repasses/abrirPainelStripe.md) | POST | Quem gere a organização | Gera um link de acesso ao painel Express do Stripe (saldo, saques, dados bancários). |
@@ -217,6 +222,44 @@ Fóruns, publicações, respostas, curtidas, denúncias e moderação. Arquivo: 
 | [`excluirForum`](comunidade/excluirForum.md) | POST | Gestão do evento: organização dona ou admin | Exclui um fórum vazio. |
 | [`definirPreferenciaForum`](comunidade/definirPreferenciaForum.md) | POST | Quem vê o fórum | Segue, silencia ou volta ao padrão de notificações de um fórum. |
 | [`atualizarNomeExibicao`](comunidade/atualizarNomeExibicao.md) | POST | Qualquer pessoa autenticada | Define o nome exibido na comunidade (no lugar do nome completo). |
+
+### Comunidade geral
+<a id="social"></a>
+
+Feed estilo Twitter (posts de até 220 caracteres e 4 fotos), fóruns públicos e privados, seguir, bloqueio, denúncia e moderação. **Fora da base**: leituras paginadas por `social_posts_page()` (sem visão nem `chamar`). Arquivo: [`src/api/social.functions.ts`](../../src/api/social.functions.ts).
+
+| API | Método | Acesso | O que faz |
+|---|---|---|---|
+| [`lerFeed`](social/lerFeed.md) | POST | Pública (visitante vê só perfis públicos) | Página do feed geral (posts sem as respostas), do mais novo para o mais antigo. |
+| [`lerPostsDoAutor`](social/lerPostsDoAutor.md) | POST | Pública (perfil privado: só seguidores aprovados) | Posts de uma pessoa (aba Publicações do perfil do operador). |
+| [`lerPost`](social/lerPost.md) | POST | Pública (respeita a visibilidade do autor) | Uma publicação, o post a que ela responde (se visível) e a primeira página de respostas. |
+| [`lerRespostas`](social/lerRespostas.md) | POST | Pública (respeita a visibilidade de cada autor) | Próximas páginas de respostas de uma publicação. |
+| [`lerPerfilSocial`](social/lerPerfilSocial.md) | POST | Pública | Cabeçalho social de um perfil: seguidores, seguindo, público/privado e a relação com quem vê. |
+| [`lerPedidosParaSeguir`](social/lerPedidosParaSeguir.md) | POST | Qualquer pessoa autenticada e ativa | Pedidos para seguir aguardando a aprovação da própria conta. |
+| [`lerDenunciasPendentes`](social/lerDenunciasPendentes.md) | POST | Admin | Fila de moderação: denúncias pendentes com a publicação denunciada. |
+| [`publicarPost`](social/publicarPost.md) | POST | Qualquer pessoa autenticada e ativa | Publica no feed geral ou responde a uma publicação. |
+| [`excluirPost`](social/excluirPost.md) | POST | Autor da publicação | Exclui a própria publicação (some do feed e do perfil). |
+| [`curtirPost`](social/curtirPost.md) | POST | Qualquer pessoa autenticada e ativa | Curte ou descurte uma publicação visível. |
+| [`seguir`](social/seguir.md) | POST | Qualquer pessoa autenticada e ativa | Segue uma pessoa (ou pede para seguir, se o perfil é privado). |
+| [`deixarDeSeguir`](social/deixarDeSeguir.md) | POST | Qualquer pessoa autenticada e ativa | Deixa de seguir (ou cancela o pedido para seguir). |
+| [`responderPedido`](social/responderPedido.md) | POST | Dono do perfil seguido | Aceita ou recusa um pedido para seguir. |
+| [`bloquear`](social/bloquear.md) | POST | Qualquer pessoa autenticada e ativa | Bloqueia ou desbloqueia uma pessoa na comunidade geral. |
+| [`denunciarPost`](social/denunciarPost.md) | POST | Qualquer pessoa autenticada e ativa | Denuncia uma publicação para a moderação do admin. |
+| [`resolverDenuncia`](social/resolverDenuncia.md) | POST | Admin | Oculta a publicação denunciada ou descarta a denúncia. |
+| [`definirPerfilComunidade`](social/definirPerfilComunidade.md) | POST | Qualquer pessoa autenticada e ativa | Define o perfil na comunidade geral como público ou privado. |
+| [`lerForuns`](social/lerForuns.md) | POST | Pública | Lista de fóruns ativos (os da pessoa primeiro, depois os mais movimentados). |
+| [`lerForum`](social/lerForum.md) | POST | Pública | Um fórum e se quem vê pode ler o conteúdo. |
+| [`lerPostsDoForum`](social/lerPostsDoForum.md) | POST | Pública (privado: só membros aprovados) | Página de publicações de um fórum. |
+| [`lerMembrosDoForum`](social/lerMembrosDoForum.md) | POST | Membros aprovados: quem lê o fórum; pedidos: dono e moderadores | Membros aprovados ou pedidos pendentes de um fórum. |
+| [`criarForum`](social/criarForum.md) | POST | Qualquer pessoa autenticada e ativa | Cria um fórum; quem cria vira o dono. |
+| [`editarForum`](social/editarForum.md) | POST | Dono do fórum | Altera nome, descrição e visibilidade. |
+| [`arquivarForum`](social/arquivarForum.md) | POST | Dono do fórum ou admin | Arquiva o fórum: some da lista e ninguém mais lê nem publica. |
+| [`entrarNoForum`](social/entrarNoForum.md) | POST | Qualquer pessoa autenticada e ativa | Entra num fórum público ou pede para entrar num privado. |
+| [`sairDoForum`](social/sairDoForum.md) | POST | Membro (ou quem pediu para entrar) | Sai do fórum ou cancela o pedido para entrar. |
+| [`responderEntrada`](social/responderEntrada.md) | POST | Dono ou moderador do fórum | Aprova ou recusa um pedido para entrar. |
+| [`removerMembro`](social/removerMembro.md) | POST | Dono ou moderador do fórum | Remove um membro do fórum. |
+| [`definirModerador`](social/definirModerador.md) | POST | Dono do fórum | Torna um membro aprovado moderador (ou tira a moderação). |
+| [`ocultarPostDoForum`](social/ocultarPostDoForum.md) | POST | Dono ou moderador do fórum do post | Oculta uma publicação (ou resposta) do fórum. |
 
 ### Perfil do operador
 <a id="perfil"></a>
@@ -329,6 +372,20 @@ Campanhas de destaque de eventos na página inicial. Arquivo: [`src/api/impulsio
 |---|---|---|---|
 | [`salvarImpulsionamento`](impulsionamentos/salvarImpulsionamento.md) | POST | Somente admin | Cria ou edita uma campanha de impulsionamento: o evento ganha prioridade nas seções escolhidas da página inicial, num período e numa região. |
 | [`alterarImpulsionamento`](impulsionamentos/alterarImpulsionamento.md) | POST | Somente admin | Pausa, retoma ou encerra uma campanha de impulsionamento. |
+
+### Impulsos das organizações
+<a id="impulsos"></a>
+
+Impulsos comprados pela organização (24h a 30 dias) e usados nas próprias operações. Arquivo: [`src/api/impulsos.functions.ts`](../../src/api/impulsos.functions.ts).
+
+| API | Método | Acesso | O que faz |
+|---|---|---|---|
+| [`comprarImpulso`](impulsos/comprarImpulso.md) | POST | Organizador ativo | Compra um impulso para a organização e abre o pagamento no Stripe Checkout da plataforma. |
+| [`retomarPagamentoImpulso`](impulsos/retomarPagamentoImpulso.md) | POST | Organizador ativo | Volta à página de pagamento de um impulso que ainda aguarda pagamento. |
+| [`sincronizarPagamentoImpulso`](impulsos/sincronizarPagamentoImpulso.md) | POST | Organizador ativo | Retorno do checkout: consulta o Stripe e aplica o pagamento do impulso. |
+| [`usarImpulso`](impulsos/usarImpulso.md) | POST | Organizador ativo | Usa um impulso disponível numa operação publicada: cria a campanha de destaque. |
+| [`salvarPlanosImpulso`](impulsos/salvarPlanosImpulso.md) | POST | Somente admin | Define preço, validade, imagem e venda dos tipos de impulso e atualiza os produtos no Stripe. |
+| [`sincronizarPlanosImpulso`](impulsos/sincronizarPlanosImpulso.md) | POST | Somente admin | Cria ou atualiza no Stripe o produto e o preço de cada tipo de impulso. |
 
 ### Webhooks
 <a id="webhooks"></a>

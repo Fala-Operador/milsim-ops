@@ -60,6 +60,8 @@ function visitanteId(): string {
   if (!v) { v = rid("vis"); storage.gravar(K.visitante, v); }
   return v;
 }
+/** Id anônimo do visitante, também usado como semente do rodízio dos impulsos comprados. */
+export const idDoVisitante = (): string => visitanteId();
 function sessaoId(): string {
   const agora = Date.now();
   const s = storage.ler<{ id: string; ultimo: number }>(K.sessao);

@@ -1,11 +1,11 @@
 // Regras de inscrição, vagas, cupons, cortesias e cancelamento.
 import { carregarBase, mutarBase, latencia, ErroDominio, gerarId, gerarCodigo } from "./db";
-import { idadeEmAnos } from "@/lib/domain/validators";
+import { idadeEmAnos, normalizarEmail, somenteDigitos } from "@/lib/domain/validators";
 import { gerarTokenEntrada } from "@/lib/checkin";
 import { descontoDoBeneficio, statusVoucher } from "@/lib/participacao";
 import { restaurarVoucherDaInscricao } from "@/services/progressao";
 import { exigeEstornoOnline, fimDaReserva, ocupaVaga, reservaVigente } from "@/lib/pagamentos";
-import { contaParaRepasse, taxaDaPlataforma, taxaPlataforma } from "@/lib/repasses";
+import { contaParaRepasse, MSG_SEM_RECEBIMENTO, taxaDaPlataforma, taxaDoComprador, taxaPlataforma } from "@/lib/repasses";
 import type {
   BaseDados,
   Cupom,
@@ -198,8 +198,8 @@ export function liberarReservasVencidas(
 }
 
 /**
- * Pagamento de uma reserva nova. Com a conta da organização apta, a cobrança já nasce com
- * destino a ela (repasse automático menos a taxa); senão o valor fica na plataforma.
+ * Pagamento de uma reserva nova: a cobrança nasce com destino à conta da organização
+ * (repasse automático menos a taxa). Sem conta de recebimento ativa não há venda.
  */
 function pagamentoInicial(
   base: BaseDados,
@@ -207,16 +207,19 @@ function pagamentoInicial(
   valorCentavos: number,
   agora: Date,
 ): PagamentoInscricao {
-  const contaDestino = contaParaRepasse(
-    base.organizacoes.find((o) => o.id === evento.organizacaoId),
-  );
+  const org = base.organizacoes.find((o) => o.id === evento.organizacaoId);
+  const contaDestino = contaParaRepasse(org);
+  if (!contaDestino) throw new ErroDominio("sem_recebimento", MSG_SEM_RECEBIMENTO);
+  // Taxa de serviço do comprador, definida pela organização: somada ao ingresso e repassada a ela.
+  const taxaComprador = taxaPlataforma(valorCentavos, taxaDoComprador(org));
   return {
     provedor: "stripe",
     status: "aguardando",
     valorCentavos,
     expiraEm: fimDaReserva(agora),
     contaDestino,
-    taxaCentavos: contaDestino ? taxaPlataforma(valorCentavos, taxaDaPlataforma(base)) : undefined,
+    taxaCentavos: taxaPlataforma(valorCentavos, taxaDaPlataforma(base)),
+    taxaCompradorCentavos: taxaComprador || undefined,
   };
 }
 
@@ -294,7 +297,9 @@ export async function confirmarInscricao(
     }
     const evento = base.eventos.find((e) => e.id === dados.eventoId);
     if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
-    if (evento.status !== "publicado") {
+    // Inclusão manual pela gestão vale também com as inscrições encerradas (quem pagou por fora).
+    const manual = dados.origem === "organizador" || dados.origem === "admin";
+    if (evento.status !== "publicado" && !(manual && evento.status === "inscricoes_encerradas")) {
       throw new ErroDominio("evento_indisponivel", "Evento não está disponível para inscrição.");
     }
     const usuario = base.usuarios.find((u) => u.id === dados.usuarioId);
@@ -456,6 +461,146 @@ export async function confirmarInscricao(
     if (!pagarOnline) registrarConfirmacaoNaBase(base, inscricao, evento, criadoEm);
     return inscricao;
   });
+}
+
+/** Mensagens da inscrição reescritas para quem inclui outra pessoa (a original fala com o titular). */
+const MENSAGEM_INCLUSAO: Record<string, string> = {
+  duplicada: "Esta pessoa já possui uma inscrição ativa neste evento.",
+  autorizacao_pendente:
+    "Esta pessoa tem de 15 a 17 anos e ainda não tem a autorização do responsável aprovada.",
+  pagamento_processando: "Esta pessoa tem um pagamento em processamento para este evento. Aguarde a confirmação.",
+};
+
+export const LIMITE_INCLUSAO_MANUAL = 50;
+
+export interface DadosInclusaoManual {
+  eventoId: string;
+  tipoId: string;
+  exercitoId: string;
+  observacao?: string | undefined;
+  /** Organização: e-mail ou CPF de uma conta existente. */
+  identificador?: string | undefined;
+  /** Admin: contas escolhidas na lista (só a administração recebe todos os usuários na visão). */
+  usuarioIds?: string[] | undefined;
+}
+
+function contasDaInclusao(base: BaseDados, dados: DadosInclusaoManual, autor: Usuario): Usuario[] {
+  if (dados.usuarioIds?.length) {
+    if (autor.perfil !== "admin") {
+      throw new ErroDominio("permissao", "Só a administração escolhe participantes pela lista.");
+    }
+    const ids = [...new Set(dados.usuarioIds)];
+    if (ids.length > LIMITE_INCLUSAO_MANUAL) {
+      throw new ErroDominio("limite", `Inclua no máximo ${LIMITE_INCLUSAO_MANUAL} participantes por vez.`);
+    }
+    return ids.map((id) => {
+      const u = base.usuarios.find((x) => x.id === id);
+      if (!u?.ativo) throw new ErroDominio("participante", "Uma das contas selecionadas não existe ou está desativada.");
+      return u;
+    });
+  }
+  const chave = (dados.identificador ?? "").trim();
+  if (!chave) throw new ErroDominio("participante", "Informe ao menos um participante.");
+  const cpf = somenteDigitos(chave);
+  const usuario = chave.includes("@")
+    ? base.usuarios.find((u) => u.email === normalizarEmail(chave))
+    : cpf.length === 11
+      ? base.usuarios.find((u) => u.cpf === cpf)
+      : undefined;
+  if (!usuario?.ativo) {
+    throw new ErroDominio("participante", "Nenhuma conta ativa encontrada com este e-mail ou CPF.");
+  }
+  return [usuario];
+}
+
+/**
+ * Inclusão manual pela gestão do evento (organização dona ou admin), para quem combinou o
+ * pagamento por fora. Cada pessoa entra como cortesia já resgatada (sem valor): respeita idade,
+ * inscrição única e capacidade, mas não exige lote aberto. A origem registra quem incluiu.
+ * No servidor é tudo ou nada: se uma pessoa não puder entrar, ninguém do lote é incluído.
+ */
+export async function incluirParticipantes(dados: DadosInclusaoManual, autor: Usuario): Promise<Inscricao[]> {
+  const base = carregarBase();
+  const evento = base.eventos.find((e) => e.id === dados.eventoId);
+  if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
+  const tipo = evento.tipos.find((t) => t.id === dados.tipoId && !t.arquivado);
+  if (!tipo) throw new ErroDominio("tipo", "Tipo de ingresso indisponível.");
+  const usuarios = contasDaInclusao(base, dados, autor);
+  const origem = autor.perfil === "admin" ? "admin" : "organizador";
+  const agora = new Date().toISOString();
+
+  const inscricoes: Inscricao[] = [];
+  for (const usuario of usuarios) {
+    const cortesiaId = gerarId("cor");
+    mutarBase((b) => {
+      b.cortesias.push({
+        id: cortesiaId,
+        eventoId: evento.id,
+        nomeConvidado: usuario.nomeCompleto,
+        emailConvidado: usuario.email,
+        tipoId: tipo.id,
+        exercitoId: dados.exercitoId,
+        validade: new Date(Date.now() + 60_000).toISOString(),
+        codigo: gerarCodigo("CORT"),
+        status: "pendente",
+        criadoEm: agora,
+      });
+    });
+    try {
+      inscricoes.push(
+        await confirmarInscricao({
+          eventoId: evento.id,
+          usuarioId: usuario.id,
+          tipoId: tipo.id,
+          exercitoId: dados.exercitoId,
+          cortesiaId,
+          origem,
+        }),
+      );
+    } catch (e) {
+      // No servidor a unidade de trabalho já descarta tudo; aqui a cortesia sai explicitamente.
+      mutarBase((b) => {
+        b.cortesias = b.cortesias.filter((c) => c.id !== cortesiaId);
+      });
+      if (!(e instanceof ErroDominio)) throw e;
+      const mensagem = MENSAGEM_INCLUSAO[e.codigo] ?? e.message;
+      // Com várias pessoas, diz qual delas impediu a inclusão.
+      throw new ErroDominio(e.codigo, usuarios.length > 1 ? `${usuario.nomeCompleto}: ${mensagem}` : mensagem);
+    }
+  }
+
+  mutarBase((b) => {
+    const observacao = dados.observacao?.trim();
+    for (const ins of inscricoes) {
+      const nome = usuarios.find((u) => u.id === ins.usuarioId)!.nomeCompleto;
+      b.auditoria.push({
+        id: gerarId("aud"),
+        autorId: autor.id,
+        acao: "inclusao_manual",
+        entidade: "inscricao",
+        entidadeId: ins.id,
+        justificativa: `${nome} incluído(a) em "${evento.nome}" como cortesia${observacao ? ` — ${observacao}` : ""}.`,
+        criadoEm: agora,
+      });
+    }
+    // Inclusão feita pela administração: a organização dona fica sabendo (um aviso por lote).
+    if (origem === "admin") {
+      const nomes = usuarios.map((u) => u.nomeCompleto).join(", ");
+      const quem = usuarios.length === 1 ? nomes : `${usuarios.length} participantes (${nomes})`;
+      for (const o of b.usuarios.filter((u) => u.perfil === "organizador" && u.organizacaoId === evento.organizacaoId && u.ativo)) {
+        b.notificacoes.push({
+          id: gerarId("not"),
+          usuarioId: o.id,
+          titulo: usuarios.length === 1 ? "Participante incluído pela administração" : "Participantes incluídos pela administração",
+          corpo: `A administração incluiu ${quem} em ${evento.nome} (${tipo.nome}, cortesia).`,
+          link: "/organizacao/inscritos",
+          lida: false,
+          criadoEm: agora,
+        });
+      }
+    }
+  });
+  return inscricoes;
 }
 
 export type ResultadoPagamento =

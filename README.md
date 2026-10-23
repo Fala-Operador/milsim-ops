@@ -45,12 +45,13 @@ bun run start                # servidor Node gerado pelo build (.output/server/i
 |---|---|
 | `SUPABASE_URL` | URL do projeto |
 | `SUPABASE_PUBLISHABLE_KEY` | chave publicável; o servidor a usa para a sessão do Supabase Auth |
-| `SUPABASE_SECRET_KEY` | chave secreta, **somente servidor** (acesso ao banco, Storage e Auth admin) |
+| `SUPABASE_SECRET_KEY` | chave secreta (`sb_secret_…` ou a legada `service_role`), **somente servidor** (acesso ao banco, Storage e Auth admin). Com a chave publicável aqui o banco nega tudo ("permission denied for function export_base"); o servidor agora avisa isso no log |
 | `SUPABASE_DB_PASSWORD` | só para `supabase link` / `db push` |
 | `STRIPE_SERVER_API_KEY` | opcional, **somente servidor**: liga a venda pelo Stripe Checkout e o Stripe Connect (sem ela, inscrição confirmada sem cobrança) |
 | `STRIPE_WEBHOOK_FORWARD_SECRET` | segredo compartilhado entre a Edge Function `stripe-webhook` e o site (mesmo valor nos dois lados) |
 | `STRIPE_BROWSER_PUBLIC_KEY` | opcional (`pk_...`): o cadastro e a gestão do recebimento da organização acontecem dentro do site (componentes embutidos do Stripe) |
 | `LOVABLE_API_KEY` | opcional, habilita Admin › Insights IA |
+| `TURNSTILE_SITE_KEY` | chave pública (site key) do Cloudflare Turnstile, mostrado no login, cadastro e pedido de redefinição de senha. A chave secreta fica só no Supabase (Authentication → Attack Protection → CAPTCHA). Com o CAPTCHA ligado no Supabase, sem esta variável ninguém entra |
 
 Na publicação, configure as variáveis do Supabase (e as do Stripe, se usar) como **segredos** do
 ambiente. Os segredos `whsec_…` do Stripe ficam só no Supabase (Edge Functions → Secrets), junto

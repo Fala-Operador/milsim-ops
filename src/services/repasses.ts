@@ -2,8 +2,8 @@
 // devolvido pelo Stripe. As chamadas ao Stripe ficam em src/server/pagamentos.server.ts.
 import { gerarId } from "./db";
 import { ErroDominio } from "./db";
-import { erroTaxa, recebimentoDaConta, taxaDaPlataforma, type ContaStripe } from "@/lib/repasses";
-import type { BaseDados } from "@/lib/domain/types";
+import { erroTaxa, gereRecebimento, recebimentoDaConta, taxaDaPlataforma, taxaDoComprador, type ContaStripe } from "@/lib/repasses";
+import type { BaseDados, Usuario } from "@/lib/domain/types";
 
 /**
  * Atualiza a situação da conta da organização. Ignora uma conta diferente da registrada
@@ -57,5 +57,23 @@ export function definirTaxaPlataformaNaBase(base: BaseDados, percentual: number,
   base.auditoria.push({
     id: gerarId("aud"), autorId, acao: "taxa_plataforma", entidade: "configuracao", entidadeId: "plataforma",
     justificativa: `Taxa da plataforma alterada de ${anterior}% para ${percentual}%.`, criadoEm: iso,
+  });
+}
+
+/**
+ * A organização define a taxa de serviço paga pelo comprador, somada ao ingresso no checkout
+ * e repassada a ela (padrão 0%). Vale para as reservas feitas daqui em diante; fica na auditoria.
+ */
+export function definirTaxaCompradorNaBase(base: BaseDados, organizacaoId: string, percentual: number, usuario: Usuario | null, agora = new Date()): void {
+  if (!usuario || !gereRecebimento(usuario, organizacaoId)) throw new ErroDominio("permissao", "Apenas a organização pode alterar a sua taxa de serviço.");
+  const org = base.organizacoes.find((o) => o.id === organizacaoId);
+  if (!org) throw new ErroDominio("organizacao", "Organização não encontrada.");
+  const erro = erroTaxa(percentual);
+  if (erro) throw new ErroDominio("taxa", erro);
+  const anterior = taxaDoComprador(org);
+  org.taxaCompradorPercentual = percentual;
+  base.auditoria.push({
+    id: gerarId("aud"), autorId: usuario.id, acao: "taxa_comprador", entidade: "organizacao", entidadeId: organizacaoId,
+    justificativa: `Taxa de serviço do comprador alterada de ${anterior}% para ${percentual}%.`, criadoEm: agora.toISOString(),
   });
 }

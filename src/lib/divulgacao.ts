@@ -12,6 +12,7 @@ import type {
   SecaoInicial,
 } from "@/lib/domain/types";
 import { campanhasNaPosicao } from "@/lib/impulsionamento";
+import { POSICAO_COMUNIDADE } from "@/lib/domain/types";
 import { ocupaVaga } from "@/lib/pagamentos";
 
 export const REGIOES: RegiaoBR[] = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
@@ -130,9 +131,10 @@ export function eventosDaSecao(
   secao: SecaoInicial,
   local: Abrangencia,
   agora: Date,
+  semente?: string,
 ): CartaoEventoResolvido[] {
   const vistos = new Set<string>();
-  const impulsionados = campanhasNaPosicao(base, secao.id, local, agora).flatMap(
+  const impulsionados = campanhasNaPosicao(base, secao.id, local, agora, { semente }).flatMap(
     (c): CartaoEventoResolvido[] => {
       const e = base.eventos.find((x) => x.id === c.eventoId)!;
       vistos.add(e.id);
@@ -222,7 +224,7 @@ export function montarPaginaInicial(
   base: BaseDados,
   local: Abrangencia,
   agora: Date,
-  opcoes: { incluirRascunhos?: boolean } = {},
+  opcoes: { incluirRascunhos?: boolean; semente?: string } = {},
 ): SecaoResolvida[] {
   return base.secoesInicio
     .filter((s) => s.status === "publicada" || (opcoes.incluirRascunhos && s.status === "rascunho"))
@@ -231,7 +233,7 @@ export function montarPaginaInicial(
     .sort((a, b) => a.ordem - b.ordem)
     .flatMap((secao): SecaoResolvida[] => {
       if (secao.tipo === "destaques" || secao.tipo === "regional") {
-        const eventos = eventosDaSecao(base, secao, local, agora);
+        const eventos = eventosDaSecao(base, secao, local, agora, opcoes.semente);
         return eventos.length ? [{ secao, eventos, parceiros: [] }] : [];
       }
       if (secao.tipo === "patrocinadores" || secao.tipo === "apoiadores") {
@@ -242,6 +244,42 @@ export function montarPaginaInicial(
       if (!b || (!b.imagemDesktop && !b.chamada)) return [];
       return [{ secao, eventos: [], parceiros: [] }];
     });
+}
+
+// ===== Lateral da comunidade geral =====
+
+export const LIMITE_LATERAL_OPERACOES = 3;
+export const LIMITE_LATERAL_PATROCINADORES = 6;
+
+export interface LateralComunidade {
+  banners: SecaoInicial[];
+  operacoes: CartaoEventoResolvido[];
+  patrocinadores: Parceiro[];
+}
+
+/**
+ * O que aparece na lateral da comunidade (feed e fóruns): banners publicados e marcados
+ * "na comunidade" (mesmo agendamento e região da página inicial), operações impulsionadas
+ * na posição "comunidade" (rodízio igual ao das outras posições) e patrocinadores ativos
+ * destacados pela administração.
+ */
+export function lateralDaComunidade(base: BaseDados, local: Abrangencia, agora: Date, semente?: string): LateralComunidade {
+  const banners = base.secoesInicio
+    .filter((s) => s.tipo === "banner" && s.naComunidade && s.status === "publicada")
+    .filter((s) => vigente(s.agendamento, agora) && secaoCompativel(s, local))
+    .filter((s) => !!s.banner && !!(s.banner.imagemCelular || s.banner.imagemDesktop || s.banner.chamada))
+    .sort((a, b) => a.ordem - b.ordem);
+  const operacoes = campanhasNaPosicao(base, POSICAO_COMUNIDADE, local, agora, { semente })
+    .slice(0, LIMITE_LATERAL_OPERACOES)
+    .flatMap((c): CartaoEventoResolvido[] => {
+      const e = base.eventos.find((x) => x.id === c.eventoId);
+      return e ? [{ evento: e, esgotado: esgotado(base, e), chamada: c.chamada, imagem: c.imagemPromocional || e.imagemUrl, campanhaId: c.id }] : [];
+    });
+  const patrocinadores = base.parceiros
+    .filter((p) => p.ativo && p.naComunidade)
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
+    .slice(0, LIMITE_LATERAL_PATROCINADORES);
+  return { banners, operacoes, patrocinadores };
 }
 
 // ===== Links =====

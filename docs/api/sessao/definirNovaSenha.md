@@ -15,7 +15,7 @@ Define a nova senha da conta (`updateUser`) e devolve a visão da pessoa logada.
 
 | Campo | Tipo | Observação |
 |---|---|---|
-| `senha` | string (até 200) | Mínimo de 6 caracteres. |
+| `senha` | string (até 200) | Mínimo de 6 caracteres, com letra minúscula, letra maiúscula, número e símbolo; não pode ser senha vazada. |
 
 ## Resposta
 
@@ -26,6 +26,10 @@ Define a nova senha da conta (`updateUser`) e devolve a visão da pessoa logada.
 Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 
 - A senha deve ter ao menos 6 caracteres.
+- A senha deve ter letra minúscula, letra maiúscula, número e símbolo.
+- Esta senha já apareceu em vazamentos de dados e não pode ser usada. Escolha outra.
+- Senha fraca. Escolha uma senha mais difícil de adivinhar.
+- A nova senha precisa ser diferente da atual.
 - Sessão de recuperação expirada. Solicite um novo link.
 
 ## Exemplo
@@ -33,14 +37,14 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 ```ts
 import { definirNovaSenha } from "@/api/sessao.functions";
 
-await definirNovaSenha("nova-senha-forte");
+await definirNovaSenha("Nova-Senha#1");
 ```
 
 `data` enviado à server function (`definirNovaSenhaFn({ data })`):
 
 ```json
 {
-  "senha": "nova-senha-forte"
+  "senha": "Nova-Senha#1"
 }
 ```
 

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { carregarBase } from "@/services/db";
@@ -84,7 +84,14 @@ function PaginaDivulgacao() {
       <div className="mt-4">
         {aba === "secoes" ? <GestaoSecoes base={base} />
           : aba === "parceiros" ? <GestaoParceiros base={base} />
-          : <GestaoImpulsionamentos base={base} eventoInicial={pesquisa.evento} irParaSecoes={() => setAba("secoes")} />}
+          : (
+            <div className="space-y-6">
+              <p className="text-sm text-muted-foreground">
+                Preço, validade e imagem dos impulsos vendidos às organizações ficam em <Link to="/admin/loja" hash="impulsos" className="underline">Loja da plataforma</Link>.
+              </p>
+              <GestaoImpulsionamentos base={base} eventoInicial={pesquisa.evento} irParaSecoes={() => setAba("secoes")} />
+            </div>
+          )}
       </div>
     </div>
   );
@@ -363,6 +370,10 @@ function EditorBanner({ base, d, set, setErro }: { base: BaseDados; d: DadosSeca
     <div className="space-y-3 rounded-lg border border-border p-3">
       <div className="grid gap-3 sm:grid-cols-2">{imagem("imagemDesktop", "Imagem para desktop")}{imagem("imagemCelular", "Imagem para celular (opcional)")}</div>
       <Campo htmlFor="bn-alt" rotulo="Texto alternativo"><Input id="bn-alt" value={b.textoAlt} onChange={(e) => up({ textoAlt: e.target.value })} /></Campo>
+      <Label className="flex items-center gap-2 text-sm font-normal text-inherit">
+        <Checkbox checked={!!d.naComunidade} onCheckedChange={(marcado) => set({ naComunidade: marcado === true || undefined })} />
+        Exibir também na lateral da comunidade (usa a imagem de celular, se houver)
+      </Label>
       <div className="grid gap-3 sm:grid-cols-2">
         <Campo htmlFor="bn-cha" rotulo="Chamada (opcional)"><Input id="bn-cha" value={b.chamada ?? ""} onChange={(e) => up({ chamada: e.target.value || undefined })} /></Campo>
         <Campo htmlFor="bn-bot" rotulo="Texto do botão"><Input id="bn-bot" value={b.textoBotao ?? ""} onChange={(e) => up({ textoBotao: e.target.value || undefined })} /></Campo>
@@ -500,6 +511,10 @@ function EditorParceiro({ inicial, onFechar }: { inicial: DadosParceiro; onFecha
         </div>
         <Campo htmlFor="pa-alt" rotulo="Texto alternativo do logo"><Input id="pa-alt" value={d.textoAlt} onChange={(e) => set({ textoAlt: e.target.value })} /></Campo>
         <Label className="flex items-center gap-2 text-sm font-normal text-inherit"><Checkbox checked={d.ativo} onCheckedChange={(marcado) => set({ ativo: marcado === true })} /> Ativo</Label>
+        <Label className="flex items-center gap-2 text-sm font-normal text-inherit">
+          <Checkbox checked={!!d.naComunidade} onCheckedChange={(marcado) => set({ naComunidade: marcado === true || undefined })} />
+          Destacar na lateral da comunidade (patrocinador)
+        </Label>
 
         <fieldset className="space-y-2 rounded-lg border border-border p-3">
           <legend className="text-sm font-medium">Links (nenhum é obrigatório)</legend>

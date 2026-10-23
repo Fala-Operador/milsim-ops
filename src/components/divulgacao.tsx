@@ -10,7 +10,8 @@ import {
   REGIOES, UF_REGIAO, hrefDoLink, linkPrincipal, rotuloAbrangencia, rotuloDoLink,
   type CartaoEventoResolvido, type SecaoResolvida,
 } from "@/lib/divulgacao";
-import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
+import { formatarDataBR } from "@/lib/domain/money";
+import { Preco } from "@/components/Preco";
 import { Badge } from "@/components/ui/badge";
 import { NativeSelect } from "@/components/ui/native-select";
 import { SectionCarousel } from "@/components/SectionCarousel";
@@ -137,10 +138,9 @@ export function CartaoEvento({ c }: { c: CartaoEventoResolvido }) {
             <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{e.cidade} · {e.uf}</span>
           </div>
         )}
-        {(c.selo || c.campanhaId) && (
+        {c.selo && (
           <span className="absolute left-2 top-2 flex gap-1">
-            {c.campanhaId && <Badge variant="warning">Em destaque</Badge>}
-            {c.selo && <Badge variant="warning">{c.selo}</Badge>}
+            <Badge variant="warning">{c.selo}</Badge>
           </span>
         )}
       </div>
@@ -154,7 +154,7 @@ export function CartaoEvento({ c }: { c: CartaoEventoResolvido }) {
         </div>
         <p className="mt-1 text-sm text-muted-foreground">{formatarDataBR(e.inicioEm)} · {e.cidade}/{e.uf}</p>
         {c.chamada && <p className="mt-2 text-sm">{c.chamada}</p>}
-        <p className="mt-2 text-sm">A partir de <span className="text-accent">{formatarBRL(precoInicial(e))}</span></p>
+        <p className="mt-2 text-sm">A partir de <Preco centavos={precoInicial(e)} className="text-accent" /></p>
       </div>
     </Link>
   );

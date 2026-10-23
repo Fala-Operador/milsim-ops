@@ -8,7 +8,10 @@ import { ehModalidade, MODALIDADES } from "@/lib/modalidades";
 import { dataUrlParaBlobUrl, pdfParaDataUrl } from "@/lib/imagens";
 import type { Ocupacao } from "@/lib/eventoEditor";
 import { formatarContatoWhatsapp, normalizarContatoWhatsapp } from "@/lib/contatoEvento";
-import { Ajuda, inval, MsgErro, paraLocal, Secao, type PropsEtapa } from "./comum";
+import { mascaraCep } from "@/lib/domain/validators";
+import { textoBuscaCep, useBuscaCep } from "@/hooks/useBuscaCep";
+import { deCampoNoFuso, paraCampoNoFuso, trocarFuso } from "@/lib/fusoHorario";
+import { Ajuda, inval, MsgErro, Secao, type PropsEtapa } from "./comum";
 
 const UFS = "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" ");
 const FUSOS = [
@@ -79,19 +82,33 @@ export function EtapaGeral({ ev, set, erros, organizacoes, podeEscolherOrg }: Pr
 }
 
 export function EtapaLocal({ ev, set, erros }: PropsEtapa) {
+  // Datas e horários são digitados no fuso do evento; ao trocar o fuso, a hora digitada se mantém.
+  const trocarFusoDoEvento = (fuso: string) => {
+    set("inicioEm", trocarFuso(ev.inicioEm, ev.fuso, fuso));
+    set("fimEm", trocarFuso(ev.fimEm, ev.fuso, fuso));
+    set("lotes", ev.lotes.map((l) => ({ ...l, inicioVendas: trocarFuso(l.inicioVendas, ev.fuso, fuso), fimVendas: trocarFuso(l.fimVendas, ev.fuso, fuso) })));
+    set("fuso", fuso);
+  };
+  // CEP novo preenche endereço, cidade e UF (campos seguem editáveis; vazio do ViaCEP não apaga nada).
+  const buscaCep = useBuscaCep(ev.cep, (r) => {
+    const endereco = [r.logradouro, r.bairro].filter(Boolean).join(", ");
+    if (endereco) set("endereco", endereco);
+    if (r.cidade) set("cidade", r.cidade);
+    if (UFS.includes(r.uf)) set("uf", r.uf);
+  });
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <Campo rotulo="Início" htmlFor="ev-ini">
-          <Input id="ev-ini" type="datetime-local" value={paraLocal(ev.inicioEm)} onChange={(e) => e.target.value && set("inicioEm", new Date(e.target.value).toISOString())} {...inval(erros, "ev-ini")} />
+          <Input id="ev-ini" type="datetime-local" value={paraCampoNoFuso(ev.inicioEm, ev.fuso)} onChange={(e) => { const iso = deCampoNoFuso(e.target.value, ev.fuso); if (iso) set("inicioEm", iso); }} {...inval(erros, "ev-ini")} />
           <MsgErro erros={erros} id="ev-ini" />
         </Campo>
         <Campo rotulo="Término" htmlFor="ev-fim">
-          <Input id="ev-fim" type="datetime-local" value={paraLocal(ev.fimEm)} onChange={(e) => e.target.value && set("fimEm", new Date(e.target.value).toISOString())} {...inval(erros, "ev-fim")} />
+          <Input id="ev-fim" type="datetime-local" value={paraCampoNoFuso(ev.fimEm, ev.fuso)} onChange={(e) => { const iso = deCampoNoFuso(e.target.value, ev.fuso); if (iso) set("fimEm", iso); }} {...inval(erros, "ev-fim")} />
           <MsgErro erros={erros} id="ev-fim" />
         </Campo>
         <Campo rotulo="Fuso horário" htmlFor="ev-fuso">
-          <NativeSelect id="ev-fuso" value={ev.fuso} onChange={(e) => set("fuso", e.target.value)}>
+          <NativeSelect id="ev-fuso" value={ev.fuso} onChange={(e) => trocarFusoDoEvento(e.target.value)}>
             {FUSOS.map(([v, r]) => <option key={v} value={v}>{r}</option>)}
             {!FUSOS.some(([v]) => v === ev.fuso) && <option value={ev.fuso}>{ev.fuso}</option>}
           </NativeSelect>
@@ -103,8 +120,9 @@ export function EtapaLocal({ ev, set, erros }: PropsEtapa) {
       </Campo>
       <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
         <Campo rotulo="CEP (opcional)" htmlFor="ev-cep">
-          <Input id="ev-cep" inputMode="numeric" placeholder="00000-000" maxLength={9} value={ev.cep ?? ""} onChange={(e) => set("cep", e.target.value || undefined)} {...inval(erros, "ev-cep")} />
+          <Input id="ev-cep" inputMode="numeric" autoComplete="postal-code" placeholder="00000-000" maxLength={9} value={ev.cep ?? ""} onChange={(e) => set("cep", mascaraCep(e.target.value) || undefined)} {...inval(erros, "ev-cep")} />
           <MsgErro erros={erros} id="ev-cep" />
+          <p aria-live="polite" className={`mt-1 text-xs ${buscaCep.status === "erro" ? "text-destructive" : "text-muted-foreground"}`}>{textoBuscaCep(buscaCep)}</p>
         </Campo>
         <Campo rotulo="Endereço" htmlFor="ev-end">
           <Input id="ev-end" value={ev.endereco} onChange={(e) => set("endereco", e.target.value)} />
@@ -189,7 +207,7 @@ export function EtapaCronograma({ ev, set, erros, onErroArquivo }: PropsEtapa & 
     <div className="space-y-4">
       <Secao titulo={`Cronograma (${ordenado.length})`} acao={
         <Button type="button" id="ev-at-add" variant="outline"
-          onClick={() => gravar([...ordenado, { id: gerarId("at"), data: paraLocal(ev.inicioEm).slice(0, 10), horario: "08:00", titulo: "", descricao: "", ordem: ordenado.length }])}>
+          onClick={() => gravar([...ordenado, { id: gerarId("at"), data: paraCampoNoFuso(ev.inicioEm, ev.fuso).slice(0, 10), horario: "08:00", titulo: "", descricao: "", ordem: ordenado.length }])}>
           + Adicionar atividade
         </Button>
       }>
@@ -203,7 +221,7 @@ export function EtapaCronograma({ ev, set, erros, onErroArquivo }: PropsEtapa & 
                   <Input id={`at-data-${a.id}`} type="date" value={a.data} onChange={(e) => mudar(a.id, { data: e.target.value })} {...inval(erros, `at-data-${a.id}`)} />
                 </Campo>
                 <Campo rotulo="Horário" htmlFor={`at-hora-${a.id}`}>
-                  <Input id={`at-hora-${a.id}`} type="time" value={a.horario} onChange={(e) => mudar(a.id, { horario: e.target.value })} />
+                  <Input id={`at-hora-${a.id}`} type="time" value={a.horario} onChange={(e) => mudar(a.id, { horario: e.target.value })} {...inval(erros, `at-data-${a.id}`)} />
                 </Campo>
                 <Campo rotulo="Atividade" htmlFor={`at-titulo-${a.id}`}>
                   <Input id={`at-titulo-${a.id}`} value={a.titulo} onChange={(e) => mudar(a.id, { titulo: e.target.value })} {...inval(erros, `at-titulo-${a.id}`)} />

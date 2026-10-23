@@ -1,10 +1,9 @@
-// Botão de localização + seletor (Popover no desktop, Sheet inferior no celular).
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+// Botão de localização + seletor de estado (Popover no desktop, Sheet inferior no celular).
+import { useEffect, useId, useRef, useState } from "react";
 import { Check, ChevronDown, Crosshair, Loader2, MapPin, Search, X } from "lucide-react";
 import { useLocalizacao, mensagemStatus } from "@/contexts/LocalizacaoContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { carregarBase } from "@/services/db";
-import { CIDADES_BASE, buscarLocalidades, normalizar, rotuloCurto, type Localidade } from "@/lib/localizacao";
+import { buscarEstados, rotuloCurto, type Estado } from "@/lib/localizacao";
 import { NACIONAL } from "@/lib/divulgacao";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,14 +21,7 @@ export function SeletorCidade({ compacto = false, className = "" }: { compacto?:
   const idTitulo = useId();
   useEffect(() => setMontado(true), []);
 
-  const lista = useMemo<Localidade[]>(() => {
-    if (!aberto) return CIDADES_BASE;
-    const extras = carregarBase().eventos.map((e) => ({ cidade: e.cidade, uf: e.uf }));
-    const todos = [...CIDADES_BASE, ...extras];
-    const v = new Set<string>();
-    return todos.filter((l) => { const k = `${normalizar(l.cidade)}/${l.uf}`; if (v.has(k)) return false; v.add(k); return true; });
-  }, [aberto]);
-  const resultados = buscarLocalidades(lista, termo, 8);
+  const resultados = buscarEstados(termo);
 
   // Fechar (Esc, clique fora, escolha) devolve o foco ao botão pelo próprio Radix.
   const fechar = () => {
@@ -42,11 +34,11 @@ export function SeletorCidade({ compacto = false, className = "" }: { compacto?:
     buscaRef.current?.focus();
   };
 
-  const escolher = (l: Localidade) => { definirLocal({ escopo: "cidade", cidade: l.cidade, uf: l.uf }); fechar(); };
+  const escolher = (e: Estado) => { definirLocal({ escopo: "estado", uf: e.uf }); fechar(); };
   const rotulo = montado ? rotuloCurto(local) : "Todo o Brasil";
   const obtendo = montado && status === "obtendo";
   const aviso = montado ? mensagemStatus(status) : null;
-  const selecionado = (l: Localidade) => local.escopo === "cidade" && local.uf === l.uf && normalizar(local.cidade ?? "") === normalizar(l.cidade);
+  const selecionado = (e: Estado) => local.escopo !== "nacional" && local.uf === e.uf;
 
   const conteudo = (
     <>
@@ -69,7 +61,7 @@ export function SeletorCidade({ compacto = false, className = "" }: { compacto?:
         {modo === "atual" && <span className="text-xs text-muted-foreground">em uso</span>}
       </Button>
       {aviso && status !== "obtendo" && <p role="status" className="mt-2 text-xs text-muted-foreground">{aviso}</p>}
-      <Label className="mt-3 block text-xs font-medium text-muted-foreground" htmlFor={`${idTitulo}-busca`}>Buscar cidade ou estado</Label>
+      <Label className="mt-3 block text-xs font-medium text-muted-foreground" htmlFor={`${idTitulo}-busca`}>Buscar estado</Label>
       <div className="relative mt-1">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -78,11 +70,11 @@ export function SeletorCidade({ compacto = false, className = "" }: { compacto?:
           type="search"
           value={termo}
           onChange={(e) => setTermo(e.target.value)}
-          placeholder="Ex.: Campinas ou SP"
+          placeholder="Ex.: São Paulo ou SP"
           className="w-full rounded-md border border-input bg-background py-2 pl-8 pr-3 text-sm focus:border-ring focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </div>
-      <ul className="mt-2 min-h-0 flex-1 overflow-y-auto" aria-label="Localidades">
+      <ul className="mt-2 max-h-[min(18rem,50dvh)] min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1" aria-label="Estados">
         <li>
           <Button variant="plain" size="none" type="button" onClick={() => { definirLocal(NACIONAL); fechar(); }} aria-pressed={local.escopo === "nacional"}
             className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">
@@ -90,16 +82,16 @@ export function SeletorCidade({ compacto = false, className = "" }: { compacto?:
             {local.escopo === "nacional" && <Check className="h-4 w-4 text-accent" />}
           </Button>
         </li>
-        {resultados.map((l) => (
-          <li key={`${l.cidade}/${l.uf}`}>
-            <Button variant="plain" size="none" type="button" onClick={() => escolher(l)} aria-pressed={selecionado(l)}
+        {resultados.map((e) => (
+          <li key={e.uf}>
+            <Button variant="plain" size="none" type="button" onClick={() => escolher(e)} aria-pressed={selecionado(e)}
               className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">
-              <span>{l.cidade} <span className="text-muted-foreground">· {l.uf}</span></span>
-              {selecionado(l) && <Check className="h-4 w-4 text-accent" />}
+              <span>{e.nome} <span className="text-muted-foreground">· {e.uf}</span></span>
+              {selecionado(e) && <Check className="h-4 w-4 text-accent" />}
             </Button>
           </li>
         ))}
-        {resultados.length === 0 && <li className="px-3 py-2 text-sm text-muted-foreground">Nenhuma cidade encontrada.</li>}
+        {resultados.length === 0 && <li className="px-3 py-2 text-sm text-muted-foreground">Nenhum estado encontrado.</li>}
       </ul>
       <p className="mt-2 text-[11px] text-muted-foreground">
         {montado && modo === "manual" ? "Localização escolhida manualmente." : montado && modo === "atual" ? "Localização atual obtida pelo aparelho." : "Mostrando todo o Brasil."}
@@ -143,7 +135,7 @@ export function SeletorCidade({ compacto = false, className = "" }: { compacto?:
             align="start"
             sideOffset={8}
             onOpenAutoFocus={focarBusca}
-            className="w-[22rem] rounded-lg border-border p-4 shadow-xl"
+            className="flex max-h-[var(--radix-popover-content-available-height)] w-[22rem] flex-col rounded-lg border-border p-4 shadow-xl"
           >
             {conteudo}
           </PopoverContent>

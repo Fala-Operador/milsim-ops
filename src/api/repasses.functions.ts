@@ -15,7 +15,7 @@ import {
   stripeConfigurado,
 } from "@/server/pagamentos.server";
 import { exigirAdmin, mutar } from "@/server/unidade.server";
-import { definirTaxaPlataformaNaBase } from "@/services/repasses";
+import { definirTaxaCompradorNaBase, definirTaxaPlataformaNaBase } from "@/services/repasses";
 import { chamar } from "@/api/cliente";
 
 const entrada = z.object({ organizacaoId: z.string().min(1).max(100) });
@@ -32,6 +32,12 @@ export const definirTaxaPlataformaFn = createServerFn({ method: "POST" })
   .validator(z.object({ percentual: z.number().min(0).max(100) }).parse)
   .handler(({ data }) =>
     mutar(({ base, usuario }) => definirTaxaPlataformaNaBase(base, data.percentual, exigirAdmin(usuario).id)),
+  );
+
+export const definirTaxaCompradorFn = createServerFn({ method: "POST" })
+  .validator(entrada.extend({ percentual: z.number().min(0).max(100) }).parse)
+  .handler(({ data }) =>
+    mutar(({ base, usuario }) => definirTaxaCompradorNaBase(base, data.organizacaoId, data.percentual, usuario)),
   );
 
 export const iniciarCadastroRecebimentoFn = createServerFn({ method: "POST" })
@@ -59,6 +65,7 @@ export const configuracaoRepasse = () => configuracaoRepasseFn();
 export const cadastrarRecebimento = (organizacaoId: string) => chamar(iniciarCadastroRecebimentoFn({ data: { organizacaoId } }));
 export const atualizarRecebimento = (organizacaoId: string) => chamar(sincronizarRecebimentoFn({ data: { organizacaoId } }));
 export const definirTaxaPlataforma = (percentual: number) => chamar(definirTaxaPlataformaFn({ data: { percentual } }));
+export const definirTaxaComprador = (organizacaoId: string, percentual: number) => chamar(definirTaxaCompradorFn({ data: { organizacaoId, percentual } }));
 export const abrirPainelStripe = (organizacaoId: string) => abrirPainelRecebimentoFn({ data: { organizacaoId } });
 export const saldoRecebimento = (organizacaoId: string, atualizar = false) => saldoRecebimentoFn({ data: { organizacaoId, atualizar } });
 export const sessaoComponentesStripeOrg = (organizacaoId: string) => sessaoComponentesStripeFn({ data: { organizacaoId } });

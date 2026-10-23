@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { useAbaAtivaVisivel } from "@/hooks/useAbaAtivaVisivel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useExigirLogin } from "@/hooks/useExigirLogin";
-import { useNotifications } from "@/contexts/NotificationContext";
 import { useSuporte } from "@/contexts/SuporteContext";
 import { ErroSecao, SkeletonPagina } from "@/components/ui";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
@@ -27,7 +26,6 @@ const ITENS = [
   { to: "/app/ingressos", rotulo: "Meus ingressos" },
   { to: "/app/comunidades", rotulo: "Comunidades" },
   { to: "/app/missoes", rotulo: "Missões" },
-  { to: "/app/notificacoes", rotulo: "Notificações" },
   { to: "/app/suporte", rotulo: "Suporte" },
   { to: "/app/perfil", rotulo: "Meu perfil" },
   { to: "/app/privacidade", rotulo: "Privacidade" },
@@ -35,7 +33,6 @@ const ITENS = [
 
 function LayoutApp() {
   const { usuario } = useAuth();
-  const { naoLidas } = useNotifications();
   const { naoLidasParticipante } = useSuporte();
   const pathname = useRouterState({ select: (s) => s.location.href });
   // O servidor não conhece a sessão guardada no navegador: mantém o esqueleto até
@@ -66,11 +63,6 @@ function LayoutApp() {
               activeProps={{ className: "bg-secondary text-foreground font-medium" }}
             >
               {item.rotulo}
-              {item.to === "/app/notificacoes" && naoLidas > 0 && (
-                <span className="ml-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                  {naoLidas}
-                </span>
-              )}
               {item.to === "/app/suporte" && naoLidasParticipante > 0 && (
                 <span data-testid="contador-suporte" aria-label={`${naoLidasParticipante} chamados com resposta não lida`} className="ml-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
                   {naoLidasParticipante}

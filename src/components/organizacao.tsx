@@ -3,9 +3,10 @@ import { useEventoOrganizacao } from "@/contexts/OrganizationEventContext";
 import { carregarBase } from "@/services/db";
 import { disponibilidadeNaBase, resumoFinanceiro } from "@/services/inscricoes";
 import { TEXTO_MOTIVO } from "@/lib/vendas";
-import { resumoRepasse } from "@/lib/repasses";
+import { resumoRepasse, taxaDaPlataforma } from "@/lib/repasses";
 import { disputaEmAberto, ROTULO_DISPUTA } from "@/lib/stripe";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
+import { Preco } from "@/components/Preco";
 import { mascararCpf } from "@/lib/domain/validators";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -141,6 +142,8 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
     ["Cupons utilizados", String(r.cuponsUtilizados)],
     ["Integralmente descontadas", String(r.integralmenteDescontadas)],
     ["Reservas aguardando pagamento", String(r.reservasAguardando)],
+    // Taxa vigente (definida pela administração); cada venda guarda a do momento em que foi feita.
+    ["Taxa da plataforma", `${taxaDaPlataforma(carregarBase()).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`],
   ];
   // Vendas pagas online: quanto foi cobrado, a taxa retida e para onde foi o dinheiro.
   const rep = resumoRepasse(carregarBase(), eventoId);
@@ -151,6 +154,7 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
       ["Repassado à organização", formatarBRL(rep.repassado)],
     );
     if (rep.naPlataforma > 0) itens.push(["Com a plataforma (repasse à parte)", formatarBRL(rep.naPlataforma)]);
+    if (rep.taxasComprador > 0) itens.push(["Taxa de serviço paga pelos compradores (repassada à organização)", formatarBRL(rep.taxasComprador)]);
   }
   return (
     <div>
@@ -234,7 +238,7 @@ export function AvisoLotes({ evento, compacto = false, onConfigurar }: { evento:
             <span>{t.nome}</span>
             {d.disponivel ? (
               <span className="flex items-center gap-2 text-muted-foreground">
-                {d.lote.nome} · {formatarBRL(d.precoCentavos)} · {d.restantes} vagas
+                {d.lote.nome} · <Preco centavos={d.precoCentavos} /> · {d.restantes} vagas
                 <Badge variant="success">disponível</Badge>
               </span>
             ) : (

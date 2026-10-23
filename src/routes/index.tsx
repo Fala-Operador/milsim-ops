@@ -4,8 +4,10 @@ import { Crosshair, MapPin, Search } from "lucide-react";
 import { carregarBase } from "@/services/db";
 import { POSICAO_LISTAGEM, type BaseDados, type Evento } from "@/lib/domain/types";
 import { campanhasNaPosicao } from "@/lib/impulsionamento";
+import { idDoVisitante } from "@/services/analytics";
 import { vagasRestantes } from "@/services/inscricoes";
-import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
+import { formatarDataBR } from "@/lib/domain/money";
+import { Preco } from "@/components/Preco";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkeletonGrade } from "@/components/ui";
@@ -105,7 +107,11 @@ function PaginaInicial() {
   }, [versao]);
 
   const agora = new Date();
-  const secoes = base ? montarPaginaInicial(base, local, agora) : [];
+  const semente = base ? idDoVisitante() : "";
+  const secoes = base ? montarPaginaInicial(base, local, agora, { semente }) : [];
+  // "Operações em destaque" (seções de destaques e impulsos) vêm acima de qualquer outra lista.
+  const secoesDestaque = secoes.filter((s) => s.secao.tipo === "destaques");
+  const secoesDemais = secoes.filter((s) => s.secao.tipo !== "destaques");
   const organizacaoDe = (id: string) => base?.organizacoes.find((o) => o.id === id)?.nome ?? "—";
   const publicados = base?.eventos.filter((e) => e.status === "publicado" && eventoElegivel(e, agora)) ?? [];
   const regionais = base ? filtrarEventos(publicados, local, aplicado, organizacaoDe, agora) : [];
@@ -115,8 +121,7 @@ function PaginaInicial() {
   // Bloco da listagem: só campanhas cujo evento já atende a todos os filtros explícitos.
   const idsResultados = new Set(resultados.map((e) => e.id));
   const impulsionados = base
-    ? campanhasNaPosicao(base, POSICAO_LISTAGEM, local, agora)
-        .filter((c) => idsResultados.has(c.eventoId))
+    ? campanhasNaPosicao(base, POSICAO_LISTAGEM, local, agora, { semente, filtro: (id) => idsResultados.has(id) })
         .map((c) => ({ ...resultados.find((e) => e.id === c.eventoId)!, campanhaId: c.id }))
     : [];
   const nacional = local.escopo === "nacional";
@@ -199,6 +204,29 @@ function PaginaInicial() {
           )}
         </div>
       </section>
+
+      {base && !falha && (impulsionados.length > 0 || secoesDestaque.length > 0) && (
+        <section className="mx-auto max-w-6xl px-4 pt-8" aria-label="Operações em destaque">
+          {impulsionados.length > 0 && (
+            <div className="rounded-lg border border-accent/40 p-4" aria-labelledby="t-impulsionados">
+              <h2 id="t-impulsionados" className="font-display text-2xl font-semibold uppercase tracking-wide">Operações em destaque</h2>
+              <p className="text-sm text-muted-foreground">Divulgação da plataforma, de acordo com a sua busca. As demais listas vêm abaixo.</p>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {impulsionados.map((e, i) => (
+                  <CardRastreado key={e.id} ativo eventoId={e.id} origem="destaques" secaoId="listagem" posicao={i + 1} visualizacaoId={visualizacaoId} campanhaId={e.campanhaId}>
+                    <CartaoEvento evento={e} base={base} organizacao={organizacaoDe(e.organizacaoId)} />
+                  </CardRastreado>
+                ))}
+              </div>
+            </div>
+          )}
+          {secoesDestaque.length > 0 && (
+            <div className={impulsionados.length > 0 ? "mt-8" : undefined}>
+              <SecoesPublicas secoes={secoesDestaque} base={base} local={local} rastrear visualizacaoId={visualizacaoId} />
+            </div>
+          )}
+        </section>
+      )}
 
       {base && pref.montado && pref.preferencia.estado === "selecionadas" && !modsSel.length && regionais.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pt-8" aria-label="Operações para você">
@@ -290,23 +318,6 @@ function PaginaInicial() {
             </div>
           </div>
         ) : (
-          <>
-          {impulsionados.length > 0 && (
-            <div className="mt-4 rounded-lg border border-accent/40 p-4" aria-labelledby="t-impulsionados">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 id="t-impulsionados" className="font-display text-lg font-semibold uppercase">Operações em destaque</h3>
-                <Badge variant="warning">Em destaque</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">Divulgação da plataforma, de acordo com a sua busca. Os resultados comuns vêm abaixo.</p>
-              <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {impulsionados.map((e, i) => (
-                  <CardRastreado key={e.id} ativo eventoId={e.id} origem="destaques" secaoId="listagem" posicao={i + 1} visualizacaoId={visualizacaoId} campanhaId={e.campanhaId}>
-                    <CartaoEvento evento={e} base={base} organizacao={organizacaoDe(e.organizacaoId)} />
-                  </CardRastreado>
-                ))}
-              </div>
-            </div>
-          )}
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {resultados.map((e, i) => (
               <CardRastreado key={e.id} ativo eventoId={e.id} origem="busca" posicao={i + 1} visualizacaoId={visualizacaoId}>
@@ -314,13 +325,12 @@ function PaginaInicial() {
               </CardRastreado>
             ))}
           </div>
-          </>
         )}
       </section>
 
-      {base && secoes.length > 0 && (
+      {base && secoesDemais.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pb-10" aria-label="Destaques e parceiros">
-          <SecoesPublicas secoes={secoes} base={base} local={local} rastrear visualizacaoId={visualizacaoId} />
+          <SecoesPublicas secoes={secoesDemais} base={base} local={local} rastrear visualizacaoId={visualizacaoId} />
         </section>
       )}
     </div>
@@ -354,7 +364,7 @@ function CartaoEvento({ evento: e, base, organizacao }: { evento: Evento; base: 
         <p className="mt-2"><span className="inline-block rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{nomeModalidade(e.modalidade)}</span></p>
         <p className="mt-1.5 truncate text-sm text-muted-foreground">{organizacao}</p>
         <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-3">
-          <p className="text-sm">A partir de <span className="font-semibold text-accent">{formatarBRL(precoInicial(e))}</span></p>
+          <p className="text-sm">A partir de <Preco centavos={precoInicial(e)} className="font-semibold text-accent" /></p>
           <span className="text-sm font-medium text-primary group-hover:underline">Ver operação →</span>
         </div>
       </div>

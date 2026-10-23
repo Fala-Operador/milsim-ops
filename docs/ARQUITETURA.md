@@ -114,8 +114,10 @@ regra no próprio banco.
 ### 3.3 Erros
 
 `ErroDominio` (regra violada) chega ao navegador com a mensagem original. Qualquer outro erro é
-registrado no log do servidor e vira "Não foi possível concluir a operação". As telas mostram
-`e.message`.
+registrado no log do servidor como `[erro CÓDIGO]` e vira "Não foi possível concluir a operação.
+Tente novamente. (código CÓDIGO)" (ou "O servidor de dados não respondeu…" quando o Supabase
+devolve 5xx ou não responde). O código é o mesmo nos dois lados: procure-o no log do servidor para
+ver a causa real. As telas mostram `e.message`.
 
 ---
 
@@ -297,7 +299,7 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   direta, sem cobrança).
 - **Repasse às organizações (Stripe Connect Express)**: cada organização cria pelo Financeiro
   uma conta com painel Express, criada pela Accounts v2 (`POST /v2/core/accounts`, conta recebedora
-  com `stripe_transfers`, perdas e taxas com a plataforma; o Stripe não libera a criação pela v1 em
+  com `stripe_transfers` e `merchant.card_payments` (exigido junto), perdas e taxas com a plataforma; o Stripe não libera a criação pela v1 em
   produção para plataformas novas) e usada pela v1 no resto (cadastro hospedado `account_links`,
   sessões, saldo, saques, cobranças com destino, webhook `account.updated`); a situação fica em
   `organizacao.recebimento` (`lib/repasses.ts`, gravada por `services/repasses.ts`, atualizada no
@@ -305,8 +307,9 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   gere a organização. Na reserva, se a conta tem transferências ativas, o pagamento guarda
   `contaDestino` e `taxaCentavos` (taxa da tabela `platform_settings`, editada em
   Administração → Pagamentos); o checkout vira cobrança
-  com destino (`transfer_data.destination` + `application_fee_amount`). Sem conta ativa, o valor
-  fica na plataforma e aparece no financeiro como "repasse à parte". O reembolso de venda
+  com destino (`transfer_data.destination` + `application_fee_amount`). Sem conta ativa não há
+  venda paga: a reserva e o checkout recusam com `MSG_SEM_RECEBIMENTO` (vendas antigas sem
+  destino ainda aparecem no financeiro como "repasse à parte"). O reembolso de venda
   repassada usa `reverse_transfer` e `refund_application_fee`. Com a conta ativa, Financeiro lê
   do Stripe (cabeçalho `Stripe-Account`, cache de 60 s no servidor, nada vai para a base nem
   para a visão) saldo, saques, cronograma e banco (`consultarSaldoRecebimento`, resumo puro em

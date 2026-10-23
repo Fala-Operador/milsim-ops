@@ -3,9 +3,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { restaurarBase } from "@/test/baseTeste";
 import { confirmarInscricao, confirmarPagamentoNaBase } from "@/services/inscricoes";
-import { definirTaxaPlataformaNaBase, descartarContaDeOutroModoNaBase, registrarRecebimentoNaBase } from "@/services/repasses";
+import { definirTaxaCompradorNaBase, definirTaxaPlataformaNaBase, descartarContaDeOutroModoNaBase, registrarRecebimentoNaBase } from "@/services/repasses";
 import { contaDeOutroModo, contaInacessivel, destinoInvalido, mensagemDeFalhaStripe, MSG_FALHA_STRIPE, ocultarChaves } from "@/lib/stripe";
-import { contaParaRepasse, descreverCronograma, MCC_EVENTOS, perfilComercialPadrao, precisaPerfilComercial, recebimentoDaConta, resumoRepasse, resumoSaldo, taxaDaPlataforma, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
+import { contaExistenteDaOrganizacao, contaParaRepasse, descreverCronograma, MCC_EVENTOS, MSG_SEM_RECEBIMENTO, perfilComercialPadrao, precisaPerfilComercial, recebimentoDaConta, resumoRepasse, resumoSaldo, taxaDaPlataforma, taxaDoComprador, taxaPlataforma, type ContaStripe } from "@/lib/repasses";
 import { visaoParaUsuario } from "@/lib/visao";
 import type { BaseDados, Evento } from "@/lib/domain/types";
 
@@ -67,15 +67,16 @@ describe("taxa e destino da cobrança", () => {
     expect(taxaPlataforma(1000, 150)).toBe(1000);
   });
 
-  it("sem conta ativa a venda fica na plataforma; com conta ativa vai para a organização", async () => {
-    const semConta = await reservar();
-    expect(semConta.pagamento).toMatchObject({ contaDestino: undefined, taxaCentavos: undefined });
+  it("sem conta ativa não há venda paga; com conta ativa vai para a organização", async () => {
+    await expect(reservar()).rejects.toThrow(MSG_SEM_RECEBIMENTO);
+    expect(base.inscricoes.filter((i) => i.eventoId === EVT)).toHaveLength(0);
+    registrarRecebimentoNaBase(base, org().id, { id: "acct_1", details_submitted: true });
+    await expect(reservar()).rejects.toThrow(MSG_SEM_RECEBIMENTO);
     registrarRecebimentoNaBase(base, org().id, contaAtiva);
-    base.inscricoes = base.inscricoes.filter((i) => i.id !== semConta.id);
     const comConta = await reservar();
     expect(comConta.pagamento).toMatchObject({ contaDestino: "acct_1", taxaCentavos: 2000, valorCentavos: 20000 });
     confirmarPagamentoNaBase(base, comConta.id, { intencaoId: "pi_1" });
-    expect(resumoRepasse(base, EVT)).toEqual({ cobrado: 20000, taxas: 2000, repassado: 18000, naPlataforma: 0 });
+    expect(resumoRepasse(base, EVT)).toEqual({ cobrado: 20000, taxas: 2000, taxasComprador: 0, repassado: 18000, naPlataforma: 0 });
   });
 });
 
@@ -111,6 +112,32 @@ describe("taxa configurada pela administração", () => {
     expect(base.inscricoes.find((i) => i.id === antes.id)?.pagamento?.taxaCentavos).toBe(2000);
     base.inscricoes = base.inscricoes.filter((i) => i.id !== antes.id);
     expect((await reservar()).pagamento?.taxaCentavos).toBe(1000);
+  });
+
+  it("taxa do comprador é da organização: começa em 0%, valida, só quem gere altera e audita", () => {
+    expect(taxaDoComprador(org())).toBe(0);
+    expect(() => definirTaxaCompradorNaBase(base, org().id, 60, usuario("usr-organizador"))).toThrow(/entre 0% e 50%/);
+    expect(() => definirTaxaCompradorNaBase(base, org().id, 3.5, usuario("usr-participante"))).toThrow(/Apenas a organização/);
+    expect(() => definirTaxaCompradorNaBase(base, org().id, 3.5, null)).toThrow(/Apenas a organização/);
+    definirTaxaCompradorNaBase(base, org().id, 3.5, usuario("usr-organizador"));
+    expect(taxaDoComprador(org())).toBe(3.5);
+    expect(base.configuracoes[0]?.taxaCompradorPercentual).toBeUndefined();
+    expect(taxaDaPlataforma(base)).toBe(10);
+    expect(base.auditoria.at(-1)).toMatchObject({ acao: "taxa_comprador", entidade: "organizacao", entidadeId: org().id, justificativa: "Taxa de serviço do comprador alterada de 0% para 3.5%." });
+    definirTaxaCompradorNaBase(base, org().id, 2, usuario("usr-admin"));
+    expect(taxaDoComprador(org())).toBe(2);
+  });
+
+  it("taxa do comprador vai na reserva e é repassada à organização", async () => {
+    registrarRecebimentoNaBase(base, org().id, contaAtiva);
+    expect((await reservar()).pagamento?.taxaCompradorCentavos).toBeUndefined();
+    base.inscricoes = [];
+    definirTaxaCompradorNaBase(base, org().id, 5, usuario("usr-organizador"));
+    const ins = await reservar();
+    expect(ins.pagamento).toMatchObject({ valorCentavos: 20000, taxaCentavos: 2000, taxaCompradorCentavos: 1000, contaDestino: "acct_1" });
+    Object.assign(ins, { status: "confirmada" });
+    Object.assign(ins.pagamento!, { status: "pago" });
+    expect(resumoRepasse(base, EVT)).toMatchObject({ cobrado: 20000, taxas: 2000, taxasComprador: 1000, repassado: 19000 });
   });
 
   it("taxa chega à administração e aos organizadores, não aos participantes", () => {
@@ -174,10 +201,13 @@ describe("perfil comercial enviado ao Stripe", () => {
     expect(perfilComercialPadrao("Org", "https://localhost").url).toBeUndefined();
   });
 
-  it("completa só contas em cadastro que ainda não têm site nem descrição", () => {
+  it("completa só contas em cadastro sem ramo ou sem site e descrição", () => {
     expect(precisaPerfilComercial({ id: "acct_1" })).toBe(true);
-    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { url: "https://x.com" } })).toBe(false);
-    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { product_description: "Eventos" } })).toBe(false);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { url: "https://milsimops.falaoperador.com.br" } })).toBe(true);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { mcc: MCC_EVENTOS } })).toBe(true);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { mcc: "7999", url: "https://milsimops.falaoperador.com.br" } })).toBe(true);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { mcc: MCC_EVENTOS, url: "https://milsimops.falaoperador.com.br" } })).toBe(false);
+    expect(precisaPerfilComercial({ id: "acct_1", business_profile: { mcc: MCC_EVENTOS, product_description: "Eventos" } })).toBe(false);
     expect(precisaPerfilComercial({ id: "acct_1", details_submitted: true })).toBe(false);
   });
 });
@@ -233,5 +263,21 @@ describe("troca do modo do Stripe (teste → produção)", () => {
     expect(org().recebimento?.contaId).toBe("acct_1");
     descartarContaDeOutroModoNaBase(base, org().id, "acct_1");
     expect(org().recebimento).toBeUndefined();
+  });
+});
+
+describe("uma conta de recebimento por organização", () => {
+  const conta = (id: string, org: string, created: number, extra: Partial<ContaStripe> = {}): ContaStripe => ({ id, metadata: { organizacaoId: org }, created, ...extra });
+
+  it("reaproveita a conta da própria organização, preferindo a que avançou no cadastro", () => {
+    const contas = [conta("acct_a", "org-1", 1), conta("acct_b", "org-1", 2, { details_submitted: true, charges_enabled: true }), conta("acct_c", "org-2", 0)];
+    expect(contaExistenteDaOrganizacao(contas, "org-1")?.id).toBe("acct_b");
+    expect(contaExistenteDaOrganizacao(contas.slice(0, 1).concat(conta("acct_d", "org-1", 3)), "org-1")?.id).toBe("acct_a");
+    expect(contaExistenteDaOrganizacao(contas, "org-3")).toBeUndefined();
+    expect(contaExistenteDaOrganizacao([{ id: "acct_x" }], "org-1")).toBeUndefined();
+  });
+
+  it("não volta para a conta que acabou de ser descartada", () => {
+    expect(contaExistenteDaOrganizacao([conta("acct_a", "org-1", 1)], "org-1", "acct_a")).toBeUndefined();
   });
 });

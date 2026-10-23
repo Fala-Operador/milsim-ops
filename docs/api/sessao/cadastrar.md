@@ -19,18 +19,21 @@ Cria a conta de participante: valida os dados, cria o usuário no Supabase Auth 
 | `nomeCompleto` | string (até 200) |  |
 | `dataNascimento` | string AAAA-MM-DD | Idade mínima de 15 anos. |
 | `email` | string |  |
-| `senha / confirmacaoSenha` | string | Mínimo de 6 caracteres; precisam ser iguais. |
+| `senha / confirmacaoSenha` | string | Mínimo de 6 caracteres, com letra minúscula, letra maiúscula, número e símbolo; precisam ser iguais. O Supabase Auth também recusa senhas vazadas. |
 | `whatsapp` | string | Telefone com DDD. |
 | `cep, logradouro, numero, complemento?, bairro, cidade, uf` | string | Endereço. |
 | `instagram?, squad?` | string | Opcionais (perfil social). |
 | `fotoUrl?` | string (data URL) | Foto opcional; vai para o Storage. |
 | `aceiteTermos, cienciaPrivacidade` | boolean | Obrigatórios (`true`). |
 | `autorizacaoPromocional` | boolean | Consentimento opcional para comunicações. |
+| `fichaEmergencia?` | objeto | Opcional; mesmos campos e regras de [`salvarFichaEmergencia`](../conta/salvarFichaEmergencia.md) (mensagens de erro iguais). |
+| `captcha?` | string | Token do Cloudflare Turnstile, repassado ao CAPTCHA do Supabase Auth (`captchaToken`). Obrigatório quando o CAPTCHA está ligado no Supabase. |
 
 ## Regras
 
 - CPF e e-mail são únicos.
 - Menores de 18 anos (15 a 17) ficam com `autorizacaoResponsavel = "pendente"` e só se inscrevem depois da aprovação do admin.
+- A conta é criada pelo admin (que não passa pelo CAPTCHA) e logo em seguida entra com o token do Turnstile; se o CAPTCHA recusar o token, a conta recém-criada é apagada.
 - Se a gravação do perfil falhar, a conta criada no Auth é apagada (não fica conta órfã).
 - Perfil, papel e organização ficam na tabela `usuarios`, nunca em `user_metadata`.
 
@@ -47,12 +50,15 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - CPF inválido.
 - Telefone/WhatsApp inválido.
 - A senha deve ter ao menos 6 caracteres.
+- A senha deve ter letra minúscula, letra maiúscula, número e símbolo.
 - A confirmação de senha não confere.
 - É necessário ter ao menos 15 anos.
 - Já existe um cadastro com este CPF.
 - Já existe um cadastro com este e-mail.
-- Senha fraca. Use uma senha mais longa.
+- Esta senha já apareceu em vazamentos de dados e não pode ser usada. Escolha outra.
+- Senha fraca. Escolha uma senha mais difícil de adivinhar.
 - Não foi possível criar a conta. Tente novamente.
+- Não conseguimos confirmar que você não é um robô. Refaça a verificação e tente de novo.
 
 ## Exemplo
 
@@ -61,7 +67,7 @@ import { cadastrar } from "@/api/sessao.functions";
 
 await cadastrar({
   cpf: "529.982.247-25", nomeCompleto: "Ana Souza", dataNascimento: "1998-04-12",
-  email: "ana@exemplo.com", senha: "segredo123", confirmacaoSenha: "segredo123",
+  email: "ana@exemplo.com", senha: "Segredo#123", confirmacaoSenha: "Segredo#123",
   whatsapp: "(11) 98888-7777", cep: "01310-100", logradouro: "Av. Paulista", numero: "1000",
   bairro: "Bela Vista", cidade: "São Paulo", uf: "SP",
   aceiteTermos: true, cienciaPrivacidade: true, autorizacaoPromocional: false,

@@ -10,6 +10,7 @@
 //  6. devolve o resultado e a visão atualizada para o navegador.
 import "@tanstack/react-start/server-only";
 import { AsyncLocalStorage } from "node:async_hooks";
+import { randomUUID } from "node:crypto";
 import { registrarProvedorContexto, ErroDominio, type ContextoBase } from "@/services/db";
 import { baseDasTabelas, calcularMudancas, objetosAlterados, type TabelasExportadas } from "@/lib/persistencia";
 import { visaoParaUsuario, type Visao } from "@/lib/visao";
@@ -59,6 +60,13 @@ let exportando: Promise<{ base: BaseDados; versao: number }> | null = null;
 const descreverErro = (error: { message?: string; code?: string }, status: number) =>
   error.message || error.code || `HTTP ${status || "sem resposta"}`;
 
+/** O banco (ou a rede até ele) não respondeu: 5xx ou sem resposta. Vale tentar de novo. */
+class ErroIndisponivel extends Error {}
+
+/** Falha ao falar com o banco: indisponibilidade vira ErroIndisponivel, o resto (schema, permissão) Error comum. */
+const falhaBanco = (contexto: string, error: { message?: string; code?: string }, status: number) =>
+  new (status === 0 || status >= 500 ? ErroIndisponivel : Error)(`${contexto}: ${descreverErro(error, status)}`);
+
 /** Leituras são idempotentes: uma falha transitória (5xx ou rede) ganha uma nova tentativa. */
 async function lerComRetentativa<R extends { error: unknown; status: number }>(ler: () => PromiseLike<R>): Promise<R> {
   const r = await ler();
@@ -71,7 +79,7 @@ async function versaoAtual(): Promise<number> {
   const { data, error, status } = await lerComRetentativa(() =>
     supabaseAdmin().from("base_control").select("version").eq("id", 1).single(),
   );
-  if (error) throw new Error(`Falha ao ler a versão da base: ${descreverErro(error, status)}`);
+  if (error) throw falhaBanco("Falha ao ler a versão da base", error, status);
   return Number(data.version);
 }
 
@@ -80,7 +88,7 @@ async function exportarBase(): Promise<{ base: BaseDados; versao: number }> {
   exportando ??= (async () => {
     try {
       const { data, error, status } = await lerComRetentativa(() => supabaseAdmin().rpc("export_base"));
-      if (error) throw new Error(`Falha ao ler a base: ${descreverErro(error, status)}`);
+      if (error) throw falhaBanco("Falha ao ler a base", error, status);
       const r = data as { version: number; tables: TabelasExportadas };
       const base = baseDasTabelas(r.tables);
       cache = { versao: r.version, base, lidoEm: Date.now() };
@@ -112,11 +120,19 @@ function invalidarCache(): void {
 const usuarioAtivo = (base: BaseDados, id: string | null) =>
   (id && base.usuarios.find((u) => u.id === id && u.ativo)) || null;
 
-/** Erros de regra chegam ao navegador com a mensagem; os demais viram mensagem genérica. */
-function tratarErro(e: unknown): never {
+/**
+ * Erros de regra chegam ao navegador com a mensagem; os demais viram mensagem genérica,
+ * com um código que também sai no log do servidor (o detalhe nunca vai ao navegador).
+ * Procure o código no log do servidor (Dokploy/Lovable) para ver a causa real.
+ */
+export function tratarErro(e: unknown): never {
   if (e instanceof ErroDominio) throw new Error(e.message);
-  console.error(e);
-  throw new Error("Não foi possível concluir a operação. Tente novamente.");
+  const codigo = randomUUID().slice(0, 8).toUpperCase();
+  console.error(`[erro ${codigo}]`, e);
+  if (e instanceof ErroIndisponivel) {
+    throw new Error(`O servidor de dados não respondeu. Tente novamente em instantes. (código ${codigo})`);
+  }
+  throw new Error(`Não foi possível concluir a operação. Tente novamente. (código ${codigo})`);
 }
 
 /**
@@ -130,10 +146,10 @@ export async function ler<T>(
 ): Promise<RespostaApi<T>> {
   try {
     const id = opcoes.usuarioId !== undefined ? opcoes.usuarioId : await idDaSessao();
-    const { base } = await lerBase();
+    const { base, versao } = await lerBase();
     const usuario = usuarioAtivo(base, id);
     const resultado = await armazenamento.run({ base }, () => fn({ base, usuario }));
-    return { resultado, visao: { base: visaoParaUsuario(base, usuario), usuarioId: usuario?.id ?? null } };
+    return { resultado, visao: { base: visaoParaUsuario(base, usuario), usuarioId: usuario?.id ?? null, versao } };
   } catch (e) {
     tratarErro(e);
   }
@@ -201,10 +217,12 @@ export async function mutar<T>(
           await esperarConflito(tentativa); // outra escrita entrou antes: refaz com a base nova
           continue;
         }
-        if (error) throw new Error(`Falha ao gravar: ${descreverErro(error, status)}`);
+        if (error) throw falhaBanco("Falha ao gravar", error, status);
       }
       const depois = usuarioAtivo(base, id);
-      return { resultado, visao: { base: visaoParaUsuario(base, depois), usuarioId: depois?.id ?? null } };
+      // apply_changes incrementa a versão em 1 a cada lote gravado.
+      const versaoNova = Object.keys(lote).length > 0 ? versao + 1 : versao;
+      return { resultado, visao: { base: visaoParaUsuario(base, depois), usuarioId: depois?.id ?? null, versao: versaoNova } };
     }
     throw new ErroDominio("concorrencia", "Muitas alterações ao mesmo tempo. Tente novamente.");
   } catch (e) {

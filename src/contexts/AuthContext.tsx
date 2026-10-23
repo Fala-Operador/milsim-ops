@@ -6,6 +6,7 @@ import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { usuarioIdDaVisao } from "@/api/cliente";
 import { cadastrar, entrar, recarregarVisao, sair } from "@/api/sessao.functions";
 import { encerrarStripeConnect } from "@/components/PaineisStripe";
+import { iniciarTempoReal } from "@/services/tempoReal";
 
 /** Estado da carga inicial da visão (dados do servidor). */
 export type EstadoCarga = "carregando" | "pronto" | "erro";
@@ -14,9 +15,9 @@ interface AuthContextValue {
   usuario: Usuario | null;
   autenticado: boolean;
   carga: EstadoCarga;
-  login: (email: string, senha: string) => Promise<Usuario>;
+  login: (email: string, senha: string, captcha?: string) => Promise<Usuario>;
   logout: () => Promise<void>;
-  registrar: (dados: DadosCadastro) => Promise<Usuario>;
+  registrar: (dados: DadosCadastro, captcha?: string) => Promise<Usuario>;
   /** Busca a visão mais recente no servidor. */
   recarregar: () => Promise<void>;
   podeGerenciarEvento: (organizacaoId: string) => boolean;
@@ -39,6 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useVersaoBase();
   const [carga, setCarga] = useState<EstadoCarga>("carregando");
   const ultimaCarga = useRef(0);
+  const cargaRef = useRef(carga);
+  cargaRef.current = carga;
   const usuario = carga === "pronto" ? usuarioDaVisao() : null;
 
   const recarregar = useCallback(async () => {
@@ -47,8 +50,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await recarregarVisao();
       setCarga("pronto");
     } catch (e) {
-      console.error(e);
-      setCarga((c) => (c === "pronto" ? c : "erro"));
+      // Já carregada (ex.: atualização ao voltar para a aba): segue com a visão atual.
+      if (cargaRef.current === "pronto") {
+        console.warn("Não foi possível atualizar os dados; seguindo com os já carregados.", e);
+        return;
+      }
+      // Carga inicial: uma falha passageira (rede, Supabase oscilando) ganha mais uma tentativa.
+      try {
+        await new Promise((ok) => setTimeout(ok, 1500));
+        await recarregarVisao();
+        setCarga("pronto");
+      } catch (e2) {
+        console.error(e2);
+        setCarga((c) => (c === "pronto" ? c : "erro"));
+      }
     }
   }, []);
 
@@ -62,8 +77,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("focus", aoFocar);
   }, [recarregar]);
 
-  const login = useCallback(async (email: string, senha: string) => {
-    await entrar(email, senha);
+  // Tempo real: gravação de outra pessoa → busca a visão de novo.
+  const pronto = carga === "pronto";
+  useEffect(() => (pronto ? iniciarTempoReal(recarregar) : undefined), [pronto, recarregar]);
+
+  const login = useCallback(async (email: string, senha: string, captcha?: string) => {
+    await entrar(email, senha, captcha);
     const u = usuarioDaVisao();
     if (!u) throw new Error("Não foi possível carregar a conta.");
     return u;
@@ -74,8 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await sair();
   }, []);
 
-  const registrar = useCallback(async (dados: DadosCadastro) => {
-    await cadastrar(dados);
+  const registrar = useCallback(async (dados: DadosCadastro, captcha?: string) => {
+    await cadastrar(dados, captcha);
     const u = usuarioDaVisao();
     if (!u) throw new Error("Não foi possível carregar a conta.");
     return u;
