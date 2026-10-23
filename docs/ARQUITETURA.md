@@ -363,7 +363,6 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   `milsim-demo:tema-conta`, que é apagada ao sair.
 - **Localização e preferências**: a localização (cidade/UF) e as preferências do visitante ficam
   no `localStorage`; as da conta, na tabela `usuarios`.
-- **Insights IA** (`lib/insights.*`): resumo agregado enviado ao gateway de IA do Lovable.
 - **Contato do evento no WhatsApp** (`lib/contatoEvento.ts`): normalização do número (DDI) e do
   convite do grupo (só `chat.whatsapp.com`), validação no editor e no servidor (`salvarEvento`) e
   `podeVerGrupo`, usado pela visão para entregar o link só a inscritos confirmados e à gestão.
@@ -407,7 +406,7 @@ Regras detalhadas de cada área: [regras-de-negocio.md](regras-de-negocio.md).
 | `checkin.test.ts`, `conta-checkin.test.ts` | check-in offline, fila e conflitos; operações da conta |
 | `perfil-operador.test.ts`, `foto-perfil.test.ts`, `instagram.test.ts` | perfil social, privacidade, fotos, links |
 | `divulgacao.test.ts`, `impulsionamento.test.ts`, `carrossel.test.ts`, `localizacao-tema.test.ts` | página inicial, impulsionamento, localização e tema |
-| `relatorio-metricas.test.ts`, `insights.test.ts` | métricas e insights |
+| `relatorio-metricas.test.ts` | métricas |
 | `persistencia.test.ts` | camelCase↔snake_case, timestamps, ida e volta da base inteira, diff mínimo, chave composta |
 | `visao.test.ts` | o que cada perfil recebe (sem CPF/e-mail para visitantes, cupons isolados por organização, inscrições anônimas...) |
 | `app-routing.test.tsx`, `error-boundary.test.tsx`, `editor-imagem.test.tsx`, `manual-regras.test.ts` | rotas, erros de página, recorte de imagem, manual de regras |

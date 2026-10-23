@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { SeletorCidade } from "./SeletorCidade";
+import { ItensMenuArea, totalPendencias, useMenuArea } from "./MenuLateral";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const itemMenu = "flex w-full items-center rounded px-3 py-2 text-left text-sm hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring";
@@ -152,6 +153,8 @@ export function Header() {
   };
 
   const primeiroNome = usuarioVisivel?.nomeCompleto.split(" ")[0] ?? "";
+  const menuArea = useMenuArea();
+  const pendenciasArea = menuArea ? totalPendencias(menuArea.grupos) : 0;
 
   return (
     <header className={`sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur transition-shadow motion-reduce:transition-none ${rolado ? "shadow-md" : ""}`}>
@@ -159,8 +162,10 @@ export function Header() {
         {/* Esquerda: marca */}
         <Link to="/" aria-label="MILSIM OPS — página inicial" className={`flex min-w-0 items-center gap-2.5 justify-self-start rounded-md ${foco}`}>
           <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary font-mono text-sm font-bold text-primary-foreground">MS</span>
-          <span aria-hidden="true" className="truncate font-display text-lg font-semibold tracking-wide text-foreground">MILSIM OPS</span>
+          <span aria-hidden="true" className="hidden truncate font-display text-lg font-semibold tracking-wide text-foreground lg:inline">MILSIM OPS</span>
         </Link>
+        {/* Celular: só a marca MS; a localização ocupa o lugar do nome (uma linha só). */}
+        <SeletorCidade compacto className="min-w-0 lg:hidden" />
 
         {/* Centro: navegação (desktop) */}
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Navegação principal">
@@ -202,14 +207,18 @@ export function Header() {
           )}
           <Sheet open={painelAberto} onOpenChange={setPainelAberto}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="none" aria-label="Abrir menu" className={`h-11 w-11 lg:hidden ${foco}`}>
+              <Button variant="ghost" size="none" aria-label={pendenciasArea > 0 ? `Abrir menu (${pendenciasArea} pendências)` : "Abrir menu"} className={`relative h-11 w-11 shrink-0 lg:hidden ${foco}`}>
                 <Menu className="h-5 w-5" aria-hidden="true" />
+                {pendenciasArea > 0 && (
+                  <span aria-hidden="true" className="absolute right-1 top-1 min-w-4 rounded-full bg-accent px-1 text-center text-[10px] font-bold leading-4 text-accent-foreground">{pendenciasArea}</span>
+                )}
               </Button>
             </SheetTrigger>
             <SheetContent side="right" showCloseButton={false} aria-describedby={undefined}
-              className="z-[60] flex w-[min(20rem,88vw)] flex-col gap-0 overflow-y-auto border-border p-3 shadow-2xl sm:max-w-none">
+              className="z-[60] flex h-dvh w-[min(20rem,88vw)] flex-col gap-0 overflow-hidden border-border p-0 shadow-2xl sm:max-w-none">
               <SheetTitle className="sr-only">Menu</SheetTitle>
-              <div className="flex items-center justify-between pb-2">
+              {/* Topo fora da área que rola: conta e botão de fechar sempre à vista. */}
+              <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-2">
                 {usuarioVisivel ? (
                   <div className="flex min-w-0 items-center gap-2">
                     <AvatarConta nome={usuarioVisivel.nomeCompleto} foto={usuarioVisivel.fotoUrl} />
@@ -222,6 +231,14 @@ export function Header() {
                   </Button>
                 </SheetClose>
               </div>
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              {/* Dentro da Administração/Organização, as seções da área vêm primeiro (um único menu). */}
+              {menuArea && (
+                <nav aria-label={`Seções: ${menuArea.titulo}`} className="py-3">
+                  <p className="px-3 pb-2 font-display text-base font-semibold uppercase">{menuArea.titulo}</p>
+                  <ItensMenuArea grupos={menuArea.grupos} aoNavegar={() => setPainelAberto(false)} />
+                </nav>
+              )}
               <nav aria-label="Navegação principal" className="flex flex-col gap-1 border-t border-border py-2">
                 <Navegacao logado={!!usuarioVisivel} vertical aoNavegar={() => setPainelAberto(false)} />
               </nav>
@@ -239,14 +256,10 @@ export function Header() {
                   </Button>
                 </div>
               )}
+              </div>
             </SheetContent>
           </Sheet>
         </div>
-      </div>
-
-      {/* Faixa de localização no celular */}
-      <div className="border-t border-border px-4 py-1.5 lg:hidden">
-        <SeletorCidade compacto />
       </div>
     </header>
   );
