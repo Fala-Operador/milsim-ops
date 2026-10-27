@@ -79,7 +79,7 @@ sequenceDiagram
     participant App as Site (server functions)
     participant DB as Banco
     participant S as Stripe
-    participant E as Edge Function stripe-webhook
+    participant E as Edge Function milsim-stripe-webhook
 
     P->>App: confirmarInscricao (clienteId)
     App->>DB: valida tudo e cria reserva "pendente" (32 min)<br/>prende vaga, cupom e benefício

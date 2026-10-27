@@ -397,5 +397,5 @@ Impulsos comprados pela organização (24h a 30 dias) e usados nas próprias ope
 
 | Endpoint | Quem chama | O que faz |
 |---|---|---|
-| [`stripe-webhook`](webhooks/stripe-webhook-edge.md) (Edge Function) | Stripe | Confere a assinatura do Stripe e repassa o evento ao site. |
-| [`POST /api/stripe/webhook`](webhooks/stripe-webhook-site.md) | Edge Function `stripe-webhook` | Aplica pagamentos, reembolsos e a situação das contas Connect. |
+| [`milsim-stripe-webhook`](webhooks/stripe-webhook-edge.md) (Edge Function) | Stripe | Confere a assinatura do Stripe e repassa o evento ao site. |
+| [`POST /api/stripe/webhook`](webhooks/stripe-webhook-site.md) | Edge Function `milsim-stripe-webhook` | Aplica pagamentos, reembolsos e a situação das contas Connect. |

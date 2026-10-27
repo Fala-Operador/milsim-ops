@@ -1,12 +1,14 @@
-// Edge Function "stripe-webhook": endpoint cadastrado no Stripe para os webhooks da conta da
-// plataforma e de Connect. Confere a assinatura do Stripe (Stripe-Signature) com os segredos
+// Edge Function "milsim-stripe-webhook": endpoint cadastrado no Stripe para os webhooks da conta da
+// plataforma e de Connect. O nome não é "stripe-webhook" porque a integração Stripe Sync do
+// Supabase publica a função dela com esse nome fixo (e o segredo STRIPE_WEBHOOK_SECRET); com o mesmo
+// nome, um deploy apagava o outro. Confere a assinatura do Stripe (Stripe-Signature) com os segredos
 // guardados só aqui e repassa o evento, intacto, para a API do site, assinado com o segredo
 // compartilhado STRIPE_WEBHOOK_FORWARD_SECRET. As regras (confirmar inscrição, liberar vaga, reembolso,
 // situação da conta da organização) rodam no site, em src/server/pagamentos.server.ts.
 //
 // Segredos (Supabase → Edge Functions → Secrets); o nome antigo, entre parênteses, ainda vale:
 //   STRIPE_PAYMENTS_WEBHOOK_SIGNING_SECRET  whsec_... do endpoint "Events on your account"
-//                                           (STRIPE_WEBHOOK_SECRET)
+//                                           (sem nome antigo: STRIPE_WEBHOOK_SECRET é do Stripe Sync)
 //   STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET   whsec_... do endpoint "Events on Connected accounts"
 //                                           (STRIPE_CONNECT_WEBHOOK_SECRET)
 //   STRIPE_WEBHOOK_FORWARD_URL              https://<site>/api/stripe/webhook (MILSIM_WEBHOOK_URL)
@@ -20,7 +22,7 @@
 //   contas conectadas (Connect): account.updated
 //
 // Publicar sem exigir JWT (o Stripe não envia token do Supabase):
-//   supabase functions deploy stripe-webhook --no-verify-jwt
+//   supabase functions deploy milsim-stripe-webhook --no-verify-jwt
 
 const TOLERANCIA_S = 300; // mesma tolerância do SDK do Stripe (protege contra replay)
 const CABECALHO_INTERNO = "x-milsim-assinatura";
@@ -72,18 +74,19 @@ function resumoNaoVerificado(corpo: string): string {
 }
 
 /** Lê o segredo pelo nome novo ou, enquanto não for recadastrado, pelo nome antigo. */
-const lerSegredo = (nome: string, nomeAntigo: string) => Deno.env.get(nome)?.trim() || Deno.env.get(nomeAntigo)?.trim() || undefined;
+const lerSegredo = (nome: string, nomeAntigo?: string) =>
+  Deno.env.get(nome)?.trim() || (nomeAntigo ? Deno.env.get(nomeAntigo)?.trim() : undefined) || undefined;
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Método não permitido.", { status: 405 });
   const segredos = [
-    lerSegredo("STRIPE_PAYMENTS_WEBHOOK_SIGNING_SECRET", "STRIPE_WEBHOOK_SECRET"),
+    lerSegredo("STRIPE_PAYMENTS_WEBHOOK_SIGNING_SECRET"),
     lerSegredo("STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET", "STRIPE_CONNECT_WEBHOOK_SECRET"),
   ].filter((s): s is string => !!s);
   const destino = lerSegredo("STRIPE_WEBHOOK_FORWARD_URL", "MILSIM_WEBHOOK_URL");
   const segredoInterno = lerSegredo("STRIPE_WEBHOOK_FORWARD_SECRET", "MILSIM_WEBHOOK_SECRET");
   if (!segredos.length || !destino || !segredoInterno) {
-    console.error("stripe-webhook: segredos ou URL do site não configurados");
+    console.error("milsim-stripe-webhook: segredos ou URL do site não configurados");
     return new Response("Função não configurada.", { status: 500 }); // o Stripe tenta de novo depois
   }
 
@@ -91,8 +94,8 @@ Deno.serve(async (req) => {
   const motivo = await motivoAssinaturaInvalida(corpo, req.headers.get("stripe-signature"), segredos);
   if (motivo) {
     // Texto diferente do 400 do site, para saber no painel do Stripe quem recusou o evento.
-    console.warn(`stripe-webhook: assinatura recusada (${motivo}); ${segredos.length} segredo(s) configurado(s); evento não verificado: ${resumoNaoVerificado(corpo)}`);
-    return new Response(`Assinatura do Stripe recusada pela função stripe-webhook: ${motivo}.`, { status: 400 });
+    console.warn(`milsim-stripe-webhook: assinatura recusada (${motivo}); ${segredos.length} segredo(s) configurado(s); evento não verificado: ${resumoNaoVerificado(corpo)}`);
+    return new Response(`Assinatura do Stripe recusada pela função milsim-stripe-webhook: ${motivo}.`, { status: 400 });
   }
 
   // Repassa o evento ao site com a assinatura interna (mesmo formato do Stripe).
@@ -105,9 +108,9 @@ Deno.serve(async (req) => {
       signal: AbortSignal.timeout(25_000),
     });
     if (r.ok) return Response.json({ recebido: true });
-    console.error("stripe-webhook: site respondeu", r.status, (await r.text()).slice(0, 300));
+    console.error("milsim-stripe-webhook: site respondeu", r.status, (await r.text()).slice(0, 300));
   } catch (e) {
-    console.error("stripe-webhook: falha ao chamar o site", e);
+    console.error("milsim-stripe-webhook: falha ao chamar o site", e);
   }
   // Erro devolvido ao Stripe = nova tentativa mais tarde (o tratamento no site é idempotente).
   return new Response("Falha ao repassar o evento.", { status: 502 });
