@@ -1,5 +1,5 @@
 // Eventos do Stripe (POST /api/stripe/webhook). Quem chama é a Edge Function do Supabase
-// `stripe-webhook` (supabase/functions/stripe-webhook): ela recebe os webhooks do Stripe,
+// `milsim-stripe-webhook` (supabase/functions/milsim-stripe-webhook): ela recebe os webhooks do Stripe,
 // confere a assinatura do Stripe com STRIPE_WEBHOOK_SECRET / STRIPE_CONNECT_WEBHOOK_SECRET
 // (guardados só no Supabase) e repassa o evento para cá assinado com MILSIM_WEBHOOK_SECRET,
 // o segredo compartilhado entre a função e o site. A assinatura é conferida sobre o corpo

@@ -280,7 +280,7 @@ entrada, regras, erros e exemplo de cada uma, está em **[docs/api/](api/README.
 | `missoes` | missões pré-evento: criar, publicar, entregar, avaliar, destacar, prêmios, encerrar, placar e temporada |
 
 Todas as server functions passam pelo middleware de CSRF de `src/start.ts`. O único endpoint
-HTTP público é `POST /api/stripe/webhook`, chamado pela Edge Function `stripe-webhook`.
+HTTP público é `POST /api/stripe/webhook`, chamado pela Edge Function `milsim-stripe-webhook`.
 
 ---
 
@@ -300,7 +300,7 @@ As regras abaixo são as mesmas de antes da migração. A diferença é que agor
   de `mutar`** (que pode repetir a função). Com `STRIPE_SERVER_API_KEY` configurada, inscrição com
   valor a pagar nasce `pendente` com `pagamento.status = "aguardando"` e reserva a vaga (e o uso
   do cupom/benefício) por 32 min, o mesmo prazo da Checkout Session. Confirmam a inscrição o
-  webhook (Stripe → Edge Function `supabase/functions/stripe-webhook`, que confere a assinatura
+  webhook (Stripe → Edge Function `supabase/functions/milsim-stripe-webhook`, que confere a assinatura
   do Stripe com os `whsec_` guardados no Supabase e repassa o evento assinado com
   `STRIPE_WEBHOOK_FORWARD_SECRET` → `POST /api/stripe/webhook`, `routes/api.stripe.webhook.ts`) e o retorno do checkout
   (`sincronizarPagamentoFn`), ambos idempotentes. Reserva expirada, pagamento recusado ou
@@ -433,7 +433,7 @@ docs/
 supabase/
   config.toml                      configuração do projeto (Auth: site_url e redirects)
   migrations/                      esquema versionado (aplicado pelo deploy)
-  functions/stripe-webhook/        Edge Function: confere a assinatura do Stripe e repassa ao site
+  functions/milsim-stripe-webhook/        Edge Function: confere a assinatura do Stripe e repassa ao site
   tests/                           testes pgTAP do banco
 src/routes/api.stripe.webhook.ts   POST /api/stripe/webhook (eventos do Stripe)
 src/server/

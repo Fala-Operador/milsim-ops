@@ -1,6 +1,6 @@
 // Cliente mínimo da API do Stripe (REST + fetch, sem SDK). Nunca importar no navegador.
 // Variáveis do site: STRIPE_SERVER_API_KEY (sk_...), STRIPE_BROWSER_PUBLIC_KEY (pk_..., opcional)
-// e STRIPE_WEBHOOK_FORWARD_SECRET (compartilhado com a Edge Function stripe-webhook, que guarda
+// e STRIPE_WEBHOOK_FORWARD_SECRET (compartilhado com a Edge Function milsim-stripe-webhook, que guarda
 // os segredos de assinatura do Stripe). Sem a chave da API, inscrições confirmam sem cobrança.
 import "@tanstack/react-start/server-only";
 import { codificarFormulario, problemaDasChaves, type CobrancaStripe, type SessaoCheckout } from "@/lib/stripe";
@@ -30,7 +30,7 @@ export function problemaChavesStripe(): string {
   return problemaDasChaves(chaveApi(), chavePublicavel());
 }
 
-/** Segredo com que a Edge Function stripe-webhook assina os eventos repassados ao site. */
+/** Segredo com que a Edge Function milsim-stripe-webhook assina os eventos repassados ao site. */
 export function segredoWebhookInterno(): string {
   return variavel("STRIPE_WEBHOOK_FORWARD_SECRET", "MILSIM_WEBHOOK_SECRET") ?? "";
 }

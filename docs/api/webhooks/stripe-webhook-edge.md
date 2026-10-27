@@ -1,13 +1,13 @@
-# `stripe-webhook` (Edge Function)
+# `milsim-stripe-webhook` (Edge Function)
 
-[← Índice de APIs](../README.md#webhooks) · Código: [`supabase/functions/stripe-webhook/index.ts`](../../../supabase/functions/stripe-webhook/index.ts)
+[← Índice de APIs](../README.md#webhooks) · Código: [`supabase/functions/milsim-stripe-webhook/index.ts`](../../../supabase/functions/milsim-stripe-webhook/index.ts)
 
 | | |
 |---|---|
-| Endpoint | `POST https://<ref>.supabase.co/functions/v1/stripe-webhook` |
+| Endpoint | `POST https://<ref>.supabase.co/functions/v1/milsim-stripe-webhook` |
 | Quem chama | Stripe (eventos da conta da plataforma e das contas Connect) |
 | Autenticação | Assinatura `Stripe-Signature` (HMAC-SHA256), sem JWT do Supabase (`--no-verify-jwt`) |
-| Publicação | `supabase functions deploy stripe-webhook --no-verify-jwt` (o deploy do GitHub Actions publica sozinho) |
+| Publicação | `supabase functions deploy milsim-stripe-webhook --no-verify-jwt` (o deploy do GitHub Actions publica sozinho) |
 
 Endpoint cadastrado no painel do Stripe. Confere a assinatura do Stripe com os segredos
 guardados **só no Supabase** e repassa o evento, intacto, para a API do site
@@ -18,10 +18,15 @@ regra de negócio roda aqui.
 
 | Segredo | Valor |
 |---|---|
-| `STRIPE_WEBHOOK_SECRET` | `whsec_…` do endpoint "Events on your account" |
-| `STRIPE_CONNECT_WEBHOOK_SECRET` | `whsec_…` do endpoint "Events on Connected accounts" |
-| `MILSIM_WEBHOOK_URL` | `https://<site>/api/stripe/webhook` |
-| `MILSIM_WEBHOOK_SECRET` | segredo aleatório, igual ao configurado no site |
+| `STRIPE_PAYMENTS_WEBHOOK_SIGNING_SECRET` | `whsec_…` do endpoint "Events on your account" |
+| `STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET` | `whsec_…` do endpoint "Events on Connected accounts" |
+| `STRIPE_WEBHOOK_FORWARD_URL` | `https://<site>/api/stripe/webhook` |
+| `STRIPE_WEBHOOK_FORWARD_SECRET` | segredo aleatório, igual ao configurado no site |
+
+`STRIPE_WEBHOOK_SECRET` e a função `stripe-webhook` pertencem à integração Stripe Sync do
+Supabase (sincroniza dados do Stripe para o schema `stripe`). Por isso esta função tem outro nome
+e não lê esse segredo. O destino do Stripe Sync no Stripe (`metadata.managed_by = stripe-sync`)
+aponta para `/functions/v1/stripe-webhook` e não deve apontar para esta função.
 
 Eventos que precisam estar marcados no Stripe: `checkout.session.completed`,
 `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`,
@@ -52,14 +57,14 @@ Eventos que precisam estar marcados no Stripe: `checkout.session.completed`,
 Teste local com a Stripe CLI, encaminhando para a função publicada:
 
 ```bash
-stripe listen --forward-to https://<ref>.supabase.co/functions/v1/stripe-webhook
+stripe listen --forward-to https://<ref>.supabase.co/functions/v1/milsim-stripe-webhook
 stripe trigger checkout.session.completed
 ```
 
 Requisição que o Stripe envia (resumida):
 
 ```http
-POST /functions/v1/stripe-webhook HTTP/1.1
+POST /functions/v1/milsim-stripe-webhook HTTP/1.1
 Content-Type: application/json
 Stripe-Signature: t=1792430000,v1=5257a869e7ecebeda32affa62cdca3fa51cad7e77a0e56ff536d0ce8e108d8bd
 
