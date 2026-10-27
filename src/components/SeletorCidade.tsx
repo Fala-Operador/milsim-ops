@@ -111,11 +111,8 @@ export function SeletorCidade({ compacto = false, className = "", variante = "ca
     >
       {obtendo ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-accent motion-reduce:animate-none" /> : <MapPin className="h-4 w-4 shrink-0 text-accent" />}
       {variante === "cabecalho" ? (
-        // No celular só a sigla do estado (ou "Brasil"), para caber ao lado da marca.
-        <span className="truncate font-medium text-foreground xl:max-w-[10rem]">
-          <span className="xl:hidden">{obtendo ? "…" : sigla}</span>
-          <span className="hidden xl:inline">{obtendo ? "Localizando…" : rotulo}</span>
-        </span>
+        // Só a sigla do estado (ou "Brasil"): o nome completo não cabe ao lado do menu central; ele aparece ao abrir.
+        <span className="truncate font-medium text-foreground">{obtendo ? "…" : sigla}</span>
       ) : (
         <span className={`truncate font-medium text-foreground ${compacto ? "max-w-[11rem]" : ""}`}>{obtendo ? "Localizando…" : rotulo}</span>
       )}
