@@ -1,3 +1,4 @@
+import { FaixaIndicadores } from "@/components/FaixaIndicadores";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
@@ -52,8 +53,8 @@ function PaginaCheckin() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="font-display text-xl font-semibold uppercase">Check-in e credenciamento</h2>
-        <p className="text-sm text-muted-foreground">Confirme a presença na portaria. Inscrição confirmada e check-in realizado são coisas diferentes.</p>
+        <h2 className="titulo-pagina">Check-in e credenciamento</h2>
+        <p className="subtitulo-pagina">Confirme a presença na portaria. Inscrição confirmada e check-in realizado são coisas diferentes.</p>
       </div>
       <OperacaoSelecionada eventos={ordenados} evento={evento} invalido={invalido} onSelecionar={selecionar} />
       {/* key: trocar de evento desmonta tudo — desliga a câmera e limpa a leitura anterior */}
@@ -94,34 +95,23 @@ function Portaria() {
 
   return (
     <>
-      {/* Estado da conexão e preparação */}
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Card className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className={`inline-flex items-center gap-2 text-base font-semibold ${ck.online ? "text-success" : "text-warning"}`} role="status">
-              {ck.online ? <Wifi className="h-5 w-5" /> : <WifiOff className="h-5 w-5" />}
-              {ck.online ? "Conectado" : ck.redeReal ? "Sem conexão (simulado)" : "Sem conexão"}
-            </span>
-          </div>
-          <div className="flex flex-col gap-2 text-sm">
-            <Label className="flex items-center gap-2 text-[length:inherit] font-normal text-inherit"><Checkbox className="h-5 w-5" checked={ck.simularOffline} onCheckedChange={(marcado) => ck.setSimularOffline(marcado === true)} /> Simular perda de conexão</Label>
-            <Label className="flex items-center gap-2 text-[length:inherit] font-normal text-inherit"><Checkbox className="h-5 w-5" checked={ck.simularFalha} onCheckedChange={(marcado) => ck.setSimularFalha(marcado === true)} /> Simular falha de sincronização</Label>
-          </div>
-          <p className="text-xs text-muted-foreground">Os registros feitos sem conexão ficam guardados neste aparelho e são enviados ao servidor assim que a conexão volta. As opções acima servem para testar a portaria antes do evento.</p>
-        </Card>
-        <Card className="space-y-2">
-          <p className="flex items-center gap-2 font-semibold">
-            {ck.fonte?.snapshot ? <ShieldCheck className="h-5 w-5 text-success" /> : <CloudOff className="h-5 w-5 text-warning" />}
-            {ck.fonte?.snapshot ? "Aparelho pronto para uso offline" : "Aparelho ainda não preparado para offline"}
-          </p>
-          {ck.fonte?.snapshot ? (
-            <p className="text-sm text-muted-foreground">Última atualização: {dataHora(ck.fonte.snapshot.atualizadoEm)} · {ck.fonte.snapshot.ingressos.filter((i) => i.status === "confirmada").length} ingressos disponíveis para validação</p>
-          ) : <p className="text-sm text-muted-foreground">Prepare antes de ir para um local sem internet.</p>}
-          <p className="text-xs text-muted-foreground">
-            Arquivos da aplicação: {ck.estadoSW === "ativo" ? "Service Worker ativo" : ck.estadoSW === "registrando" ? "verificando…" : "Service Worker indisponível neste navegador/prévia — reabrir sem internet não funcionará aqui"}
-            {!ck.idb && " · IndexedDB indisponível"}
-          </p>
-        </Card>
+      {/* Estado da conexão e preparação: uma faixa só */}
+      <div className="flex flex-col divide-y divide-border rounded-lg border border-border text-sm md:flex-row md:divide-x md:divide-y-0">
+        <div className="flex flex-1 items-center gap-3 p-3">
+          <span className={`h-2 w-2 shrink-0 rounded-full ${ck.online ? "bg-success" : "bg-warning"}`} aria-hidden />
+          <span className="font-semibold" role="status">{ck.online ? "Conectado" : ck.redeReal ? "Sem conexão (simulado)" : "Sem conexão"}</span>
+          <span className="ml-auto flex flex-wrap gap-3 text-xs text-muted-foreground">
+            <Label className="flex items-center gap-1.5 text-[length:inherit] font-normal text-inherit"><Checkbox checked={ck.simularOffline} onCheckedChange={(m) => ck.setSimularOffline(m === true)} />Simular sem rede</Label>
+            <Label className="flex items-center gap-1.5 text-[length:inherit] font-normal text-inherit"><Checkbox checked={ck.simularFalha} onCheckedChange={(m) => ck.setSimularFalha(m === true)} />Simular falha</Label>
+          </span>
+        </div>
+        <div className="flex flex-1 items-center gap-3 p-3">
+          {ck.fonte?.snapshot ? <ShieldCheck className="h-4 w-4 shrink-0 text-success" /> : <CloudOff className="h-4 w-4 shrink-0 text-warning" />}
+          <span className="min-w-0">
+            <span className="font-semibold">{ck.fonte?.snapshot ? "Pronto para offline" : "Offline não preparado"}</span>
+            <span className="block text-xs text-muted-foreground">{ck.fonte?.snapshot ? `Base de ${dataHora(ck.fonte.snapshot.atualizadoEm)}` : "Baixe a base antes de ir para um local sem internet."}{ck.estadoSW !== "ativo" && " · Service Worker indisponível"}</span>
+          </span>
+        </div>
       </div>
 
       {ck.aviso && <p role="status" className="rounded-md border border-border bg-secondary px-4 py-3 text-sm">{ck.aviso}</p>}
@@ -133,15 +123,15 @@ function Portaria() {
       )}
 
       {/* Indicadores */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Indicador icone={Users} rotulo="Inscritos ativos" valor={ativos.length} />
-        <Indicador icone={UserCheck} rotulo="Presenças confirmadas" valor={presentes} />
-        <Indicador icone={Clock} rotulo="Ainda não credenciados" valor={ativos.length - presentes} />
-        <Indicador icone={CloudUpload} rotulo="Pendentes de sincronização" valor={ck.pendentes} />
-      </div>
+      <FaixaIndicadores className="lg:grid-cols-4" itens={[
+        { rotulo: "Inscritos ativos", valor: String(ativos.length) },
+        { rotulo: "Presenças", valor: String(presentes), detalhe: ativos.length ? `${Math.round((presentes / ativos.length) * 100)}% credenciados` : undefined },
+        { rotulo: "Faltam credenciar", valor: String(ativos.length - presentes) },
+        { rotulo: "Na fila offline", valor: String(ck.pendentes), detalhe: ck.pendentes ? "Sincroniza ao voltar a conexão" : "Tudo sincronizado" },
+      ]} />
 
       {/* Ações principais */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5 [&>*:first-child]:col-span-2 [&>*:first-child]:min-h-32 [&>*:first-child]:!border-primary [&>*:first-child]:!bg-primary [&>*:first-child]:text-xl [&>*:first-child]:!text-primary-foreground">
         <BotaoGrande ativo={leitorAberto} onClick={() => { setResultado(null); setLeitorAberto(true); }} disabled={semBase}><QrCode className="h-7 w-7" />Ler QR Code</BotaoGrande>
         <BotaoGrande ativo={modo === "busca"} onClick={() => trocarModo("busca")} disabled={semBase}><Search className="h-7 w-7" />Buscar participante</BotaoGrande>
         <BotaoGrande ativo={modo === "codigo"} onClick={() => trocarModo("codigo")} disabled={semBase}><Keyboard className="h-7 w-7" />Digitar código</BotaoGrande>
@@ -198,7 +188,7 @@ function Indicador({ icone: Icone, rotulo, valor }: { icone: typeof Users; rotul
   );
 }
 
-const GRANDE = "flex min-h-24 flex-col items-center justify-center gap-2 rounded-lg border-2 p-3 text-center text-base font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const GRANDE = "flex min-h-24 flex-col items-center justify-center gap-2 rounded-lg border p-3 text-center text-base font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 // Com `ativo`, alterna um modo (Toggle); sem ele, é uma ação comum (Button).
 function BotaoGrande({ ativo, children, ...p }: React.ButtonHTMLAttributes<HTMLButtonElement> & { ativo?: boolean }) {

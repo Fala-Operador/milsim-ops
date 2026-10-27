@@ -75,9 +75,9 @@ function PaginaFinanceiro() {
   const organizacao = base.organizacoes.find((o) => o.id === (usuario.organizacaoId ?? evento?.organizacaoId));
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-lg font-semibold uppercase">Financeiro</h2>
+        <h2 className="titulo-pagina">Financeiro</h2>
       </div>
       <OperacaoSelecionada eventos={eventos} evento={eventos.find((e) => e.id === eventoId)} invalido={invalido} onSelecionar={setEventoId} />
 
@@ -88,18 +88,20 @@ function PaginaFinanceiro() {
         <Card><p className="text-sm text-muted-foreground">Nenhum evento criado ainda. Crie um evento no Painel.</p></Card>
       ) : (
         evento && (
-          <Card>
+          <section className="pt-2">
+            <h3 className="text-lg font-semibold">Vendas do evento</h3>
             <Financeiro eventoId={evento.id} />
-          </Card>
+          </section>
         )
       )}
 
       {organizacao && (
-        <Card>
+        <section className="border-t border-border pt-6">
           <RecebimentosOrganizacao organizacao={organizacao} retorno={retornoRecebimento} />
-        </Card>
+        </section>
       )}
 
+      <div className="grid gap-4 border-t border-border pt-6 lg:grid-cols-2">
       {organizacao && <CardTaxaPlataforma percentual={taxaDaPlataforma(base)} taxaComprador={taxaDoComprador(organizacao)} />}
 
       {organizacao && (
@@ -112,18 +114,19 @@ function PaginaFinanceiro() {
           exemplo={(p) => `Exemplo: num ingresso de ${formatarBRL(15000)}, o comprador paga ${formatarBRL(15000 + taxaPlataforma(15000, p))} (${formatarBRL(taxaPlataforma(15000, p))} de taxa de serviço).`}
         />
       )}
+      </div>
 
       {evento && (
         <>
-          <Card>
+          <section className="border-t border-border pt-6">
             <AvisoLotes evento={evento} onConfigurar={() => navigate({ to: "/organizacao", search: { lotes: evento.id } })} />
-          </Card>
+          </section>
 
-          <Card>
+          <section className="border-t border-border pt-6">
             <CuponsEvento evento={evento} cupons={base.cupons.filter((c) => c.eventoId === evento.id)} />
-          </Card>
+          </section>
 
-          <Card>
+          <section className="border-t border-border pt-6">
             <h3 className="font-display text-base font-semibold uppercase">Cortesias</h3>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <Campo rotulo="Nome do convidado" htmlFor="ct-nome">
@@ -147,7 +150,7 @@ function PaginaFinanceiro() {
             </div>
             <ul className="mt-3 space-y-1 text-sm">
               {base.cortesias.filter((c) => c.eventoId === evento.id).map((c) => (
-                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-elevated px-3 py-2">
+                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-border/70 py-2">
                   <span>{c.nomeConvidado} — {c.emailConvidado}</span>
                   <span className="flex items-center gap-2">
                     <Badge variant={c.status === "resgatada" ? "success" : c.status === "pendente" ? "warning" : "destructive"}>{c.status}</Badge>
@@ -161,7 +164,7 @@ function PaginaFinanceiro() {
                 </li>
               ))}
             </ul>
-          </Card>
+          </section>
         </>
       )}
     </div>

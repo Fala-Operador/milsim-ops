@@ -10,10 +10,11 @@ import { arquivoParaDataUrl } from "@/lib/imagens";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { EstadoVazio } from "@/components/ui";
+import { FaixaIndicadores } from "@/components/FaixaIndicadores";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface Linha { id: PlanoImpulsoId; rotulo: string; preco: string; validade: string; ativo: boolean; imagem: string }
@@ -80,71 +81,99 @@ export function PlanosImpulso({ base }: { base: BaseDados }) {
   const datas = planosDeImpulso(base).map((p) => p.sincronizadoEm);
   const sincronizacao = datas.every(Boolean) ? (datas as string[]).sort().at(0) : undefined;
 
+  const pagos = base.impulsosComprados.filter((i) => i.pagoEm);
+  const receita = pagos.reduce((t, i) => t + i.precoCentavos, 0);
+  const agora = new Date();
+  const disponiveis = pagos.filter((i) => statusDoImpulso(i, agora) === "disponivel").length;
+
   return (
-    <Card className="space-y-3">
-      <div>
-        <h3 className="font-medium">Impulsos à venda para as organizações</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          A organização compra em Minha organização → Impulsionar, paga à plataforma pelo Stripe e usa numa operação publicada dentro da validade (contada do pagamento).
-          O impulso usado vira uma campanha abaixo, nos destaques e no topo da listagem, em todo o Brasil. Preço 0 libera o tipo de graça.
+    <div className="space-y-8">
+      <FaixaIndicadores className="lg:grid-cols-4" itens={[
+        { rotulo: "Impulsos vendidos", valor: String(pagos.length) },
+        { rotulo: "Receita bruta", valor: formatarBRL(receita) },
+        { rotulo: "Comprados e não usados", valor: String(disponiveis) },
+        { rotulo: "Tipos à venda", valor: `${linhas.filter((l) => l.ativo).length} de ${linhas.length}` },
+      ]} />
+
+      <section aria-labelledby="t-catalogo">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h4 id="t-catalogo" className="text-lg font-semibold">Catálogo</h4>
+          <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+            <span className={`h-1.5 w-1.5 rounded-full ${stripeAtivo ? "bg-success" : "bg-muted-foreground"}`} aria-hidden />
+            {stripeAtivo ? "Stripe ligado · catálogo sincronizado ao salvar" : "Pagamentos online desligados"}
+          </p>
+        </div>
+        <p className="mt-1 max-w-[68ch] text-sm text-muted-foreground">
+          A organização compra em Minha organização → Impulsionar e usa o impulso numa operação publicada dentro da validade, contada do pagamento. Preço 0 libera o tipo de graça.
         </p>
-      </div>
-      <div className="overflow-x-auto">
-        <Table className="w-full min-w-[760px] text-sm">
-          <TableHeader className="text-left text-xs uppercase text-muted-foreground">
-            <TableRow>{["Imagem", "Tipo", "Preço (R$)", "Validade (dias)", "À venda"].map((h) => <TableHead key={h} className="px-2 py-2">{h}</TableHead>)}</TableRow>
-          </TableHeader>
-          <TableBody>
-            {linhas.map((l) => (
-              <TableRow key={l.id} className="border-t border-border">
-                <TableCell className="px-2 py-2">
-                  <div className="flex items-center gap-2">
-                    <img src={l.imagem} alt={`Imagem do ${l.rotulo}`} className="h-12 w-[72px] shrink-0 rounded object-cover" />
-                    <div className="flex flex-col gap-1">
-                      <Label className="inline-flex h-8 cursor-pointer items-center gap-2 whitespace-nowrap rounded-md border border-border px-3 text-xs font-normal hover:bg-secondary focus-within:ring-2 focus-within:ring-ring">
-                        <ImageUp className="size-4" aria-hidden="true" />Trocar imagem
-                        <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label={`Trocar imagem do ${l.rotulo}`}
-                          onChange={(e) => { const a = e.target.files?.[0]; e.target.value = ""; void trocarImagem(l.id, a); }} />
-                      </Label>
-                      {l.imagem !== imagemPadraoImpulso(l.id) && (
-                        <Button type="button" variant="ghost" size="sm" className="h-6 justify-start px-1 text-xs" onClick={() => mudar(l.id, { imagem: imagemPadraoImpulso(l.id) })}>
-                          Usar a padrão
-                        </Button>
-                      )}
+        <ul className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {linhas.map((l) => {
+            const preco = centavos(l.preco);
+            return (
+              <li key={l.id} className={`overflow-hidden rounded-lg border border-border ${l.ativo ? "" : "opacity-70"}`}>
+                <div className="relative aspect-[16/9] bg-secondary">
+                  <img src={l.imagem} alt={`Imagem do ${l.rotulo}`} className="absolute inset-0 h-full w-full object-cover" />
+                  <Label className="absolute right-3 top-3 inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-white/30 bg-black/40 px-2.5 text-xs font-medium text-white hover:bg-black/60 focus-within:ring-2 focus-within:ring-ring">
+                    <ImageUp className="size-3.5" aria-hidden="true" />Trocar
+                    <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label={`Trocar imagem do ${l.rotulo}`}
+                      onChange={(e) => { const a = e.target.files?.[0]; e.target.value = ""; void trocarImagem(l.id, a); }} />
+                  </Label>
+                </div>
+                <div className="flex items-baseline justify-between gap-2 border-b border-border px-4 py-3">
+                  <p className="flex min-w-0 items-center gap-2 font-semibold">
+                    <span className="truncate">{l.rotulo}</span>
+                    <Badge variant={l.ativo ? "success" : "secondary"}>{l.ativo ? "À venda" : "Pausado"}</Badge>
+                  </p>
+                  <p className="font-display text-2xl font-bold tabular-nums leading-none">{Number.isFinite(preco) ? (preco === 0 ? "Grátis" : formatarBRL(preco)) : "—"}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 p-4">
+                  <div>
+                    <Label htmlFor={`preco-${l.id}`} className="rotulo-tecnico">Preço</Label>
+                    <div className="mt-1 flex items-center rounded-md border border-input focus-within:ring-2 focus-within:ring-ring">
+                      <span className="pl-3 font-mono text-xs text-muted-foreground">R$</span>
+                      <Input id={`preco-${l.id}`} inputMode="decimal" value={l.preco} onChange={(e) => mudar(l.id, { preco: e.target.value })}
+                        className="border-0 font-mono tabular-nums shadow-none focus-visible:ring-0" />
                     </div>
                   </div>
-                </TableCell>
-                <TableCell className="px-2 py-2 font-medium">{l.rotulo}</TableCell>
-                <TableCell className="px-2 py-2">
-                  <Input aria-label={`Preço do ${l.rotulo}`} inputMode="decimal" value={l.preco} onChange={(e) => mudar(l.id, { preco: e.target.value })} className="max-w-32" />
-                </TableCell>
-                <TableCell className="px-2 py-2">
-                  <Input aria-label={`Validade do ${l.rotulo}`} inputMode="numeric" value={l.validade} onChange={(e) => mudar(l.id, { validade: e.target.value })} className="max-w-24" />
-                </TableCell>
-                <TableCell className="px-2 py-2">
-                  <Label className="flex items-center gap-2">
-                    <Checkbox checked={l.ativo} onCheckedChange={(v) => mudar(l.id, { ativo: v === true })} />
-                    {l.ativo ? "Sim" : "Não"}
-                  </Label>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
-      {aviso && <p role="status" className="text-sm text-success">{aviso}</p>}
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" disabled={salvando} onClick={() => void salvar()}>{salvando ? "Salvando…" : "Salvar impulsos"}</Button>
-        {stripeAtivo && <Button type="button" variant="outline" disabled={salvando} onClick={() => void sincronizar()}>Sincronizar com o Stripe</Button>}
-      </div>
-      <p className="text-xs text-muted-foreground">
-        {stripeAtivo
-          ? `Cada tipo é um produto do catálogo do Stripe da plataforma (nome, imagem e preço), atualizado ao salvar. ${sincronizacao ? `Última sincronização completa: ${new Date(sincronizacao).toLocaleString("pt-BR")}.` : "Ainda não sincronizado."}`
-          : "Com os pagamentos online desligados, os produtos do Stripe não são criados."}
-      </p>
+                  <div>
+                    <Label htmlFor={`validade-${l.id}`} className="rotulo-tecnico">Validade</Label>
+                    <div className="mt-1 flex items-center rounded-md border border-input focus-within:ring-2 focus-within:ring-ring">
+                      <Input id={`validade-${l.id}`} inputMode="numeric" value={l.validade} onChange={(e) => mudar(l.id, { validade: e.target.value })}
+                        className="border-0 font-mono tabular-nums shadow-none focus-visible:ring-0" />
+                      <span className="pr-3 font-mono text-xs text-muted-foreground">dias</span>
+                    </div>
+                  </div>
+                  <div className="col-span-2 flex items-center justify-between gap-3 border-t border-border pt-3">
+                    <Label htmlFor={`ativo-${l.id}`} className="text-sm">Vender para as organizações</Label>
+                    <Switch id={`ativo-${l.id}`} checked={l.ativo} onCheckedChange={(v) => mudar(l.id, { ativo: v })} />
+                  </div>
+                  {l.imagem !== imagemPadraoImpulso(l.id) && (
+                    <Button type="button" variant="link" size="none" className="col-span-2 justify-start text-xs text-muted-foreground" onClick={() => mudar(l.id, { imagem: imagemPadraoImpulso(l.id) })}>
+                      Voltar para a imagem padrão
+                    </Button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-y border-border py-3">
+          <div className="min-w-0 text-sm">
+            {erro ? <p role="alert" className="text-destructive">{erro}</p>
+              : aviso ? <p role="status" className="text-success">{aviso}</p>
+              : <p className="text-muted-foreground">Os novos valores valem para as próximas compras.
+                  {stripeAtivo && ` ${sincronizacao ? `Última sincronização: ${new Date(sincronizacao).toLocaleString("pt-BR")}.` : "Ainda não sincronizado."}`}</p>}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {stripeAtivo && <Button type="button" variant="ghost" disabled={salvando} onClick={() => void sincronizar()}>Sincronizar com o Stripe</Button>}
+            <Button type="button" disabled={salvando} onClick={() => void salvar()}>{salvando ? "Salvando…" : "Salvar catálogo"}</Button>
+          </div>
+        </div>
+      </section>
+
       <VendasImpulso base={base} />
-    </Card>
+    </div>
   );
 }
 
@@ -154,30 +183,31 @@ function VendasImpulso({ base }: { base: BaseDados }) {
     .filter((i) => i.pagoEm)
     .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm))
     .slice(0, 50);
-  if (!vendas.length) return <p className="text-sm text-muted-foreground">Nenhum impulso vendido ainda.</p>;
+  if (!vendas.length) return <EstadoVazio titulo="Nenhum impulso vendido" descricao="As compras das organizações aparecem aqui, com a operação em que o impulso foi usado." />;
   const nomeOrg = (id: string) => base.organizacoes.find((o) => o.id === id)?.nome ?? "Organização removida";
   const nomeEvento = (id?: string) => (id ? base.eventos.find((e) => e.id === id)?.nome ?? "Operação removida" : "—");
   return (
-    <div className="space-y-2">
-      <h4 className="text-sm font-medium">Últimas vendas</h4>
+    <section aria-labelledby="t-vendas" className="space-y-2">
+      <h4 id="t-vendas" className="text-lg font-semibold">Últimas vendas</h4>
       <div className="overflow-x-auto">
         <Table className="w-full min-w-[640px] text-sm">
           <TableHeader className="text-left text-xs uppercase text-muted-foreground">
-            <TableRow>{["Organização", "Impulso", "Pago em", "Situação", "Operação"].map((h) => <TableHead key={h} className="px-2 py-2">{h}</TableHead>)}</TableRow>
+            <TableRow>{["Pago em", "Organização", "Impulso", "Operação", "Situação", "Valor"].map((h) => <TableHead key={h} className={`rotulo-tecnico px-2 py-2 ${h === "Valor" ? "text-right" : ""}`}>{h}</TableHead>)}</TableRow>
           </TableHeader>
           <TableBody>
             {vendas.map((i) => (
               <TableRow key={i.id} className="border-t border-border">
-                <TableCell className="px-2 py-2">{nomeOrg(i.organizacaoId)}</TableCell>
-                <TableCell className="px-2 py-2 whitespace-nowrap">{rotuloDuracao(i.duracaoHoras)} · {formatarBRL(i.precoCentavos)}</TableCell>
-                <TableCell className="px-2 py-2 whitespace-nowrap">{formatarDataBR(i.pagoEm!)}</TableCell>
-                <TableCell className="px-2 py-2"><Badge variant="outline">{ROTULO_STATUS_IMPULSO[statusDoImpulso(i, agora)]}</Badge></TableCell>
+                <TableCell className="px-2 py-2 whitespace-nowrap font-mono text-xs text-muted-foreground">{formatarDataBR(i.pagoEm!)}</TableCell>
+                <TableCell className="px-2 py-2 font-medium">{nomeOrg(i.organizacaoId)}</TableCell>
+                <TableCell className="px-2 py-2 whitespace-nowrap">{rotuloDuracao(i.duracaoHoras)}</TableCell>
                 <TableCell className="px-2 py-2">{nomeEvento(i.eventoId)}</TableCell>
+                <TableCell className="px-2 py-2"><Badge variant="outline">{ROTULO_STATUS_IMPULSO[statusDoImpulso(i, agora)]}</Badge></TableCell>
+                <TableCell className="px-2 py-2 text-right font-mono tabular-nums">{formatarBRL(i.precoCentavos)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
-    </div>
+    </section>
   );
 }

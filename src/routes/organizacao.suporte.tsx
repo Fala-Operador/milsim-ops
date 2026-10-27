@@ -33,7 +33,7 @@ function SuporteOrganizacao() {
   }
   return (
     <div>
-      <h2 className="font-display text-xl font-semibold">Demandas da administração</h2>
+      <h2 className="titulo-pagina">Demandas da administração</h2>
       <p className="mb-4 mt-1 text-sm text-muted-foreground">Todo chamado é atendido pela administração. Aqui aparecem só as demandas que ela encaminhou à sua organização.</p>
       <EncaminhamentosOrganizacao usuario={usuario} selecionado={selecionado} onSelecionar={(id) => navigate({ search: id ? { e: id } : {}, replace: true })} />
     </div>

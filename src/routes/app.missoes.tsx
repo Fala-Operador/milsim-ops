@@ -10,8 +10,8 @@ import { arquivoParaDataUrl } from "@/lib/imagens";
 import { bloqueioEnvio, ROTULO_STATUS_ENTREGA, ROTULO_TIPO_ENTREGA, situacaoMissao } from "@/lib/missoes";
 import { PlacarCompleto, Temporada } from "@/components/missoes/Placar";
 import { Badge } from "@/components/ui/badge";
+import { FaixaIndicadores } from "@/components/FaixaIndicadores";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,8 +50,8 @@ function PaginaMissoes() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold uppercase">Missões pré-evento</h1>
-        <p className="text-sm text-muted-foreground">Cumpra as missões da organização para somar pontos ao seu exército. O exército vencedor leva os prêmios no dia do evento.</p>
+        <h1 className="titulo-pagina">Missões pré-evento</h1>
+        <p className="subtitulo-pagina">Cumpra as missões da organização para somar pontos ao seu exército. O exército vencedor leva os prêmios no dia do evento.</p>
       </div>
       {eventos.length === 0 ? (
         <EstadoVazio titulo="Nenhuma missão por enquanto" descricao="Quando a organização de um evento em que você está inscrito publicar missões, elas aparecem aqui." />
@@ -68,7 +68,7 @@ function PaginaMissoes() {
           />
         ))
       )}
-      {organizacoes.map((o) => <Card key={o}><Temporada organizacaoId={o} /></Card>)}
+      {organizacoes.map((o) => <section key={o} className="border-t border-border pt-6"><Temporada organizacaoId={o} /></section>)}
     </div>
   );
 }
@@ -81,29 +81,52 @@ function EventoMissoes({ evento, missoes, entregas, campanha, exercito, versao }
     return ordem[situacaoMissao(a)] - ordem[situacaoMissao(b)] || a.prazo.localeCompare(b.prazo);
   });
   return (
-    <Card className="space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-2">
+    <section className="space-y-5">
+      <div className="relative isolate flex flex-wrap items-end justify-between gap-2 overflow-hidden rounded-lg border border-border bg-black p-5 text-white">
+        {evento.imagemUrl && <img src={evento.imagemUrl} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-60" />}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/90 to-black/30" aria-hidden />
         <div>
-          <h2 className="font-display text-xl font-semibold uppercase">{evento.nome}</h2>
-          <p className="text-sm text-muted-foreground">Seu exército: <strong className="text-foreground">{exercito ?? "—"}</strong></p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/70">Exército {exercito ?? "—"}</p>
+          <h2 className="mt-1 font-display text-3xl font-bold uppercase leading-none">{evento.nome}</h2>
         </div>
         {campanha?.encerradaEm && <Badge variant="secondary">Campanha encerrada</Badge>}
       </div>
-      {campanha && campanha.premios.length > 0 && (
-        <div className="rounded-md border border-border bg-secondary/40 p-3 text-sm">
-          <p className="flex items-center gap-1 font-medium"><Trophy className="size-4 text-accent" aria-hidden="true" />Prêmios no dia do evento</p>
-          <ul className="mt-1 space-y-0.5 text-muted-foreground">
-            {campanha.premios.map((p) => <li key={p.colocacao}>{p.colocacao}º lugar: {p.descricao}</li>)}
-          </ul>
-        </div>
-      )}
-      <ul className="space-y-3">
-        {ordenadas.map((m) => (
-          <CartaoMissao key={m.id} missao={m} entrega={entregas.find((e) => e.missaoId === m.id)} campanha={campanha} />
-        ))}
-      </ul>
-      <PlacarCompleto eventoId={evento.id} versao={versao} />
-    </Card>
+      {(() => {
+        const minhas = missoes.map((m) => entregas.find((e) => e.missaoId === m.id));
+        const feitas = minhas.filter((e) => e?.status === "concluida").length;
+        const ganhos = missoes.reduce((t, m, k) => t + (minhas[k]?.status === "concluida" ? m.pontos ?? 0 : 0), 0);
+        const possiveis = missoes.reduce((t, m) => t + (m.pontos ?? 0), 0);
+        const proxima = ordenadas.find((m) => situacaoMissao(m) === "aberta" && entregas.find((e) => e.missaoId === m.id)?.status !== "concluida");
+        return (
+          <FaixaIndicadores className="lg:grid-cols-4" itens={[
+            { rotulo: "Missões concluídas", valor: `${feitas} de ${missoes.length}` },
+            { rotulo: "Seus pontos", valor: String(ganhos), detalhe: `de ${possiveis} possíveis` },
+            { rotulo: "Abertas agora", valor: String(ordenadas.filter((m) => situacaoMissao(m) === "aberta").length) },
+            { rotulo: "Próximo prazo", valor: proxima ? formatarDataHoraBR(proxima.prazo).slice(0, 5) : "—", detalhe: proxima?.titulo },
+          ]} />
+        );
+      })()}
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+        <ul className="divide-y divide-border border-y border-border">
+          {ordenadas.map((m) => (
+            <CartaoMissao key={m.id} missao={m} entrega={entregas.find((e) => e.missaoId === m.id)} campanha={campanha} />
+          ))}
+        </ul>
+        <aside className="space-y-6 lg:sticky lg:top-24">
+          {campanha && campanha.premios.length > 0 && (
+            <section>
+              <h3 className="rotulo-tecnico flex items-center gap-1.5"><Trophy className="size-3.5 text-accent" aria-hidden="true" />Prêmios no dia do evento</h3>
+              <ol className="mt-2 divide-y divide-border border-y border-border text-sm">
+                {campanha.premios.map((p) => (
+                  <li key={p.colocacao} className="flex gap-3 py-2"><span className="font-display text-xl font-bold leading-none text-accent">{p.colocacao}º</span><span>{p.descricao}</span></li>
+                ))}
+              </ol>
+            </section>
+          )}
+          <PlacarCompleto eventoId={evento.id} versao={versao} empilhado />
+        </aside>
+      </div>
+    </section>
   );
 }
 
@@ -136,28 +159,32 @@ function CartaoMissao({ missao: m, entrega, campanha }: { missao: Missao; entreg
   };
 
   return (
-    <li className="overflow-hidden rounded-lg border border-border">
-      {m.imagemUrl && <img src={m.imagemUrl} alt="" className="max-h-48 w-full object-cover" loading="lazy" />}
-      <div className="space-y-2 p-4">
+    <li className="grid gap-4 py-5 sm:grid-cols-[88px_minmax(0,1fr)]">
+      <div className="hidden sm:block">
+        <span className="grid h-14 w-14 place-items-center rounded-md border border-border text-accent"><Icone className="size-6" aria-hidden="true" /></span>
+        {!!m.pontos && <p className="mt-2 font-display text-2xl font-bold leading-none">{m.pontos}<span className="ml-0.5 font-mono text-[10px] text-muted-foreground">PTS</span></p>}
+      </div>
+      <div className="min-w-0 space-y-2">
+        {m.imagemUrl && <img src={m.imagemUrl} alt="" className="max-h-48 w-full rounded-md object-cover" loading="lazy" />}
         <div className="flex flex-wrap items-start justify-between gap-2">
-          <h3 className="flex items-center gap-2 font-medium"><Icone className="size-4 text-accent" aria-hidden="true" />{m.titulo}</h3>
+          <h3 className="text-lg font-semibold">{m.titulo}</h3>
           <div className="flex flex-wrap gap-1">
             {!!m.pontos && <Badge variant="outline">{m.pontos} pts</Badge>}
             <Badge variant={tomStatus}>{ROTULO_STATUS_ENTREGA[status]}</Badge>
           </div>
         </div>
         <p className="whitespace-pre-line text-sm">{m.descricao}</p>
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
           <span>{ROTULO_TIPO_ENTREGA[m.tipoEntrega]}</span>
           {situacao === "agendada" && m.abreEm && <span className="flex items-center gap-1"><Lock className="size-3" aria-hidden="true" />Abre {formatarDataHoraBR(m.abreEm)}</span>}
           <span className="flex items-center gap-1"><Clock className="size-3" aria-hidden="true" />Prazo {formatarDataHoraBR(m.prazo)}</span>
           {m.metaPercentual && m.metaBonus && <span>Meta coletiva: {m.metaPercentual}% do exército → +{m.metaBonus} pts</span>}
         </p>
         {entrega?.avaliacao && <p className="rounded-md bg-secondary/50 p-2 text-sm"><strong>Organização:</strong> {entrega.avaliacao}</p>}
-        {entrega?.destacadaEm && <p className="text-sm text-accent">⭐ Sua entrega foi destacada na comunidade do evento.</p>}
+        {entrega?.destacadaEm && <p className="text-sm text-accent">Sua entrega foi destacada na comunidade do evento.</p>}
 
         {!bloqueio && (
-          <div className="space-y-2 border-t border-border pt-3">
+          <div className="space-y-2 pt-1">
             {m.tipoEntrega === "texto" && (
               <Textarea aria-label="Sua entrega" placeholder="Escreva a sua entrega ou cole o link (vídeo, post…)" maxLength={2000} value={texto} onChange={(e) => setTexto(e.target.value)} />
             )}

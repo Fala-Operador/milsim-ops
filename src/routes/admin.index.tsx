@@ -1,3 +1,4 @@
+import { FaixaIndicadores } from "@/components/FaixaIndicadores";
 import { nomeModalidade } from "@/lib/modalidades";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { carregarBase } from "@/services/db";
@@ -30,14 +31,10 @@ function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {cards.map(([r, v]) => (
-          <Card key={r}>
-            <p className="text-xs uppercase text-muted-foreground">{r}</p>
-            <p className="font-display text-2xl font-semibold">{v}</p>
-          </Card>
-        ))}
-      </section>
+      <div>
+        <h2 className="titulo-pagina">Visão geral</h2>
+        <FaixaIndicadores className="mt-4 lg:grid-cols-4" itens={cards.map(([r, v]) => ({ rotulo: r, valor: String(v) }))} />
+      </div>
 
       <section>
         <h2 className="font-display text-lg font-semibold uppercase">Eventos</h2>

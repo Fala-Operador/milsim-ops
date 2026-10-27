@@ -1,3 +1,5 @@
+import { Heart, ImagePlus, MessageSquare, Pin } from "lucide-react";
+import { IconeForum } from "@/components/IconeForum";
 // Componentes de interface da comunidade (feed social). Regras ficam no serviço.
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -157,7 +159,7 @@ function SeletorImagens({ imagens, setImagens, max, onErro }: { imagens: ImagemP
       <input ref={ref} type="file" accept="image/*" multiple={max > 1} className="hidden" onChange={(e) => adicionar(e.target.files)} />
       {imagens.length < max && (
         <Button type="button" variant="ghost" onClick={() => ref.current?.click()}>
-          🖼 Adicionar imagem
+          <ImagePlus className="h-4 w-4" aria-hidden />Adicionar imagem
         </Button>
       )}
     </div>
@@ -226,7 +228,7 @@ export function Compositor({
                 <NativeSelect aria-label="Fórum de destino" value={forumId} onChange={(e) => setForumId(e.target.value)}>
                   <option value="">Escolha o fórum…</option>
                   {forunsPermitidos.map((f) => (
-                    <option key={f.id} value={f.id}>{f.icone} {f.nome}</option>
+                    <option key={f.id} value={f.id}>{f.nome}</option>
                   ))}
                 </NativeSelect>
               </div>
@@ -338,7 +340,7 @@ export function CartaoPublicacao({
   };
 
   return (
-    <article className={`rounded-lg border bg-card p-4 ${pub.fixada ? "border-accent" : "border-border"} ${pub.oculta ? "opacity-60" : ""}`}>
+    <article className={`border-b border-border py-5 ${pub.fixada ? "border-l-2 border-l-accent bg-accent/5 pl-4 pr-3" : ""} ${pub.oculta ? "opacity-60" : ""}`}>
       <div className="flex gap-3">
         <AvatarLink usuario={pub.removidaPeloAutor ? undefined : base.usuarios.find((u) => u.id === pub.autorId)} />
         <div className="min-w-0 flex-1">
@@ -346,8 +348,8 @@ export function CartaoPublicacao({
             <div className="min-w-0">
               <CabecalhoAutor base={base} autorId={pub.autorId} eventoId={pub.eventoId} criadoEm={pub.criadoEm} editadoEm={pub.editadoEm} />
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                {mostrarForum && forum && <span className="text-xs text-muted-foreground">em {forum.icone} {forum.nome}</span>}
-                {pub.fixada && <Badge variant="accent">📌 Fixada</Badge>}
+                {mostrarForum && forum && <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><IconeForum forum={forum} tamanho="sm" />{forum.nome}</span>}
+                {pub.fixada && <Badge variant="accent"><Pin />Fixada</Badge>}
                 {pub.importante && <Badge variant="warning">Importante</Badge>}
                 {pub.respostasFechadas && <Badge>Respostas fechadas</Badge>}
                 {pub.oculta && <Badge variant="destructive">Oculta: {pub.motivoOcultacao}</Badge>}
@@ -399,10 +401,10 @@ export function CartaoPublicacao({
               disabled={!podeCurtir(base, usuario, pub)}
               onClick={() => executar(() => alternarCurtida(pub.id))}
             >
-              {curtido ? "♥" : "♡"} {contarCurtidas(base, pub.id)}
+              <Heart className={`inline h-3.5 w-3.5 ${curtido ? "fill-current text-destructive" : ""}`} aria-hidden /> {contarCurtidas(base, pub.id)}
             </Button>
             {noDetalhe ? (
-              <span>💬 {contarRespostas(base, pub.id, gestao)}</span>
+              <span><MessageSquare className="inline h-3.5 w-3.5" aria-hidden /> {contarRespostas(base, pub.id, gestao)}</span>
             ) : (
               <Link
                 to="/comunidade/$eventoId/p/$postId"
@@ -411,7 +413,7 @@ export function CartaoPublicacao({
                 className="flex items-center gap-1 hover:text-foreground"
                 aria-label="Ver publicação e respostas"
               >
-                💬 {contarRespostas(base, pub.id, gestao)}
+                <MessageSquare className="inline h-3.5 w-3.5" aria-hidden /> {contarRespostas(base, pub.id, gestao)}
               </Link>
             )}
           </div>

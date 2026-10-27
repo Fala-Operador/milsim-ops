@@ -8,7 +8,6 @@ import { AbaEquipamentos, AbaInsignias, AbaOperacoes, AbaRecompensas, Restrito }
 import { EditarPerfil, Privacidade } from "@/components/perfil/edicao";
 import { CompartilharPerfil } from "@/components/perfil/CompartilharPerfil";
 import { CartaoFichaEmergencia } from "@/components/perfil/FichaEmergencia";
-import { Card } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Campo, ErroSecao, SkeletonPagina } from "@/components/ui";
 
@@ -30,6 +29,7 @@ import { usePreferencias } from "@/contexts/PreferenciasContext";
 import { nomeModalidade } from "@/lib/modalidades";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export const Route = createFileRoute("/app/perfil")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -56,9 +56,17 @@ function Perfil() {
   const irPara = (a: Aba) => router.navigate({ to: "/app/perfil", search: { aba: a }, replace: true, resetScroll: false });
   if (!usuario) return null;
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="font-display text-2xl font-semibold uppercase">Meu perfil</h1>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-4">
+          {usuario.fotoUrl
+            ? <img src={usuario.fotoUrl} alt="" className="size-16 rounded-lg object-cover" />
+            : <span aria-hidden className="grid size-16 place-items-center rounded-lg bg-primary font-display text-3xl font-bold text-primary-foreground">{usuario.nomeCompleto.slice(0, 1).toUpperCase()}</span>}
+          <div className="min-w-0">
+            <h1 className="titulo-pagina">Meu perfil</h1>
+            <p className="mt-1 truncate font-mono text-xs uppercase tracking-wider text-muted-foreground">{usuario.nomeCompleto} · {usuario.endereco.cidade}/{usuario.endereco.uf}</p>
+          </div>
+        </div>
         <div className="flex flex-wrap items-start gap-2">
           <Link to="/operador/$usuarioId" params={{ usuarioId: usuario.id }} search={{ aba: undefined }}><Button variant="outline">Ver perfil público</Button></Link>
           <CompartilharPerfil usuarioId={usuario.id} />
@@ -111,7 +119,7 @@ function GestaoPerfil({ aba, usuarioId }: { aba: Exclude<Aba, "perfil">; usuario
     </div>
   );
   return (
-    <Card>
+    <section className="border-t border-border pt-6 first:border-t-0 first:pt-0">
       <h2 className="font-display text-lg font-semibold uppercase">Privacidade do perfil</h2>
       <p className="mt-1 text-sm text-muted-foreground">Escolha o que outras pessoas veem: histórico, mapa, insígnias, equipamentos e fotos. Notas fiscais nunca são públicas.</p>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -120,7 +128,19 @@ function GestaoPerfil({ aba, usuarioId }: { aba: Exclude<Aba, "perfil">; usuario
       </div>
       {priv && <Privacidade perfil={p} aberto onFechar={() => setPriv(false)} onSalvo={recarregar} />}
       {editar && <EditarPerfil perfil={p} aberto onFechar={() => setEditar(false)} onSalvo={recarregar} />}
-    </Card>
+    </section>
+  );
+}
+
+function Secao({ titulo, descricao, children }: { titulo: string; descricao?: string; children: React.ReactNode }) {
+  return (
+    <section className="grid gap-4 border-t border-border py-6 first:border-t-0 first:pt-0 md:grid-cols-[240px_minmax(0,1fr)] md:gap-8">
+      <div>
+        <h2 className="font-semibold">{titulo}</h2>
+        {descricao && <p className="mt-1 text-sm text-muted-foreground">{descricao}</p>}
+      </div>
+      <div className="min-w-0">{children}</div>
+    </section>
   );
 }
 
@@ -130,43 +150,52 @@ function DadosConta() {
   const [editando, setEditando] = useState(false);
   if (!usuario) return null;
   const [a, m, d] = usuario.dataNascimento.split("-");
+  const dados: [string, string][] = [
+    ["Nome", usuario.nomeCompleto], ["E-mail", usuario.email], ["CPF", mascararCpf(usuario.cpf)], ["Nascimento", `${d}/${m}/${a}`],
+    ["WhatsApp", mascararTelefone(usuario.whatsapp)],
+    ...(usuario.squad ? [["Squad", usuario.squad] as [string, string]] : []),
+    ...(usuario.instagram ? [["Instagram", usuario.instagram] as [string, string]] : []),
+    ["Aceite dos termos", `${usuario.aceiteTermosVersao} em ${formatarDataBR(usuario.aceiteTermosEm)}`],
+  ];
   const end = usuario.endereco;
+  const endereco = `${end.logradouro}, ${end.numero}${end.complemento ? ` — ${end.complemento}` : ""} · ${end.bairro} · ${end.cidade}/${end.uf} · CEP ${mascaraCep(end.cep)}`;
   return (
-    <div className="space-y-4">
-      <Card>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-lg font-semibold uppercase">Meus dados</h2>
-          <Button variant="outline" onClick={() => setEditando(true)}><Pencil className="h-4 w-4" aria-hidden="true" /> Editar dados</Button>
+    <div>
+      <Secao titulo="Meus dados" descricao="Vêm do seu cadastro. CPF e telefone aparecem mascarados. CPF e e-mail só mudam pelo suporte.">
+        <div className="mb-3 flex justify-end">
+          <Button variant="outline" size="sm" onClick={() => setEditando(true)}><Pencil className="h-4 w-4" aria-hidden="true" /> Editar dados</Button>
         </div>
-        <dl className="grid gap-3 text-sm sm:grid-cols-2">
-          <div><dt className="text-muted-foreground">Nome</dt><dd>{usuario.nomeCompleto}</dd></div>
-          <div><dt className="text-muted-foreground">E-mail</dt><dd>{usuario.email}</dd></div>
-          <div><dt className="text-muted-foreground">CPF</dt><dd>{mascararCpf(usuario.cpf)}</dd></div>
-          <div><dt className="text-muted-foreground">Nascimento</dt><dd>{`${d}/${m}/${a}`}</dd></div>
-          <div><dt className="text-muted-foreground">WhatsApp</dt><dd>{mascararTelefone(usuario.whatsapp)}</dd></div>
-          <div className="sm:col-span-2"><dt className="text-muted-foreground">Endereço</dt><dd>{end.logradouro}, {end.numero}{end.complemento ? ` — ${end.complemento}` : ""} · {end.bairro} · {end.cidade}/{end.uf} · CEP {mascaraCep(end.cep)}</dd></div>
-          {usuario.squad && <div><dt className="text-muted-foreground">Squad</dt><dd>{usuario.squad}</dd></div>}
-          {usuario.instagram && <div><dt className="text-muted-foreground">Instagram</dt><dd>{usuario.instagram}</dd></div>}
-          <div><dt className="text-muted-foreground">Aceite dos termos</dt><dd>{usuario.aceiteTermosVersao} em {formatarDataBR(usuario.aceiteTermosEm)}</dd></div>
+        <dl className="grid border-y border-border text-sm sm:grid-cols-2">
+          {dados.map(([r, v]) => (
+            <div key={r} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5 last:border-b-0 sm:odd:pr-6 sm:even:pl-6 sm:[&:nth-last-child(-n+2)]:border-b-0">
+              <dt className="rotulo-tecnico shrink-0">{r}</dt><dd className="truncate text-right">{v}</dd>
+            </div>
+          ))}
+        </dl>
+        <dl className="flex flex-col gap-1 border-b border-border py-2.5 text-sm sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+          <dt className="rotulo-tecnico shrink-0">Endereço</dt><dd className="sm:text-right">{endereco}</dd>
         </dl>
         {editando && <EditarDadosConta usuario={usuario} aberto onFechar={() => setEditando(false)} />}
-      </Card>
-      <Card>
-        <h2 className="font-display text-lg font-semibold uppercase">Foto</h2>
-        <div className="mt-3"><FotoPerfil /></div>
-      </Card>
-      <Card>
-        <h2 className="font-display text-lg font-semibold uppercase">Configurações</h2>
-        <div className="mt-3"><NomeExibicaoForm /></div>
-        <div className="mt-3 max-w-xs">
-          <Campo rotulo="Aparência" htmlFor="tema">
-            <NativeSelect id="tema" value={tema} onChange={(e) => definirTema(e.target.value as "dark" | "light")}>
-              <option value="dark">Escuro — Verde-oliva</option>
-              <option value="light">Claro — TAN</option>
-            </NativeSelect>
-          </Campo>
-        </div>
-      </Card>
+      </Secao>
+      <Secao titulo="Foto" descricao="Aparece na comunidade dos eventos e no seu perfil público.">
+        <FotoPerfil />
+      </Secao>
+      <Secao titulo="Nome na comunidade" descricao="Como os outros operadores veem você nos fóruns.">
+        <NomeExibicaoForm />
+      </Secao>
+      <Secao titulo="Aparência" descricao="Vale para esta conta, neste navegador.">
+        <RadioGroup value={tema} onValueChange={(v) => definirTema(v as "dark" | "light")} aria-label="Aparência" className="grid max-w-md grid-cols-2 gap-3">
+          {([["dark", "Escuro", "Verde-oliva", "dark"], ["light", "Claro", "TAN", "tema-claro"]] as const).map(([v, r, sub, classe]) => (
+            <Label key={v} htmlFor={`tema-${v}`} className="cursor-pointer rounded-lg border p-2 font-normal has-[[data-state=checked]]:border-accent has-[[data-state=checked]]:ring-1 has-[[data-state=checked]]:ring-accent">
+              <span className={`${classe} block overflow-hidden rounded-md border border-border bg-background`} aria-hidden>
+                <span className="flex items-center gap-1.5 border-b border-border bg-card px-2 py-1.5"><span className="h-1.5 w-8 rounded-full bg-accent" /><span className="h-1.5 w-5 rounded-full bg-muted-foreground/40" /></span>
+                <span className="block space-y-1.5 p-2"><span className="block h-2 w-3/4 rounded-sm bg-foreground/70" /><span className="block h-2 w-1/2 rounded-sm bg-muted-foreground/40" /><span className="block h-4 w-16 rounded-sm bg-primary" /></span>
+              </span>
+              <span className="mt-2 flex items-center gap-2 px-1"><RadioGroupItem id={`tema-${v}`} value={v} /><span className="text-sm font-medium">{r}</span><span className="text-xs text-muted-foreground">{sub}</span></span>
+            </Label>
+          ))}
+        </RadioGroup>
+      </Secao>
       <PreferenciasEventos />
     </div>
   );
@@ -179,9 +208,8 @@ function PreferenciasEventos() {
   const atual = p.preferencia.estado === "selecionadas" ? p.preferencia.modalidades.map(nomeModalidade).join(", ")
     : p.preferencia.estado === "todas" ? "Explorar todas" : "Ainda não escolhidas";
   return (
-    <Card>
-      <h2 className="font-display text-lg font-semibold uppercase">Preferências de eventos</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Atual: {atual}. Suas favoritas aparecem primeiro em “Para você”, sem esconder as demais. Salvo nesta conta, neste navegador.</p>
+    <Secao titulo="Modalidades favoritas" descricao="Suas favoritas aparecem primeiro em “Para você”, sem esconder as demais.">
+      <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Atual: {atual}</p>
       {p.montado && (
         <>
           <div className="mt-3"><OpcoesModalidade selecionadas={sel} onAlternar={alternar} nome="perfil-mod" /></div>
@@ -191,6 +219,6 @@ function PreferenciasEventos() {
           </div>
         </>
       )}
-    </Card>
+    </Secao>
   );
 }

@@ -1,6 +1,6 @@
 // Formulário de abertura de chamado (inline, sem modal: não fecha por clique fora).
 import { useRef, useState } from "react";
-import { Paperclip, X } from "lucide-react";
+import { CalendarDays, LifeBuoy, Paperclip, Upload, X } from "lucide-react";
 import { abrirChamadoSuporte, type AnexoEnvio } from "@/api/suporte.functions";
 import { useSuporte } from "@/contexts/SuporteContext";
 import { CATEGORIAS_SUPORTE, TIPOS_ANEXO, protocolo } from "@/lib/suporte";
@@ -58,18 +58,24 @@ export function NovoChamado({ base, usuarioId, eventoInicial, anterior, onCriado
   };
 
   return (
-    <div className="rolagem-discreta min-h-0 min-w-0 flex-1 p-4">
-      <h2 className="font-display text-lg font-semibold">Nova solicitação de suporte</h2>
-      {anterior && <p className="mt-1 text-sm text-muted-foreground">Vinculada ao protocolo {protocolo(anterior)}.</p>}
-      <div className="mt-4 space-y-3">
+    <div className="rolagem-discreta min-h-0 min-w-0 flex-1 p-4 @min-[760px]:p-6">
+      <p className="rotulo-tecnico">Novo chamado</p>
+      <h2 className="mt-1 font-display text-2xl font-bold uppercase leading-tight">Como podemos ajudar?</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {anterior ? <>Continuação do protocolo <span className="font-mono">{protocolo(anterior)}</span>.</> : "Conte o que aconteceu. A administração responde por aqui e avisa você nas notificações."}
+      </p>
+      <div className="mt-4 space-y-3.5">
         <fieldset>
           <legend className="text-sm font-medium">Tipo de atendimento</legend>
           <RadioGroup className="mt-1 grid gap-2 @min-[560px]:grid-cols-2" value={f.tipo} disabled={!!anterior} onValueChange={(v) => setF({ ...f, tipo: v as typeof f.tipo })}>
-            {([["evento", "Suporte do evento", "Sobre uma operação: a organização do evento e a administração atendem."], ["plataforma", "Suporte da plataforma", "Conta, funcionamento ou outras questões: só a administração atende."]] as const).map(([v, t, d]) => (
-              <Label key={v} className={`cursor-pointer rounded-md border p-3 text-sm ${f.tipo === v ? "border-primary bg-primary/10" : "border-border"} font-normal text-inherit`}>
-                <RadioGroupItem value={v} className="mr-2 align-[-2px]" />
-                <span className="font-medium">{t}</span>
-                <span className="mt-1 block text-xs text-muted-foreground">{d}</span>
+            {([["evento", "Suporte do evento", "Sobre uma operação: a organização do evento e a administração atendem.", CalendarDays], ["plataforma", "Suporte da plataforma", "Conta, funcionamento ou outras questões: só a administração atende.", LifeBuoy]] as const).map(([v, t, d, Icone]) => (
+              <Label key={v} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm font-normal text-inherit ${f.tipo === v ? "border-accent ring-1 ring-accent" : "border-border hover:border-muted-foreground/60"}`}>
+                <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-md ${f.tipo === v ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`} aria-hidden="true"><Icone className="h-4 w-4" /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium">{t}</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">{d}</span>
+                </span>
+                <RadioGroupItem value={v} className="mt-0.5" />
               </Label>
             ))}
           </RadioGroup>
@@ -93,7 +99,7 @@ export function NovoChamado({ base, usuarioId, eventoInicial, anterior, onCriado
           </Campo>
         </div>
         <Campo rotulo="Descrição" htmlFor="nc-descricao" erro={erros.descricao}>
-          <Textarea id="nc-descricao" rows={5} maxLength={4000} value={f.descricao} onChange={(e) => setF({ ...f, descricao: e.target.value })} />
+          <Textarea id="nc-descricao" rows={4} maxLength={4000} value={f.descricao} onChange={(e) => setF({ ...f, descricao: e.target.value })} />
         </Campo>
         <div>
           <input ref={arquivo} type="file" accept={TIPOS_ANEXO.join(",")} className="sr-only" tabIndex={-1}
@@ -110,13 +116,17 @@ export function NovoChamado({ base, usuarioId, eventoInicial, anterior, onCriado
               <Button variant="plain" size="none" type="button" className="shrink-0" aria-label="Remover anexo" onClick={() => setAnexo(null)}><X className="h-3.5 w-3.5" /></Button>
             </p>
           ) : (
-            <Button type="button" variant="outline" className="!py-1 text-xs" onClick={() => arquivo.current?.click()}><Paperclip className="h-3.5 w-3.5" />Anexar (opcional)</Button>
+            <Button type="button" variant="plain" size="none" onClick={() => arquivo.current?.click()}
+              className="flex w-full items-center gap-3 rounded-lg border border-dashed border-border p-3 text-left text-sm hover:border-muted-foreground/60 hover:bg-secondary/40 focus-visible:outline-2 focus-visible:outline-ring">
+              <Upload className="h-4 w-4 shrink-0 text-accent" aria-hidden="true" />
+              <span className="min-w-0"><span className="block font-medium">Anexar imagem ou PDF <span className="font-normal text-muted-foreground">(opcional)</span></span>
+              <span className="block text-xs text-muted-foreground">JPEG, PNG, WebP ou PDF, até 5 MB. Não anexe documentos pessoais além do necessário.</span></span>
+            </Button>
           )}
-          <p className="mt-1 text-xs text-muted-foreground">Imagem (JPEG, PNG, WebP) ou PDF, até 5 MB. Não anexe documentos pessoais além do necessário.</p>
         </div>
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancelar} disabled={enviando}>Cancelar</Button>
+        <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-4">
+          <Button type="button" variant="ghost" onClick={onCancelar} disabled={enviando}>Cancelar</Button>
           <Button type="button" onClick={enviar} disabled={enviando}>{enviando ? "Enviando…" : "Abrir chamado"}</Button>
         </div>
       </div>

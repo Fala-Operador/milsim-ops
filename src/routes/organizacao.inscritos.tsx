@@ -1,3 +1,4 @@
+import { FaixaIndicadores } from "@/components/FaixaIndicadores";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Download, Search, SlidersHorizontal, Ticket, Users, UserCheck, X, Eye } from "lucide-react";
@@ -60,8 +61,8 @@ function PaginaInscritos() {
   return (
     <div className="min-h-[70vh] min-w-0 space-y-6">
       <header>
-        <h2 className="font-display text-2xl font-semibold uppercase tracking-wide">Inscritos por evento</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Selecione uma operação para consultar e gerenciar seus participantes.</p>
+        <h2 className="titulo-pagina">Inscritos por evento</h2>
+        <p className="subtitulo-pagina">Selecione uma operação para consultar e gerenciar seus participantes.</p>
       </header>
 
       {ordenados.length === 0 ? (
@@ -150,18 +151,20 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
   return (
     <>
       <section aria-label="Indicadores de inscrições" className="space-y-3">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          <Indicador icone={UserCheck} rotulo="Inscrições ativas" valor={ind.ativas} />
-          <Indicador icone={Ticket} rotulo="Vagas disponíveis" valor={ind.disponiveis} />
-          <Indicador icone={Users} rotulo="Capacidade total" valor={ind.capacidade} />
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">{ind.ativas} de {ind.capacidade} vagas ocupadas</p>
-          <Progress className="mt-1" value={Math.min(ind.ocupacao, 100)} aria-label="Ocupação" indicatorClassName="rounded-full" />
+        <div className="rounded-lg border border-border">
+          <FaixaIndicadores className="rounded-none border-0 lg:grid-cols-3" itens={[
+            { rotulo: "Inscrições ativas", valor: String(ind.ativas) },
+            { rotulo: "Vagas disponíveis", valor: String(ind.disponiveis) },
+            { rotulo: "Capacidade total", valor: String(ind.capacidade) },
+          ]} />
+          <div className="border-t border-border px-4 py-3">
+            <div className="flex justify-between text-xs text-muted-foreground"><span>Ocupação</span><span className="font-mono">{Math.round(ind.ocupacao)}%</span></div>
+            <Progress className="mt-1.5 h-1.5" value={Math.min(ind.ocupacao, 100)} aria-label="Ocupação" indicatorClassName="rounded-full" />
+          </div>
         </div>
       </section>
 
-      <Card className="overflow-hidden bg-elevated p-0">
+      <Card className="overflow-hidden bg-transparent p-0">
         <div className="space-y-3 border-b border-border p-4">
           <div className="grid min-w-0 grid-cols-2 items-center gap-2 lg:grid-cols-[minmax(240px,1fr)_auto]">
               <div className="relative col-span-2 min-w-0 lg:col-span-1">
