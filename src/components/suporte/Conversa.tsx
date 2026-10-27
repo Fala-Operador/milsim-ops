@@ -241,6 +241,11 @@ function BotaoAnexo({ chamadoId, m }: { chamadoId: string; m: MensagemChamado })
   );
 }
 
+function iniciaisDe(nome: string) {
+  const p = nome.trim().split(/\s+/);
+  return ((p[0]?.[0] ?? "") + (p.length > 1 ? p[p.length - 1]![0] : "")).toUpperCase();
+}
+
 const BALAO = "max-w-[88%] min-w-0 rounded-2xl px-3.5 py-2 text-sm leading-relaxed sm:max-w-[80%]";
 
 export function Conversa({
@@ -456,7 +461,14 @@ export function Conversa({
                     <span className="ml-1 whitespace-nowrap opacity-80">· {hora(m.criadoEm)}</span>
                   </p>
                 ) : (
-                  <div className={`flex min-w-0 flex-col ${eu ? "items-end" : "items-start"}`}>
+                  <div className={`flex min-w-0 items-end gap-2 ${eu ? "justify-end" : ""}`}>
+                    {/* Quem fala com você aparece com as iniciais; a cor diz o papel no chamado. */}
+                    {!eu && (
+                      <span aria-hidden="true" className={`mb-5 grid h-7 w-7 shrink-0 place-items-center rounded-full font-mono text-[10px] font-bold ${continuacao ? "invisible" : papel === "admin" ? "bg-primary text-primary-foreground" : papel === "organizador" ? "bg-accent text-accent-foreground" : "bg-secondary text-foreground"}`}>
+                        {iniciaisDe(nomeDe(m.autorId))}
+                      </span>
+                    )}
+                  <div className={`flex min-w-0 flex-1 flex-col ${eu ? "items-end" : "items-start"}`}>
                     {!eu && !continuacao && (
                       <p className="mb-1 max-w-full truncate px-1 text-xs font-semibold">
                         {nomeDe(m.autorId)}{" "}
@@ -466,7 +478,7 @@ export function Conversa({
                       </p>
                     )}
                     <div
-                      className={`${BALAO} ${eu ? "rounded-br-md bg-primary/15" : "rounded-bl-md border border-border bg-secondary/60"}`}
+                      className={`${BALAO} ${eu ? "rounded-br-sm bg-primary text-primary-foreground [&_time]:text-primary-foreground/75" : "rounded-bl-sm border border-border bg-background"}`}
                     >
                       {m.corpo && (
                         <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">
@@ -478,6 +490,7 @@ export function Conversa({
                         <time dateTime={m.criadoEm}>{hora(m.criadoEm)}</time>
                       </p>
                     </div>
+                  </div>
                   </div>
                 )}
               </li>

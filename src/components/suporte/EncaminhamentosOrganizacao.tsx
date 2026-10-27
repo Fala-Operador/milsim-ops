@@ -1,6 +1,6 @@
 // Organização vê apenas demandas encaminhadas pela administração para ela.
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, FileText, Inbox, Loader2, MessageSquareReply, Send } from "lucide-react";
 import { carregarBase } from "@/services/db";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { useSuporte } from "@/contexts/SuporteContext";
@@ -10,7 +10,6 @@ import { formatarDataHoraBR } from "@/lib/domain/money";
 import type { AnexoCompartilhado, Chamado, Usuario } from "@/lib/domain/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { EstadoVazio } from "@/components/ui";
 import { Conversa } from "./Conversa";
 import { Indisponivel } from "./CentralSuporte";
 import { SituacaoEncaminhamento } from "./PainelEncaminhamento";
@@ -33,6 +32,32 @@ function AnexoCompartilhadoBotao({ chamadoId, a }: { chamadoId: string; a: Anexo
       </Button>
       {erro && <span className="text-xs text-destructive">{erro}</span>}
     </span>
+  );
+}
+
+/** Sem demanda aberta: o papel da organização no atendimento, em três passos. */
+function ComoFuncionamDemandas() {
+  const passos = [
+    { icone: Inbox, titulo: "A administração encaminha", texto: "Quando um chamado depende da organização, chega aqui com a orientação do que é preciso." },
+    { icone: MessageSquareReply, titulo: "Você responde à administração", texto: "A conversa é interna: o participante não vê estas mensagens." },
+    { icone: Send, titulo: "Marque o retorno enviado", texto: "A administração dá a devolutiva ao participante e encerra o chamado." },
+  ];
+  return (
+    <div className="w-full max-w-md text-left">
+      <p className="rotulo-tecnico">Demandas</p>
+      <h2 className="mt-1 font-display text-2xl font-bold uppercase leading-tight">Como funciona para a organização</h2>
+      <ol className="mt-5 space-y-4">
+        {passos.map(({ icone: Icone, titulo, texto }, i) => (
+          <li key={titulo} className="flex gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-border bg-background text-accent" aria-hidden="true"><Icone className="h-4 w-4" /></span>
+            <div className="min-w-0">
+              <p className="text-sm font-medium"><span className="mr-1.5 font-mono text-xs text-muted-foreground">0{i + 1}</span>{titulo}</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">{texto}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 
@@ -64,19 +89,31 @@ export function EncaminhamentosOrganizacao({ usuario, selecionado, onSelecionar 
     <div className={`flex overflow-hidden rounded-lg border border-border bg-card ${selecionado ? "h-[calc(100dvh-12rem)] min-h-[520px]" : "md:h-[calc(100dvh-12rem)] md:min-h-[520px]"}`}>
       <section aria-label="Demandas encaminhadas" className={`${selecionado ? "hidden md:flex" : "flex"} w-full flex-col border-border md:w-80 md:shrink-0 md:border-r`}>
         <ul className="min-h-0 flex-1 overflow-y-auto">
-          {itens.length === 0 && <li className="p-4"><EstadoVazio titulo="Nenhuma demanda" descricao="Quando a administração precisar da organização, a demanda aparece aqui." /></li>}
+          {itens.length === 0 && (
+            <li className="flex flex-col items-center px-6 py-10 text-center">
+              <span className="grid h-11 w-11 place-items-center rounded-full border border-border text-muted-foreground" aria-hidden="true"><Inbox className="h-5 w-5" /></span>
+              <p className="mt-3 text-sm font-medium">Nenhuma demanda por aqui</p>
+              <p className="mt-1 text-xs text-muted-foreground">Quando a administração precisar da organização, a demanda aparece nesta lista.</p>
+            </li>
+          )}
           {itens.map(({ c, e }) => {
             const ev = base.eventos.find((x) => x.id === c.eventoId);
             const n = naoLidas({ ...c, mensagens: e.mensagens }, usuario.id, lidoAte(c.id));
             return (
               <li key={e.id}>
                 <Button variant="plain" size="none" type="button" onClick={() => onSelecionar(e.id)} aria-current={e.id === selecionado ? "true" : undefined}
-                  className={`block w-full border-b border-border px-3 py-3 text-left hover:bg-secondary/60 ${e.id === selecionado ? "bg-secondary" : ""} ${n > 0 ? "border-l-4 border-l-accent" : ""}`}>
-                  <p className="truncate text-sm font-medium">{c.assunto}</p>
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground">{protocolo(c)} · {ev?.nome ?? "Evento"}</p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  className={`relative block w-full border-b border-border px-4 py-3 text-left hover:bg-secondary/50 ${e.id === selecionado ? "bg-secondary before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-accent" : ""}`}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className={`truncate text-sm ${n > 0 ? "font-semibold" : "font-medium"}`}>
+                      {n > 0 && <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-accent align-middle" aria-label={`${n} não lidas`} />}
+                      {c.assunto}
+                    </p>
+                    <span className="shrink-0 font-mono text-[11px] text-muted-foreground">{formatarDataHoraBR(e.criadoEm).slice(0, 5)}</span>
+                  </div>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">{ev?.nome ?? "Evento"}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     <SituacaoEncaminhamento e={e} />
-                    <span className="ml-auto text-[11px] text-muted-foreground">{formatarDataHoraBR(e.criadoEm)}</span>
+                    <span className="ml-auto font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{protocolo(c)}</span>
                   </div>
                 </Button>
               </li>
@@ -91,7 +128,7 @@ export function EncaminhamentosOrganizacao({ usuario, selecionado, onSelecionar 
               <div className="flex items-start gap-2">
                 <Button type="button" variant="ghost" className="!px-2 !py-1 md:hidden" onClick={() => onSelecionar(undefined)} aria-label="Voltar para a lista"><ArrowLeft className="h-4 w-4" /></Button>
                 <div className="min-w-0 flex-1">
-                  <h2 className="truncate font-display text-base font-semibold">{atual.c.assunto}</h2>
+                  <h2 className="truncate font-display text-lg font-bold uppercase leading-tight">{atual.c.assunto}</h2>
                   <p className="text-xs text-muted-foreground">{protocolo(atual.c)} · {base.eventos.find((x) => x.id === atual.c.eventoId)?.nome ?? "Evento"} · Chamado: {ROTULO_STATUS[atual.c.status]}</p>
                 </div>
                 <SituacaoEncaminhamento e={atual.e} />
@@ -110,7 +147,7 @@ export function EncaminhamentosOrganizacao({ usuario, selecionado, onSelecionar 
           </>
         ) : (
           <div className="flex flex-1 items-center justify-center p-6 text-center">
-            {selecionado ? <Indisponivel onVoltar={() => onSelecionar(undefined)} /> : <EstadoVazio titulo="Selecione uma demanda" descricao="Escolha uma demanda encaminhada pela administração." />}
+            {selecionado ? <Indisponivel onVoltar={() => onSelecionar(undefined)} /> : <ComoFuncionamDemandas />}
           </div>
         )}
       </section>
