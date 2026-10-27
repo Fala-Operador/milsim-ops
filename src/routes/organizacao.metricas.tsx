@@ -25,7 +25,8 @@ function PaginaMetricasOrg() {
   if (!montado) return <SkeletonPagina />;
   return (
     <div>
-      <h2 className="mb-4 font-display text-xl font-semibold uppercase">Métricas</h2>
+      <h2 className="titulo-pagina">Métricas</h2>
+      <p className="subtitulo-pagina">Visitas, inscrições e receita das operações da sua organização.</p>
       <PainelMetricas base={base} eventos={eventos} modo="organizador" />
     </div>
   );

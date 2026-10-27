@@ -1,12 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Lock, MessagesSquare, Search, Users } from "lucide-react";
+import { Lock, Search, Users } from "lucide-react";
 import { carregarBase } from "@/services/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { comunidadesVitrine, type AcessoComunidade, type ItemVitrine } from "@/lib/comunidadePublica";
 import { nomeModalidade } from "@/lib/modalidades";
-import { formatarDataBR } from "@/lib/domain/money";
 import { ImagemSegura } from "@/components/divulgacao";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,7 @@ import { ListaPosts } from "@/components/social/ListaPosts";
 import { CartaoPerfilComunidade, PedidosParaSeguir } from "@/components/social/Relacoes";
 import { ListaForuns } from "@/components/social/Foruns";
 import { LateralComunidade } from "@/components/social/LateralComunidade";
+import imgEquipamento from "@/assets/comunidade-equipamento.jpg";
 
 export const Route = createFileRoute("/comunidades/")({
   validateSearch: (s: Record<string, unknown>): { aba?: "geral" | "foruns" | "operacoes" | "pedidos" | undefined } => ({
@@ -65,34 +65,27 @@ function Acao({ item }: { item: ItemVitrine }) {
 
 function Cartao({ item }: { item: ItemVitrine }) {
   const { evento, acesso, confirmados } = item;
+  const d = new Date(evento.inicioEm);
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground">
-      <Link to="/eventos/$eventoId" params={{ eventoId: evento.id }} className="block aspect-video overflow-hidden border-b border-border bg-secondary" tabIndex={-1} aria-hidden="true">
-        {evento.imagemUrl ? (
-          <ImagemSegura key={evento.imagemUrl} src={evento.imagemUrl} alt="" className="h-full w-full" />
-        ) : (
-          <div className="topo-bg h-full" />
-        )}
+    <article className="flex h-full flex-col overflow-hidden rounded-lg border border-border">
+      <Link to="/eventos/$eventoId" params={{ eventoId: evento.id }} className="relative block aspect-[16/9] overflow-hidden bg-secondary" tabIndex={-1} aria-hidden="true">
+        {evento.imagemUrl ? <ImagemSegura key={evento.imagemUrl} src={evento.imagemUrl} alt="" className="h-full w-full" /> : <div className="topo-bg h-full" />}
+        <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-sm bg-black/60 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-white">
+          {acesso === "entrar" ? <><Users className="size-3" />Você participa</> : <><Lock className="size-3" />Só inscritos</>}
+        </span>
+        <span className="absolute inset-x-0 bottom-0 p-3 text-white">
+          <span className="block font-mono text-[11px] uppercase tracking-wider text-white/75">{String(d.getDate()).padStart(2, "0")}/{String(d.getMonth() + 1).padStart(2, "0")} · {evento.cidade}/{evento.uf} · {nomeModalidade(evento.modalidade)}</span>
+          <span className="mt-1 block font-display text-2xl font-bold uppercase leading-none">{evento.nome}</span>
+        </span>
       </Link>
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <div className="flex items-start justify-between gap-2">
-          <h2 className="min-w-0 break-words font-display text-lg font-semibold uppercase leading-tight">
-            <Link to="/eventos/$eventoId" params={{ eventoId: evento.id }} className="hover:underline">{evento.nome}</Link>
-          </h2>
-          {acesso === "entrar" ? (
-            <Badge variant="success" className="shrink-0"><Users aria-hidden="true" />Você participa</Badge>
-          ) : (
-            <Badge variant="secondary" className="shrink-0"><Lock aria-hidden="true" />Exclusiva</Badge>
-          )}
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {formatarDataBR(evento.inicioEm)} · {evento.cidade}/{evento.uf} · {nomeModalidade(evento.modalidade)}
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <p className="flex items-baseline gap-2 text-sm text-muted-foreground">
+          <span className="font-display text-2xl font-bold leading-none text-foreground tabular-nums">{confirmados}</span>
+          {confirmados === 1 ? "operador confirmado" : "operadores confirmados"}
         </p>
-        <p className="text-xs text-muted-foreground">
-          {confirmados} {confirmados === 1 ? "operador confirmado" : "operadores confirmados"}
-          {acesso !== "entrar" && " · fóruns, avisos e conversas para inscritos"}
-        </p>
-        <div className="mt-auto pt-2"><Acao item={item} /></div>
+        {acesso !== "entrar" && <p className="text-xs text-muted-foreground">Fóruns, avisos da organização e conversa entre os inscritos.</p>}
+        <div className="mt-auto"><Acao item={item} /></div>
       </div>
     </article>
   );
@@ -115,10 +108,16 @@ function Comunidades() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
-      <header className="space-y-3">
-        <h1 className="flex items-center gap-2 font-display text-2xl font-semibold uppercase">
-          <MessagesSquare className="size-6" aria-hidden="true" /> Comunidades
-        </h1>
+      <header className="space-y-4">
+        <div className="relative isolate overflow-hidden rounded-lg border border-border bg-black text-white">
+          <img src={imgEquipamento} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-55" />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/90 via-black/60 to-transparent" aria-hidden />
+          <div className="max-w-2xl p-6 sm:p-8">
+            <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/70">Comunidade MilSim Ops</p>
+            <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none sm:text-5xl">Comunidades</h1>
+            <p className="mt-3 text-sm text-white/80">O feed geral é aberto a todos. Cada operação tem também uma comunidade fechada, com fóruns e avisos só para os inscritos.</p>
+          </div>
+        </div>
         <Tabs value={aba} onValueChange={(v) => irPara(v as Aba)}>
           <TabsList aria-label="Seções da comunidade" className="abas-rolaveis flex w-full gap-1 border-b border-border">
             {ABAS.filter((a) => !a.logado || usuario).map((a) => (
@@ -149,9 +148,9 @@ function FeedGeral() {
         {usuario ? (
           <Compositor onPublicado={() => void qc.invalidateQueries({ queryKey: ["social", "feed"] })} />
         ) : (
-          <div className="rounded-lg border border-border bg-card p-4 text-sm">
-            <p>Veja o que a galera do airsoft e do milsim está publicando.</p>
-            <p className="mt-1 text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-y border-border py-4 text-sm">
+            <p className="font-medium">Veja o que a galera do airsoft e do milsim está publicando.</p>
+            <p className="text-muted-foreground">
               <Link to="/login" search={{ redirect: "/comunidades" }} className="text-accent hover:underline">Entre</Link> ou{" "}
               <Link to="/cadastro" search={{ redirect: "/comunidades" }} className="text-accent hover:underline">cadastre-se</Link> para publicar, curtir, responder e seguir.
             </p>
@@ -210,13 +209,13 @@ function VitrineOperacoes() {
         <>
           {minhas.length > 0 && (
             <section aria-labelledby="minhas" className="space-y-3">
-              <h2 id="minhas" className="font-display text-base font-semibold uppercase tracking-wide text-muted-foreground">Suas comunidades</h2>
+              <h2 id="minhas" className="text-lg font-semibold">Suas comunidades</h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{minhas.map((i) => <Cartao key={i.evento.id} item={i} />)}</div>
             </section>
           )}
           {outras.length > 0 && (
             <section aria-labelledby="outras" className="space-y-3">
-              <h2 id="outras" className="font-display text-base font-semibold uppercase tracking-wide text-muted-foreground">
+              <h2 id="outras" className="text-lg font-semibold">
                 {minhas.length > 0 ? "Outras comunidades" : "Comunidades das próximas operações"}
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{outras.map((i) => <Cartao key={i.evento.id} item={i} />)}</div>

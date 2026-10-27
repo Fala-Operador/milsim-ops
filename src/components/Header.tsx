@@ -105,8 +105,8 @@ function AvatarConta({ nome, foto }: { nome: string; foto?: string | undefined }
 }
 
 
-const linkNav = `rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-secondary/60 hover:text-foreground ${foco}`;
-const linkNavAtivo = "bg-secondary text-foreground font-medium shadow-[inset_0_-2px_0_var(--accent)]";
+const linkNav = `relative px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground ${foco}`;
+const linkNavAtivo = "text-foreground after:absolute after:inset-x-3 after:-bottom-[17px] after:h-[2px] after:bg-accent";
 
 function Navegacao({ logado, aoNavegar, vertical = false }: { logado: boolean; aoNavegar?: () => void; vertical?: boolean }) {
   const cls = vertical ? `${linkNav} block py-3` : linkNav;
@@ -157,12 +157,17 @@ export function Header() {
   const pendenciasArea = menuArea ? totalPendencias(menuArea.grupos) : 0;
 
   return (
-    <header className={`vt-cabecalho sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur transition-shadow motion-reduce:transition-none ${rolado ? "shadow-md" : ""}`}>
+    <header className={`vt-cabecalho sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md transition-shadow motion-reduce:transition-none ${rolado ? "shadow-md" : ""}`}>
       <div className="mx-auto flex h-[60px] max-w-6xl items-center gap-3 px-4 lg:grid lg:h-[72px] lg:grid-cols-[1fr_auto_1fr]">
         {/* Esquerda: marca */}
         <Link to="/" aria-label="MILSIM OPS — página inicial" className={`flex min-w-0 items-center gap-2.5 justify-self-start rounded-md ${foco}`}>
-          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary font-mono text-sm font-bold text-primary-foreground">MS</span>
-          <span aria-hidden="true" className="hidden truncate font-display text-lg font-semibold tracking-wide text-foreground lg:inline">MILSIM OPS</span>
+          <svg aria-hidden="true" viewBox="0 0 32 32" className="h-8 w-8 shrink-0 text-primary">
+            <path d="M4 3h24v17.5L16 29 4 20.5Z" fill="currentColor" />
+            <path d="m9 12 7-4.5 7 4.5M9 18l7-4.5 7 4.5" fill="none" stroke="var(--background)" strokeWidth="2.6" strokeLinejoin="miter" />
+          </svg>
+          <span aria-hidden="true" className="hidden font-display text-[22px] font-bold uppercase leading-none tracking-[0.04em] text-foreground lg:inline">
+            Milsim<span className="text-accent">Ops</span>
+          </span>
         </Link>
         {/* Celular: só a marca MS; a localização ocupa o lugar do nome (uma linha só). */}
         <SeletorCidade compacto className="min-w-0 lg:hidden" />

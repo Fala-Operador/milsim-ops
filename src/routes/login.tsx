@@ -3,10 +3,10 @@ import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-r
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { InputSenha } from "@/components/ui/input-senha";
 import { Campo } from "@/components/ui";
+import { LayoutAcesso } from "@/components/LayoutAcesso";
 import { useTurnstile } from "@/components/Turnstile";
 import { ReenviarConfirmacao } from "@/components/ReenviarConfirmacao";
 import { MSG_EMAIL_NAO_CONFIRMADO } from "@/lib/confirmacaoEmail";
@@ -52,10 +52,8 @@ function PaginaLogin() {
   };
 
   return (
-    <div className="mx-auto flex max-w-md flex-col px-4 py-12">
-      <Card>
-        <h1 className="font-display text-2xl font-semibold uppercase tracking-wide">Entrar</h1>
-        <form onSubmit={aoEnviar} className="mt-5 space-y-4">
+    <LayoutAcesso titulo="Entrar" subtitulo="Use o e-mail da sua conta MilsimOps." rotulo="Ingresso · QR Code · Check-in" frase="Seu ingresso e o briefing da operação no mesmo lugar.">
+        <form onSubmit={aoEnviar} className="mt-6 space-y-4">
           <Campo rotulo="E-mail" htmlFor="email" erro={erro && undefined}>
             <Input
               id="email"
@@ -82,7 +80,7 @@ function PaginaLogin() {
           )}
           {erro === MSG_EMAIL_NAO_CONFIRMADO && <ReenviarConfirmacao email={email} />}
           {turnstile.elemento}
-          <Button type="submit" disabled={carregando || !turnstile.pronto} className="w-full">
+          <Button type="submit" disabled={carregando || !turnstile.pronto} size="lg" className="w-full">
             {carregando ? "Entrando..." : "Entrar"}
           </Button>
         </form>
@@ -98,7 +96,6 @@ function PaginaLogin() {
             Criar cadastro
           </Link>
         </div>
-      </Card>
-    </div>
+    </LayoutAcesso>
   );
 }

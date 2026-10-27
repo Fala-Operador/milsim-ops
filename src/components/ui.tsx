@@ -34,11 +34,17 @@ export function Campo({
   );
 }
 
-export function EstadoVazio({ titulo, descricao }: { titulo: string; descricao?: string }) {
+export function EstadoVazio({ titulo, descricao, acao }: { titulo: string; descricao?: string; acao?: ReactNode }) {
   return (
-    <div className="surgir rounded-lg border border-dashed border-border p-8 text-center">
-      <p className="font-medium text-foreground">{titulo}</p>
-      {descricao && <p className="mt-1 text-sm text-muted-foreground">{descricao}</p>}
+    <div className="surgir flex flex-col items-start gap-4 rounded-lg border border-border bg-[repeating-linear-gradient(135deg,transparent_0_10px,color-mix(in_oklch,var(--color-foreground)_3%,transparent)_10px_11px)] p-6 sm:flex-row sm:items-center">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-border bg-background text-accent" aria-hidden="true">
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="7" /><path d="M12 2v5M12 17v5M2 12h5M17 12h5" /></svg>
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-foreground">{titulo}</p>
+        {descricao && <p className="mt-0.5 text-sm text-muted-foreground">{descricao}</p>}
+      </div>
+      {acao}
     </div>
   );
 }

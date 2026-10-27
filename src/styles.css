@@ -177,7 +177,7 @@
 .tema-claro {
   /* Controles nativos (ícones de data/hora, seletores, barras de rolagem) seguem o tema. */
   color-scheme: light;
-  --radius: 0.5rem;
+  --radius: 0.375rem;
   /* Light — TAN militar */
   --background: oklch(0.93 0.025 85);
   --foreground: oklch(0.27 0.02 80);
@@ -477,4 +477,61 @@ select.campo-select:not([multiple]):not([size]) {
 select.campo-select:not([multiple]):not([size]):disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ---------- Redesign (protótipo) ----------
+ * Títulos de seção: Inter, sem caixa alta. Barlow Condensed fica só no título da página,
+ * no nome da operação e em números grandes. */
+@layer components {
+  :where(h2, h3, p, div, span).font-display.uppercase:is(.text-lg, .text-base, .text-sm, .text-xl) {
+    font-family: var(--font-sans);
+    text-transform: none;
+    letter-spacing: -0.005em;
+    font-weight: 600;
+  }
+  :where(h2, h3, p, div, span).font-display.uppercase:is(.text-lg, .text-xl) { font-size: 1.0625rem; }
+  :where(h2, h3, p, div, span).font-display.uppercase:is(.text-base, .text-sm) { font-size: 0.9375rem; }
+  h1.font-display { letter-spacing: 0.01em; }
+  h2.font-display.text-2xl.uppercase {
+    font-size: 1.375rem;
+    letter-spacing: 0.02em;
+  }
+  .card-plano { box-shadow: none; }
+}
+@layer components {
+.rotulo-tecnico {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+}
+@layer components {
+  h1.font-display.text-2xl { font-size: 1.875rem; font-weight: 700; line-height: 1.1; }
+}
+@layer components {
+  .titulo-pagina {
+    font-family: var(--font-display);
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+  }
+  .subtitulo-pagina {
+    margin-top: 0.5rem;
+    max-width: 68ch;
+    font-size: 0.9375rem;
+    color: var(--color-muted-foreground);
+  }
+}
+/* Protótipo: itens de lista "caixa dentro de caixa" viram linhas com divisória. */
+li.bg-elevated.border {
+  background: transparent;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  padding-left: 0;
+  padding-right: 0;
 }

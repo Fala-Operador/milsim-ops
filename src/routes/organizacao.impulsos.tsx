@@ -15,10 +15,8 @@ import { formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
 import { Preco } from "@/components/Preco";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Campo, EstadoVazio, Modal } from "@/components/ui";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { BaseDados, ImpulsoComprado } from "@/lib/domain/types";
 
 export const Route = createFileRoute("/organizacao/impulsos")({
@@ -99,7 +97,6 @@ function Impulsos() {
   const planos = planosDeImpulso(base).filter((p) => p.ativo);
   const meus = impulsosDaOrganizacao(base, organizacaoId, agora);
   const disponiveis = meus.filter((i) => statusDoImpulso(i, agora) === "disponivel");
-  const [aba, setAba] = useState<"meus" | "comprar">("meus");
 
   const executar = async (chave: string, fn: () => Promise<void>) => {
     setErro(""); setOcupado(chave);
@@ -115,71 +112,75 @@ function Impulsos() {
   });
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-8">
       <div>
-        <h1 className="font-display text-2xl font-semibold uppercase">Impulsionar</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="titulo-pagina">Impulsionar</h1>
+        <p className="subtitulo-pagina">
           Compre um impulso e use numa operação publicada: ela aparece nos destaques da página inicial e no topo da listagem de eventos, em todo o Brasil, pelo período do impulso.
         </p>
       </div>
       {aviso && (
-        <p role="status" className={`rounded-md border px-3 py-2 text-sm ${aviso.tom === "ok" ? "border-success/40 bg-success/10 text-success" : "border-destructive/40 bg-destructive/10 text-destructive"}`}>
+        <p role="status" className={`border-l-2 px-4 py-3 text-sm ${aviso.tom === "ok" ? "border-success bg-success/10 text-success" : "border-destructive bg-destructive/10 text-destructive"}`}>
           {aviso.texto}
         </p>
       )}
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
 
-      <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)}>
-        <TabsList>
-          <TabsTrigger value="meus">Meus impulsos{disponiveis.length > 0 ? ` (${disponiveis.length})` : ""}</TabsTrigger>
-          <TabsTrigger value="comprar">Comprar</TabsTrigger>
-        </TabsList>
-        <TabsContent value="meus" className="mt-4 space-y-3">
-          {disponiveis.length > 0 && (
-            <p className="text-sm text-muted-foreground">
-              {disponiveis.length === 1 ? "1 impulso disponível" : `${disponiveis.length} impulsos disponíveis`}. Impulso não usado dentro da validade expira.
-            </p>
-          )}
-          {meus.length === 0 ? (
-            <div className="space-y-3 text-center">
-              <EstadoVazio titulo="Nenhum impulso ainda" descricao="Os impulsos comprados aparecem aqui até serem usados." />
-              <Button onClick={() => setAba("comprar")}>Comprar impulso</Button>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {meus.map((i) => (
-                <LinhaImpulso key={i.id} base={base} impulso={i} agora={agora} ocupado={ocupado === i.id}
-                  onUsar={() => setUsando(i)} onPagar={() => void pagar(i)} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
+      <ol className="grid overflow-hidden rounded-lg border border-border sm:grid-cols-3 sm:divide-x sm:divide-border" aria-label="Como funciona">
+        {[
+          ["Compre o pacote", "Pagamento pelo Stripe. O prazo de uso conta do pagamento."],
+          ["Escolha a operação", "Qualquer operação publicada da sua organização."],
+          ["Fique em destaque", "Destaques da página inicial e topo da listagem, em todo o Brasil."],
+        ].map(([t, d], k) => (
+          <li key={t} className="flex gap-3 p-4">
+            <span className="font-display text-3xl font-bold leading-none text-accent">{String(k + 1).padStart(2, "0")}</span>
+            <span><span className="block font-semibold">{t}</span><span className="text-sm text-muted-foreground">{d}</span></span>
+          </li>
+        ))}
+      </ol>
 
-        <TabsContent value="comprar" className="mt-4 space-y-3">
-          {planos.length === 0 ? (
-            <EstadoVazio titulo="Nenhum impulso à venda no momento" />
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {planos.map((p) => (
-                <Card key={p.id} className="flex flex-col gap-3 overflow-hidden p-0">
-                  {p.imagemUrl && <img src={p.imagemUrl} alt={p.rotulo} loading="lazy" className="aspect-[3/2] w-full object-cover" />}
-                  <div className="flex flex-1 flex-col gap-3 px-4 pb-4">
-                  <div className="flex items-center gap-2">
-                    <Rocket className="h-4 w-4 shrink-0 text-primary" />
-                    <span className="font-semibold">{p.rotulo}</span>
-                  </div>
-                  <p className="font-mono text-2xl font-semibold text-accent">{p.precoCentavos === 0 ? "Grátis" : <Preco centavos={p.precoCentavos} />}</p>
-                  <p className="text-xs text-muted-foreground">Use em até {p.validadeDias} dias depois da compra.</p>
-                  <Button className="mt-auto" disabled={ocupado !== null} onClick={() => void comprar(p.id)}>
-                    {ocupado === p.id ? "Abrindo pagamento…" : "Comprar"}
+      {meus.length > 0 && (
+        <section aria-labelledby="t-meus">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="t-meus" className="text-lg font-semibold">Seus impulsos</h2>
+            {disponiveis.length > 0 && (
+              <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+                {disponiveis.length === 1 ? "1 disponível" : `${disponiveis.length} disponíveis`} · expira se não for usado
+              </span>
+            )}
+          </div>
+          <ul className="mt-3 divide-y divide-border border-y border-border">
+            {meus.map((i) => (
+              <LinhaImpulso key={i.id} base={base} impulso={i} agora={agora} ocupado={ocupado === i.id}
+                onUsar={() => setUsando(i)} onPagar={() => void pagar(i)} />
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section aria-labelledby="t-pacotes">
+        <h2 id="t-pacotes" className="text-lg font-semibold">Pacotes</h2>
+        {meus.length === 0 && <p className="mt-1 text-sm text-muted-foreground">Você ainda não tem impulsos. Escolha um pacote para começar.</p>}
+        {planos.length === 0 ? (
+          <div className="mt-3"><EstadoVazio titulo="Nenhum pacote à venda no momento" descricao="A plataforma ainda não liberou pacotes de impulso." /></div>
+        ) : (
+          <ul className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {planos.map((p) => (
+              <li key={p.id} className="flex flex-col overflow-hidden rounded-lg border border-border">
+                {p.imagemUrl ? <img src={p.imagemUrl} alt={p.rotulo} loading="lazy" className="aspect-[16/9] w-full object-cover" /> : <div className="aspect-[16/9] bg-secondary" />}
+                <div className="flex flex-1 flex-col gap-1 p-4">
+                  <p className="font-semibold">{p.rotulo}</p>
+                  <p className="font-display text-4xl font-bold leading-none tabular-nums">{p.precoCentavos === 0 ? "Grátis" : <Preco centavos={p.precoCentavos} />}</p>
+                  <p className="mt-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Use em até {p.validadeDias} dias após a compra</p>
+                  <Button className="mt-4" disabled={ocupado !== null} onClick={() => void comprar(p.id)}>
+                    <Rocket className="size-4" aria-hidden />{ocupado === p.id ? "Abrindo pagamento…" : "Comprar"}
                   </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {usando && <ModalUsar base={base} impulso={usando} onFechar={() => setUsando(null)} />}
     </section>
@@ -193,7 +194,9 @@ function LinhaImpulso({ base, impulso: i, agora, ocupado, onUsar, onPagar }: {
   const campanha = i.impulsionamentoId ? base.impulsionamentos.find((c) => c.id === i.impulsionamentoId) : undefined;
   const evento = i.eventoId ? base.eventos.find((e) => e.id === i.eventoId) : undefined;
   return (
-    <Card className="flex flex-wrap items-center justify-between gap-3 p-3">
+    <li className="flex flex-wrap items-center justify-between gap-3 py-4">
+      <div className="flex min-w-0 items-start gap-3">
+      <span className={`grid size-10 shrink-0 place-items-center rounded-md border ${st === "disponivel" ? "border-accent/50 bg-accent/10 text-accent" : "border-border text-muted-foreground"}`} aria-hidden><Rocket className="size-4" /></span>
       <div className="min-w-0 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-medium">Impulso de {rotuloDuracao(i.duracaoHoras)}</span>
@@ -211,9 +214,10 @@ function LinhaImpulso({ base, impulso: i, agora, ocupado, onUsar, onPagar }: {
           </p>
         )}
       </div>
+      </div>
       {st === "disponivel" && <Button onClick={onUsar}>Usar em uma operação</Button>}
       {st === "aguardando_pagamento" && <Button variant="outline" disabled={ocupado} onClick={onPagar}>{ocupado ? "Abrindo…" : "Pagar"}</Button>}
-    </Card>
+    </li>
   );
 }
 

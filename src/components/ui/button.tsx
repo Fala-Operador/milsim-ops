@@ -8,13 +8,13 @@ import { cn } from "@/lib/utils";
 // e sem tamanho fixo de ícone, para manter os ícones que cada tela já define.
 // Hover e toque com transição curta (cor, fundo, borda, opacidade) e leve afundar ao toque.
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-[color,background-color,border-color,opacity,box-shadow,transform] duration-150 ease-[var(--ease-saida)] enabled:active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-semibold transition-[color,background-color,border-color,opacity,box-shadow,transform] duration-150 ease-[var(--ease-saida)] enabled:active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:opacity-90",
-        destructive: "bg-destructive text-destructive-foreground hover:opacity-90",
-        outline: "border border-border bg-transparent text-foreground hover:bg-secondary",
+        destructive: "border border-destructive/50 bg-transparent text-destructive hover:bg-destructive hover:text-destructive-foreground",
+        outline: "border border-border bg-transparent text-foreground hover:border-foreground/40 hover:bg-secondary/60",
         secondary: "bg-secondary text-secondary-foreground hover:opacity-90",
         ghost: "bg-transparent text-foreground hover:bg-secondary",
         link: "text-accent underline-offset-2 hover:underline",

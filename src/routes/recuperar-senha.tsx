@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { definirNovaSenha, recuperarSenha, trocarCodigoRecuperacao, validarTokenRecuperacao } from "@/api/sessao.functions";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { LayoutAcesso } from "@/components/LayoutAcesso";
 import { Input } from "@/components/ui/input";
 import { Campo, Spinner } from "@/components/ui";
 import { CheckCircle2, ShieldAlert } from "lucide-react";
@@ -10,6 +10,7 @@ import { InputSenha } from "@/components/ui/input-senha";
 import { RequisitosSenha } from "@/components/RequisitosSenha";
 import { useTurnstile } from "@/components/Turnstile";
 import { erroSenha } from "@/lib/domain/senha";
+import imgSar from "@/assets/modalidade-sar.jpg";
 
 export const Route = createFileRoute("/recuperar-senha")({
   // O e-mail de recuperação (supabase/templates/recuperar-senha.html) volta para esta página com
@@ -37,15 +38,14 @@ function PaginaRecuperar() {
   const { code, token_hash, type, error_description } = Route.useSearch();
   const link = token_hash && (!type || type === "recovery") ? { tokenHash: token_hash } : code ? { codigo: code } : null;
   return (
-    <div className="mx-auto max-w-md px-4 py-12">
-      <Card>
-        <h1 className="font-display text-2xl font-semibold uppercase tracking-wide">{link ? "Criar nova senha" : "Recuperar senha"}</h1>
-        {link ? <NovaSenha link={link} /> : <PedirLink erroLink={error_description} />}
-        <p className="mt-4 text-sm">
-          <Link to="/login" search={{ redirect: undefined }} className="text-accent hover:underline">Voltar ao login</Link>
-        </p>
-      </Card>
-    </div>
+    <LayoutAcesso titulo={link ? "Criar nova senha" : "Recuperar senha"}
+      subtitulo={link ? undefined : "Informe o e-mail da conta. Enviamos um link que vale por 1 hora."}
+      imagem={imgSar} rotulo="Acesso à conta" frase="Volte para o campo em menos de um minuto.">
+      {link ? <NovaSenha link={link} /> : <PedirLink erroLink={error_description} />}
+      <p className="mt-4 text-sm">
+        <Link to="/login" search={{ redirect: undefined }} className="text-accent hover:underline">Voltar ao login</Link>
+      </p>
+    </LayoutAcesso>
   );
 }
 
@@ -79,12 +79,12 @@ function PedirLink({ erroLink }: { erroLink?: string | undefined }) {
     );
   }
   return (
-    <form onSubmit={aoEnviar} className="mt-4 space-y-4">
+    <form onSubmit={aoEnviar} className="mt-6 space-y-4">
       <Campo rotulo="E-mail" htmlFor="email" erro={erro || undefined}>
         <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </Campo>
       {turnstile.elemento}
-      <Button type="submit" className="w-full" disabled={enviando || !turnstile.pronto}>{enviando ? "Enviando..." : "Enviar link de recuperação"}</Button>
+      <Button type="submit" size="lg" className="w-full" disabled={enviando || !turnstile.pronto}>{enviando ? "Enviando..." : "Enviar link de recuperação"}</Button>
     </form>
   );
 }
