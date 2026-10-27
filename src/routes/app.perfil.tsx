@@ -17,7 +17,9 @@ const ROTULOS: Record<Aba, string> = { perfil: "Meu perfil", emergencia: "Ficha 
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { formatarDataBR } from "@/lib/domain/money";
-import { mascararCpf, mascararTelefone } from "@/lib/domain/validators";
+import { mascaraCep, mascararCpf, mascararTelefone } from "@/lib/domain/validators";
+import { EditarDadosConta } from "@/components/perfil/EditarDadosConta";
+import { Pencil } from "lucide-react";
 import { NomeExibicaoForm } from "@/components/NomeExibicaoForm";
 import { FotoPerfil } from "@/components/FotoPerfil";
 import { useEffect } from "react";
@@ -145,18 +147,24 @@ function Secao({ titulo, descricao, children }: { titulo: string; descricao?: st
 function DadosConta() {
   const { usuario } = useAuth();
   const { tema, definirTema } = useTheme();
+  const [editando, setEditando] = useState(false);
   if (!usuario) return null;
   const [a, m, d] = usuario.dataNascimento.split("-");
   const dados: [string, string][] = [
     ["Nome", usuario.nomeCompleto], ["E-mail", usuario.email], ["CPF", mascararCpf(usuario.cpf)], ["Nascimento", `${d}/${m}/${a}`],
-    ["WhatsApp", mascararTelefone(usuario.whatsapp)], ["Cidade", `${usuario.endereco.cidade}/${usuario.endereco.uf}`],
+    ["WhatsApp", mascararTelefone(usuario.whatsapp)],
     ...(usuario.squad ? [["Squad", usuario.squad] as [string, string]] : []),
     ...(usuario.instagram ? [["Instagram", usuario.instagram] as [string, string]] : []),
     ["Aceite dos termos", `${usuario.aceiteTermosVersao} em ${formatarDataBR(usuario.aceiteTermosEm)}`],
   ];
+  const end = usuario.endereco;
+  const endereco = `${end.logradouro}, ${end.numero}${end.complemento ? ` — ${end.complemento}` : ""} · ${end.bairro} · ${end.cidade}/${end.uf} · CEP ${mascaraCep(end.cep)}`;
   return (
     <div>
-      <Secao titulo="Dados pessoais" descricao="Vêm do seu cadastro. CPF e telefone aparecem mascarados.">
+      <Secao titulo="Meus dados" descricao="Vêm do seu cadastro. CPF e telefone aparecem mascarados. CPF e e-mail só mudam pelo suporte.">
+        <div className="mb-3 flex justify-end">
+          <Button variant="outline" size="sm" onClick={() => setEditando(true)}><Pencil className="h-4 w-4" aria-hidden="true" /> Editar dados</Button>
+        </div>
         <dl className="grid border-y border-border text-sm sm:grid-cols-2">
           {dados.map(([r, v]) => (
             <div key={r} className="flex items-baseline justify-between gap-4 border-b border-border py-2.5 last:border-b-0 sm:odd:pr-6 sm:even:pl-6 sm:[&:nth-last-child(-n+2)]:border-b-0">
@@ -164,6 +172,10 @@ function DadosConta() {
             </div>
           ))}
         </dl>
+        <dl className="flex flex-col gap-1 border-b border-border py-2.5 text-sm sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+          <dt className="rotulo-tecnico shrink-0">Endereço</dt><dd className="sm:text-right">{endereco}</dd>
+        </dl>
+        {editando && <EditarDadosConta usuario={usuario} aberto onFechar={() => setEditando(false)} />}
       </Secao>
       <Secao titulo="Foto" descricao="Aparece na comunidade dos eventos e no seu perfil público.">
         <FotoPerfil />
