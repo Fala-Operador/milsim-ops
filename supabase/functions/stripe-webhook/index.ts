@@ -39,9 +39,12 @@ function iguais(a: string, b: string): boolean {
   return dif === 0;
 }
 
-/** Igual a stripe.webhooks.constructEvent: t=...,v1=... sobre "t.corpo", dentro da tolerância. */
-async function assinaturaDoStripeValida(corpo: string, cabecalho: string | null, segredos: string[]): Promise<boolean> {
-  if (!cabecalho) return false;
+/**
+ * Igual a stripe.webhooks.constructEvent: t=...,v1=... sobre "t.corpo", dentro da tolerância.
+ * Devolve undefined quando a assinatura confere, ou o motivo da recusa (sem segredos no texto).
+ */
+async function motivoAssinaturaInvalida(corpo: string, cabecalho: string | null, segredos: string[]): Promise<string | undefined> {
+  if (!cabecalho) return "sem cabeçalho Stripe-Signature";
   let t = NaN;
   const v1: string[] = [];
   for (const parte of cabecalho.split(",")) {
@@ -49,12 +52,23 @@ async function assinaturaDoStripeValida(corpo: string, cabecalho: string | null,
     if (k === "t") t = Number(v);
     else if (k === "v1" && v) v1.push(v);
   }
-  if (!Number.isFinite(t) || !v1.length || Math.abs(Date.now() / 1000 - t) > TOLERANCIA_S) return false;
+  if (!Number.isFinite(t) || !v1.length) return "cabeçalho Stripe-Signature malformado";
+  if (Math.abs(Date.now() / 1000 - t) > TOLERANCIA_S) return "horário da assinatura fora da tolerância de 5 minutos";
   for (const segredo of segredos) {
     const esperada = await hmac(segredo, `${t}.${corpo}`);
-    if (v1.some((a) => iguais(a, esperada))) return true;
+    if (v1.some((a) => iguais(a, esperada))) return undefined;
   }
-  return false;
+  return "o segredo de assinatura (whsec_) do destino no Stripe não confere com nenhum segredo da função";
+}
+
+/** Tipo, id e conta do evento só para o log; o corpo ainda não foi autenticado. */
+function resumoNaoVerificado(corpo: string): string {
+  try {
+    const e = JSON.parse(corpo) as { id?: unknown; type?: unknown; account?: unknown; livemode?: unknown };
+    return `${String(e.type)} ${String(e.id)}${e.account ? ` conta ${String(e.account)}` : ""} livemode=${String(e.livemode)}`;
+  } catch {
+    return "corpo não é JSON";
+  }
 }
 
 /** Lê o segredo pelo nome novo ou, enquanto não for recadastrado, pelo nome antigo. */
@@ -74,8 +88,11 @@ Deno.serve(async (req) => {
   }
 
   const corpo = await req.text();
-  if (!(await assinaturaDoStripeValida(corpo, req.headers.get("stripe-signature"), segredos))) {
-    return new Response("Assinatura inválida.", { status: 400 });
+  const motivo = await motivoAssinaturaInvalida(corpo, req.headers.get("stripe-signature"), segredos);
+  if (motivo) {
+    // Texto diferente do 400 do site, para saber no painel do Stripe quem recusou o evento.
+    console.warn(`stripe-webhook: assinatura recusada (${motivo}); ${segredos.length} segredo(s) configurado(s); evento não verificado: ${resumoNaoVerificado(corpo)}`);
+    return new Response(`Assinatura do Stripe recusada pela função stripe-webhook: ${motivo}.`, { status: 400 });
   }
 
   // Repassa o evento ao site com a assinatura interna (mesmo formato do Stripe).
