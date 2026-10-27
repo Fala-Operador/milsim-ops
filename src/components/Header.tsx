@@ -258,9 +258,9 @@ export function Header() {
               </DropdownMenu>
             </div>
           ) : (
-            <div className="hidden items-center gap-1.5 lg:flex">
+            <div className="hidden shrink-0 items-center gap-1.5 lg:flex">
               <Link to="/login" search={{ redirect: undefined }} className={`flex h-10 items-center rounded-md px-3 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground ${foco}`}>Entrar</Link>
-              <Button asChild><Link to="/cadastro" search={{ redirect: undefined }}>Criar conta</Link></Button>
+              <Button asChild className="h-10"><Link to="/cadastro" search={{ redirect: undefined }}>Criar conta</Link></Button>
             </div>
           )}
           <Sheet open={painelAberto} onOpenChange={setPainelAberto}>

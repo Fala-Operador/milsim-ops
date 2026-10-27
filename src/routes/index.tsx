@@ -174,7 +174,7 @@ function PaginaInicial() {
                 <option value="90d">Próximos 90 dias</option>
               </NativeSelect>
             </div>
-            <Button type="submit" className="m-2 h-auto rounded-md px-6 py-3"><Search className="h-4 w-4" aria-hidden />Buscar</Button>
+            <Button type="submit" className="m-2 h-11 rounded-md px-6 md:self-center"><Search className="h-4 w-4" aria-hidden />Buscar</Button>
           </form>
 
           <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="Modalidades">

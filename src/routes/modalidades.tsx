@@ -88,7 +88,7 @@ function PaginaModalidades() {
         </div>
       </header>
 
-      <nav aria-label="Modalidades" className="sticky top-14 z-10 border-b border-border bg-background/95 backdrop-blur">
+      <nav aria-label="Modalidades" className="sticky top-14 z-10 border-b lg:top-[68px] border-border bg-background/95 backdrop-blur">
         <ol className="carousel-viewport mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 py-2">
           {MODALIDADES.map((m, i) => (
             <li key={m.id} className="shrink-0">
@@ -106,7 +106,7 @@ function PaginaModalidades() {
           const invertido = i % 2 === 1;
           return (
             <section key={m.id} id={`modalidade-${m.id}`} aria-labelledby={`t-modalidade-${m.id}`}
-              className="grid scroll-mt-28 items-center gap-8 py-12 lg:grid-cols-2 lg:gap-14">
+              className="grid scroll-mt-28 items-center lg:scroll-mt-32 gap-8 py-12 lg:grid-cols-2 lg:gap-14">
               <div className={`relative overflow-hidden rounded-lg border border-border ${invertido ? "lg:order-2" : ""}`}>
                 <img src={info.imagem} alt={`Cena representativa da modalidade ${m.nome}`} loading={i === 0 ? "eager" : "lazy"}
                   width={1280} height={720} className="aspect-[4/3] w-full object-cover" />
