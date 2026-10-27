@@ -40,30 +40,30 @@ export function OperacaoSelecionada({ eventos, evento, invalido, onSelecionar }:
   return (
     <>
       {evento ? (
-        <section
-          aria-label="Operação selecionada"
-          className="topo-bg relative grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 overflow-hidden rounded-lg border border-border border-l-4 border-l-primary bg-elevated p-4 shadow-sm sm:grid-cols-[auto_minmax(0,1fr)_auto]"
-        >
-          <Miniatura evento={evento} />
-          <div className="min-w-0">
-            <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Operação selecionada</p>
-            <p className="truncate font-display text-xl font-bold uppercase" title={evento.nome}>{evento.nome || "Sem nome"}</p>
-            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-              <span className="inline-flex items-center gap-1"><CalendarDays className="h-4 w-4 shrink-0" />{formatarDataBR(evento.inicioEm)}</span>
-              <span className="inline-flex min-w-0 items-center gap-1"><MapPin className="h-4 w-4 shrink-0" /><span className="truncate">{evento.cidade}/{evento.uf}</span></span>
-              <Badge variant={tomStatusEvento(evento.status)}>{ROTULO_STATUS_EVENTO[evento.status] ?? evento.status}</Badge>
-            </p>
+        <section aria-label="Operação selecionada" className="relative isolate overflow-hidden rounded-lg border border-border bg-black text-white">
+          {evento.imagemUrl && <img src={evento.imagemUrl} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-70" />}
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/90 via-black/60 to-black/20" aria-hidden="true" />
+          <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6">
+            <div className="min-w-0">
+              <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/70">Operação selecionada</p>
+              <p className="mt-1 truncate font-display text-3xl font-bold uppercase leading-none sm:text-4xl" title={evento.nome}>{evento.nome || "Sem nome"}</p>
+              <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-wider text-white/80">
+                <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 shrink-0" />{formatarDataBR(evento.inicioEm)}</span>
+                <span className="inline-flex min-w-0 items-center gap-1.5"><MapPin className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{evento.cidade}/{evento.uf}</span></span>
+                <span className="inline-flex items-center gap-1.5"><span className={`h-1.5 w-1.5 rounded-full ${evento.status === "publicado" ? "bg-success" : evento.status === "cancelado" ? "bg-destructive" : "bg-warning"}`} />{ROTULO_STATUS_EVENTO[evento.status] ?? evento.status}</span>
+              </p>
+            </div>
+            <Button
+              ref={botao}
+              variant="outline"
+              className="w-full shrink-0 border-white/40 bg-black/30 text-white backdrop-blur hover:border-white hover:bg-black/50 sm:w-auto"
+              aria-haspopup="dialog"
+              aria-expanded={aberto}
+              onClick={() => setAberto(true)}
+            >
+              <ArrowLeftRight className="h-4 w-4" /> Trocar evento
+            </Button>
           </div>
-          <Button
-            ref={botao}
-            variant="outline"
-            className="col-span-2 w-full border-primary sm:col-span-1 sm:w-auto"
-            aria-haspopup="dialog"
-            aria-expanded={aberto}
-            onClick={() => setAberto(true)}
-          >
-            <ArrowLeftRight className="h-4 w-4" /> Trocar evento <ChevronDown className="h-4 w-4" />
-          </Button>
         </section>
       ) : (
         <section role="alert" className="flex flex-col gap-3 rounded-lg border border-warning/60 bg-warning/10 p-4 sm:flex-row sm:items-center">

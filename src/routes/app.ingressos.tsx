@@ -174,7 +174,7 @@ function MeusIngressos() {
 
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold uppercase">Meus ingressos</h1>
+      <h1 className="titulo-pagina">Meus ingressos</h1>
       {aviso && (
         <p
           role="status"
@@ -208,10 +208,18 @@ function MeusIngressos() {
             const aguardandoPagamento =
               ins.pagamento?.status === "aguardando" && reservaVigente(ins);
             return (
-              <Card key={ins.id}>
+              <div key={ins.id} className={`flex overflow-hidden rounded-lg border border-border/70 bg-card ${ins.status === "cancelada" ? "opacity-60" : ""}`}>
+                <div className="relative hidden w-44 shrink-0 sm:block">
+                  {evento?.imagemUrl && <img src={evento.imagemUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+                  {evento && <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 text-white">
+                    <p className="font-display text-3xl font-bold leading-none">{formatarDataBR(evento.inicioEm).slice(0, 5)}</p>
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-white/75">{evento.cidade}/{evento.uf}</p>
+                  </div>}
+                </div>
+                <div className="min-w-0 flex-1 p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <h2 className="font-medium">{evento?.nome ?? "Evento"}</h2>
+                    <h2 className="font-display text-2xl font-bold uppercase leading-tight">{evento?.nome ?? "Evento"}</h2>
                     <p className="text-sm text-muted-foreground">
                       {evento &&
                         `${formatarDataBR(evento.inicioEm)} · ${evento.cidade}/${evento.uf}`}
@@ -235,9 +243,9 @@ function MeusIngressos() {
                       </p>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:block sm:shrink-0 sm:text-right">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:block sm:shrink-0 sm:border-l sm:border-dashed sm:border-border sm:pl-5 sm:text-right">
                     <StatusInscricao status={ins.status} />
-                    <p className="font-mono text-sm text-accent sm:mt-2">{ins.codigo}</p>
+                    <p className="font-mono text-lg font-semibold tracking-wider text-accent sm:mt-2">{ins.codigo}</p>
                     <p className="w-full text-[11px] text-muted-foreground">
                       Código do ingresso — sem dados pessoais
                     </p>
@@ -280,15 +288,16 @@ function MeusIngressos() {
                       </a>
                     )}
                     <Button
-                      className="w-full sm:w-auto"
-                      variant="outline"
+                      className="w-full text-muted-foreground sm:ml-auto sm:w-auto"
+                      variant="ghost"
                       onClick={() => setCancelando(ins)}
                     >
                       Cancelar inscrição
                     </Button>
                   </div>
                 )}
-              </Card>
+                </div>
+              </div>
             );
           })}
         </div>

@@ -29,7 +29,7 @@ function Privacidade() {
 
   return (
     <section>
-      <h2 className="font-display text-lg font-semibold uppercase">Solicitações de privacidade</h2>
+      <h2 className="titulo-pagina">Solicitações de privacidade</h2>
       {base.privacidade.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">Nenhuma solicitação.</p>
       ) : (

@@ -1,6 +1,7 @@
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
+import { ArrowDown, ArrowUp, GripVertical, MoreHorizontal } from "lucide-react";
 import { carregarBase } from "@/services/db";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -68,8 +69,8 @@ function PaginaDivulgacao() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-semibold uppercase">Página inicial e divulgação</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="titulo-pagina">Página inicial e divulgação</h2>
+          <p className="subtitulo-pagina">
             Agendamentos são aplicados sempre que a página inicial é carregada.
           </p>
         </div>
@@ -121,13 +122,13 @@ function GestaoSecoes({ base }: { base: BaseDados }) {
         <Button onClick={() => setEditando(secaoVazia("destaques"))}>Nova seção</Button>
         <Button variant="outline" onClick={() => setPrevia(true)}>Prévia da página</Button>
       </div>
-      <ul className="mt-4 space-y-2" aria-label="Seções da página inicial (arraste para reordenar)">
+      <ul className="mt-4 divide-y divide-border border-y border-border" aria-label="Seções da página inicial (arraste para reordenar)">
         {ordenadas.map((s, i) => (
           <li key={s.id} draggable
             onDragStart={() => setArrastando(s.id)}
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => { if (arrastando) mover(ordenadas.findIndex((x) => x.id === arrastando), i); setArrastando(null); }}
-            className={`flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-border bg-card p-3 ${arrastando === s.id ? "opacity-50" : ""}`}>
+            className={`flex flex-wrap items-center gap-x-3 gap-y-2 py-3 ${arrastando === s.id ? "opacity-50" : ""}`}>
             <GripVertical className="hidden h-4 w-4 shrink-0 cursor-grab text-muted-foreground sm:block" aria-hidden />
             <span className="w-5 shrink-0 font-mono text-xs text-muted-foreground">{i + 1}</span>
             <div className="min-w-0 flex-1">
@@ -139,16 +140,19 @@ function GestaoSecoes({ base }: { base: BaseDados }) {
               </p>
             </div>
             <Badge variant={tomStatus[s.status]}>{s.status}</Badge>
-            <div className="flex w-full flex-wrap gap-1 sm:w-auto">
-              <Button variant="ghost" className="!px-2" aria-label={`Mover ${s.titulo} para cima`} disabled={i === 0} onClick={() => mover(i, i - 1)}><ArrowUp className="h-4 w-4" /></Button>
-              <Button variant="ghost" className="!px-2" aria-label={`Mover ${s.titulo} para baixo`} disabled={i === ordenadas.length - 1} onClick={() => mover(i, i + 1)}><ArrowDown className="h-4 w-4" /></Button>
-              <Button variant="outline" onClick={() => setEditando(structuredClone(s))}>Editar</Button>
-              {s.status !== "publicada" ? (
-                <Button variant="secondary" onClick={() => alterarStatusSecao(s.id, "publicada")}>Publicar</Button>
-              ) : (
-                <Button variant="secondary" onClick={() => alterarStatusSecao(s.id, "desativada")}>Desativar</Button>
-              )}
-              <Button variant="ghost" onClick={() => setExcluir(s)}>Excluir</Button>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" aria-label={`Mover ${s.titulo} para cima`} disabled={i === 0} onClick={() => mover(i, i - 1)}><ArrowUp className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" aria-label={`Mover ${s.titulo} para baixo`} disabled={i === ordenadas.length - 1} onClick={() => mover(i, i + 1)}><ArrowDown className="h-4 w-4" /></Button>
+              <Button variant="outline" size="sm" onClick={() => setEditando(structuredClone(s))}>Editar</Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`Mais ações de ${s.titulo}`}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {s.status !== "publicada"
+                    ? <DropdownMenuItem onSelect={() => alterarStatusSecao(s.id, "publicada")}>Publicar</DropdownMenuItem>
+                    : <DropdownMenuItem onSelect={() => alterarStatusSecao(s.id, "desativada")}>Desativar</DropdownMenuItem>}
+                  <DropdownMenuItem className="text-destructive" onSelect={() => setExcluir(s)}>Excluir</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </li>
         ))}
@@ -468,9 +472,9 @@ function GestaoParceiros({ base }: { base: BaseDados }) {
                 Pendência — {rotuloDoLink(link)} “{link.url ?? link.telefone ?? ""}”: {erro}
               </p>
             ))}
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button variant="outline" onClick={() => setEditando(structuredClone(p))}>Editar</Button>
-              <Button variant="ghost" onClick={() => excluirParceiro(p.id)}>Excluir</Button>
+            <div className="mt-3 flex flex-wrap gap-x-4 text-sm">
+              <Button variant="link" size="none" onClick={() => setEditando(structuredClone(p))}>Editar</Button>
+              <Button variant="link" size="none" className="text-muted-foreground hover:text-destructive" onClick={() => excluirParceiro(p.id)}>Excluir</Button>
             </div>
           </Card>
         ))}

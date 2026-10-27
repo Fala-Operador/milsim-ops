@@ -1,4 +1,5 @@
 // Componentes públicos da página inicial: seletor de região, seções, carrossel, parceiros e banner.
+import { CartaoOperacao } from "@/components/CartaoOperacao";
 import { nomeModalidade } from "@/lib/modalidades";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -127,37 +128,7 @@ function precoInicial(e: CartaoEventoResolvido["evento"]): number {
 
 export function CartaoEvento({ c }: { c: CartaoEventoResolvido }) {
   const e = c.evento;
-  return (
-    <Link to="/eventos/$eventoId" params={{ eventoId: e.id }}
-      className="block h-full rounded-lg border border-border bg-card text-card-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-      <div className="relative aspect-[16/9] overflow-hidden rounded-t-lg">
-        {c.imagem ? (
-          <ImagemSegura src={c.imagem} alt={`Imagem da ${e.nome}`} className="h-full w-full" />
-        ) : (
-          <div className="topo-bg flex h-full items-end bg-secondary p-3">
-            <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{e.cidade} · {e.uf}</span>
-          </div>
-        )}
-        {c.selo && (
-          <span className="absolute left-2 top-2 flex gap-1">
-            <Badge variant="warning">{c.selo}</Badge>
-          </span>
-        )}
-      </div>
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h3 className="font-display text-lg font-semibold uppercase leading-tight">{e.nome}</h3>
-            <span className="mt-1 inline-block rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{nomeModalidade(e.modalidade)}</span>
-          </div>
-          {c.esgotado ? <Badge variant="destructive">Esgotado</Badge> : <Badge variant="success">Vagas abertas</Badge>}
-        </div>
-        <p className="mt-1 text-sm text-muted-foreground">{formatarDataBR(e.inicioEm)} · {e.cidade}/{e.uf}</p>
-        {c.chamada && <p className="mt-2 text-sm">{c.chamada}</p>}
-        <p className="mt-2 text-sm">A partir de <Preco centavos={precoInicial(e)} className="text-accent" /></p>
-      </div>
-    </Link>
-  );
+  return <CartaoOperacao evento={{ ...e, imagemUrl: c.imagem }} preco={precoInicial(e)} restantes={c.esgotado ? 0 : e.capacidadeTotal} selo={c.selo} chamada={c.chamada} />;
 }
 
 const TAM_LOGO = { p: "h-14", m: "h-20", g: "h-28" } as const;

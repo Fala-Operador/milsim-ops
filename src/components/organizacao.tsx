@@ -187,13 +187,34 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
           </ul>
         </div>
       )}
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {itens.map(([rotulo, valor]) => (
-          <div key={rotulo} className="min-w-0 rounded-md border border-border bg-elevated p-3">
-            <p className="text-xs leading-tight text-muted-foreground">{rotulo}</p>
-            <p className="mt-1 break-words font-mono text-base font-semibold sm:text-lg">{valor}</p>
+      <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <div className="rounded-lg border border-border">
+          <div className="flex items-end justify-between gap-3 border-b border-border p-5">
+            <div>
+              <p className="rotulo-tecnico">Total líquido</p>
+              <p className="mt-1 font-display text-5xl font-bold leading-none tabular-nums">{formatarBRL(r.liquido)}</p>
+            </div>
+            <p className="text-right text-xs text-muted-foreground">{r.inscritosAtivos} inscritos ativos<br />{r.reservasAguardando} reservas aguardando</p>
           </div>
-        ))}
+          <dl className="divide-y divide-border/70 font-mono text-sm tabular-nums">
+            {([
+              ["Valor bruto", r.bruto, ""], ["Descontos de cupom", -r.descontos, "−"], ["Estornos", -r.estornos, "−"], ["Ajustes", r.ajustes, r.ajustes < 0 ? "−" : "+"],
+            ] as const).map(([rot, v]) => (
+              <div key={rot} className="flex justify-between gap-3 px-5 py-2.5">
+                <dt className="font-sans text-muted-foreground">{rot}</dt>
+                <dd className={v < 0 ? "text-destructive" : ""}>{formatarBRL(v)}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+        <dl className="grid content-start grid-cols-2 gap-x-6 gap-y-4 self-start">
+          {itens.filter(([rot]) => !["Inscritos ativos", "Valor bruto", "Descontos concedidos", "Ajustes", "Estornos", "Total líquido", "Reservas aguardando pagamento"].includes(rot)).map(([rotulo, valor]) => (
+            <div key={rotulo} className="min-w-0 border-t border-border pt-2">
+              <dt className="text-xs leading-tight text-muted-foreground">{rotulo}</dt>
+              <dd className="mt-1 break-words font-display text-2xl font-bold tabular-nums">{valor}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
       {/* key: trocar de evento recomeça abas e filtros */}
       <Movimentacoes

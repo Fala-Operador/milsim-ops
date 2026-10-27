@@ -127,25 +127,38 @@ export function FormCampanha({ base, usuario, inicial, organizacaoFixa, onFechar
   );
 }
 
-export function ListaCampanhas({ base, campanhas, onEditar }: { base: BaseDados; campanhas: CampanhaRecompensa[]; onEditar: (c: CampanhaRecompensa) => void }) {
-  if (!campanhas.length) return <EstadoVazio titulo="Nenhuma campanha" />;
+export function ListaCampanhas({ base, campanhas, onEditar, onNova }: { base: BaseDados; campanhas: CampanhaRecompensa[]; onEditar: (c: CampanhaRecompensa) => void; onNova?: () => void }) {
+  if (!campanhas.length) return (
+    <EstadoVazio titulo="Nenhuma campanha ainda"
+      descricao="Crie uma campanha para dar um benefício a quem conquistou uma insígnia. O operador usa o benefício na inscrição."
+      acao={onNova && <Button onClick={onNova}>Criar a primeira campanha</Button>} />
+  );
   return (
-    <ul className="space-y-2">
+    <ul className="divide-y divide-border border-y border-border">
       {campanhas.map((c) => {
         const vs = base.vouchers.filter((v) => v.campanhaId === c.id);
         const usados = vs.filter((v) => v.status === "utilizada").length;
         const disp = vs.filter((v) => statusVoucher(v) === "disponivel").length;
         const ins = base.insignias.find((i) => i.id === c.insigniaId);
+        const pct = c.maximo > 0 ? Math.min(100, Math.round((vs.length / c.maximo) * 100)) : 0;
         return (
-          <li key={c.id} className="flex flex-wrap items-start justify-between gap-2 rounded-md border border-border bg-card p-3 text-sm">
-            <div className="min-w-0">
-              <p className="font-medium">{c.nome} <Badge variant={c.ativa ? "success" : "secondary"}>{c.ativa ? "Ativa" : "Inativa"}</Badge> <span className="text-xs text-muted-foreground">v{c.versao}</span></p>
-              <p className="text-xs text-muted-foreground">
-                {descreverBeneficio(c)} · conquista: {ins ? `${ins.icone} ${ins.nome}` : "—"} · {base.organizacoes.find((o) => o.id === c.organizacaoId)?.nome}
-              </p>
-              <p className="text-xs text-muted-foreground">Emitidos {vs.length}/{c.maximo} · disponíveis {disp} · utilizados {usados} · resgate até {formatarDataBR(c.resgatarAte)}{c.aceitaAnteriores ? " · aceita conquistas anteriores" : ""}</p>
+          <li key={c.id} className={`grid gap-4 py-4 text-sm sm:grid-cols-[minmax(0,1fr)_200px_auto] sm:items-center ${c.ativa ? "" : "opacity-70"}`}>
+            <div className="flex min-w-0 gap-4">
+              <span className="grid size-12 shrink-0 place-items-center rounded-md border border-dashed border-accent/60 text-2xl" aria-hidden>{ins?.icone ?? "★"}</span>
+              <div className="min-w-0">
+                <p className="flex flex-wrap items-center gap-2 font-semibold">{c.nome}<Badge variant={c.ativa ? "success" : "secondary"}>{c.ativa ? "Ativa" : "Inativa"}</Badge><span className="font-mono text-[11px] text-muted-foreground">v{c.versao}</span></p>
+                <p className="mt-0.5 text-accent">{descreverBeneficio(c)}</p>
+                <p className="mt-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                  Insígnia: {ins?.nome ?? "—"} · resgate até {formatarDataBR(c.resgatarAte)}{c.aceitaAnteriores ? " · aceita conquistas anteriores" : ""}
+                </p>
+              </div>
             </div>
-            <Button variant="outline" className="text-xs" onClick={() => onEditar(c)}>Editar</Button>
+            <div>
+              <div className="flex justify-between font-mono text-[11px] text-muted-foreground"><span>Emitidos</span><span className="tabular-nums">{vs.length}/{c.maximo}</span></div>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden><div className="h-full bg-accent" style={{ width: `${pct}%` }} /></div>
+              <p className="mt-1 text-xs text-muted-foreground">{disp} disponíveis · {usados} usados</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => onEditar(c)}>Editar</Button>
           </li>
         );
       })}

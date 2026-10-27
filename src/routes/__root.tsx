@@ -166,13 +166,25 @@ function Providers({ children }: { children: ReactNode }) {
      <ConfirmacaoProvider>
       <Header />
       <main>{conteudo}</main>
-      <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        <p>MilSim Ops — eventos de simulação militar. Pagamentos de ingressos processados pelo Stripe.</p>
-        <nav className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1" aria-label="Links do rodapé">
-          <Link to="/modalidades" className="underline-offset-4 hover:underline">Modalidades</Link>
-          <Link to="/termos" className="underline-offset-4 hover:underline">Termos de uso</Link>
-          <Link to="/privacidade" className="underline-offset-4 hover:underline">Privacidade</Link>
-        </nav>
+      <footer className="mt-12 border-t border-border">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-sm sm:grid-cols-[1.4fr_1fr_1fr]">
+          <div>
+            <p className="font-display text-xl font-bold uppercase tracking-[0.04em]">Milsim<span className="text-accent">Ops</span></p>
+            <p className="mt-2 max-w-xs text-muted-foreground">Agenda, inscrição e check-in de operações de airsoft e milsim no Brasil.</p>
+          </div>
+          <nav aria-label="Links do rodapé" className="flex flex-col gap-2">
+            <p className="rotulo-tecnico">Plataforma</p>
+            <Link to="/" className="text-muted-foreground hover:text-foreground">Eventos</Link>
+            <Link to="/modalidades" className="text-muted-foreground hover:text-foreground">Modalidades</Link>
+            <Link to="/comunidades" className="text-muted-foreground hover:text-foreground">Comunidades</Link>
+          </nav>
+          <div className="flex flex-col gap-2">
+            <p className="rotulo-tecnico">Legal</p>
+            <Link to="/termos" className="text-muted-foreground hover:text-foreground">Termos de uso</Link>
+            <Link to="/privacidade" className="text-muted-foreground hover:text-foreground">Privacidade</Link>
+            <p className="text-xs text-muted-foreground">Pagamentos processados pelo Stripe.</p>
+          </div>
+        </div>
       </footer>
       <MenuInferior />
      </ConfirmacaoProvider>
