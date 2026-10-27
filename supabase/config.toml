@@ -430,5 +430,5 @@ enabled = true
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
 
 # Webhooks do Stripe: o Stripe não envia JWT do Supabase; a função confere a assinatura dele.
-[functions.stripe-webhook]
+[functions.milsim-stripe-webhook]
 verify_jwt = false

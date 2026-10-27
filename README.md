@@ -23,7 +23,7 @@ os avisos ficam nas notificações do app.
 - **TanStack Start** (React 19 + SSR) com roteamento por arquivos (`src/routes/`) e server functions (`src/api/`)
 - **Supabase**: Postgres (tabelas com RLS, acesso só pelo servidor), Auth (sessão em cookies via `@supabase/ssr`) e Storage (bucket `midia`)
 - **Vite 8** via `@lovable.dev/vite-tanstack-config` (build com Nitro: servidor Node em `.output/`; dentro do Lovable o alvo continua Cloudflare)
-- **Stripe** (Checkout, reembolsos e Connect Express) por `fetch`, sem SDK; webhooks pela Edge Function `supabase/functions/stripe-webhook`
+- **Stripe** (Checkout, reembolsos e Connect Express) por `fetch`, sem SDK; webhooks pela Edge Function `supabase/functions/milsim-stripe-webhook`
 - **Tailwind CSS 4**, `lucide-react`, `recharts`; **Vitest** + Testing Library
 - Apoio: `qrcode` / `jsqr` (check-in), `jspdf` (relatórios), `zod` (validação das APIs)
 
@@ -50,7 +50,7 @@ bun run start                # servidor Node gerado pelo build (.output/server/i
 | `PERSONAL_DATA_ENCRYPTION_KEY` | **obrigatória, somente servidor**: chave (32 bytes em base64, `openssl rand -base64 32`) que cifra os dados pessoais no banco (CPF, nascimento, e-mail, WhatsApp, endereço, ficha de emergência, CNPJ/telefone, convidados). Mesmo valor em todo servidor que usa o mesmo banco (Lovable e Dokploy); outro valor por ambiente (prod ≠ hml). **Perder a chave = perder esses dados**: guarde uma cópia fora do servidor. Sem ela o site lê, mas não grava dado pessoal |
 | `PERSONAL_DATA_ENCRYPTION_PREVIOUS_KEYS` | só na rotação: chaves antigas (separadas por vírgula), ainda aceitas para decifrar; o servidor regrava tudo com a chave atual e a antiga pode sair depois |
 | `STRIPE_SERVER_API_KEY` | opcional, **somente servidor**: liga a venda pelo Stripe Checkout e o Stripe Connect (sem ela, inscrição confirmada sem cobrança) |
-| `STRIPE_WEBHOOK_FORWARD_SECRET` | segredo compartilhado entre a Edge Function `stripe-webhook` e o site (mesmo valor nos dois lados) |
+| `STRIPE_WEBHOOK_FORWARD_SECRET` | segredo compartilhado entre a Edge Function `milsim-stripe-webhook` e o site (mesmo valor nos dois lados) |
 | `STRIPE_BROWSER_PUBLIC_KEY` | opcional (`pk_...`): o cadastro e a gestão do recebimento da organização acontecem dentro do site (componentes embutidos do Stripe) |
 | `TURNSTILE_SITE_KEY` | chave pública (site key) do Cloudflare Turnstile, mostrado no login, cadastro e pedido de redefinição de senha. A chave secreta fica só no Supabase (Authentication → Attack Protection → CAPTCHA). Com o CAPTCHA ligado no Supabase, sem esta variável ninguém entra |
 
@@ -68,7 +68,7 @@ os antigos. Todas precisam ser do mesmo ambiente do Stripe (mesma conta e mesmo 
 | `STRIPE_BROWSER_PUBLIC_KEY` | `STRIPE_PUBLISHABLE_KEY` | site | chave publicável (`pk_…`) dos painéis embutidos em Financeiro |
 | `STRIPE_WEBHOOK_FORWARD_SECRET` | `MILSIM_WEBHOOK_SECRET` | site **e** Edge Function | senha com que a Edge Function assina o evento repassado ao site |
 | `STRIPE_WEBHOOK_FORWARD_URL` | `MILSIM_WEBHOOK_URL` | Edge Function | endereço do site que recebe o repasse (`https://<site>/api/stripe/webhook`) |
-| `STRIPE_PAYMENTS_WEBHOOK_SIGNING_SECRET` | `STRIPE_WEBHOOK_SECRET` | Edge Function | `whsec_…` do endpoint de eventos da conta (pagamentos) |
+| `STRIPE_PAYMENTS_WEBHOOK_SIGNING_SECRET` | — (`STRIPE_WEBHOOK_SECRET` é do Stripe Sync) | Edge Function | `whsec_…` do endpoint de eventos da conta (pagamentos) |
 | `STRIPE_CONNECT_WEBHOOK_SIGNING_SECRET` | `STRIPE_CONNECT_WEBHOOK_SECRET` | Edge Function | `whsec_…` do endpoint de eventos das contas conectadas (Connect) |
 
 O Supabase Auth precisa da URL publicada nas URLs de retorno, e um SMTP próprio para a
@@ -169,7 +169,7 @@ Stripe em modo live.
   reembolso integral automático no cancelamento. Com a conta Stripe Connect da organização ativa
   (Financeiro → Recebimentos), cada venda é repassada automaticamente a ela, descontada a taxa da
   plataforma (definida em Administração → Pagamentos); antes disso, o valor fica na plataforma.
-  Os webhooks do Stripe chegam pela Edge Function `supabase/functions/stripe-webhook`, que confere
+  Os webhooks do Stripe chegam pela Edge Function `supabase/functions/milsim-stripe-webhook`, que confere
   a assinatura e repassa o evento à API do site (lista de eventos no cabeçalho da função).
   Com a conta ativa, Financeiro mostra saldo, próximos saques e banco lidos do Stripe e, com
   `STRIPE_BROWSER_PUBLIC_KEY`, o cadastro da conta, os avisos, os dados bancários, os saques e os
