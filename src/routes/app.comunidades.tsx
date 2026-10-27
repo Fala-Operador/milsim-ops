@@ -72,8 +72,8 @@ function MinhasComunidades() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold uppercase">Minhas comunidades</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="titulo-pagina">Minhas comunidades</h1>
+        <p className="subtitulo-pagina">
           Comunidades dos eventos em que você participa ou gerencia.
         </p>
       </div>

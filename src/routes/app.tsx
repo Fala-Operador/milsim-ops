@@ -5,6 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useExigirLogin } from "@/hooks/useExigirLogin";
 import { useSuporte } from "@/contexts/SuporteContext";
 import { ErroSecao, SkeletonPagina } from "@/components/ui";
+import { LayoutMenuLateral } from "@/components/MenuLateral";
+import { LayoutDashboard, LifeBuoy, MessagesSquare, Shield, Target, Ticket, UserRound } from "lucide-react";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 
@@ -39,42 +41,27 @@ function LayoutApp() {
   // montar, para que o primeiro desenho do navegador coincida com o HTML recebido.
   const [montado, setMontado] = useState(false);
   useEffect(() => setMontado(true), []);
-  const navRef = useRef<HTMLElement>(null);
-  useAbaAtivaVisivel(navRef, `${pathname}|${montado && !!usuario}`);
+  void pathname; void useRef; void useAbaAtivaVisivel;
 
   useExigirLogin("/app");
 
   if (!montado || !usuario) return <SkeletonPagina />;
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 lg:flex-row">
-      <aside className="min-w-0 lg:w-56 lg:shrink-0">
-        <nav
-          ref={navRef}
-          aria-label="Área do participante"
-          className="abas-rolaveis relative -mx-4 flex gap-1 border-b border-border px-4 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:border-b-0 lg:px-0 lg:pb-0"
-        >
-          {ITENS.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="inline-flex shrink-0 items-center whitespace-nowrap rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
-              activeOptions={{ exact: item.to === "/app" }}
-              activeProps={{ className: "bg-secondary text-foreground font-medium" }}
-            >
-              {item.rotulo}
-              {item.to === "/app/suporte" && naoLidasParticipante > 0 && (
-                <span data-testid="contador-suporte" aria-label={`${naoLidasParticipante} chamados com resposta não lida`} className="ml-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                  {naoLidasParticipante}
-                </span>
-              )}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-      <div className="min-w-0 flex-1">
-        <Outlet />
-      </div>
-    </div>
+    <LayoutMenuLateral titulo="Minha área" rotuloNav="Área do participante" grupos={[
+      { titulo: "Operações", itens: [
+        { to: "/app", rotulo: "Visão geral", icone: LayoutDashboard, exato: true },
+        { to: "/app/ingressos", rotulo: "Meus ingressos", icone: Ticket },
+        { to: "/app/missoes", rotulo: "Missões", icone: Target },
+        { to: "/app/comunidades", rotulo: "Comunidades", icone: MessagesSquare },
+      ] },
+      { titulo: "Conta", itens: [
+        { to: "/app/perfil", rotulo: "Meu perfil", icone: UserRound },
+        { to: "/app/suporte", rotulo: "Suporte", icone: LifeBuoy, contador: naoLidasParticipante },
+        { to: "/app/privacidade", rotulo: "Privacidade", icone: Shield },
+      ] },
+    ]}>
+      <Outlet />
+    </LayoutMenuLateral>
   );
 }

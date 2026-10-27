@@ -1,3 +1,4 @@
+import { IconeForum, OPCOES_ICONE_FORUM } from "@/components/IconeForum";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useComunidade } from "@/hooks/useComunidade";
@@ -91,7 +92,7 @@ function Gerenciar() {
               <Card key={f.id}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold">{f.icone} {f.nome} {f.status === "arquivado" && <Badge>Arquivado</Badge>}</p>
+                    <p className="flex items-center gap-2 font-semibold"><IconeForum forum={f} />{f.nome} {f.status === "arquivado" && <Badge>Arquivado</Badge>}</p>
                     <p className="text-sm text-muted-foreground">{f.descricao}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {publicoNome(f.publico)} · Publicação: {f.publicacao === "gestao" ? "só organização" : "membros"} · Respostas: {f.respostas === "gestao" ? "só organização" : "membros"} · {qtd} publicação(ões)
@@ -199,7 +200,14 @@ function ModalForum({ inicial, titulo, exercitos, onFechar, onSalvar }: { inicia
       <div className="max-h-[70vh] space-y-3 overflow-y-auto pr-1">
         <Campo rotulo="Nome" htmlFor="f-nome"><Input id="f-nome" value={d.nome} onChange={(e) => set("nome", e.target.value)} /></Campo>
         <Campo rotulo="Descrição" htmlFor="f-desc"><Textarea id="f-desc" rows={2} value={d.descricao} onChange={(e) => set("descricao", e.target.value)} /></Campo>
-        <Campo rotulo="Ícone (emoji, opcional)" htmlFor="f-ico"><Input id="f-ico" maxLength={4} value={d.icone ?? ""} onChange={(e) => set("icone", e.target.value)} /></Campo>
+        <Campo rotulo="Ícone" htmlFor="f-ico">
+          <div className="flex items-center gap-2">
+            <IconeForum forum={{ icone: d.icone, nome: d.nome }} ativo />
+            <NativeSelect id="f-ico" value={OPCOES_ICONE_FORUM.some((o) => o.valor === (d.icone ?? "")) ? (d.icone ?? "") : ""} onChange={(e) => set("icone", e.target.value)}>
+              {OPCOES_ICONE_FORUM.map((o) => <option key={o.rotulo} value={o.valor}>{o.rotulo}</option>)}
+            </NativeSelect>
+          </div>
+        </Campo>
         <Campo rotulo="Regras específicas (opcional)" htmlFor="f-reg"><Textarea id="f-reg" rows={2} value={d.regras ?? ""} onChange={(e) => set("regras", e.target.value)} /></Campo>
         <Campo rotulo="Público autorizado" htmlFor="f-pub">
           <NativeSelect id="f-pub" value={d.publico} onChange={(e) => set("publico", e.target.value)}>

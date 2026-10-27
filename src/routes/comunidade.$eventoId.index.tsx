@@ -1,4 +1,5 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ExternalLink, LifeBuoy, MessageCircle, Target } from "lucide-react";
+import { IconeForum } from "@/components/IconeForum";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { useComunidade } from "@/hooks/useComunidade";
@@ -85,26 +86,37 @@ function ComunidadeInicio() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
-      <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground">
-        <Link to="/app" className="hover:underline">Minha área</Link> /{" "}
-        <Link to="/comunidade/$eventoId" params={{ eventoId }} search={{}} className="hover:underline">Comunidade</Link>
-        {forumAtual && <> / {forumAtual.nome}</>}
-      </nav>
-
-      <header className="mt-2 flex flex-wrap items-center gap-4 rounded-lg border border-border bg-card p-4">
-        {evento.imagemUrl && <img src={evento.imagemUrl} alt="" className="h-16 w-16 rounded-md object-cover" />}
-        <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-semibold uppercase">{evento.nome}</h1>
-          <p className="text-sm text-muted-foreground">
-            Comunidade · {formatarDataBR(evento.inicioEm)} · {evento.cidade}/{evento.uf}
-            {totalNovidades > 0 && <> · <span className="text-accent">{totalNovidades} novidade(s) desde sua última visita</span></>}
-          </p>
+      <header className="relative isolate overflow-hidden rounded-lg border border-border bg-black text-white">
+        {evento.imagemUrl && <img src={evento.imagemUrl} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-60" />}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/90 via-black/60 to-black/20" aria-hidden />
+        <div className="flex flex-wrap items-end justify-between gap-4 p-5 sm:p-7">
+          <div className="min-w-0">
+            <nav aria-label="Breadcrumb" className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/70">
+              <Link to="/app" className="hover:text-white">Minha área</Link> /{" "}
+              <Link to="/comunidade/$eventoId" params={{ eventoId }} search={{}} className="hover:text-white">Comunidade</Link>
+              {forumAtual && <> / {forumAtual.nome}</>}
+            </nav>
+            <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none sm:text-5xl">{evento.nome}</h1>
+            <p className="mt-3 font-mono text-xs uppercase tracking-wider text-white/80">
+              {formatarDataBR(evento.inicioEm)} · {evento.cidade}/{evento.uf} · {foruns.length} fóruns
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {totalNovidades > 0 && (
+              <span className="inline-flex items-center gap-2 rounded-md border border-white/25 bg-black/40 px-3 py-1.5 text-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />{totalNovidades} {totalNovidades === 1 ? "novidade" : "novidades"} desde a sua última visita
+              </span>
+            )}
+            <Button asChild variant="outline" className="border-white/40 bg-black/30 text-white hover:bg-black/50">
+              <Link to="/eventos/$eventoId" params={{ eventoId }}>Página da operação</Link>
+            </Button>
+            {gestao && (
+              <Button asChild variant="outline" className="border-white/40 bg-black/30 text-white hover:bg-black/50">
+                <Link to="/comunidade/$eventoId/gerenciar" params={{ eventoId }}>Gerenciar</Link>
+              </Button>
+            )}
+          </div>
         </div>
-        {gestao && (
-          <Link to="/comunidade/$eventoId/gerenciar" params={{ eventoId }}>
-            <Button variant="outline">Gerenciar comunidade</Button>
-          </Link>
-        )}
       </header>
 
       {suspenso && (
@@ -119,23 +131,25 @@ function ComunidadeInicio() {
           <option value="">Todos os fóruns</option>
           {foruns.map((f) => (
             <option key={f.id} value={f.id}>
-              {f.icone} {f.nome}{f.status === "arquivado" ? " (arquivado)" : ""}{novidades[f.id] ? ` • ${novidades[f.id]} novas` : ""}
+              {f.nome}{f.status === "arquivado" ? " (arquivado)" : ""}{novidades[f.id] ? ` • ${novidades[f.id]} novas` : ""}
             </option>
           ))}
         </NativeSelect>
       </div>
 
-      <div className="mt-4 grid gap-6 lg:grid-cols-[240px_1fr_260px]">
+      <div className="mt-4 grid gap-6 lg:grid-cols-[250px_minmax(0,1fr)_240px]">
         {/* Navegação lateral */}
         <aside className="hidden lg:block" aria-label="Fóruns">
-          <ul className="sticky top-20 space-y-1">
-            <ItemForum ativo={!forumAtual} onClick={() => irPara()} rotulo="🗂 Todos" />
+          <p className="rotulo-tecnico mb-2 px-2">Fóruns</p>
+          <ul className="sticky top-20 space-y-0.5">
+            <ItemForum ativo={!forumAtual} onClick={() => irPara()} rotulo="Todos os fóruns" />
             {foruns.map((f) => (
               <ItemForum
                 key={f.id}
                 ativo={forumAtual?.id === f.id}
                 onClick={() => irPara(f.id)}
-                rotulo={`${f.icone ?? "#"} ${f.nome}`}
+                forum={f}
+                rotulo={f.nome}
                 descricao={f.descricao}
                 novas={novidades[f.id]}
                 arquivado={f.status === "arquivado"}
@@ -158,11 +172,14 @@ function ComunidadeInicio() {
           </form>
 
           {forumAtual && (
-            <Card>
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <h2 className="font-display text-xl font-semibold">{forumAtual.icone} {forumAtual.nome}</h2>
-                  <p className="text-sm text-muted-foreground">{forumAtual.descricao}</p>
+            <div className="border-b border-border pb-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-3">
+                  <IconeForum forum={forumAtual} ativo tamanho="lg" />
+                  <div className="min-w-0">
+                    <h2 className="text-xl font-semibold">{forumAtual.nome}</h2>
+                    <p className="text-sm text-muted-foreground">{forumAtual.descricao}</p>
+                  </div>
                 </div>
                 <div className="w-44">
                   <NativeSelect
@@ -181,7 +198,7 @@ function ComunidadeInicio() {
               {forumAtual.publicacao === "gestao" && forumAtual.status === "ativo" && (
                 <p className="mt-2 text-xs text-muted-foreground">Publicações oficiais da organização{forumAtual.respostas === "membros" ? " · respostas abertas aos participantes" : ""}.</p>
               )}
-            </Card>
+            </div>
           )}
 
           {q && (
@@ -190,7 +207,7 @@ function ComunidadeInicio() {
               {forunsEncontrados.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {forunsEncontrados.map((f) => (
-                    <Button variant="plain" size="none" key={f.id} onClick={() => irPara(f.id)} className="rounded-full border border-border px-3 py-1 text-xs hover:bg-secondary">{f.icone} {f.nome}</Button>
+                    <Button variant="plain" size="none" key={f.id} onClick={() => irPara(f.id)} className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs hover:bg-secondary"><IconeForum forum={f} tamanho="sm" />{f.nome}</Button>
                   ))}
                 </div>
               )}
@@ -202,15 +219,17 @@ function ComunidadeInicio() {
           )}
 
           {fixadas.length > 0 && (
-            <section aria-label="Publicações fixadas" className="space-y-3">
-              <h2 className="font-display text-sm font-semibold uppercase text-accent">📌 Fixadas e avisos importantes</h2>
+            <section aria-label="Publicações fixadas">
+              <div className="space-y-0">
+              <h2 className="rotulo-tecnico !text-accent">Fixadas e avisos importantes</h2>
               {fixadas.map((p) => (
                 <CartaoPublicacao key={p.id} base={base} pub={p} usuario={usuario} gestao={gestao} foruns={foruns} mostrarForum={!forumAtual} onMudou={atualizar} onAbrir={salvarPosicao} />
               ))}
+              </div>
             </section>
           )}
 
-          <section aria-label="Feed" className="space-y-3">
+          <section aria-label="Feed">
             {feed.length === 0 && fixadas.length === 0 && <EstadoVazio titulo="Nenhuma publicação por aqui" descricao="Seja o primeiro a compartilhar algo." />}
             {feed.slice(0, limite).map((p) => (
               <CartaoPublicacao key={p.id} base={base} pub={p} usuario={usuario} gestao={gestao} foruns={foruns} mostrarForum={!forumAtual} onMudou={atualizar} onAbrir={salvarPosicao} />
@@ -223,19 +242,23 @@ function ComunidadeInicio() {
           </section>
         </main>
 
-        <aside className="space-y-4" aria-label="Atalhos do evento">
-          <Card>
-            <h2 className="font-display text-sm font-semibold uppercase">Cronograma</h2>
-            <ul className="mt-2 space-y-1 text-sm">
+        <aside className="space-y-6 lg:border-l lg:border-border lg:pl-6" aria-label="Atalhos do evento">
+          <section>
+            <h2 className="rotulo-tecnico">Cronograma</h2>
+            <ol className="mt-3 space-y-3 border-l border-border pl-4 text-sm">
               {evento.cronograma.slice().sort((a, b) => a.ordem - b.ordem).map((at) => (
-                <li key={at.id}><span className="font-mono text-xs text-accent">{formatarDataBR(at.data)} {at.horario}</span> {at.titulo}</li>
+                <li key={at.id} className="relative">
+                  <span className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full border border-accent bg-background" aria-hidden />
+                  <span className="block font-mono text-[11px] uppercase tracking-wider text-muted-foreground">{formatarDataBR(at.data).slice(0, 5)} · {at.horario}</span>
+                  <span className="font-medium">{at.titulo}</span>
+                </li>
               ))}
-            </ul>
-          </Card>
+            </ol>
+          </section>
           {evento.regras && (
-            <Collapsible className="rounded-lg border border-border bg-card p-4 text-sm">
-              <CollapsibleTrigger className="group flex cursor-pointer items-center gap-1 text-left font-display font-semibold uppercase">
-                <ChevronRight aria-hidden="true" className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />Caderno de regras
+            <Collapsible className="border-t border-border pt-4 text-sm">
+              <CollapsibleTrigger className="group flex w-full cursor-pointer items-center justify-between gap-1 text-left font-semibold">
+                Caderno de regras<ChevronRight aria-hidden="true" className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
               </CollapsibleTrigger>
               <CollapsibleContent>
                 {evento.regras.pdfDataUrl ? (
@@ -246,33 +269,34 @@ function ComunidadeInicio() {
               </CollapsibleContent>
             </Collapsible>
           )}
-          <Card>
-            <ul className="space-y-2 text-sm">
-              <li><Link to="/app/missoes" className="text-accent hover:underline">🎯 Missões</Link></li>
-              <li><Link to="/app/suporte" search={{ evento: eventoId }} className="text-accent hover:underline">🛟 Suporte (privado)</Link></li>
-              {evento.whatsappGrupoUrl && <li><a href={evento.whatsappGrupoUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">💬 Grupo do WhatsApp ↗</a></li>}
+          <nav aria-label="Atalhos" className="border-t border-border pt-4">
+            <ul className="space-y-1 text-sm">
+              <li><Link to="/app/missoes" className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-secondary"><Target className="h-4 w-4 text-accent" aria-hidden />Missões</Link></li>
+              <li><Link to="/app/suporte" search={{ evento: eventoId }} className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-secondary"><LifeBuoy className="h-4 w-4 text-accent" aria-hidden />Suporte privado</Link></li>
+              {evento.whatsappGrupoUrl && <li><a href={evento.whatsappGrupoUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-secondary"><MessageCircle className="h-4 w-4 text-accent" aria-hidden />Grupo do WhatsApp<ExternalLink className="ml-auto h-3.5 w-3.5 text-muted-foreground" aria-hidden /></a></li>}
             </ul>
-          </Card>
+          </nav>
         </aside>
       </div>
     </div>
   );
 }
 
-function ItemForum({ ativo, onClick, rotulo, descricao, novas, arquivado }: { ativo: boolean; onClick: () => void; rotulo: string; descricao?: string; novas?: number | undefined; arquivado?: boolean }) {
+function ItemForum({ ativo, onClick, rotulo, forum, descricao, novas, arquivado }: { ativo: boolean; onClick: () => void; rotulo: string; forum?: { icone?: string | undefined; nome: string }; descricao?: string; novas?: number | undefined; arquivado?: boolean }) {
   return (
     <li>
       <Button variant="plain" size="none"
         onClick={onClick}
         aria-current={ativo ? "page" : undefined}
-        className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${ativo ? "bg-secondary font-semibold" : "hover:bg-secondary"}`}
+        className={`flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors ${ativo ? "bg-secondary font-semibold" : "hover:bg-secondary/70"}`}
       >
-        <span className="flex items-center justify-between gap-2">
-          <span className="truncate">{rotulo}</span>
-          {!!novas && <Badge variant="accent">{novas}</Badge>}
-          {arquivado && <Badge>Arquivado</Badge>}
+        <IconeForum forum={forum} ativo={ativo} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate">{rotulo}</span>
+          {descricao && <span className="block truncate text-xs font-normal text-muted-foreground">{descricao}</span>}
         </span>
-        {descricao && <span className="mt-0.5 block truncate text-xs font-normal text-muted-foreground">{descricao}</span>}
+        {!!novas && <span className="min-w-5 rounded-sm bg-accent px-1 text-center font-mono text-[11px] font-semibold text-accent-foreground">{novas}</span>}
+        {arquivado && <Badge>Arquivado</Badge>}
       </Button>
     </li>
   );

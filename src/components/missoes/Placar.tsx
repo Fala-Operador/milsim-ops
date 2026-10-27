@@ -14,33 +14,32 @@ export function usePlacar(eventoId: string, versao: unknown) {
 }
 
 export function PlacarExercitos({ placar }: { placar: PlacarMissoes }) {
+  const maior = Math.max(1, ...placar.exercitos.map((x) => x.total));
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-display text-base font-semibold uppercase">Placar dos exércitos</h3>
+        <h3 className="rotulo-tecnico">Placar dos exércitos</h3>
         <Badge variant={placar.encerrada ? "secondary" : "success"}>{placar.encerrada ? "Resultado final" : "Ao vivo"}</Badge>
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Média de pontos por inscrito (o tamanho do exército não decide) + bônus das metas coletivas.
-      </p>
-      <ol className="mt-3 space-y-2">
+      <ol className="mt-2 divide-y divide-border border-y border-border">
         {placar.exercitos.map((x) => (
-          <li key={x.exercitoId} className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-card p-3">
-            <span className={`flex size-9 shrink-0 items-center justify-center rounded-full font-display text-lg font-bold ${x.colocacao === 1 ? "bg-primary text-primary-foreground" : "bg-secondary"}`} aria-label={`${x.colocacao}º lugar`}>
-              {x.colocacao}º
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-medium">{x.nome}</p>
-              <p className="text-xs text-muted-foreground">
-                {x.pontos} pts ÷ {x.inscritos} inscrito(s) = {x.media}{x.bonus ? ` + ${x.bonus} de bônus` : ""}
-                {x.metas.length > 0 && ` · metas: ${x.metas.join(", ")}`}
-              </p>
-              {x.premio && <p className="mt-1 flex items-center gap-1 text-sm text-accent"><Trophy className="size-4" aria-hidden="true" />{x.premio}</p>}
+          <li key={x.exercitoId} className="py-3">
+            <div className="flex items-baseline gap-3">
+              <span className={`font-display text-xl font-bold leading-none ${x.colocacao === 1 ? "text-accent" : "text-muted-foreground"}`} aria-label={`${x.colocacao}º lugar`}>{x.colocacao}º</span>
+              <span className="min-w-0 flex-1 truncate font-semibold">{x.nome}</span>
+              <span className="font-display text-3xl font-bold leading-none tabular-nums">{x.total}</span>
             </div>
-            <span className="font-display text-2xl font-semibold tabular-nums">{x.total}</span>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden>
+              <div className={`h-full ${x.colocacao === 1 ? "bg-accent" : "bg-muted-foreground/50"}`} style={{ width: `${Math.round((x.total / maior) * 100)}%` }} />
+            </div>
+            <p className="mt-1.5 font-mono text-[11px] text-muted-foreground">
+              {x.pontos} pts ÷ {x.inscritos} = {x.media}{x.bonus ? ` + ${x.bonus} bônus` : ""}{x.metas.length > 0 && ` · metas: ${x.metas.join(", ")}`}
+            </p>
+            {x.premio && <p className="mt-1 flex items-center gap-1 text-sm text-accent"><Trophy className="size-4" aria-hidden="true" />{x.premio}</p>}
           </li>
         ))}
       </ol>
+      <p className="mt-2 text-xs text-muted-foreground">Média de pontos por inscrito, mais o bônus das metas coletivas. O tamanho do exército não decide.</p>
     </div>
   );
 }
@@ -49,8 +48,8 @@ export function RankingIndividual({ placar }: { placar: PlacarMissoes }) {
   if (placar.ranking.length === 0) return <p className="text-sm text-muted-foreground">Ninguém pontuou ainda.</p>;
   return (
     <div>
-      <h3 className="font-display text-base font-semibold uppercase">Destaques individuais</h3>
-      <ol className="mt-2 divide-y divide-border rounded-md border border-border text-sm">
+      <h3 className="rotulo-tecnico">Destaques individuais</h3>
+      <ol className="mt-2 divide-y divide-border border-y border-border text-sm">
         {placar.ranking.map((l) => (
           <li key={l.posicao} className={`flex items-center gap-3 px-3 py-2 ${l.eu ? "bg-primary/10" : ""}`}>
             <span className="w-6 text-right font-mono text-muted-foreground">{l.posicao}</span>
@@ -66,11 +65,12 @@ export function RankingIndividual({ placar }: { placar: PlacarMissoes }) {
   );
 }
 
-export function PlacarCompleto({ eventoId, versao }: { eventoId: string; versao: unknown }) {
+export function PlacarCompleto({ eventoId, versao, empilhado = false }: { eventoId: string; versao: unknown; empilhado?: boolean }) {
+  const grade = empilhado ? "grid gap-6" : "grid gap-6 lg:grid-cols-2";
   const q = usePlacar(eventoId, versao);
   if (q.isPending) {
     return (
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className={grade}>
         <SkeletonLista linhas={4} rotulo="Carregando placar" />
         <SkeletonLista linhas={6} rotulo="Carregando ranking" />
       </div>
@@ -78,7 +78,7 @@ export function PlacarCompleto({ eventoId, versao }: { eventoId: string; versao:
   }
   if (q.isError || !q.data) return <ErroSecao titulo="Placar indisponível" onTentar={() => q.refetch()} />;
   return (
-    <div className="surgir grid gap-6 lg:grid-cols-2">
+    <div className={`surgir ${grade}`}>
       <PlacarExercitos placar={q.data} />
       <RankingIndividual placar={q.data} />
     </div>

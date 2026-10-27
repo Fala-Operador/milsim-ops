@@ -11,7 +11,8 @@ import { nomeExibicao } from "@/services/comunidade";
 import type { CampanhaRecompensa, CriterioInsignia, Insignia } from "@/lib/domain/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Plus } from "lucide-react";
+import { FaixaIndicadores } from "@/components/FaixaIndicadores";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
@@ -88,10 +89,17 @@ function Correcao() {
   const [aviso, setAviso] = useState<{ ok: boolean; t: string } | null>(null);
   const inscritos = base.inscricoes.filter((i) => i.eventoId === eventoId && i.status === "confirmada");
   return (
-    <Card>
-      <h3 className="font-display text-lg font-semibold uppercase">Corrigir participação</h3>
-      <p className="text-xs text-muted-foreground">Invalidar remove a operação da progressão e revoga benefícios não usados (usados viram ocorrência para análise). Validar registra presença sem check-in em evento concluído. Toda correção exige justificativa e fica na auditoria.</p>
-      <div className="mt-3 grid gap-3 md:grid-cols-4">
+    <section id="correcoes" aria-labelledby="t-correcoes" className="grid scroll-mt-24 gap-6 border-t border-border pt-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div>
+        <h2 id="t-correcoes" className="text-lg font-semibold">Corrigir participação</h2>
+        <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
+          <li className="border-l-2 border-destructive/60 pl-3"><span className="font-medium text-foreground">Invalidar</span> tira a operação da progressão e revoga benefícios não usados. Os usados viram ocorrência.</li>
+          <li className="border-l-2 border-success/60 pl-3"><span className="font-medium text-foreground">Validar</span> registra presença sem check-in em evento concluído.</li>
+        </ul>
+        <p className="mt-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Justificativa obrigatória · registrada na auditoria</p>
+      </div>
+      <div>
+      <div className="grid gap-3 sm:grid-cols-2">
         <Campo rotulo="Evento" htmlFor="cr-ev">
           <NativeSelect id="cr-ev" value={eventoId} onChange={(e) => { setEventoId(e.target.value); setUsuarioId(""); }}>
             <option value="">Selecione</option>
@@ -109,7 +117,7 @@ function Correcao() {
             <option value="invalidar">Invalidar participação</option><option value="validar">Validar participação</option>
           </NativeSelect>
         </Campo>
-        <Campo rotulo="Justificativa" htmlFor="cr-j"><Input id="cr-j" value={just} onChange={(e) => setJust(e.target.value)} /></Campo>
+        <Campo rotulo="Justificativa" htmlFor="cr-j"><Input id="cr-j" value={just} onChange={(e) => setJust(e.target.value)} placeholder="Ex.: check-in feito em papel" /></Campo>
       </div>
       <div className="mt-3 flex items-center gap-3">
         <Button disabled={!eventoId || !usuarioId} onClick={async () => {
@@ -118,7 +126,8 @@ function Correcao() {
         }}>Registrar correção</Button>
         {aviso && <p role={aviso.ok ? "status" : "alert"} className={`text-sm ${aviso.ok ? "text-success" : "text-destructive"}`}>{aviso.t}</p>}
       </div>
-    </Card>
+      </div>
+    </section>
   );
 }
 
@@ -131,71 +140,114 @@ function Gamificacao() {
   const base = carregarBase();
   const nome = (id: string) => nomeExibicao(base.usuarios.find((u) => u.id === id));
 
+  const concedidas = (id: string) => base.concessoesInsignia.filter((c) => c.insigniaId === id && !c.revogadaEm).length;
+  const SECOES = [["insignias", "Insígnias"], ["campanhas", "Campanhas"], ["correcoes", "Correções"], ["historico", "Histórico"]] as const;
+
   return (
-    <div className="space-y-6">
-      <section>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-lg font-semibold uppercase">Insígnias</h2>
-          <Button onClick={() => setInsignia("nova")}>Nova insígnia</Button>
+    <div className="space-y-8">
+      <div>
+        <h1 className="titulo-pagina">Gamificação</h1>
+        <p className="subtitulo-pagina">Insígnias que os operadores conquistam, campanhas de recompensa ligadas a elas e correções de participação. Só presença confirmada conta.</p>
+      </div>
+      <FaixaIndicadores className="lg:grid-cols-4" itens={[
+        { rotulo: "Insígnias ativas", valor: `${base.insignias.filter((i) => i.ativa).length} de ${base.insignias.length}` },
+        { rotulo: "Conquistas concedidas", valor: String(base.concessoesInsignia.filter((c) => !c.revogadaEm).length) },
+        { rotulo: "Campanhas ativas", valor: String(base.campanhasRecompensa.filter((c) => c.ativa).length) },
+        { rotulo: "Benefícios usados", valor: String(base.vouchers.filter((v) => v.status === "utilizada").length), detalhe: `de ${base.vouchers.length} emitidos` },
+      ]} />
+      <nav aria-label="Seções da gamificação" className="flex flex-wrap gap-1 border-b border-border">
+        {SECOES.map(([id, r]) => <a key={id} href={`#${id}`} className="-mb-px border-b-2 border-transparent px-3 py-2 text-sm font-medium text-muted-foreground hover:border-border hover:text-foreground">{r}</a>)}
+      </nav>
+
+      <section id="insignias" aria-labelledby="t-insignias" className="scroll-mt-24">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="t-insignias" className="text-lg font-semibold">Insígnias</h2>
+          <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Mudar o critério cria uma nova versão</span>
         </div>
-        <ul className="mt-2 grid gap-2 md:grid-cols-2">
+        <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {base.insignias.map((i) => (
-            <li key={i.id} className="flex items-center justify-between gap-2 rounded-md border border-border bg-card p-3 text-sm">
-              <div>
-                <p className="flex items-center gap-2 font-medium"><IconeInsignia icone={i.icone} size={18} /> {i.nome} <span className="text-xs text-muted-foreground">v{i.versao}</span> {!i.ativa && <Badge>Sem novas concessões</Badge>}</p>
-                <p className="text-xs text-muted-foreground">{descreverCriterio(i.criterio)} · {base.concessoesInsignia.filter((c) => c.insigniaId === i.id && !c.revogadaEm).length} concedidas</p>
+            <li key={i.id} className={`flex flex-col rounded-lg border border-border p-4 ${i.ativa ? "" : "opacity-60"}`}>
+              <div className="flex items-start justify-between gap-2">
+                <span className={`grid size-12 place-items-center rounded-full border-2 ${i.ativa ? "border-accent/70 bg-accent/10 text-accent" : "border-border text-muted-foreground"}`}><IconeInsignia icone={i.icone} size={22} /></span>
+                <span className="font-mono text-[11px] text-muted-foreground">v{i.versao}</span>
               </div>
-              <Button variant="outline" className="text-xs" onClick={() => setInsignia(i)}>Editar</Button>
+              <p className="mt-3 font-semibold">{i.nome}</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">{descreverCriterio(i.criterio)}</p>
+              <div className="mt-auto flex items-end justify-between gap-2 pt-4">
+                <p><span className="font-display text-3xl font-bold leading-none tabular-nums">{concedidas(i.id)}</span> <span className="text-xs text-muted-foreground">concedidas</span></p>
+                <Button variant="link" size="none" className="text-sm" onClick={() => setInsignia(i)}>Editar</Button>
+              </div>
+              {!i.ativa && <p className="mt-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Sem novas concessões</p>}
             </li>
           ))}
+          <li>
+            <Button variant="plain" size="none" onClick={() => setInsignia("nova")}
+              className="flex h-full min-h-40 w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:border-accent hover:text-foreground">
+              <Plus className="size-5" aria-hidden />Nova insígnia
+            </Button>
+          </li>
         </ul>
       </section>
 
-      <section>
+      <section id="campanhas" aria-labelledby="t-campanhas" className="scroll-mt-24 border-t border-border pt-8">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-lg font-semibold uppercase">Campanhas de recompensa</h2>
-          <Button onClick={() => setCampanha("nova")}>Nova campanha</Button>
+          <div>
+            <h2 id="t-campanhas" className="text-lg font-semibold">Campanhas de recompensa</h2>
+            <p className="text-sm text-muted-foreground">Benefício dado a quem conquista uma insígnia. As organizações criam as delas em Recompensas.</p>
+          </div>
+          <Button variant="outline" onClick={() => setCampanha("nova")}><Plus className="size-4" aria-hidden />Nova campanha</Button>
         </div>
-        <div className="mt-2"><ListaCampanhas base={base} campanhas={base.campanhasRecompensa} onEditar={setCampanha} /></div>
+        <div className="mt-3"><ListaCampanhas base={base} campanhas={base.campanhasRecompensa} onEditar={setCampanha} onNova={() => setCampanha("nova")} /></div>
       </section>
 
       <Correcao />
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div>
-          <h2 className="font-display text-lg font-semibold uppercase">Concessões</h2>
-          <div className="mt-2 max-h-80 overflow-y-auto rounded-md border border-border">
-            <Table className="w-full text-left text-xs">
-              <TableHeader className="bg-secondary"><TableRow><TableHead className="p-2">Pessoa</TableHead><TableHead className="p-2">Insígnia</TableHead><TableHead className="p-2">Data</TableHead><TableHead className="p-2">Situação</TableHead></TableRow></TableHeader>
-              <TableBody>
-                {base.concessoesInsignia.map((c) => (
-                  <TableRow key={c.id} className="border-t border-border">
-                    <TableCell className="p-2">{nome(c.usuarioId)}</TableCell>
-                    <TableCell className="p-2">{base.insignias.find((i) => i.id === c.insigniaId)?.nome}</TableCell>
-                    <TableCell className="p-2">{formatarDataBR(c.conquistadaEm)}</TableCell>
-                    <TableCell className="p-2">{c.revogadaEm ? `Revogada: ${c.motivoRevogacao}` : "Ativa"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+      <section id="historico" aria-labelledby="t-historico" className="scroll-mt-24 border-t border-border pt-8">
+        <h2 id="t-historico" className="text-lg font-semibold">Histórico</h2>
+        <div className="mt-3 grid gap-8 lg:grid-cols-2">
+          <div>
+            <h3 className="rotulo-tecnico">Conquistas</h3>
+            <div className="mt-2 max-h-96 overflow-y-auto border-y border-border">
+              <Table className="w-full text-left text-sm">
+                <TableHeader><TableRow><TableHead className="rotulo-tecnico px-2 py-2">Data</TableHead><TableHead className="rotulo-tecnico px-2 py-2">Pessoa</TableHead><TableHead className="rotulo-tecnico px-2 py-2">Insígnia</TableHead><TableHead className="rotulo-tecnico px-2 py-2">Situação</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {base.concessoesInsignia.map((c) => {
+                    const ins = base.insignias.find((i) => i.id === c.insigniaId);
+                    return (
+                      <TableRow key={c.id} className="border-t border-border">
+                        <TableCell className="whitespace-nowrap px-2 py-2 font-mono text-xs text-muted-foreground">{formatarDataBR(c.conquistadaEm)}</TableCell>
+                        <TableCell className="px-2 py-2 font-medium">{nome(c.usuarioId)}</TableCell>
+                        <TableCell className="px-2 py-2"><span className="inline-flex items-center gap-1.5">{ins && <IconeInsignia icone={ins.icone} size={14} />}{ins?.nome}</span></TableCell>
+                        <TableCell className="px-2 py-2">{c.revogadaEm ? <Badge variant="destructive" title={c.motivoRevogacao}>Revogada</Badge> : <Badge variant="success">Ativa</Badge>}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              {base.concessoesInsignia.length === 0 && <p className="py-4 text-sm text-muted-foreground">Nenhuma conquista ainda.</p>}
+            </div>
           </div>
-        </div>
-        <div>
-          <h2 className="font-display text-lg font-semibold uppercase">Benefícios e resgates</h2>
-          <div className="mt-2 max-h-80 overflow-y-auto rounded-md border border-border">
-            <Table className="w-full text-left text-xs">
-              <TableHeader className="bg-secondary"><TableRow><TableHead className="p-2">Pessoa</TableHead><TableHead className="p-2">Campanha</TableHead><TableHead className="p-2">Status</TableHead><TableHead className="p-2">Observação</TableHead></TableRow></TableHeader>
-              <TableBody>
-                {base.vouchers.map((v) => (
-                  <TableRow key={v.id} className="border-t border-border">
-                    <TableCell className="p-2">{nome(v.usuarioId)}</TableCell>
-                    <TableCell className="p-2">{v.beneficio.nome}</TableCell>
-                    <TableCell className="p-2">{statusVoucher(v)}</TableCell>
-                    <TableCell className="p-2">{v.ocorrencia ?? v.motivo ?? (v.inscricaoId ? `Inscrição ${v.inscricaoId}` : "")}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <div>
+            <h3 className="rotulo-tecnico">Benefícios e resgates</h3>
+            <div className="mt-2 max-h-96 overflow-y-auto border-y border-border">
+              <Table className="w-full text-left text-sm">
+                <TableHeader><TableRow><TableHead className="rotulo-tecnico px-2 py-2">Pessoa</TableHead><TableHead className="rotulo-tecnico px-2 py-2">Benefício</TableHead><TableHead className="rotulo-tecnico px-2 py-2">Situação</TableHead><TableHead className="rotulo-tecnico px-2 py-2">Observação</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {base.vouchers.map((v) => {
+                    const st = statusVoucher(v);
+                    return (
+                      <TableRow key={v.id} className="border-t border-border">
+                        <TableCell className="px-2 py-2 font-medium">{nome(v.usuarioId)}</TableCell>
+                        <TableCell className="px-2 py-2">{v.beneficio.nome}</TableCell>
+                        <TableCell className="px-2 py-2"><Badge variant={st === "disponivel" ? "success" : st === "utilizada" ? "accent" : "secondary"}>{st}</Badge></TableCell>
+                        <TableCell className="px-2 py-2 text-xs text-muted-foreground">{v.ocorrencia ?? v.motivo ?? (v.inscricaoId ? `Inscrição ${v.inscricaoId}` : "")}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              {base.vouchers.length === 0 && <p className="py-4 text-sm text-muted-foreground">Nenhum benefício emitido ainda.</p>}
+            </div>
           </div>
         </div>
       </section>

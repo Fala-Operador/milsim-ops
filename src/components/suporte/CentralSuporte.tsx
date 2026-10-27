@@ -210,16 +210,16 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
   return (
     <div className="space-y-4">
       {modo === "equipe" && (
-        <dl className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <dl className="grid grid-cols-2 overflow-hidden rounded-lg border border-border sm:grid-cols-5 sm:divide-x sm:divide-border">
           {(Object.keys(indicadores) as (keyof typeof indicadores)[]).map((k) => (
             <Toggle
               key={k}
               pressed={filtro.status === k}
               onPressedChange={() => setFiltro((f) => ({ ...f, status: f.status === k ? "" : k }))}
-              className="min-w-0 rounded-lg border p-3 text-left data-[state=off]:border-border data-[state=off]:bg-card data-[state=on]:border-primary data-[state=on]:bg-primary/10"
+              className="h-auto min-w-0 flex-col items-start rounded-none border-0 px-4 py-3 text-left data-[state=off]:bg-transparent data-[state=on]:bg-secondary data-[state=on]:shadow-[inset_0_-2px_0_var(--accent)]"
             >
-              <dt className="truncate text-xs text-muted-foreground">{ROTULO_STATUS_EXIBIDO[k]}</dt>
-              <dd className="font-display text-2xl font-semibold">{indicadores[k]}</dd>
+              <dt className="rotulo-tecnico truncate">{ROTULO_STATUS_EXIBIDO[k]}</dt>
+              <dd className="mt-1 font-display text-3xl font-bold tabular-nums">{indicadores[k]}</dd>
             </Toggle>
           ))}
         </dl>

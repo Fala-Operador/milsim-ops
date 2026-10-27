@@ -1,3 +1,4 @@
+import { FaixaIndicadores } from "@/components/FaixaIndicadores";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { carregarBase } from "@/services/db";
@@ -36,26 +37,13 @@ function Usuarios() {
 
   return (
     <section>
-      <h2 className="font-display text-lg font-semibold uppercase">Usuários</h2>
-      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Contagem de usuários">
-        <Card className="col-span-2 sm:col-span-1">
-          <p className="text-xs uppercase text-muted-foreground">Usuários ativos</p>
-          <p className="font-display text-3xl font-semibold">{ativos.length}</p>
-          <p className="text-xs text-muted-foreground">de {base.usuarios.length} cadastrados</p>
-        </Card>
-        <Card>
-          <p className="text-xs uppercase text-muted-foreground">Participantes</p>
-          <p className="font-display text-2xl font-semibold">{porPerfil("participante")}</p>
-        </Card>
-        <Card>
-          <p className="text-xs uppercase text-muted-foreground">Organizadores</p>
-          <p className="font-display text-2xl font-semibold">{porPerfil("organizador")}</p>
-        </Card>
-        <Card className="col-span-2 sm:col-span-1">
-          <p className="text-xs uppercase text-muted-foreground">Admins · Inativos</p>
-          <p className="font-display text-2xl font-semibold">{porPerfil("admin")} · {base.usuarios.length - ativos.length}</p>
-        </Card>
-      </div>
+      <h2 className="titulo-pagina">Usuários</h2>
+      <FaixaIndicadores className="mt-4 lg:grid-cols-4" itens={[
+        { rotulo: "Usuários ativos", valor: String(ativos.length), detalhe: `de ${base.usuarios.length} cadastrados` },
+        { rotulo: "Participantes", valor: String(porPerfil("participante")) },
+        { rotulo: "Organizadores", valor: String(porPerfil("organizador")) },
+        { rotulo: "Admins · inativos", valor: `${porPerfil("admin")} · ${base.usuarios.length - ativos.length}` },
+      ]} />
       {erro && <p role="alert" className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
       <div className="mt-3 overflow-x-auto">
         <Table className="tabela-cards w-full text-sm">
@@ -75,7 +63,7 @@ function Usuarios() {
                 <TableCell className="py-2 pr-3 font-medium lg:font-normal">{u.nomeCompleto}</TableCell>
                 <TableCell data-rotulo="E-mail" className="py-2 pr-3 break-all">{u.email}</TableCell>
                 <TableCell data-rotulo="CPF" className="py-2 pr-3 font-mono text-xs">{mascararCpf(u.cpf)}</TableCell>
-                <TableCell data-rotulo="Perfil" className="py-2 pr-3">{u.perfil}</TableCell>
+                <TableCell data-rotulo="Perfil" className="py-2 pr-3 capitalize text-muted-foreground">{u.perfil}</TableCell>
                 <TableCell data-rotulo="Status" className="py-2 pr-3">
                   <Badge variant={u.ativo ? "success" : "destructive"}>{u.ativo ? "Ativo" : "Inativo"}</Badge>
                   {u.autorizacaoResponsavel === "pendente" && <Badge variant="warning">Autorização pendente</Badge>}
@@ -89,7 +77,7 @@ function Usuarios() {
                     )}
                     {u.ativo && u.id !== usuario.id && (
                       <Button
-                        variant="destructive"
+                        variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive"
                         onClick={() => {
                           setErro("");
                           setDesativando({ id: u.id, nome: u.nomeCompleto });

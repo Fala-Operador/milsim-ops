@@ -28,11 +28,11 @@ function PaginaComunidadeOrg() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-lg font-semibold uppercase">Comunidade</h2>
+        <h2 className="titulo-pagina">Comunidade</h2>
       </div>
       <OperacaoSelecionada eventos={eventos} evento={eventos.find((e) => e.id === eventoId)} invalido={invalido} onSelecionar={setEventoId} />
       {eventos.length === 0 ? (
-        <Card><p className="text-sm text-muted-foreground">Nenhum evento criado ainda. Crie um evento no Painel.</p></Card>
+        <Card><p className="subtitulo-pagina">Nenhum evento criado ainda. Crie um evento no Painel.</p></Card>
       ) : !eventoId ? null : (
         <>
           <section aria-label="Resumo da comunidade" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

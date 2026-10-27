@@ -57,8 +57,8 @@ function NotificacoesAdmin() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="font-display text-xl font-semibold uppercase">Notificações</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h2 className="titulo-pagina">Notificações</h2>
+          <p className="subtitulo-pagina">
             Todas as notificações de eventos, inscrições e solicitações da plataforma.
           </p>
         </div>
