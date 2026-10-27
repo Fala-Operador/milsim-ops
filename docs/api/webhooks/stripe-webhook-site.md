@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | Endpoint | `POST https://<site>/api/stripe/webhook` |
-| Quem chama | Somente a Edge Function [`stripe-webhook`](stripe-webhook-edge.md) |
+| Quem chama | Somente a Edge Function [`milsim-stripe-webhook`](stripe-webhook-edge.md) |
 | Autenticação | Cabeçalho `x-milsim-assinatura` (HMAC-SHA256 com `MILSIM_WEBHOOK_SECRET`), conferido sobre o corpo bruto antes de qualquer leitura |
 
 Único endpoint HTTP público do site. Recebe os eventos do Stripe já validados pela Edge

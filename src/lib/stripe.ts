@@ -20,7 +20,7 @@ export function codificarFormulario(dados: Record<string, Valor>): string {
 }
 
 /**
- * Cabeçalho com que a Edge Function stripe-webhook assina o evento repassado ao site, no
+ * Cabeçalho com que a Edge Function milsim-stripe-webhook assina o evento repassado ao site, no
  * mesmo formato do Stripe-Signature (t=...,v1=HMAC-SHA256 de "t.corpo").
  */
 export const CABECALHO_ASSINATURA_INTERNA = "x-milsim-assinatura";
