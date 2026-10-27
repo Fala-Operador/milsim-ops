@@ -11,7 +11,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 
-export function SeletorCidade({ compacto = false, className = "" }: { compacto?: boolean; className?: string }) {
+// "cabecalho": sem caixa, para a barra do topo; "campo": botão com borda (padrão).
+export function SeletorCidade({ compacto = false, className = "", variante = "campo" }: { compacto?: boolean; className?: string; variante?: "campo" | "cabecalho" }) {
   const { local, modo, status, definirLocal, usarLocalizacaoAtual } = useLocalizacao();
   const [aberto, setAberto] = useState(false);
   const [termo, setTermo] = useState("");
@@ -36,6 +37,7 @@ export function SeletorCidade({ compacto = false, className = "" }: { compacto?:
 
   const escolher = (e: Estado) => { definirLocal({ escopo: "estado", uf: e.uf }); fechar(); };
   const rotulo = montado ? rotuloCurto(local) : "Todo o Brasil";
+  const sigla = montado && local.escopo !== "nacional" && local.uf ? local.uf : "Brasil";
   const obtendo = montado && status === "obtendo";
   const aviso = montado ? mensagemStatus(status) : null;
   const selecionado = (e: Estado) => local.escopo !== "nacional" && local.uf === e.uf;
@@ -103,10 +105,20 @@ export function SeletorCidade({ compacto = false, className = "" }: { compacto?:
     <Button variant="plain" size="none"
       type="button"
       aria-label={obtendo ? "Obtendo sua localização" : `Localização: ${rotulo}. Alterar localização`}
-      className={`flex max-w-full items-center gap-1.5 rounded-md border border-border bg-secondary/40 text-sm hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${compacto ? "h-10 px-3" : "h-10 w-full px-3"}`}
+      className={variante === "cabecalho"
+        ? "flex h-11 max-w-full items-center gap-1.5 rounded-md px-2 text-sm hover:bg-secondary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:px-2.5"
+        : `flex max-w-full items-center gap-1.5 rounded-md border border-border bg-secondary/40 text-sm hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${compacto ? "h-10 px-3" : "h-10 w-full px-3"}`}
     >
       {obtendo ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-accent motion-reduce:animate-none" /> : <MapPin className="h-4 w-4 shrink-0 text-accent" />}
-      <span className={`truncate font-medium text-foreground ${compacto ? "max-w-[11rem]" : ""}`}>{obtendo ? "Localizando…" : rotulo}</span>
+      {variante === "cabecalho" ? (
+        // No celular só a sigla do estado (ou "Brasil"), para caber ao lado da marca.
+        <span className="truncate font-medium text-foreground lg:max-w-[10rem]">
+          <span className="lg:hidden">{obtendo ? "…" : sigla}</span>
+          <span className="hidden lg:inline">{obtendo ? "Localizando…" : rotulo}</span>
+        </span>
+      ) : (
+        <span className={`truncate font-medium text-foreground ${compacto ? "max-w-[11rem]" : ""}`}>{obtendo ? "Localizando…" : rotulo}</span>
+      )}
       <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none ${aberto ? "rotate-180" : ""}`} aria-hidden="true" />
     </Button>
   );

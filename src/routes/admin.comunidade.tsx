@@ -40,7 +40,7 @@ function ModeracaoComunidade() {
   return (
     <section className="space-y-4">
       <div>
-        <h2 className="font-display text-lg font-semibold uppercase">Comunidade — moderação</h2>
+        <h2 className="titulo-pagina">Comunidade — moderação</h2>
         <p className="mt-1 max-w-prose text-sm text-muted-foreground">
           Denúncias para resolver e as últimas publicações de toda a comunidade, para auditoria.
         </p>

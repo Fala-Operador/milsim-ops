@@ -15,8 +15,9 @@ const ITENS: { to: "/" | "/app/ingressos" | "/comunidades" | "/app/perfil"; rotu
   { to: "/app/perfil", rotulo: "Meu perfil", icone: UserRound },
 ];
 
+// A aba atual ganha um traço no topo e o ícone na cor de destaque, sem caixa preenchida.
 const item =
-  "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[11px] font-medium text-muted-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring";
+  "relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 pt-1 text-[11px] font-medium text-muted-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring";
 
 export function MenuInferior() {
   const { usuario } = useAuth();
@@ -35,14 +36,14 @@ export function MenuInferior() {
       aria-label="Atalhos"
       className="vt-menu-inferior fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
-      <ul className="mx-auto flex h-16 max-w-md items-stretch gap-1 px-2 py-1.5">
+      <ul className="mx-auto flex h-16 max-w-md items-stretch px-2">
         {ITENS.map(({ to, rotulo, icone: Icone, exato }) => (
           <li key={to} className="flex flex-1">
             <Link
               to={to}
               activeOptions={{ exact: !!exato }}
               className={item}
-              activeProps={{ className: "bg-secondary text-foreground", "aria-current": "page" }}
+              activeProps={{ className: "text-foreground before:absolute before:inset-x-5 before:top-0 before:h-[3px] before:rounded-b-full before:bg-accent [&>svg]:text-accent", "aria-current": "page" }}
             >
               <Icone className="size-5 shrink-0" aria-hidden="true" />
               <span className="truncate">{rotulo}</span>

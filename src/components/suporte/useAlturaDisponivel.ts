@@ -16,10 +16,12 @@ export function useAlturaDisponivel(ref: RefObject<HTMLElement | null>): number 
       const janela = window.visualViewport?.height ?? window.innerHeight;
       const topoNaPagina = el.getBoundingClientRect().top + window.scrollY;
       const cabecalho = document.querySelector("header")?.getBoundingClientRect().height ?? 0;
+      // A barra de atalhos fixa do celular cobre o fim da tela: o compositor não pode ficar atrás dela.
+      const menuInferior = document.querySelector(".vt-menu-inferior")?.getBoundingClientRect().height ?? 0;
       // Cabe sem rolar a página? Usa o espaço até o fim da tela. Senão, ocupa a tela
       // abaixo do cabeçalho fixo (a página rola até a área ficar inteira visível).
-      const semRolar = janela - topoNaPagina - MARGEM_INFERIOR;
-      const abaixoDoCabecalho = janela - cabecalho - MARGEM_INFERIOR;
+      const semRolar = janela - topoNaPagina - menuInferior - MARGEM_INFERIOR;
+      const abaixoDoCabecalho = janela - cabecalho - menuInferior - MARGEM_INFERIOR;
       setAltura(Math.round(Math.max(ALTURA_MINIMA, semRolar >= 480 ? semRolar : abaixoDoCabecalho)));
     };
     calcular();

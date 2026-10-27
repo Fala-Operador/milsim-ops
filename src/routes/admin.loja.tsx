@@ -31,19 +31,24 @@ function LojaDaPlataforma() {
   if (!base) return <SkeletonPagina />;
   return (
     <div>
-      <h2 className="font-display text-xl font-semibold uppercase">Loja da plataforma</h2>
-      <p className="text-sm text-muted-foreground">Itens que a MilSim Ops vende diretamente, pagos à plataforma pelo Stripe. Edite preço, validade, imagem e venda de cada item.</p>
-      <nav aria-label="Seções da loja" className="mt-4 flex flex-wrap gap-2">
+      <h2 className="titulo-pagina">Loja da plataforma</h2>
+      <p className="subtitulo-pagina">Itens que a MilSim Ops vende diretamente, pagos à plataforma pelo Stripe. Edite preço, validade, imagem e venda de cada item.</p>
+      {SECOES.length > 1 && <nav aria-label="Seções da loja" className="mt-4 flex flex-wrap gap-2">
         {SECOES.map((s) => (
           <a key={s.id} href={`#${s.id}`} className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-secondary">
             <s.icone className="size-4" aria-hidden="true" />{s.rotulo}
           </a>
         ))}
-      </nav>
+      </nav>}
       <div className="mt-6 space-y-8">
         <section id="impulsos" aria-labelledby="loja-impulsos" className="scroll-mt-20">
-          <h3 id="loja-impulsos" className="font-display text-lg font-semibold uppercase">{SECOES[0].rotulo}</h3>
-          <p className="mb-3 text-sm text-muted-foreground">{SECOES[0].descricao}</p>
+          <div className="mb-4 flex items-center gap-3 border-b border-border pb-3">
+            <span className="grid size-9 place-items-center rounded-md border border-border text-accent"><Rocket className="size-4" aria-hidden="true" /></span>
+            <div>
+              <h3 id="loja-impulsos" className="text-xl font-semibold">{SECOES[0].rotulo}</h3>
+              <p className="text-sm text-muted-foreground">{SECOES[0].descricao}</p>
+            </div>
+          </div>
           <PlanosImpulso base={base} />
         </section>
       </div>

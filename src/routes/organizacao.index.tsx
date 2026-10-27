@@ -1,3 +1,6 @@
+import { FaixaIndicadores } from "@/components/FaixaIndicadores";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Plus } from "lucide-react";
 import { nomeModalidade } from "@/lib/modalidades";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { selecionarEventoOrganizacao } from "@/contexts/OrganizationEventContext";
@@ -140,41 +143,33 @@ function PainelEventos() {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-lg font-semibold uppercase">
+        <h2 className="titulo-pagina">
           {orgId ? (base.organizacoes.find((o) => o.id === orgId)?.nome ?? "Painel") : "Todas as organizações"}
         </h2>
         {(() => {
           const sem = eventos.filter((e) => !e.modalidade && e.status !== "cancelado" && e.status !== "concluido");
           return sem.length > 0 ? (
-            <p role="status" className="basis-full rounded-md border border-dashed border-accent/60 px-3 py-2 text-sm">
+            <p role="status" className="order-last basis-full border-l-2 border-warning bg-warning/10 px-3 py-2 text-sm">
               {sem.length === 1 ? "1 evento está" : `${sem.length} eventos estão`} sem modalidade: {sem.map((e) => e.nome || "Sem nome").join(", ")}. Edite para completar o cadastro.
             </p>
           ) : null;
         })()}
-        <Button onClick={() => { setFocarLotes(false); const idOrg = orgId ?? base.organizacoes[0]?.id ?? ""; setFormEstado({ evento: eventoVazio(idOrg, base.organizacoes.find((o) => o.id === idOrg)?.telefone), existente: false }); }}>+ Criar evento</Button>
+        <Button onClick={() => { setFocarLotes(false); const idOrg = orgId ?? base.organizacoes[0]?.id ?? ""; setFormEstado({ evento: eventoVazio(idOrg, base.organizacoes.find((o) => o.id === idOrg)?.telefone), existente: false }); }}><Plus className="h-4 w-4" aria-hidden />Criar evento</Button>
       </div>
 
       {aviso && <p role="status" className="mt-3 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm">{aviso}</p>}
       {erro && <p role="alert" className="mt-3 whitespace-pre-line rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
 
-      <section aria-label="Visão geral" className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {([
-          ["Eventos", String(eventos.length), `${eventos.filter((e) => e.status === "publicado").length} publicados · ${eventos.filter((e) => e.status === "rascunho").length} rascunhos`],
-          ["Próximos eventos", String(proximos.length), proximos[0] ? `Próximo: ${formatarDataBR([...proximos].sort((x, y) => x.inicioEm.localeCompare(y.inicioEm))[0]!.inicioEm)}` : "Nenhum agendado"],
-          ["Inscrições ativas", String(totalInscritos), totalCapacidade ? `${Math.round((totalInscritos / totalCapacidade) * 100)}% da capacidade total` : "—"],
-          ["Receita registrada", formatarBRL(totalReceita), "Soma das movimentações"],
-        ] as const).map(([rotulo, valor, sub]) => (
-          <Card key={rotulo}>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">{rotulo}</p>
-            <p className="mt-1 font-mono text-2xl font-semibold">{valor}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
-          </Card>
-        ))}
-      </section>
+      <FaixaIndicadores className="mt-6 lg:grid-cols-4" itens={[
+        { rotulo: "Eventos", valor: String(eventos.length), detalhe: `${eventos.filter((e) => e.status === "publicado").length} publicados · ${eventos.filter((e) => e.status === "rascunho").length} rascunhos` },
+        { rotulo: "Próximos", valor: String(proximos.length), detalhe: proximos[0] ? `Próximo: ${formatarDataBR([...proximos].sort((x, y) => x.inicioEm.localeCompare(y.inicioEm))[0]!.inicioEm)}` : "Nenhum agendado" },
+        { rotulo: "Inscrições ativas", valor: String(totalInscritos), detalhe: totalCapacidade ? `${Math.round((totalInscritos / totalCapacidade) * 100)}% da capacidade total` : "—" },
+        { rotulo: "Receita", valor: formatarBRL(totalReceita), detalhe: "Soma das movimentações" },
+      ]} />
 
       <AvisoRecebimento organizacaoId={orgId} className="mt-6" />
 
-      <Card className="mt-6">
+      <section className="mt-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-display text-lg font-semibold uppercase">Meus eventos</h3>
           <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
@@ -222,17 +217,18 @@ function PainelEventos() {
                     </TableCell>
                     <TableCell data-rotulo="Receita" className="py-2 pr-3 font-mono whitespace-nowrap">{formatarBRL(receitaEvento(e.id))}</TableCell>
                     <TableCell className="celula-acoes py-2">
-                      <div className="flex flex-wrap gap-1 lg:justify-end">
-                        {e.status === "rascunho" && <Button variant="ghost" onClick={() => aoPublicar(e)}>Publicar</Button>}
-                        {e.status === "publicado" && <Button variant="ghost" onClick={() => setCancelarEvt(e)}>Cancelar</Button>}
-                        {["publicado", "inscricoes_encerradas"].includes(e.status) && (
-                          <Link to="/eventos/$eventoId" params={{ eventoId: e.id }}>
-                            <Button variant="ghost">Página pública</Button>
-                          </Link>
-                        )}
-                        <Button variant="ghost" onClick={() => { selecionarEventoOrganizacao(e.id); navigate({ to: "/organizacao/checkin" }); }}>Abrir check-in</Button>
-                        <Button variant="outline" onClick={() => abrirEditor(e, false)} disabled={["cancelado", "concluido"].includes(e.status)}>Editar</Button>
-                        <Button variant="destructive" onClick={() => setExcluirEvt(e)}>Excluir</Button>
+                      <div className="flex items-center gap-1 lg:justify-end">
+                        <Button variant="outline" size="sm" onClick={() => abrirEditor(e, false)} disabled={["cancelado", "concluido"].includes(e.status)}>Editar</Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`Mais ações de ${e.nome}`}><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            {e.status === "rascunho" && <DropdownMenuItem onClick={() => aoPublicar(e)}>Publicar</DropdownMenuItem>}
+                            {["publicado", "inscricoes_encerradas"].includes(e.status) && <DropdownMenuItem asChild><Link to="/eventos/$eventoId" params={{ eventoId: e.id }}>Ver página pública</Link></DropdownMenuItem>}
+                            <DropdownMenuItem onClick={() => { selecionarEventoOrganizacao(e.id); navigate({ to: "/organizacao/checkin" }); }}>Abrir check-in</DropdownMenuItem>
+                            {e.status === "publicado" && <DropdownMenuItem onClick={() => setCancelarEvt(e)}>Cancelar evento</DropdownMenuItem>}
+                            <DropdownMenuItem className="text-destructive" onClick={() => setExcluirEvt(e)}>Excluir</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -244,7 +240,7 @@ function PainelEventos() {
             </TableBody>
           </Table>
         </div>
-      </Card>
+      </section>
 
       {form && (
         <EventEditorDrawer

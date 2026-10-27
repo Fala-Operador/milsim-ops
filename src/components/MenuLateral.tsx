@@ -56,27 +56,16 @@ export function ItensMenuArea({ grupos, aoNavegar }: { grupos: GrupoMenuLateral[
   const [aberto, setAberto] = useState(grupoAtual);
   useEffect(() => setAberto(grupoAtual), [grupoAtual]);
 
+  void aberto; void setAberto;
   return (
-    <Accordion type="single" collapsible value={aberto} onValueChange={setAberto} className="space-y-1">
-      {grupos.map((g) => {
-        const pendentes = totalPendencias([g]);
-        return (
-          <AccordionItem key={g.titulo} value={g.titulo} className="border-b-0">
-            <AccordionTrigger className="rounded-md px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:bg-secondary/60 hover:text-foreground hover:no-underline focus-visible:outline-2 focus-visible:outline-ring">
-              <span className="flex min-w-0 flex-1 items-center gap-2">
-                <span className="truncate">{g.titulo}</span>
-                {pendentes > 0 && aberto !== g.titulo && (
-                  <span className="rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold normal-case tracking-normal text-accent-foreground" aria-label={`${pendentes} pendências`}>{pendentes}</span>
-                )}
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="pb-1 pt-0.5">
-              <GrupoItens itens={g.itens} aoNavegar={aoNavegar} />
-            </AccordionContent>
-          </AccordionItem>
-        );
-      })}
-    </Accordion>
+    <div className="space-y-5">
+      {grupos.map((g) => (
+        <div key={g.titulo}>
+          <p className="rotulo-tecnico px-3 pb-1.5">{g.titulo}</p>
+          <GrupoItens itens={g.itens} aoNavegar={aoNavegar} />
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -89,8 +78,8 @@ function GrupoItens({ itens, aoNavegar }: { itens: ItemMenuLateral[]; aoNavegar?
                   to={item.to}
                   activeOptions={{ exact: !!item.exato }}
                   onClick={aoNavegar}
-                  className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-                  activeProps={{ className: "bg-secondary !text-foreground shadow-[inset_3px_0_0_var(--color-primary)]", "aria-current": "page" }}
+                  className="flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary/60 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                  activeProps={{ className: "bg-secondary !text-foreground font-medium [&>svg]:text-accent", "aria-current": "page" }}
                 >
                   <item.icone className="h-4 w-4 shrink-0" aria-hidden="true" />
                   <span className="min-w-0 flex-1 truncate">{item.rotulo}</span>
@@ -131,9 +120,9 @@ export function LayoutMenuLateral({ titulo, rotuloNav, grupos, children }: {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 lg:py-8">
       <div className="lg:flex lg:gap-8">
-        <aside className="vt-menu-area hidden w-56 shrink-0 lg:block">
+        <aside className="vt-menu-area hidden w-56 shrink-0 border-r border-border pr-4 lg:block">
           <div className="sticky top-[88px] max-h-[calc(100dvh-104px)] overflow-y-auto pb-4">
-            <h1 className="sticky top-0 z-10 bg-background px-3 pb-3 font-display text-lg font-semibold uppercase">{titulo}</h1>
+            <h1 className="sticky top-0 z-10 bg-background px-3 pb-4 font-display text-2xl font-bold uppercase">{titulo}</h1>
             <nav aria-label={rotuloNav}>
               <ItensMenuArea grupos={grupos} />
             </nav>

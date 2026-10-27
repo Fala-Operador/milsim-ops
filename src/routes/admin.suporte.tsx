@@ -23,5 +23,13 @@ function SuporteAdmin() {
   const { c } = Route.useSearch();
   const navigate = useNavigate({ from: "/admin/suporte" });
   if (!usuario) return null;
-  return <CentralSuporte modo="equipe" usuario={usuario} selecionado={c} onSelecionar={(id) => navigate({ search: id ? { c: id } : {}, replace: true })} />;
+  return (
+    <div>
+      <h2 className="titulo-pagina">Central de suporte</h2>
+      <p className="subtitulo-pagina">Chamados dos participantes sobre as operações e a plataforma. Clique num indicador para filtrar a fila.</p>
+      <div className="mt-4">
+        <CentralSuporte modo="equipe" usuario={usuario} selecionado={c} onSelecionar={(id) => navigate({ search: id ? { c: id } : {}, replace: true })} />
+      </div>
+    </div>
+  );
 }

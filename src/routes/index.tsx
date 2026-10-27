@@ -7,7 +7,7 @@ import { campanhasNaPosicao } from "@/lib/impulsionamento";
 import { idDoVisitante } from "@/services/analytics";
 import { vagasRestantes } from "@/services/inscricoes";
 import { formatarDataBR } from "@/lib/domain/money";
-import { Preco } from "@/components/Preco";
+import { CartaoOperacao } from "@/components/CartaoOperacao";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkeletonGrade } from "@/components/ui";
@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Toggle } from "@/components/ui/toggle";
 import { Label } from "@/components/ui/label";
+import imgMilsim from "@/assets/modalidade-milsim.jpg";
 
 interface BuscaInicio { q?: string | undefined; periodo?: "30d" | "90d" | undefined; mod?: string | undefined; ordem?: Ordenacao | undefined }
 
@@ -138,50 +139,51 @@ function PaginaInicial() {
 
   return (
     <div>
-      <section className="topo-bg border-b border-border bg-card">
-        <div className="mx-auto max-w-6xl px-4 pb-6 pt-8 sm:pt-10">
-          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">Central de operações</p>
-          <h1 className="mt-1 font-display text-3xl font-bold uppercase tracking-wide text-foreground sm:text-4xl">
-            Encontre sua próxima operação.
+      <section className="relative overflow-hidden border-b border-border">
+        <img src={imgMilsim} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0%,color-mix(in_oklch,var(--background)_88%,transparent)_45%,color-mix(in_oklch,var(--background)_35%,transparent)_100%)]" aria-hidden="true" />
+        <div className="relative mx-auto max-w-6xl px-4 pb-8 pt-12 sm:pt-16">
+          <h1 className="max-w-2xl font-display text-4xl font-bold uppercase leading-[0.95] text-foreground sm:text-6xl">
+            Operações de airsoft e milsim pelo Brasil
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">
-            Explore eventos de simulação militar, reúna seu squad e prepare-se para a missão.
+          <p className="mt-3 max-w-xl text-base text-muted-foreground">
+            {base ? `${publicados.length} operações com inscrição aberta.` : "Operações com inscrição aberta."} Escolha a data, a modalidade e garanta a vaga do seu squad.
           </p>
 
           <form onSubmit={buscar} role="search" aria-label="Buscar operações"
-            className="mt-5 grid gap-3 rounded-lg border border-border bg-background/80 p-3 backdrop-blur md:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)_minmax(0,1fr)_auto] md:items-end">
-            <div>
-              <Label htmlFor="busca-inicio" className="mb-1 block text-xs font-medium text-muted-foreground">Buscar operação ou organização</Label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            className="mt-7 grid overflow-hidden rounded-lg border border-border bg-background shadow-[0_8px_30px_-12px_rgb(0_0_0/0.5)] md:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1fr)_auto]">
+            <div className="border-b border-border px-4 py-2.5 md:border-b-0 md:border-r">
+              <Label htmlFor="busca-inicio" className="rotulo-tecnico block">Operação ou organização</Label>
+              <div className="relative mt-1">
+                <Search className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input id="busca-inicio" type="search" value={busca} onChange={(e) => setBusca(e.target.value)}
                   placeholder="Ex.: Escudo Norte"
-                  className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus-visible:ring-2 focus-visible:ring-ring py-0" />
+                  className="h-7 w-full border-0 bg-transparent p-0 pl-6 text-[15px] text-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0" />
               </div>
             </div>
-            <div>
-              <span className="mb-1 block text-xs font-medium text-muted-foreground">Localização</span>
-              <SeletorCidade />
+            <div className="border-b border-border px-4 py-2.5 md:border-b-0 md:border-r">
+              <span className="rotulo-tecnico block">Onde</span>
+              <SeletorCidade className="mt-1 [&_button]:h-7 [&_button]:w-full [&_button]:justify-between [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-0" />
             </div>
-            <div>
-              <Label htmlFor="periodo-inicio" className="mb-1 block text-xs font-medium text-muted-foreground">Período</Label>
+            <div className="border-b border-border px-4 py-2.5 md:border-b-0">
+              <Label htmlFor="periodo-inicio" className="rotulo-tecnico block">Quando</Label>
               <NativeSelect id="periodo-inicio" value={periodo} onChange={(e) => setPeriodo(e.target.value as Periodo)}
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:border-ring focus:outline-none focus-visible:ring-2 focus-visible:ring-ring py-0">
+                className="mt-1 h-7 w-full border-0 bg-transparent px-0 text-[15px] text-foreground focus-visible:ring-0 py-0">
                 <option value="">Qualquer data</option>
                 <option value="30d">Próximos 30 dias</option>
                 <option value="90d">Próximos 90 dias</option>
               </NativeSelect>
             </div>
-            <Button type="submit" className="h-10 px-5">Buscar operações</Button>
+            <Button type="submit" className="m-2 h-auto rounded-md px-6 py-3"><Search className="h-4 w-4" aria-hidden />Buscar</Button>
           </form>
 
           <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="Modalidades">
-            <span className="text-xs font-medium text-muted-foreground">Modalidades:</span>
+            <span className="rotulo-tecnico mr-1">Modalidade</span>
             {MODALIDADES.map((m) => {
               const ativo = modsSel.includes(m.id);
               return (
                 <Toggle key={m.id} variant="chip" pressed={ativo} onPressedChange={() => alternarMod(m.id)}>
-                  {ativo && <span aria-hidden>✓ </span>}{m.nome}
+                  {m.nome}
                 </Toggle>
               );
             })}
@@ -193,10 +195,10 @@ function PaginaInicial() {
           </div>
 
           {pedirPermissao && (
-            <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-dashed border-accent/50 bg-background/60 px-3 py-2 text-sm">
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <Crosshair className="h-4 w-4 text-accent" aria-hidden />
-              <span className="flex-1 font-medium">Encontre operações perto de você</span>
-              <Button variant="secondary" onClick={() => void usarLocalizacaoAtual()}>Usar minha localização</Button>
+              <Button variant="link" size="none" className="text-sm" onClick={() => void usarLocalizacaoAtual()}>Usar minha localização</Button>
+              <span>para ver primeiro o que está perto.</span>
             </div>
           )}
           {aviso && status !== "obtendo" && (
@@ -208,7 +210,7 @@ function PaginaInicial() {
       {base && !falha && (impulsionados.length > 0 || secoesDestaque.length > 0) && (
         <section className="mx-auto max-w-6xl px-4 pt-8" aria-label="Operações em destaque">
           {impulsionados.length > 0 && (
-            <div className="rounded-lg border border-accent/40 p-4" aria-labelledby="t-impulsionados">
+            <div aria-labelledby="t-impulsionados">
               <h2 id="t-impulsionados" className="font-display text-2xl font-semibold uppercase tracking-wide">Operações em destaque</h2>
               <p className="text-sm text-muted-foreground">Divulgação da plataforma, de acordo com a sua busca. As demais listas vêm abaixo.</p>
               <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -338,36 +340,5 @@ function PaginaInicial() {
 }
 
 function CartaoEvento({ evento: e, base, organizacao }: { evento: Evento; base: BaseDados; organizacao: string }) {
-  const restantes = vagasRestantes(base, e);
-  return (
-    <Link to="/eventos/$eventoId" params={{ eventoId: e.id }}
-      className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-      <div className="aspect-video overflow-hidden border-b border-border bg-secondary">
-        {e.imagemUrl ? (
-          <ImagemSegura key={e.imagemUrl} src={e.imagemUrl} alt={e.imagem?.alt || `Imagem da ${e.nome}`} className="h-full w-full" />
-        ) : (
-          <div className="topo-bg flex h-full items-end p-3">
-            <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-              {e.cidade}/{e.uf}
-            </span>
-          </div>
-        )}
-      </div>
-      <div className="flex flex-1 flex-col p-4">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="line-clamp-2 min-w-0 font-display sm:min-h-[3.25rem] text-xl font-semibold uppercase leading-tight">{e.nome}</h3>
-          {restantes <= 0 ? <Badge variant="destructive">Esgotado</Badge>
-            : restantes <= e.capacidadeTotal * 0.15 ? <Badge variant="warning">Últimas vagas</Badge>
-            : <Badge variant="success">Vagas abertas</Badge>}
-        </div>
-        <p className="mt-1 text-sm text-muted-foreground">{formatarDataBR(e.inicioEm)} · {e.cidade}/{e.uf}</p>
-        <p className="mt-2"><span className="inline-block rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{nomeModalidade(e.modalidade)}</span></p>
-        <p className="mt-1.5 truncate text-sm text-muted-foreground">{organizacao}</p>
-        <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-3">
-          <p className="text-sm">A partir de <Preco centavos={precoInicial(e)} className="font-semibold text-accent" /></p>
-          <span className="text-sm font-medium text-primary group-hover:underline">Ver operação →</span>
-        </div>
-      </div>
-    </Link>
-  );
+  return <CartaoOperacao evento={e} organizacao={organizacao} preco={precoInicial(e)} restantes={vagasRestantes(base, e)} />;
 }

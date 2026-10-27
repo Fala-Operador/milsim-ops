@@ -50,8 +50,8 @@ function PaginaMissoesOrg() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="font-display text-lg font-semibold uppercase">Missões pré-evento</h2>
-        <p className="text-sm text-muted-foreground">Crie missões para os inscritos, avalie as entregas e premie o exército vencedor no dia do evento.</p>
+        <h2 className="titulo-pagina">Missões pré-evento</h2>
+        <p className="subtitulo-pagina">Crie missões para os inscritos, avalie as entregas e premie o exército vencedor no dia do evento.</p>
       </div>
       <OperacaoSelecionada eventos={eventos} evento={evento} invalido={invalido} onSelecionar={setEventoId} />
       {!evento ? <EstadoVazio titulo="Escolha um evento" /> : (
@@ -87,37 +87,39 @@ function AbaMissoes({ evento, missoes, entregas, encerrada }: { evento: Evento; 
   const nomeExercito = (id: string) => (id === "todos" ? "Todos os exércitos" : evento.exercitos.find((x) => x.id === id)?.nome ?? id);
   return (
     <div className="space-y-3">
-      {!encerrada && <Button onClick={() => setEditando("nova")}><Plus className="size-4" aria-hidden="true" />Nova missão</Button>}
+      {!encerrada && <div className="flex justify-end"><Button onClick={() => setEditando("nova")}><Plus className="size-4" aria-hidden="true" />Nova missão</Button></div>}
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
       {missoes.length === 0 ? <EstadoVazio titulo="Nenhuma missão" descricao="Crie a primeira missão pré-evento. Ela nasce como rascunho e só aparece para os inscritos depois de publicada." /> : (
-        <ul className="space-y-2">
+        <div className="overflow-hidden rounded-lg border border-border">
+          <div className="hidden grid-cols-[minmax(0,1fr)_70px_150px_110px_100px_150px] gap-3 border-b border-border bg-card px-4 py-2 lg:grid">
+            {["Missão", "Pontos", "Prazo", "Entregas", "Status", ""].map((h) => <span key={h} className="rotulo-tecnico">{h}</span>)}
+          </div>
+          <ul className="divide-y divide-border">
           {[...missoes].sort((a, b) => a.prazo.localeCompare(b.prazo)).map((m) => {
             const s = situacaoMissao(m);
             const doMissao = entregas.filter((e) => e.missaoId === m.id);
             return (
-              <li key={m.id} className="rounded-md border border-border p-3 text-sm">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-medium">{m.titulo}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {ROTULO_TIPO_ENTREGA[m.tipoEntrega]} · {m.pontos ?? 0} pts · {nomeExercito(m.publico)} · prazo {formatarDataHoraBR(m.prazo)}
-                      {m.metaPercentual ? ` · meta ${m.metaPercentual}% → +${m.metaBonus}` : ""}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{doMissao.filter((e) => e.status === "concluida").length} concluída(s) · {doMissao.filter((e) => e.status === "enviada").length} em análise</p>
-                  </div>
-                  <Badge variant={s === "aberta" ? "success" : s === "rascunho" ? "outline" : "secondary"}>{ROTULO_SITUACAO[s]}</Badge>
+              <li key={m.id} className="grid gap-2 px-4 py-3 text-sm lg:grid-cols-[minmax(0,1fr)_70px_150px_110px_100px_150px] lg:items-center lg:gap-3">
+                <div className="min-w-0">
+                  <p className="font-semibold">{m.titulo}</p>
+                  <p className="text-xs text-muted-foreground">{ROTULO_TIPO_ENTREGA[m.tipoEntrega]} · {nomeExercito(m.publico)}{m.metaPercentual ? ` · meta ${m.metaPercentual}% → +${m.metaBonus}` : ""}</p>
                 </div>
-                {!encerrada && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    <Button variant="outline" className="text-xs" onClick={() => setEditando(m)}>Editar</Button>
-                    {s === "rascunho" && <Button className="text-xs" onClick={() => acao(() => publicarMissao(m.id))}><Send className="size-3" aria-hidden="true" />Publicar e avisar</Button>}
-                    {doMissao.length === 0 && <Button variant="ghost" className="text-xs" aria-label={`Excluir ${m.titulo}`} onClick={async () => (await confirmar({ titulo: "Excluir missão?", descricao: `A missão "${m.titulo}" será excluída.`, confirmar: "Excluir", destrutivo: true })) && acao(() => excluirMissao(m.id))}><Trash2 className="size-3" aria-hidden="true" /></Button>}
+                <span className="font-display text-xl font-bold">{m.pontos ?? 0}</span>
+                <span className="font-mono text-xs">{formatarDataHoraBR(m.prazo)}</span>
+                <span className="text-xs text-muted-foreground"><b className="text-foreground">{doMissao.filter((e) => e.status === "concluida").length}</b> feitas · <b className="text-foreground">{doMissao.filter((e) => e.status === "enviada").length}</b> em análise</span>
+                <span><Badge variant={s === "aberta" ? "success" : s === "rascunho" ? "outline" : "secondary"}>{ROTULO_SITUACAO[s]}</Badge></span>
+                {!encerrada ? (
+                  <div className="flex gap-1 lg:justify-end">
+                    {s === "rascunho" && <Button size="sm" onClick={() => acao(() => publicarMissao(m.id))}><Send className="size-3" aria-hidden="true" />Publicar</Button>}
+                    <Button variant="outline" size="sm" onClick={() => setEditando(m)}>Editar</Button>
+                    {doMissao.length === 0 && <Button variant="ghost" size="sm" aria-label={`Excluir ${m.titulo}`} onClick={async () => (await confirmar({ titulo: "Excluir missão?", descricao: `A missão "${m.titulo}" será excluída.`, confirmar: "Excluir", destrutivo: true })) && acao(() => excluirMissao(m.id))}><Trash2 className="size-3.5" aria-hidden="true" /></Button>}
                   </div>
-                )}
+                ) : <span />}
               </li>
             );
           })}
-        </ul>
+          </ul>
+        </div>
       )}
       {editando && <FormMissao evento={evento} missao={editando === "nova" ? undefined : editando} onFechar={() => setEditando(null)} />}
     </div>

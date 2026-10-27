@@ -25,8 +25,8 @@ function PaginaSuporte() {
   if (!usuario) return null;
   return (
     <div>
-      <h1 className="font-display text-2xl font-semibold uppercase">Meus chamados</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Acompanhe suas solicitações e converse com a administração. Quando necessário, a equipe consultará a organização do evento.</p>
+      <h1 className="titulo-pagina">Meus chamados</h1>
+      <p className="subtitulo-pagina">Acompanhe suas solicitações e converse com a administração. Quando necessário, a equipe consultará a organização do evento.</p>
       <div className="mt-4">
         <CentralSuporte modo="participante" usuario={usuario} selecionado={c} eventoInicial={evento}
           onSelecionar={(id) => navigate({ search: id ? { c: id } : {}, replace: true })} />

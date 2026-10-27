@@ -5,7 +5,7 @@
 // vez (lista → conversa, com "Voltar aos chamados"). Detalhes abrem sob demanda num painel
 // sobreposto à conversa (tela inteira no celular), sem comprimi-la.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Info, Plus, Search, WifiOff, X } from "lucide-react";
+import { ArrowLeft, CalendarDays, CheckCircle2, Info, LifeBuoy, MessageSquareText, Plus, Search, SlidersHorizontal, WifiOff, X } from "lucide-react";
 import { carregarBase } from "@/services/db";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { useSuporte } from "@/contexts/SuporteContext";
@@ -100,6 +100,8 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState({ evento: "", categoria: "", status: "", responsavel: "" });
   const [detalhes, setDetalhes] = useState(false);
+  const [situacao, setSituacao] = useState<"todos" | "andamento" | "encerrados">("todos");
+  const [verFiltros, setVerFiltros] = useState(false);
   const area = useRef<HTMLDivElement>(null);
   const botaoDetalhes = useRef<HTMLButtonElement>(null);
   const altura = useAlturaDisponivel(area);
@@ -128,6 +130,8 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
     return meus.filter((c) => {
+      if (situacao === "andamento" && !ativo(c)) return false;
+      if (situacao === "encerrados" && ativo(c)) return false;
       if (
         filtro.evento &&
         (filtro.evento === "plataforma" ? !!c.eventoId : c.eventoId !== filtro.evento)
@@ -154,11 +158,11 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
         sol.includes(q)
       );
     });
-  }, [meus, busca, filtro, base, usuario.id]);
+  }, [meus, busca, filtro, base, usuario.id, situacao]);
 
   // Ordem estável: novos chamados entram no topo, os existentes não pulam enquanto se lê.
   const ordem = useRef<string[]>([]);
-  const chaveFiltro = JSON.stringify([busca, filtro, modo]);
+  const chaveFiltro = JSON.stringify([busca, filtro, modo, situacao]);
   const ultimaChave = useRef("");
   const ordenados = useMemo(() => {
     const porId = new Map(filtrados.map((c) => [c.id, c]));
@@ -197,6 +201,9 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
     (u) => u.ativo && (u.perfil === "admin" || u.perfil === "organizador"),
   );
 
+  const filtrosAtivos = Object.values(filtro).filter(Boolean).length;
+  const emAndamento = meus.filter(ativo).length;
+
   const abrirNovo = (anterior?: Chamado) => {
     setNovo(anterior ? { anterior } : {});
     onSelecionar(undefined);
@@ -210,16 +217,16 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
   return (
     <div className="space-y-4">
       {modo === "equipe" && (
-        <dl className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <dl className="grid grid-cols-2 overflow-hidden rounded-lg border border-border sm:grid-cols-5 sm:divide-x sm:divide-border">
           {(Object.keys(indicadores) as (keyof typeof indicadores)[]).map((k) => (
             <Toggle
               key={k}
               pressed={filtro.status === k}
               onPressedChange={() => setFiltro((f) => ({ ...f, status: f.status === k ? "" : k }))}
-              className="min-w-0 rounded-lg border p-3 text-left data-[state=off]:border-border data-[state=off]:bg-card data-[state=on]:border-primary data-[state=on]:bg-primary/10"
+              className="h-auto min-w-0 flex-col items-start rounded-none border-0 px-4 py-3 text-left data-[state=off]:bg-transparent data-[state=on]:bg-secondary data-[state=on]:shadow-[inset_0_-2px_0_var(--accent)]"
             >
-              <dt className="truncate text-xs text-muted-foreground">{ROTULO_STATUS_EXIBIDO[k]}</dt>
-              <dd className="font-display text-2xl font-semibold">{indicadores[k]}</dd>
+              <dt className="rotulo-tecnico truncate">{ROTULO_STATUS_EXIBIDO[k]}</dt>
+              <dd className="mt-1 font-display text-3xl font-bold tabular-nums">{indicadores[k]}</dd>
             </Toggle>
           ))}
         </dl>
@@ -230,13 +237,13 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
         style={altura && (duasColunas || mostrandoPainel) ? { height: altura } : undefined}
         className="@container min-h-[280px] rounded-lg border border-border bg-card"
       >
-        <div className="grid h-full min-h-0 grid-cols-1 @min-[760px]:grid-cols-[300px_minmax(0,1fr)]">
+        <div className="grid h-full min-h-0 grid-cols-1 @min-[760px]:grid-cols-[340px_minmax(0,1fr)]">
           {/* ---------- Lista ---------- */}
           <section
             aria-label="Chamados"
             className={`${mostrandoPainel ? "hidden @min-[760px]:flex" : "flex"} min-h-0 min-w-0 flex-col border-border @min-[760px]:border-r`}
           >
-            <div className="space-y-2 border-b border-border p-3">
+            <div className="space-y-2.5 border-b border-border p-3">
               <div className="flex items-center gap-2">
                 <Label className="relative min-w-0 flex-1 text-[length:inherit] font-normal text-inherit">
                   <span className="sr-only">
@@ -255,15 +262,31 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                     className="h-9 w-full min-w-0 rounded-md border border-input bg-background pl-8 pr-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40 py-0"
                   />
                 </Label>
-                {modo === "participante" && (
-                  <Button type="button" className="shrink-0 !px-3 !py-2" onClick={() => abrirNovo()}>
+                {modo === "participante" ? (
+                  <Button type="button" className="h-9 shrink-0 !px-3" onClick={() => abrirNovo()}>
                     <Plus className="h-4 w-4" />
                     Novo
                   </Button>
+                ) : (
+                  <Button type="button" variant="outline" className="relative h-9 shrink-0 !px-3" aria-expanded={verFiltros} onClick={() => setVerFiltros((v) => !v)}>
+                    <SlidersHorizontal className="h-4 w-4" />
+                    Filtros
+                    {filtrosAtivos > 0 && <span className="rounded-full bg-accent px-1.5 text-[10px] font-bold leading-4 text-accent-foreground">{filtrosAtivos}</span>}
+                  </Button>
                 )}
               </div>
-              {modo === "equipe" && (
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {modo === "participante" && (
+                <div role="group" aria-label="Situação" className="grid grid-cols-3 gap-0.5 rounded-md bg-secondary/50 p-0.5 text-xs font-medium">
+                  {([["todos", `Todos · ${meus.length}`], ["andamento", `Abertos · ${emAndamento}`], ["encerrados", `Encerrados · ${meus.length - emAndamento}`]] as const).map(([v, r]) => (
+                    <Button key={v} type="button" variant="plain" size="none" aria-pressed={situacao === v} onClick={() => setSituacao(v)}
+                      className={`h-7 truncate rounded px-2 ${situacao === v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+                      {r}
+                    </Button>
+                  ))}
+                </div>
+              )}
+              {modo === "equipe" && verFiltros && (
+                <div className="grid grid-cols-2 gap-2">
                   <NativeSelect
                     aria-label="Filtrar por evento"
                     value={filtro.evento}
@@ -351,51 +374,47 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                         onSelecionar(c.id);
                       }}
                       aria-current={sel ? "true" : undefined}
-                      className={`block w-full min-w-0 border-b border-l-4 border-b-border px-3 py-3 text-left hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${sel ? "bg-secondary" : ""} ${n > 0 ? "border-l-accent" : "border-l-transparent"}`}
+                      className={`relative block w-full min-w-0 border-b border-border px-4 py-3 text-left hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${sel ? "bg-secondary before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-accent" : ""}`}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <p
-                          className={`line-clamp-2 min-w-0 break-words text-sm ${n > 0 ? "font-semibold" : "font-medium"}`}
-                        >
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className={`line-clamp-2 min-w-0 break-words text-sm ${n > 0 ? "font-semibold" : "font-medium"}`}>
+                          {n > 0 && <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-accent align-middle" aria-hidden="true" />}
                           {c.assunto}
                         </p>
-                        {n > 0 && (
-                          <span
-                            className="shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground"
-                            aria-label={`${n} não lidas`}
-                          >
-                            {n}
-                          </span>
-                        )}
+                        <span className="shrink-0 whitespace-nowrap font-mono text-[11px] text-muted-foreground">
+                          {formatarDataHoraBR(ultimaAtividade(c)).slice(0, 5)}
+                        </span>
                       </div>
-                      <p className="mt-0.5 line-clamp-2 break-words text-xs text-muted-foreground">
-                        {protocolo(c)} · {nomeEvento(c, ev)}
-                        {modo === "equipe"
-                          ? ` · ${nome(base.usuarios.find((u) => u.id === c.solicitanteId))}`
-                          : ""}
-                      </p>
                       {ult && (
                         <p className="mt-1 line-clamp-1 break-all text-xs text-muted-foreground">
                           {ult.corpo || (ult.anexo ? "📎 Anexo" : "")}
                         </p>
                       )}
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
                         <StatusChamadoBadge s={statusExibido(base, c)} />
-                        {modo === "equipe" && retornoRecebido(base, c) && <Badge variant="accent">Retorno do organizador recebido</Badge>}
+                        {modo === "equipe" && retornoRecebido(base, c) && <Badge variant="accent">Retorno do organizador</Badge>}
                         {modo === "equipe" && pendenteDeResposta(c) && (
                           <Badge variant="warning">Aguardando resposta</Badge>
                         )}
-                        {modo === "equipe" && (
-                          <span className="text-[11px] text-muted-foreground">
-                            {resp
-                              ? `Resp.: ${resp === usuario.id ? "você" : nome(base.usuarios.find((u) => u.id === resp))}`
-                              : "Sem responsável"}
+                        <span className="min-w-0 truncate text-[11px] text-muted-foreground">
+                          {c.eventoId ? <CalendarDays className="mr-1 inline h-3 w-3 align-[-2px]" aria-hidden="true" /> : <LifeBuoy className="mr-1 inline h-3 w-3 align-[-2px]" aria-hidden="true" />}
+                          {nomeEvento(c, ev)}
+                          {modo === "equipe" ? ` · ${nome(base.usuarios.find((u) => u.id === c.solicitanteId))}` : ""}
+                        </span>
+                        {n > 0 && (
+                          <span className="ml-auto shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold leading-none text-accent-foreground" aria-label={`${n} não lidas`}>
+                            {n}
                           </span>
                         )}
-                        <span className="ml-auto whitespace-nowrap text-[11px] text-muted-foreground">
-                          {formatarDataHoraBR(ultimaAtividade(c))}
-                        </span>
                       </div>
+                      <p className="mt-1.5 flex items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                        <span className="truncate">{protocolo(c)}</span>
+                        {modo === "equipe" && (
+                          <span className="shrink-0 normal-case tracking-normal">
+                            {resp ? `Resp.: ${resp === usuario.id ? "você" : nome(base.usuarios.find((u) => u.id === resp))}` : "Sem responsável"}
+                          </span>
+                        )}
+                      </p>
                     </Button>
                   </li>
                 );
@@ -470,14 +489,13 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
               <div className="flex flex-1 items-center justify-center p-6 text-center">
                 {naoEncontrado ? (
                   <Indisponivel onVoltar={() => onSelecionar(undefined)} />
+                ) : modo === "participante" ? (
+                  <ComoFunciona onNovo={() => abrirNovo()} />
                 ) : (
-                  <EstadoVazio
-                    titulo="Selecione um chamado"
-                    descricao={
-                      modo === "participante"
-                        ? "Ou abra uma nova solicitação."
-                        : "Escolha um chamado na lista para atender."
-                    }
+                  <ResumoFila
+                    semResponsavel={meus.filter((c) => ativo(c) && !responsavelId(c)).length}
+                    aguardando={meus.filter((c) => ativo(c) && pendenteDeResposta(c)).length}
+                    comigo={meus.filter((c) => ativo(c) && responsavelId(c) === usuario.id).length}
                   />
                 )}
               </div>
@@ -485,6 +503,59 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
           </section>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Sem chamado aberto (participante): como o atendimento funciona, em três passos. */
+function ComoFunciona({ onNovo }: { onNovo: () => void }) {
+  const passos = [
+    { icone: MessageSquareText, titulo: "Abra um chamado", texto: "Escolha se é sobre uma operação ou sobre a plataforma e descreva o que aconteceu." },
+    { icone: LifeBuoy, titulo: "A administração responde", texto: "Quando o assunto é do evento, ela consulta a organização. Você recebe as respostas nas notificações." },
+    { icone: CheckCircle2, titulo: "Resolvido", texto: "Se ainda precisar de ajuda, reabra o chamado em vez de abrir outro." },
+  ];
+  return (
+    <div className="w-full max-w-md text-left">
+      <p className="rotulo-tecnico">Central de suporte</p>
+      <h2 className="mt-1 font-display text-2xl font-bold uppercase leading-tight">Como funciona o atendimento</h2>
+      <ol className="mt-5 space-y-4">
+        {passos.map(({ icone: Icone, titulo, texto }, i) => (
+          <li key={titulo} className="flex gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-border bg-background text-accent" aria-hidden="true"><Icone className="h-4 w-4" /></span>
+            <div className="min-w-0">
+              <p className="text-sm font-medium"><span className="mr-1.5 font-mono text-xs text-muted-foreground">0{i + 1}</span>{titulo}</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">{texto}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <Button type="button" className="mt-6" onClick={onNovo}><Plus className="h-4 w-4" />Abrir um chamado</Button>
+    </div>
+  );
+}
+
+/** Sem chamado aberto (equipe): o que pede atenção na fila agora. */
+function ResumoFila({ semResponsavel, aguardando, comigo }: { semResponsavel: number; aguardando: number; comigo: number }) {
+  const itens = [
+    { rotulo: "Sem responsável", valor: semResponsavel, texto: "Assuma para começar o atendimento." },
+    { rotulo: "Aguardando resposta", valor: aguardando, texto: "O participante escreveu por último." },
+    { rotulo: "Com você", valor: comigo, texto: "Chamados ativos sob sua responsabilidade." },
+  ];
+  return (
+    <div className="w-full max-w-md text-left">
+      <p className="rotulo-tecnico">Fila de atendimento</p>
+      <h2 className="mt-1 font-display text-2xl font-bold uppercase leading-tight">Escolha um chamado na lista</h2>
+      <dl className="mt-5 divide-y divide-border rounded-lg border border-border bg-background/40">
+        {itens.map((i) => (
+          <div key={i.rotulo} className="flex items-center gap-4 px-4 py-3">
+            <dd className="w-10 shrink-0 font-display text-3xl font-bold tabular-nums">{i.valor}</dd>
+            <div className="min-w-0">
+              <dt className="text-sm font-medium">{i.rotulo}</dt>
+              <p className="text-xs text-muted-foreground">{i.texto}</p>
+            </div>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }
@@ -553,31 +624,37 @@ function CabecalhoConversa({
   const solicitante =
     modo === "equipe" ? nome(base.usuarios.find((u) => u.id === c.solicitanteId)) : null;
   return (
-    <header className="flex items-start gap-2 border-b border-border px-3 py-2.5 sm:px-4">
+    <header className="flex items-start gap-3 border-b border-border px-3 py-3 sm:px-4">
+      <span className="hidden h-10 w-10 shrink-0 place-items-center rounded-md bg-secondary text-accent @min-[480px]:grid" aria-hidden="true">
+        {c.eventoId ? <CalendarDays className="h-5 w-5" /> : <LifeBuoy className="h-5 w-5" />}
+      </span>
       <div className="min-w-0 flex-1">
-        <h2 className="line-clamp-2 break-words font-display text-base font-semibold leading-snug">
+        <h2 className="line-clamp-2 break-words font-display text-lg font-bold uppercase leading-tight">
           {c.assunto}
         </h2>
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="break-all text-xs text-muted-foreground">
-            {protocolo(c)}
-            {solicitante ? ` · ${solicitante}` : ""}
-          </span>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
           <StatusChamadoBadge s={statusExibido(base, c)} />
+          <span className="font-mono">{protocolo(c)}</span>
+          <span aria-hidden="true">·</span>
+          <span className="truncate">{nomeEvento(c, c.eventoId ? base.eventos.find((e) => e.id === c.eventoId) : undefined)}</span>
+          <span aria-hidden="true">·</span>
+          <span>{c.categoria}</span>
+          {solicitante && <><span aria-hidden="true">·</span><span className="truncate">{solicitante}</span></>}
         </div>
       </div>
       <Button
         ref={botao}
         type="button"
-        variant="outline"
-        className="shrink-0 !px-3 !py-1.5"
+        variant={detalhes ? "secondary" : "ghost"}
+        aria-label="Detalhes do chamado"
+        className="shrink-0 !px-2.5"
         onClick={onDetalhes}
         aria-expanded={detalhes}
         aria-controls="detalhes-chamado"
         aria-haspopup="dialog"
       >
         <Info className="h-4 w-4" />
-        Detalhes
+        <span className="hidden @min-[480px]:inline">Detalhes</span>
       </Button>
     </header>
   );
