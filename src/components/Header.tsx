@@ -226,7 +226,7 @@ export function Header() {
 
   return (
     <header className={`vt-cabecalho sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md transition-shadow motion-reduce:transition-none ${rolado ? "shadow-md" : ""}`}>
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 lg:grid lg:h-[68px] lg:grid-cols-[1fr_auto_1fr] lg:gap-3">
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 lg:grid lg:h-[68px] lg:grid-cols-[1fr_auto_1fr] lg:gap-6">
         <Marca />
 
         {/* Centro: navegação (desktop) */}
@@ -235,7 +235,7 @@ export function Header() {
         </nav>
 
         {/* Direita: região, avisos e conta */}
-        <div className="ml-auto flex min-w-0 items-center gap-0.5 justify-self-end lg:ml-0 lg:gap-1">
+        <div className="ml-auto flex min-w-0 items-center gap-0.5 justify-self-end lg:ml-0 lg:min-w-max lg:gap-1">
           <SeletorCidade compacto variante="cabecalho" className="min-w-0" />
           <span aria-hidden="true" className="mx-1 hidden h-6 w-px bg-border lg:block" />
           {usuarioVisivel && <SinoNotificacoes />}
