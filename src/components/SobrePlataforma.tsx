@@ -10,6 +10,25 @@ const RECURSOS = [
   { icone: ShieldCheck, titulo: "Para organizações", texto: "Ferramentas para criar eventos, vender lotes, controlar inscritos e receber os valores das vendas." },
 ];
 
+/** Título e finalidade do topo da página inicial; também sai no HTML do servidor antes da carga. */
+export function ChamadaPlataforma() {
+  return (
+    <>
+      <p className="rotulo-tecnico">MilSim Ops · plataforma de eventos de airsoft e milsim</p>
+      <h1 className="mt-2 max-w-2xl font-display text-4xl font-bold uppercase leading-[0.95] text-foreground sm:text-6xl">
+        Operações de airsoft e milsim pelo Brasil
+      </h1>
+      <p className="mt-3 max-w-xl text-base text-muted-foreground">
+        O MilSim Ops é uma plataforma pública para encontrar eventos de airsoft e milsim, fazer a inscrição, pagar o ingresso
+        e fazer o check-in. Você vê a agenda sem criar conta; o login só é pedido para se inscrever.{" "}
+        <a href="#sobre" className="text-accent underline-offset-2 hover:underline">Saiba mais</a>
+        {" · "}
+        <Link to="/privacidade" className="text-accent underline-offset-2 hover:underline">Aviso de privacidade</Link>
+      </p>
+    </>
+  );
+}
+
 export function SobrePlataforma() {
   return (
     <section id="sobre" aria-labelledby="t-sobre" className="border-t border-border">
