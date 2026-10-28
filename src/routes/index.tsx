@@ -30,6 +30,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Toggle } from "@/components/ui/toggle";
 import { Label } from "@/components/ui/label";
 import imgMilsim from "@/assets/modalidade-milsim.jpg";
+import { tr } from "@/i18n/routes/index";
 
 interface BuscaInicio { q?: string | undefined; periodo?: "30d" | "90d" | undefined; mod?: string | undefined; ordem?: Ordenacao | undefined }
 
@@ -132,8 +133,8 @@ function PaginaInicial() {
     : [];
   const nacional = local.escopo === "nacional";
   const tituloSecao = nacional
-    ? "Explore operações pelo Brasil"
-    : local.escopo === "cidade" ? `Operações perto de ${local.cidade}` : `Operações em ${rotuloCurto(local)}`;
+    ? tr("explore_operacoes_pelo_brasil")
+    : local.escopo === "cidade" ? tr("operacoes_perto_de_cidade", { cidade: local.cidade ?? "" }) : tr("operacoes_em_local", { local: rotuloCurto(local) });
   const aviso = mensagemStatus(status);
 
   const buscar = (e: React.FormEvent) => {
@@ -150,35 +151,35 @@ function PaginaInicial() {
         <div className="relative mx-auto max-w-6xl px-4 pb-8 pt-12 sm:pt-16">
           <ChamadaPlataforma />
 
-          <form onSubmit={buscar} role="search" aria-label="Buscar operações"
+          <form onSubmit={buscar} role="search" aria-label={tr("buscar_operacoes")}
             className="mt-7 grid overflow-hidden rounded-lg border border-border bg-background shadow-[0_8px_30px_-12px_rgb(0_0_0/0.5)] md:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1fr)_auto]">
             <div className="border-b border-border px-4 py-2.5 md:border-b-0 md:border-r">
-              <Label htmlFor="busca-inicio" className="rotulo-tecnico block">Operação ou organização</Label>
+              <Label htmlFor="busca-inicio" className="rotulo-tecnico block">{tr("operacao_ou_organizacao")}</Label>
               <div className="relative mt-1">
                 <Search className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input id="busca-inicio" type="search" value={busca} onChange={(e) => setBusca(e.target.value)}
-                  placeholder="Ex.: Escudo Norte"
+                  placeholder={tr("ex_escudo_norte")}
                   className="h-7 w-full border-0 bg-transparent p-0 pl-6 text-[15px] text-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0" />
               </div>
             </div>
             <div className="border-b border-border px-4 py-2.5 md:border-b-0 md:border-r">
-              <span className="rotulo-tecnico block">Onde</span>
+              <span className="rotulo-tecnico block">{tr("onde")}</span>
               <SeletorCidade className="mt-1 [&_button]:h-7 [&_button]:w-full [&_button]:justify-between [&_button]:border-0 [&_button]:bg-transparent [&_button]:px-0" />
             </div>
             <div className="border-b border-border px-4 py-2.5 md:border-b-0">
-              <Label htmlFor="periodo-inicio" className="rotulo-tecnico block">Quando</Label>
+              <Label htmlFor="periodo-inicio" className="rotulo-tecnico block">{tr("quando")}</Label>
               <NativeSelect id="periodo-inicio" value={periodo} onChange={(e) => setPeriodo(e.target.value as Periodo)}
                 className="mt-1 h-7 w-full border-0 bg-transparent px-0 text-[15px] text-foreground focus-visible:ring-0 py-0">
-                <option value="">Qualquer data</option>
-                <option value="30d">Próximos 30 dias</option>
-                <option value="90d">Próximos 90 dias</option>
+                <option value="">{tr("qualquer_data")}</option>
+                <option value="30d">{tr("proximos_30_dias")}</option>
+                <option value="90d">{tr("proximos_90_dias")}</option>
               </NativeSelect>
             </div>
-            <Button type="submit" className="m-2 h-11 rounded-md px-6 md:self-center"><Search className="h-4 w-4" aria-hidden />Buscar</Button>
+            <Button type="submit" className="m-2 h-11 rounded-md px-6 md:self-center"><Search className="h-4 w-4" aria-hidden />{tr("buscar")}</Button>
           </form>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="Modalidades">
-            <span className="rotulo-tecnico mr-1">Modalidade</span>
+          <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label={tr("modalidades")}>
+            <span className="rotulo-tecnico mr-1">{tr("modalidade")}</span>
             {MODALIDADES.map((m) => {
               const ativo = modsSel.includes(m.id);
               return (
@@ -189,16 +190,15 @@ function PaginaInicial() {
             })}
             {pref.montado && (
               <Button variant="plain" size="none" type="button" onClick={pref.abrirEditor} className="ml-auto text-xs text-accent underline-offset-2 hover:underline">
-                Personalizar modalidades
-              </Button>
+                {tr("personalizar_modalidades")}</Button>
             )}
           </div>
 
           {pedirPermissao && (
             <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <Crosshair className="h-4 w-4 text-accent" aria-hidden />
-              <Button variant="link" size="none" className="text-sm" onClick={() => void usarLocalizacaoAtual()}>Usar minha localização</Button>
-              <span>para ver primeiro o que está perto.</span>
+              <Button variant="link" size="none" className="text-sm" onClick={() => void usarLocalizacaoAtual()}>{tr("usar_minha_localizacao")}</Button>
+              <span>{tr("para_ver_primeiro_o_que_esta")}</span>
             </div>
           )}
           {aviso && status !== "obtendo" && (
@@ -208,11 +208,11 @@ function PaginaInicial() {
       </section>
 
       {base && !falha && (impulsionados.length > 0 || secoesDestaque.length > 0) && (
-        <section className="mx-auto max-w-6xl px-4 pt-8" aria-label="Operações em destaque">
+        <section className="mx-auto max-w-6xl px-4 pt-8" aria-label={tr("operacoes_em_destaque")}>
           {impulsionados.length > 0 && (
             <div aria-labelledby="t-impulsionados">
-              <h2 id="t-impulsionados" className="font-display text-2xl font-semibold uppercase tracking-wide">Operações em destaque</h2>
-              <p className="text-sm text-muted-foreground">Divulgação da plataforma, de acordo com a sua busca. As demais listas vêm abaixo.</p>
+              <h2 id="t-impulsionados" className="font-display text-2xl font-semibold uppercase tracking-wide">{tr("operacoes_em_destaque")}</h2>
+              <p className="text-sm text-muted-foreground">{tr("divulgacao_da_plataforma_de_acordo_com")}</p>
               <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {impulsionados.map((e, i) => (
                   <CardRastreado key={e.id} ativo eventoId={e.id} origem="destaques" secaoId="listagem" posicao={i + 1} visualizacaoId={visualizacaoId} campanhaId={e.campanhaId}>
@@ -231,15 +231,15 @@ function PaginaInicial() {
       )}
 
       {base && pref.montado && pref.preferencia.estado === "selecionadas" && !modsSel.length && regionais.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 pt-8" aria-label="Operações para você">
+        <section className="mx-auto max-w-6xl px-4 pt-8" aria-label={tr("operacoes_para_voce")}>
           {paraVoce.favoritas.length > 0 ? (
-            <SectionCarousel rotulo="Operações para você" cabecalho={
+            <SectionCarousel rotulo={tr("operacoes_para_voce")} cabecalho={
               <div className="flex flex-wrap items-end justify-between gap-2">
                 <div>
-                  <h2 className="font-display text-2xl font-semibold uppercase tracking-wide">Operações para você</h2>
-                  <p className="text-sm text-muted-foreground">Priorizadas pelas suas modalidades favoritas e pela localização selecionada.</p>
+                  <h2 className="font-display text-2xl font-semibold uppercase tracking-wide">{tr("operacoes_para_voce")}</h2>
+                  <p className="text-sm text-muted-foreground">{tr("priorizadas_pelas_suas_modalidades_favor")}</p>
                 </div>
-                <Button variant="plain" size="none" type="button" onClick={pref.abrirEditor} className="text-sm text-accent underline-offset-2 hover:underline">Editar preferências</Button>
+                <Button variant="plain" size="none" type="button" onClick={pref.abrirEditor} className="text-sm text-accent underline-offset-2 hover:underline">{tr("editar_preferencias")}</Button>
               </div>
             }>
               {paraVoce.favoritas.map((e, i) => (
@@ -250,17 +250,16 @@ function PaginaInicial() {
             </SectionCarousel>
           ) : (
             <div className="rounded-lg border border-dashed border-border p-4">
-              <h2 className="font-display text-xl font-semibold uppercase">Operações para você</h2>
+              <h2 className="font-display text-xl font-semibold uppercase">{tr("operacoes_para_voce")}</h2>
               <p className="mt-1 text-sm">
-                Nenhuma operação de {pref.preferencia.modalidades.map(nomeModalidade).join(", ")} em {rotuloCurto(local)} no momento.
-                {paraVoce.outras.length > 0 && " Veja abaixo outras modalidades desta região."}
+                {tr("nenhuma_operacao_de_valor_em_local", { valor: pref.preferencia.modalidades.map(nomeModalidade).join(", "), local: rotuloCurto(local) })}{paraVoce.outras.length > 0 && ` ${tr("veja_abaixo_outras_modalidades_desta_reg")}`}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {local.escopo === "cidade" && local.uf && (
-                  <Button variant="secondary" onClick={() => definirLocal({ escopo: "estado", uf: local.uf })}>Ampliar para o estado</Button>
+                  <Button variant="secondary" onClick={() => definirLocal({ escopo: "estado", uf: local.uf })}>{tr("ampliar_para_o_estado")}</Button>
                 )}
-                {!nacional && <Button variant="secondary" onClick={() => definirLocal(NACIONAL)}>Ampliar para todo o Brasil</Button>}
-                <Button variant="ghost" onClick={pref.abrirEditor}>Editar preferências</Button>
+                {!nacional && <Button variant="secondary" onClick={() => definirLocal(NACIONAL)}>{tr("ampliar_para_todo_o_brasil")}</Button>}
+                <Button variant="ghost" onClick={pref.abrirEditor}>{tr("editar_preferencias")}</Button>
               </div>
             </div>
           )}
@@ -274,34 +273,32 @@ function PaginaInicial() {
             <p className="mt-0.5 flex items-center gap-1 text-sm text-muted-foreground">
               <MapPin className="h-3.5 w-3.5 text-accent" aria-hidden />
               {rotuloCurto(local)}
-              {base && <> · {resultados.length} {resultados.length === 1 ? "operação encontrada" : "operações encontradas"}</>}
+              {base && <> · {resultados.length} {resultados.length === 1 ? tr("operacao_encontrada") : tr("operacoes_encontradas")}</>}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Label className="flex items-center gap-2 text-sm text-muted-foreground font-normal">
-              Ordenar por
-              <NativeSelect value={ordem} onChange={(e) => atualizar({ ordem: e.target.value === "para_voce" ? undefined : (e.target.value as Ordenacao) })}
+              {tr("ordenar_por")}<NativeSelect value={ordem} onChange={(e) => atualizar({ ordem: e.target.value === "para_voce" ? undefined : (e.target.value as Ordenacao) })}
                 className="h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring w-auto py-0">
                 {(Object.keys(ROTULO_ORDENACAO) as Ordenacao[]).map((o) => <option key={o} value={o}>{ROTULO_ORDENACAO[o]}</option>)}
               </NativeSelect>
             </Label>
             {filtrosAtivos && (
               <Button variant="plain" size="none" type="button" className="text-sm text-accent underline-offset-2 hover:underline" onClick={limparFiltros}>
-                Limpar filtros
-              </Button>
+                {tr("limpar_filtros")}</Button>
             )}
           </div>
         </div>
 
         {filtrosAtivos && (
           <p className="mt-2 text-xs text-muted-foreground">
-            Filtros ativos: {[aplicado.busca && `“${aplicado.busca}”`, aplicado.periodo && (aplicado.periodo === "30d" ? "próximos 30 dias" : "próximos 90 dias"), ...modsSel.map(nomeModalidade)].filter(Boolean).join(" · ")}
+            {tr("filtros_ativos")}{" "}{[aplicado.busca && `“${aplicado.busca}”`, aplicado.periodo && (aplicado.periodo === "30d" ? tr("proximos_30_dias_2") : tr("proximos_90_dias_2")), ...modsSel.map(nomeModalidade)].filter(Boolean).join(" · ")}
           </p>
         )}
         {falha ? (
           <div role="alert" className="mt-4 rounded-lg border border-destructive/50 p-6 text-center">
-            <p className="font-medium">Não foi possível carregar as operações.</p>
-            <Button className="mt-3" variant="secondary" onClick={() => { try { setBase(carregarBase()); setFalha(false); } catch { setFalha(true); } }}>Tentar novamente</Button>
+            <p className="font-medium">{tr("nao_foi_possivel_carregar_as_operacoes")}</p>
+            <Button className="mt-3" variant="secondary" onClick={() => { try { setBase(carregarBase()); setFalha(false); } catch { setFalha(true); } }}>{tr("tentar_novamente")}</Button>
           </div>
         ) : !base ? (
           <div className="mt-4"><SkeletonGrade quantidade={3} /></div>
@@ -309,14 +306,14 @@ function PaginaInicial() {
           <div className="mt-4 rounded-lg border border-dashed border-border p-6 text-center">
             <p className="font-medium">
               {filtrosAtivos
-                ? "Nenhuma operação encontrada para esta busca."
-                : local.escopo === "cidade" ? "Nenhuma operação encontrada nesta cidade." : "Nenhuma operação encontrada nesta localização."}
+                ? tr("nenhuma_operacao_encontrada_para_esta_bu")
+                : local.escopo === "cidade" ? tr("nenhuma_operacao_encontrada_nesta_cidade") : tr("nenhuma_operacao_encontrada_nesta_locali")}
             </p>
             <div className="mt-3 flex flex-wrap justify-center gap-2">
               {local.escopo === "cidade" && local.uf && (
-                <Button variant="secondary" onClick={() => definirLocal({ escopo: "estado", uf: local.uf })}>Ver eventos no estado</Button>
+                <Button variant="secondary" onClick={() => definirLocal({ escopo: "estado", uf: local.uf })}>{tr("ver_eventos_no_estado")}</Button>
               )}
-              {!nacional && <Button onClick={() => definirLocal(NACIONAL)}>Explorar todo o Brasil</Button>}
+              {!nacional && <Button onClick={() => definirLocal(NACIONAL)}>{tr("explorar_todo_o_brasil")}</Button>}
             </div>
           </div>
         ) : (
@@ -331,7 +328,7 @@ function PaginaInicial() {
       </section>
 
       {base && secoesDemais.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 pb-10" aria-label="Destaques e parceiros">
+        <section className="mx-auto max-w-6xl px-4 pb-10" aria-label={tr("destaques_e_parceiros")}>
           <SecoesPublicas secoes={secoesDemais} base={base} local={local} rastrear visualizacaoId={visualizacaoId} />
         </section>
       )}

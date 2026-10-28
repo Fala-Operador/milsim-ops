@@ -29,22 +29,23 @@ import { MenuInferior } from "@/components/MenuInferior";
 import { ChamadaPlataforma, SobrePlataforma } from "@/components/SobrePlataforma";
 import { IdiomaProvider, useIdioma } from "@/contexts/IdiomaContext";
 import { obterTextosFn } from "@/api/textos.functions";
+import { definirIdiomaLocal } from "@/lib/idiomaAtual";
 import { criarTradutor, IDIOMAS, LANG_HTML, langDaBusca, PREFIXOS_COMUNS, type Idioma } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Languages } from "lucide-react";
+import { tr } from "@/i18n/routes/__root";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="font-mono text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Página não encontrada</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">{tr("pagina_nao_encontrada")}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          A página que você procura não existe ou foi movida.
-        </p>
+          {tr("a_pagina_que_voce_procura_nao")}</p>
         <div className="mt-6">
           <Button asChild>
-            <Link to="/">Voltar ao início</Link>
+            <Link to="/">{tr("voltar_ao_inicio")}</Link>
           </Button>
         </div>
       </div>
@@ -63,11 +64,9 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Esta página não carregou
-        </h1>
+          {tr("esta_pagina_nao_carregou")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Algo deu errado. Tente novamente ou volte ao início.
-        </p>
+          {tr("algo_deu_errado_tente_novamente_ou")}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Button
             onClick={() => {
@@ -75,10 +74,9 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
               reset();
             }}
           >
-            Tentar novamente
-          </Button>
+            {tr("tentar_novamente")}</Button>
           <Button variant="outline" className="border-input bg-background hover:bg-accent" asChild>
-            <a href="/">Voltar ao início</a>
+            <a href="/">{tr("voltar_ao_inicio")}</a>
           </Button>
         </div>
       </div>
@@ -99,6 +97,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   },
   staleTime: Infinity,
   head: ({ loaderData }) => {
+    // No navegador, o idioma vale para os dicionários antes de qualquer head() ou componente filho.
+    if (typeof window !== "undefined" && loaderData) definirIdiomaLocal(loaderData.idioma);
     const t = criarTradutor(loaderData?.textos ?? {});
     return {
       meta: [
@@ -177,7 +177,7 @@ function Providers({ children }: { children: ReactNode }) {
     carga === "pronto" || PAGINAS_ESTATICAS.has(caminho) ? children
     : carga === "erro" ? (
       <div className="mx-auto max-w-lg px-4 py-16">
-        <ErroSecao titulo="Não foi possível carregar os dados" descricao="Verifique a conexão e tente novamente." onTentar={() => void recarregar()} />
+        <ErroSecao titulo={tr("nao_foi_possivel_carregar_os_dados")} descricao={tr("verifique_a_conexao_e_tente_novamente")} onTentar={() => void recarregar()} />
       </div>
     )
     : <SkeletonPagina />;
@@ -266,8 +266,8 @@ class LimiteErroRaiz extends Component<{ children: ReactNode }, { quebrou: boole
         <div className="flex min-h-screen items-center justify-center bg-background px-4">
           <div className="w-full max-w-lg">
             <ErroSecao
-              titulo="O aplicativo não carregou"
-              descricao="Algo deu errado ao iniciar. Recarregue a página ou volte ao início."
+              titulo={tr("o_aplicativo_nao_carregou")}
+              descricao={tr("algo_deu_errado_ao_iniciar_recarregue")}
               onTentar={() => window.location.reload()}
             />
           </div>

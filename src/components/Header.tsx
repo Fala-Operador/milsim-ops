@@ -12,6 +12,7 @@ import { SeletorCidade } from "./SeletorCidade";
 import { ItensMenuArea, totalPendencias, useMenuArea } from "./MenuLateral";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useIdioma } from "@/contexts/IdiomaContext";
+import { tr } from "@/i18n/components/Header";
 
 const foco = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 const linha = `flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-foreground hover:bg-secondary/70 ${foco}`;
@@ -31,12 +32,12 @@ function Aparencia({ onEscolher, menu }: { onEscolher?: () => void; menu: boolea
   const { tema, podeAlterar, definirTema } = useTheme();
   if (!podeAlterar) return null;
   const opcoes = [
-    { v: "dark" as const, r: "Escuro", sub: "Verde-oliva", classe: "dark" },
-    { v: "light" as const, r: "Claro", sub: "TAN", classe: "tema-claro" },
+    { v: "dark" as const, r: tr("escuro"), sub: tr("verde_oliva"), classe: "dark" },
+    { v: "light" as const, r: tr("claro"), sub: "TAN", classe: "tema-claro" },
   ];
   return (
-    <div role="group" aria-label="Aparência">
-      <Rotulo>Aparência</Rotulo>
+    <div role="group" aria-label={tr("aparencia")}>
+      <Rotulo>{tr("aparencia")}</Rotulo>
       <div className="grid grid-cols-2 gap-2 px-1">
         {opcoes.map((o) => (
           <Item key={o.v} menu={menu}>
@@ -70,8 +71,8 @@ function ItensConta({ fechar, aoSair, menu = false }: { fechar: () => void; aoSa
   const { abrirEditor } = usePreferencias();
   if (!usuario) return null;
   const atalhos = [
-    { to: "/app" as const, rotulo: "Minha área", icone: LayoutDashboard, exato: true },
-    { to: "/app/ingressos" as const, rotulo: "Ingressos", icone: Ticket },
+    { to: "/app" as const, rotulo: tr("minha_area"), icone: LayoutDashboard, exato: true },
+    { to: "/app/ingressos" as const, rotulo: tr("ingressos"), icone: Ticket },
   ];
   return (
     <>
@@ -88,20 +89,20 @@ function ItensConta({ fechar, aoSair, menu = false }: { fechar: () => void; aoSa
           </Item>
         ))}
       </div>
-      <Rotulo>Conta</Rotulo>
-      <Item menu={menu}><Link to="/operador/$usuarioId" params={{ usuarioId: usuario.id }} search={{ aba: "recompensas" }} className={linha} onClick={fechar}><Award className={iconeLinha} aria-hidden="true" />Minhas recompensas</Link></Item>
-      <Item menu={menu}><Link to="/app/perfil" search={{ aba: undefined }} className={linha} onClick={fechar}><UserRound className={iconeLinha} aria-hidden="true" />Meu perfil</Link></Item>
-      <Item menu={menu}><Button variant="plain" size="none" type="button" className={linha} onClick={() => { fechar(); abrirEditor(); }}><SlidersHorizontal className={iconeLinha} aria-hidden="true" />Preferências de eventos</Button></Item>
+      <Rotulo>{tr("conta")}</Rotulo>
+      <Item menu={menu}><Link to="/operador/$usuarioId" params={{ usuarioId: usuario.id }} search={{ aba: "recompensas" }} className={linha} onClick={fechar}><Award className={iconeLinha} aria-hidden="true" />{tr("minhas_recompensas")}</Link></Item>
+      <Item menu={menu}><Link to="/app/perfil" search={{ aba: undefined }} className={linha} onClick={fechar}><UserRound className={iconeLinha} aria-hidden="true" />{tr("meu_perfil")}</Link></Item>
+      <Item menu={menu}><Button variant="plain" size="none" type="button" className={linha} onClick={() => { fechar(); abrirEditor(); }}><SlidersHorizontal className={iconeLinha} aria-hidden="true" />{tr("preferencias_de_eventos")}</Button></Item>
       <Aparencia onEscolher={fechar} menu={menu} />
       {/* Gestão em destaque: é a porta de entrada do organizador e do admin. */}
       <div className="px-1 pt-3">
-        {usuario.perfil === "organizador" && <Item menu={menu}><Link to="/organizacao" onClick={fechar} className={`flex items-center gap-3 rounded-md border border-border p-3 hover:bg-secondary/60 ${foco}`}><span className="grid h-9 w-9 shrink-0 place-items-center rounded bg-primary text-primary-foreground"><Building2 className="h-4 w-4" aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block text-sm font-medium">Minha organização</span><span className="block text-xs text-muted-foreground">Operações, inscritos e financeiro</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" /></Link></Item>}
-        {usuario.perfil === "admin" && <Item menu={menu}><Link to="/admin" onClick={fechar} className={`flex items-center gap-3 rounded-md border border-border p-3 hover:bg-secondary/60 ${foco}`}><span className="grid h-9 w-9 shrink-0 place-items-center rounded bg-primary text-primary-foreground"><ShieldCheck className="h-4 w-4" aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block text-sm font-medium">Administração</span><span className="block text-xs text-muted-foreground">Usuários, pagamentos e moderação</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" /></Link></Item>}
-        {usuario.perfil === "participante" && <Item menu={menu}><Link to="/app/organizador" onClick={fechar} className={`flex items-center gap-3 rounded-md border border-dashed border-border p-3 hover:bg-secondary/60 ${foco}`}><span className="grid h-9 w-9 shrink-0 place-items-center rounded border border-border text-accent"><Building2 className="h-4 w-4" aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block text-sm font-medium">Quero ser organizador</span><span className="block text-xs text-muted-foreground">Publique suas próprias operações</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" /></Link></Item>}
+        {usuario.perfil === "organizador" && <Item menu={menu}><Link to="/organizacao" onClick={fechar} className={`flex items-center gap-3 rounded-md border border-border p-3 hover:bg-secondary/60 ${foco}`}><span className="grid h-9 w-9 shrink-0 place-items-center rounded bg-primary text-primary-foreground"><Building2 className="h-4 w-4" aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block text-sm font-medium">{tr("minha_organizacao")}</span><span className="block text-xs text-muted-foreground">{tr("operacoes_inscritos_e_financeiro")}</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" /></Link></Item>}
+        {usuario.perfil === "admin" && <Item menu={menu}><Link to="/admin" onClick={fechar} className={`flex items-center gap-3 rounded-md border border-border p-3 hover:bg-secondary/60 ${foco}`}><span className="grid h-9 w-9 shrink-0 place-items-center rounded bg-primary text-primary-foreground"><ShieldCheck className="h-4 w-4" aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block text-sm font-medium">{tr("administracao")}</span><span className="block text-xs text-muted-foreground">{tr("usuarios_pagamentos_e_moderacao")}</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" /></Link></Item>}
+        {usuario.perfil === "participante" && <Item menu={menu}><Link to="/app/organizador" onClick={fechar} className={`flex items-center gap-3 rounded-md border border-dashed border-border p-3 hover:bg-secondary/60 ${foco}`}><span className="grid h-9 w-9 shrink-0 place-items-center rounded border border-border text-accent"><Building2 className="h-4 w-4" aria-hidden="true" /></span><span className="min-w-0 flex-1"><span className="block text-sm font-medium">{tr("quero_ser_organizador")}</span><span className="block text-xs text-muted-foreground">{tr("publique_suas_proprias_operacoes")}</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" /></Link></Item>}
       </div>
       {menu && (
         <div className="mt-2 border-t border-border px-1 pt-1">
-          <Item menu><Button variant="plain" size="none" type="button" className={`${linha} text-destructive`} onClick={aoSair}><LogOut className="h-4 w-4" aria-hidden="true" />Sair</Button></Item>
+          <Item menu><Button variant="plain" size="none" type="button" className={`${linha} text-destructive`} onClick={aoSair}><LogOut className="h-4 w-4" aria-hidden="true" />{tr("sair")}</Button></Item>
         </div>
       )}
     </>
@@ -131,8 +132,7 @@ function CartaoConta({ fechar }: { fechar: () => void }) {
         <p className="truncate text-xs text-muted-foreground">{usuario.email}</p>
         <Link to="/operador/$usuarioId" params={{ usuarioId: usuario.id }} search={{ aba: undefined }} onClick={fechar}
           className={`mt-1 inline-flex items-center gap-1 rounded text-xs font-medium text-accent hover:underline ${foco}`}>
-          <IdCard className="h-3.5 w-3.5" aria-hidden="true" />Ver perfil do operador
-        </Link>
+          <IdCard className="h-3.5 w-3.5" aria-hidden="true" />{tr("ver_perfil_do_operador")}</Link>
       </div>
     </div>
   );
@@ -248,7 +248,7 @@ export function Header() {
             <div className="relative hidden lg:block">
               <DropdownMenu open={menuAberto} onOpenChange={setMenuAberto} modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="plain" size="none" type="button" aria-label={`Menu da conta de ${usuarioVisivel.nomeCompleto}`}
+                  <Button variant="plain" size="none" type="button" aria-label={tr("menu_da_conta_de_nomecompleto", { nomeCompleto: usuarioVisivel.nomeCompleto })}
                     className={`flex h-11 max-w-[13rem] items-center gap-2 rounded-full py-1 pl-1 pr-2.5 text-sm hover:bg-secondary/70 data-[state=open]:bg-secondary ${foco}`}>
                     <AvatarConta nome={usuarioVisivel.nomeCompleto} foto={usuarioVisivel.fotoUrl} />
                     <span className="truncate font-medium">{primeiroNome}</span>
@@ -270,7 +270,7 @@ export function Header() {
           )}
           <Sheet open={painelAberto} onOpenChange={setPainelAberto}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="none" aria-label={pendenciasArea > 0 ? `Abrir menu (${pendenciasArea} pendências)` : t("cabecalho.abrir_menu")} className={`relative h-11 w-11 shrink-0 lg:hidden ${foco}`}>
+              <Button variant="ghost" size="none" aria-label={pendenciasArea > 0 ? tr("abrir_menu_pendenciasarea_pendencias", { pendenciasArea }) : t("cabecalho.abrir_menu")} className={`relative h-11 w-11 shrink-0 lg:hidden ${foco}`}>
                 {usuarioVisivel ? <AvatarConta nome={usuarioVisivel.nomeCompleto} foto={usuarioVisivel.fotoUrl} /> : <Menu className="h-5 w-5" aria-hidden="true" />}
                 {pendenciasArea > 0 && (
                   <span aria-hidden="true" className="absolute right-0.5 top-0.5 min-w-4 rounded-full bg-accent px-1 text-center text-[10px] font-bold leading-4 text-accent-foreground">{pendenciasArea}</span>
@@ -308,7 +308,7 @@ export function Header() {
                 )}
                 {/* Dentro da Administração/Organização, as seções da área vêm primeiro (um único menu). */}
                 {menuArea && (
-                  <nav aria-label={`Seções: ${menuArea.titulo}`} className="border-b border-border pb-3">
+                  <nav aria-label={tr("secoes_titulo", { titulo: menuArea.titulo })} className="border-b border-border pb-3">
                     <Rotulo>{menuArea.titulo}</Rotulo>
                     <ItensMenuArea grupos={menuArea.grupos} aoNavegar={() => setPainelAberto(false)} />
                   </nav>
@@ -322,8 +322,7 @@ export function Header() {
               {usuarioVisivel && (
                 <div className="shrink-0 border-t border-border px-2 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
                   <Button variant="plain" size="none" type="button" className={`${linha} text-destructive`} onClick={aoSair}>
-                    <LogOut className="h-4 w-4" aria-hidden="true" />Sair da conta
-                  </Button>
+                    <LogOut className="h-4 w-4" aria-hidden="true" />{tr("sair_da_conta")}</Button>
                 </div>
               )}
             </SheetContent>

@@ -1,9 +1,9 @@
 // Idioma e textos fixos do site para os componentes. Os textos vêm do loader da rota raiz
 // (já no HTML do servidor); páginas com textos próprios (documentos legais) somam os seus.
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
-import { useNavigate, useRouter } from "@tanstack/react-router";
 import { definirIdiomaFn } from "@/api/textos.functions";
 import { criarTradutor, type Idioma, type Textos, type Traduzir } from "@/lib/i18n";
+import { definirIdiomaLocal } from "@/lib/idiomaAtual";
 
 interface IdiomaContextValue {
   idioma: Idioma;
@@ -16,14 +16,15 @@ const g = globalThis as unknown as { __idiomaCtx?: React.Context<IdiomaContextVa
 const IdiomaContext = (g.__idiomaCtx ??= createContext<IdiomaContextValue | null>(null));
 
 export function IdiomaProvider({ idioma, textos, children }: { idioma: Idioma; textos: Textos; children: ReactNode }) {
-  const router = useRouter();
-  const navigate = useNavigate();
+  // Os dicionários de tela (src/i18n/) leem o idioma daqui, antes de desenhar a página.
+  if (typeof window !== "undefined") definirIdiomaLocal(idioma);
   const trocarIdioma = useCallback(async (novo: Idioma) => {
     await definirIdiomaFn({ data: { idioma: novo } });
-    // Tira o ?lang da URL (senão ele venceria o cookie) e recarrega os textos das rotas.
-    await navigate({ to: ".", search: (s: Record<string, unknown>) => ({ ...s, lang: undefined }), replace: true } as never);
-    await router.invalidate();
-  }, [navigate, router]);
+    // Recarrega a página inteira no novo idioma, sem o ?lang (senão ele venceria o cookie).
+    const url = new URL(window.location.href);
+    url.searchParams.delete("lang");
+    window.location.replace(url.toString());
+  }, []);
   const valor = useMemo(() => ({ idioma, textos, t: criarTradutor(textos), trocarIdioma }), [idioma, textos, trocarIdioma]);
   return <IdiomaContext.Provider value={valor}>{children}</IdiomaContext.Provider>;
 }

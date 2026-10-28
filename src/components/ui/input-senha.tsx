@@ -4,6 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { tr } from "@/i18n/components/ui/input-senha";
 
 type InputSenhaProps = Omit<React.ComponentProps<"input">, "type">;
 
@@ -19,7 +20,7 @@ const InputSenha = React.forwardRef<HTMLInputElement, InputSenhaProps>(({ classN
         variant="plain"
         size="none"
         onClick={() => setMostrar((m) => !m)}
-        aria-label={mostrar ? "Ocultar senha" : "Mostrar senha"}
+        aria-label={mostrar ? tr("ocultar_senha") : tr("mostrar_senha")}
         aria-pressed={mostrar}
         aria-controls={props.id}
         className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground hover:text-foreground"

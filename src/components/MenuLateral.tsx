@@ -6,6 +6,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 import type { FileRoutesByTo } from "@/routeTree.gen";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { tr } from "@/i18n/components/MenuLateral";
 
 export interface ItemMenuLateral {
   to: keyof FileRoutesByTo;
@@ -84,7 +85,7 @@ function GrupoItens({ itens, aoNavegar }: { itens: ItemMenuLateral[]; aoNavegar?
                   <item.icone className="h-4 w-4 shrink-0" aria-hidden="true" />
                   <span className="min-w-0 flex-1 truncate">{item.rotulo}</span>
                   {!!item.contador && item.contador > 0 && (
-                    <span className="shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground" aria-label={item.rotuloContador ?? `${item.contador} pendentes`}>
+                    <span className="shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground" aria-label={item.rotuloContador ?? tr("contador_pendentes", { contador: item.contador })}>
                       {item.contador}
                     </span>
                   )}
