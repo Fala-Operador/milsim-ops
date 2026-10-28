@@ -43,10 +43,10 @@ export const Route = createFileRoute("/")({
       throw redirect({ to: "/recuperar-senha", search: { token_hash: s["token_hash"], type: "recovery" } });
     }
     if (typeof s["code"] === "string" || typeof s["error"] === "string") {
-      throw redirect({ to: "/entrar-google", search: {
-        code: typeof s["code"] === "string" ? s["code"] : undefined,
-        error: typeof s["error"] === "string" ? s["error"] : undefined,
-      } });
+      const volta = new URLSearchParams();
+      if (typeof s["code"] === "string") volta.set("code", s["code"]);
+      if (typeof s["error"] === "string") volta.set("error", s["error"]);
+      throw redirect({ href: `/entrar-google?${volta}`, reloadDocument: true });
     }
   },
   head: () => ({

@@ -1,9 +1,7 @@
 // Botão "Entrar com o Google" das telas de acesso. O servidor monta o endereço do Google
-// (Supabase Auth, PKCE); a volta é em /entrar-google, que segue para o destino guardado aqui.
+// (Supabase Auth, PKCE) e guarda o destino; a volta é em /entrar-google, rota do servidor.
 import { useState } from "react";
 import { iniciarLoginGoogle } from "@/api/sessao.functions";
-import { CHAVE_DESTINO_GOOGLE } from "@/lib/loginGoogle";
-import { redirectSeguro } from "@/lib/links";
 import { Button } from "@/components/ui/button";
 
 function LogoGoogle() {
@@ -25,8 +23,7 @@ export function EntrarComGoogle({ redirect, texto = "Entrar com o Google" }: { r
     setErro("");
     setIndo(true);
     try {
-      try { localStorage.setItem(CHAVE_DESTINO_GOOGLE, redirectSeguro(redirect)); } catch { /* sem armazenamento: vai para /app */ }
-      window.location.assign(await iniciarLoginGoogle());
+      window.location.assign(await iniciarLoginGoogle(redirect));
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível abrir o Google.");
       setIndo(false);
