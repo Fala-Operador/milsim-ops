@@ -55,18 +55,6 @@ export function SobrePlataforma() {
           <Link to="/privacidade" className="text-accent underline underline-offset-2">Aviso de privacidade</Link> e nos{" "}
           <Link to="/termos" className="text-accent underline underline-offset-2">Termos de uso</Link>.
         </p>
-        {/* Resumo em inglês para a revisão do Google (avaliadores e verificação automática). */}
-        <div lang="en" className="mt-6 max-w-3xl rounded-lg border border-border p-4 text-sm text-muted-foreground">
-          <h3 className="font-semibold text-foreground">About MilSim Ops (English)</h3>
-          <p className="mt-1">
-            MilSim Ops is a public web platform, operated by Fala Operador (Brazil), for airsoft and military simulation
-            (milsim) events. Players browse the public event calendar without an account, register for events, pay for
-            tickets and check in on site with a QR code; organizers publish events, sell tickets and manage attendees.
-            Signing in with Google is optional: we only receive your name, email address and profile picture, used solely to
-            create and identify your account. Read our{" "}
-            <Link to="/privacidade" hash="english" className="text-accent underline underline-offset-2">Privacy Policy</Link>.
-          </p>
-        </div>
       </div>
     </section>
   );
