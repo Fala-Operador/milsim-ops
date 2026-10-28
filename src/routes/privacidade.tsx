@@ -9,7 +9,7 @@ import { DOCUMENTOS_LEGAIS_ATUALIZADOS_EM } from "@/data/termos";
 // aqui fica só a ordem. Ao mudar o que a plataforma coleta ou com quem compartilha, atualize as
 // cláusulas nos dois idiomas (nova migration) e a data em src/data/termos.ts.
 // O conteúdo cobre o que a LGPD e a verificação do Google pedem; sem idioma no navegador, sai em inglês.
-const CLAUSULAS = ["quem-somos", "resumo", "dados-coletados", "google", "finalidade", "quem-ve", "emergencia", "compartilhamento", "transferencia", "cookies", "seguranca", "retencao", "menores", "direitos", "exclusao", "alteracoes", "contato"] as const;
+const CLAUSULAS = ["quem-somos", "escopo", "resumo", "dados-coletados", "google", "finalidade", "quem-ve", "emergencia", "compartilhamento", "transferencia", "cookies", "seguranca", "retencao", "menores", "direitos", "exclusao", "alteracoes", "contato"] as const;
 
 export const Route = createFileRoute("/privacidade")({
   loaderDeps: ({ search }) => ({ lang: langDaBusca(search) }),
