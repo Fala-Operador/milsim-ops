@@ -22,7 +22,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Campo, EstadoVazio, ErroSecao, Modal, SkeletonCartao } from "@/components/ui";
+import { Campo, EstadoVazio, ErroSecao, Modal, SkeletonCartao, TextoLivre } from "@/components/ui";
 
 /** Foto do fórum (quadrada) ou a inicial do nome. */
 export function FotoForum({ nome, fotoUrl, tamanho = "h-12 w-12", texto = "text-lg" }: { nome: string; fotoUrl?: string | undefined; tamanho?: string; texto?: string }) {
@@ -59,7 +59,7 @@ export function CartaoForum({ f }: { f: ForumDTO }) {
           <SeloVisibilidade v={f.visibilidade} />
         </div>
       </div>
-      {f.descricao && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{f.descricao}</p>}
+      <TextoLivre texto={f.descricao} className="mt-1 line-clamp-2 text-sm text-muted-foreground" />
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" aria-hidden="true" /> {f.membros} {f.membros === 1 ? "membro" : "membros"}</span>
         <span>· criado por {f.dono.nome}</span>

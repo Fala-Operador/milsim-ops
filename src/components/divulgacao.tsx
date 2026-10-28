@@ -162,7 +162,7 @@ function CartaoParceiro({ p, secao, carrossel }: { p: Parceiro; secao: SecaoInic
           <p className="mt-2 text-center font-medium">{p.nome}</p>
         </>
       )}
-      {secao.mostrarDescricoes && p.descricao && <p className="mt-1 text-center text-xs text-muted-foreground">{p.descricao}</p>}
+      {secao.mostrarDescricoes && p.descricao && <p className="mt-1 text-center text-xs text-muted-foreground whitespace-pre-line [overflow-wrap:anywhere]">{p.descricao.trim()}</p>}
       {botoes.length > 0 && (
         // mt-auto: os botões ficam alinhados na base, mesmo com descrições de alturas diferentes
         <div className="mt-auto flex flex-wrap justify-center gap-1 pt-2">
