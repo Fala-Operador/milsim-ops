@@ -2,7 +2,7 @@
 // @supabase/ssr; a aplicação guarda o perfil (papel, dados cadastrais) na tabela
 // usuarios, cujo id é o mesmo de auth.users.
 import "@tanstack/react-start/server-only";
-import { getRequestUrl } from "@tanstack/react-start/server";
+import { deleteCookie, getCookie, getRequestUrl, setCookie } from "@tanstack/react-start/server";
 import { ErroDominio } from "@/services/db";
 import { registrarPerfil, validarCadastro, validarPerfil, type DadosCadastro, type DadosPerfil } from "@/services/auth";
 import { erroSenha, mensagemSenhaFraca } from "@/lib/domain/senha";
@@ -15,7 +15,8 @@ import {
   MSG_LINK_CONFIRMACAO_INVALIDO,
   type LinkConfirmacao,
 } from "@/lib/confirmacaoEmail";
-import { CAMINHO_RETORNO_GOOGLE, MSG_GOOGLE_FALHOU } from "@/lib/loginGoogle";
+import { CAMINHO_RETORNO_GOOGLE, type AvisoLoginGoogle } from "@/lib/loginGoogle";
+import { redirectSeguro } from "@/lib/links";
 import { somenteDigitos } from "@/lib/domain/validators";
 import { supabaseAdmin, supabaseSessao } from "@/server/supabase.server";
 import { ERRO_CAPTCHA, erroDeCaptcha } from "@/server/turnstile.server";
@@ -176,8 +177,11 @@ function motivosSenhaFraca(error: unknown): string[] | undefined {
 // conta já confirmada entra nela (vínculo automático do Supabase). Conta nova não tem perfil:
 // a pessoa completa os dados obrigatórios em /cadastro?completar=google antes de usar o site.
 
-/** Endereço do Google para onde o navegador vai. */
-export async function iniciarLoginGoogle(): Promise<string> {
+/** Cookie com o destino depois do Google (ex.: inscrição do evento). Vale 10 minutos. */
+const COOKIE_DESTINO_GOOGLE = "milsim-destino-google";
+
+/** Endereço do Google para onde o navegador vai. Guarda o destino em cookie para a volta. */
+export async function iniciarLoginGoogle(redirect: string | undefined): Promise<string> {
   const { data, error } = await supabaseSessao().auth.signInWithOAuth({
     provider: "google",
     options: {
@@ -190,37 +194,52 @@ export async function iniciarLoginGoogle(): Promise<string> {
     console.error("iniciarLoginGoogle:", error);
     throw new Error("Entrar com o Google não está disponível agora. Use e-mail e senha.");
   }
+  setCookie(COOKIE_DESTINO_GOOGLE, redirectSeguro(redirect), {
+    path: "/", httpOnly: true, sameSite: "lax", secure: getRequestUrl().protocol === "https:", maxAge: 600,
+  });
   return data.url;
 }
 
-export interface ResultadoLoginGoogle {
-  /** true: conta Google sem perfil; abre o complemento do cadastro. */
-  precisaCompletar: boolean;
-  /**
-   * true: o código era de um link antigo de recuperação de senha (PKCE, ?code=…) que caiu aqui
-   * pela página inicial. A sessão de recuperação já está aberta; a tela segue para a nova senha.
-   */
-  recuperacao?: boolean;
-}
-
-/** Troca o código do retorno do Google pela sessão e diz se a conta já tem perfil. */
-export async function concluirLoginGoogle(codigo: string): Promise<RespostaApi<ResultadoLoginGoogle>> {
+/**
+ * Volta do Google em /entrar-google (rota do servidor, sem tela): troca o código pela sessão e
+ * devolve o endereço para onde o navegador segue. Tudo numa ida ao servidor, sem carregar a base.
+ *  - conta com perfil ativo → destino guardado (padrão /app);
+ *  - conta Google nova, sem perfil → complemento do cadastro;
+ *  - link antigo de recuperação de senha (PKCE com a marca "recovery") → tela de nova senha;
+ *  - erro ou cancelamento → login com o aviso.
+ */
+export async function concluirLoginGoogle(codigo: string | undefined, erro: string | undefined): Promise<string> {
+  const destino = redirectSeguro(getCookie(COOKIE_DESTINO_GOOGLE));
+  deleteCookie(COOKIE_DESTINO_GOOGLE, { path: "/" });
+  const login = (aviso: AvisoLoginGoogle) => `/login?${new URLSearchParams({ google: aviso, redirect: destino })}`;
+  if (!codigo) return login(erro === "access_denied" ? "cancelado" : "falhou");
   const sessao = supabaseSessao();
   const { data, error } = await sessao.auth.exchangeCodeForSession(codigo);
   if (error || !data.user) {
-    console.error("concluirLoginGoogle:", error);
-    throw new Error(MSG_GOOGLE_FALHOU);
+    console.error("concluirLoginGoogle:", error?.code, error?.message);
+    return login("falhou");
   }
-  // O verificador PKCE guardado por resetPasswordForEmail leva a marca "recovery"; a troca a devolve
-  // em `redirectType` (o tipo do supabase-js ainda não declara o campo).
-  if ((data as { redirectType?: string | null }).redirectType === "recovery") return ler(() => ({ precisaCompletar: false, recuperacao: true }), { usuarioId: null });
+  // A troca devolve a marca do verificador em `redirectType` (o tipo do supabase-js ainda não declara).
+  if ((data as { redirectType?: string | null }).redirectType === "recovery") return "/recuperar-senha?sessao=recuperacao";
   const { data: perfil } = await supabaseAdmin().from("users").select("active").eq("id", data.user.id).maybeSingle();
-  if (!perfil) return ler(() => ({ precisaCompletar: true }), { usuarioId: null });
+  if (!perfil) {
+    // O Supabase só vincula o Google a uma conta com o e-mail já confirmado. Sem vínculo, nasce uma
+    // segunda conta no Auth; se o e-mail já tem perfil aqui, ela é desfeita e a pessoa entra com senha.
+    const email = data.user.email ? normalizarEmail(data.user.email) : "";
+    const { base } = await contextoSomenteLeitura();
+    if (email && base.usuarios.some((u) => u.email === email)) {
+      console.error("concluirLoginGoogle: Google sem vínculo com a conta existente", data.user.id);
+      await sessao.auth.signOut();
+      if ((data.user.identities ?? []).every((i) => i.provider === "google")) await supabaseAdmin().auth.admin.deleteUser(data.user.id);
+      return login("sem_vinculo");
+    }
+    return `/cadastro?${new URLSearchParams({ completar: "google", redirect: destino })}`;
+  }
   if (!perfil.active) {
     await sessao.auth.signOut();
-    throw new Error("Conta inativa.");
+    return login("inativa");
   }
-  return ler(() => ({ precisaCompletar: false }), { usuarioId: data.user.id });
+  return destino;
 }
 
 export interface ContaSemPerfil {

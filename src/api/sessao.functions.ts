@@ -62,12 +62,10 @@ export const cadastrarFn = createServerFn({ method: "POST" })
   .validator(entradaCadastro.parse)
   .handler(({ data: { captcha, ...dados } }) => auth.cadastrar(dados as DadosCadastro, captcha));
 
-// Entrar com o Google: vai ao Google, volta com o código e, se a conta for nova, completa o perfil.
-export const iniciarLoginGoogleFn = createServerFn({ method: "POST" }).handler(() => auth.iniciarLoginGoogle());
-
-export const concluirLoginGoogleFn = createServerFn({ method: "POST" })
-  .validator(z.object({ codigo: z.string().min(1).max(500) }).parse)
-  .handler(({ data }) => auth.concluirLoginGoogle(data.codigo));
+// Entrar com o Google: vai ao Google; a volta é a rota do servidor /entrar-google; conta nova completa o perfil.
+export const iniciarLoginGoogleFn = createServerFn({ method: "POST" })
+  .validator(z.object({ redirect: z.string().max(500).optional() }).parse)
+  .handler(({ data }) => auth.iniciarLoginGoogle(data.redirect));
 
 export const obterContaSemPerfilFn = createServerFn({ method: "POST" }).handler(() => auth.contaSemPerfil());
 
@@ -115,8 +113,7 @@ export const validarTokenRecuperacao = (tokenHash: string) => validarTokenRecupe
 export const definirNovaSenha = (senha: string) => chamar(definirNovaSenhaFn({ data: { senha } }));
 export const confirmarEmail = (link: { tokenHash: string } | { codigo: string }) => chamar(confirmarEmailFn({ data: link }));
 export const reenviarConfirmacao = (email: string, captcha?: string) => reenviarConfirmacaoFn({ data: { email, captcha } });
-export const iniciarLoginGoogle = () => iniciarLoginGoogleFn();
-export const concluirLoginGoogle = (codigo: string) => chamar(concluirLoginGoogleFn({ data: { codigo } }));
+export const iniciarLoginGoogle = (redirect: string | undefined) => iniciarLoginGoogleFn({ data: { redirect } });
 export const obterContaSemPerfil = () => obterContaSemPerfilFn();
 export const completarCadastroGoogle = (dados: Omit<DadosPerfil, "email">) => chamar(completarCadastroGoogleFn({ data: dados }));
 export const cancelarCadastroGoogle = () => chamar(cancelarCadastroGoogleFn());
