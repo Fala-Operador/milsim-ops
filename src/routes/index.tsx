@@ -18,6 +18,7 @@ import { CardRastreado, ImagemSegura, SecoesPublicas } from "@/components/divulg
 import { SeletorCidade } from "@/components/SeletorCidade";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { SectionCarousel } from "@/components/SectionCarousel";
+import { SobrePlataforma } from "@/components/SobrePlataforma";
 import { usePreferencias } from "@/contexts/PreferenciasContext";
 import {
   ehModalidade, filtrarPorModalidades, MODALIDADES, nomeModalidade, ordenarEventos, ROTULO_ORDENACAO, separarPorPreferencia,
@@ -148,6 +149,10 @@ function PaginaInicial() {
           </h1>
           <p className="mt-3 max-w-xl text-base text-muted-foreground">
             {base ? `${publicados.length} operações com inscrição aberta.` : "Operações com inscrição aberta."} Escolha a data, a modalidade e garanta a vaga do seu squad.
+          </p>
+          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+            O MilSim Ops reúne agenda, inscrição, ingresso e check-in de eventos de airsoft e milsim.{" "}
+            <a href="#sobre" className="text-accent underline-offset-2 hover:underline">Saiba mais</a>
           </p>
 
           <form onSubmit={buscar} role="search" aria-label="Buscar operações"
@@ -335,6 +340,8 @@ function PaginaInicial() {
           <SecoesPublicas secoes={secoesDemais} base={base} local={local} rastrear visualizacaoId={visualizacaoId} />
         </section>
       )}
+
+      <SobrePlataforma />
     </div>
   );
 }
