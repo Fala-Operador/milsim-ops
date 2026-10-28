@@ -10,6 +10,7 @@ import { LayoutAcesso } from "@/components/LayoutAcesso";
 import { useTurnstile } from "@/components/Turnstile";
 import { ReenviarConfirmacao } from "@/components/ReenviarConfirmacao";
 import { MSG_EMAIL_NAO_CONFIRMADO } from "@/lib/confirmacaoEmail";
+import { EntrarComGoogle, SeparadorOu } from "@/components/EntrarComGoogle";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -52,8 +53,12 @@ function PaginaLogin() {
   };
 
   return (
-    <LayoutAcesso titulo="Entrar" subtitulo="Use o e-mail da sua conta MilsimOps." rotulo="Ingresso · QR Code · Check-in" frase="Seu ingresso e o briefing da operação no mesmo lugar.">
-        <form onSubmit={aoEnviar} className="mt-6 space-y-4">
+    <LayoutAcesso titulo="Entrar" subtitulo="Use a sua conta Google ou o e-mail da sua conta MilsimOps." rotulo="Ingresso · QR Code · Check-in" frase="Seu ingresso e o briefing da operação no mesmo lugar.">
+        <div className="mt-6 space-y-4">
+          <EntrarComGoogle redirect={redirect} />
+          <SeparadorOu />
+        </div>
+        <form onSubmit={aoEnviar} className="mt-4 space-y-4">
           <Campo rotulo="E-mail" htmlFor="email" erro={erro && undefined}>
             <Input
               id="email"
