@@ -4,10 +4,10 @@
 import "@tanstack/react-start/server-only";
 import { getRequestUrl } from "@tanstack/react-start/server";
 import { ErroDominio } from "@/services/db";
-import { registrarPerfil, validarCadastro, type DadosCadastro } from "@/services/auth";
+import { registrarPerfil, validarCadastro, validarPerfil, type DadosCadastro, type DadosPerfil } from "@/services/auth";
 import { erroSenha, mensagemSenhaFraca } from "@/lib/domain/senha";
 import { normalizarEmail } from "@/lib/domain/validators";
-import { contextoSomenteLeitura, ler, mutar, type RespostaApi } from "@/server/unidade.server";
+import { contextoSomenteLeitura, idDaSessao, ler, mutar, type RespostaApi } from "@/server/unidade.server";
 import {
   CAMINHO_CONFIRMACAO,
   MSG_AGUARDE_REENVIO,
@@ -15,6 +15,7 @@ import {
   MSG_LINK_CONFIRMACAO_INVALIDO,
   type LinkConfirmacao,
 } from "@/lib/confirmacaoEmail";
+import { CAMINHO_RETORNO_GOOGLE, MSG_GOOGLE_FALHOU } from "@/lib/loginGoogle";
 import { somenteDigitos } from "@/lib/domain/validators";
 import { supabaseAdmin, supabaseSessao } from "@/server/supabase.server";
 import { ERRO_CAPTCHA, erroDeCaptcha } from "@/server/turnstile.server";
@@ -167,4 +168,93 @@ export async function definirNovaSenha(senha: string): Promise<RespostaApi<null>
 function motivosSenhaFraca(error: unknown): string[] | undefined {
   const motivos = (error as { reasons?: unknown }).reasons;
   return Array.isArray(motivos) ? motivos.filter((m): m is string => typeof m === "string") : undefined;
+}
+
+// ---------- Entrar com o Google (Supabase Auth, provedor OAuth "google") ----------
+// O fluxo é PKCE pelo servidor: o verificador fica em cookie do Supabase e o código que o
+// Google devolve em /entrar-google vira sessão aqui. Conta Google com o mesmo e-mail de uma
+// conta já confirmada entra nela (vínculo automático do Supabase). Conta nova não tem perfil:
+// a pessoa completa os dados obrigatórios em /cadastro?completar=google antes de usar o site.
+
+/** Endereço do Google para onde o navegador vai. */
+export async function iniciarLoginGoogle(): Promise<string> {
+  const { data, error } = await supabaseSessao().auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: new URL(CAMINHO_RETORNO_GOOGLE, getRequestUrl()).toString(),
+      skipBrowserRedirect: true,
+      queryParams: { prompt: "select_account" },
+    },
+  });
+  if (error || !data.url) {
+    console.error("iniciarLoginGoogle:", error);
+    throw new Error("Entrar com o Google não está disponível agora. Use e-mail e senha.");
+  }
+  return data.url;
+}
+
+export interface ResultadoLoginGoogle {
+  /** true: conta Google sem perfil; abre o complemento do cadastro. */
+  precisaCompletar: boolean;
+}
+
+/** Troca o código do retorno do Google pela sessão e diz se a conta já tem perfil. */
+export async function concluirLoginGoogle(codigo: string): Promise<RespostaApi<ResultadoLoginGoogle>> {
+  const sessao = supabaseSessao();
+  const { data, error } = await sessao.auth.exchangeCodeForSession(codigo);
+  if (error || !data.user) {
+    console.error("concluirLoginGoogle:", error);
+    throw new Error(MSG_GOOGLE_FALHOU);
+  }
+  const { data: perfil } = await supabaseAdmin().from("users").select("active").eq("id", data.user.id).maybeSingle();
+  if (!perfil) return ler(() => ({ precisaCompletar: true }), { usuarioId: null });
+  if (!perfil.active) {
+    await sessao.auth.signOut();
+    throw new Error("Conta inativa.");
+  }
+  return ler(() => ({ precisaCompletar: false }), { usuarioId: data.user.id });
+}
+
+export interface ContaSemPerfil {
+  email: string;
+  nome: string;
+}
+
+/**
+ * Conta da sessão que ainda não tem perfil (entrou com o Google pela primeira vez).
+ * null = sem sessão ou o perfil já existe.
+ */
+export async function contaSemPerfil(): Promise<ContaSemPerfil | null> {
+  const { data } = await supabaseSessao().auth.getUser();
+  const user = data.user;
+  if (!user?.email) return null;
+  const { data: perfil } = await supabaseAdmin().from("users").select("id").eq("id", user.id).maybeSingle();
+  if (perfil) return null;
+  const meta = user.user_metadata ?? {};
+  const nome = typeof meta["full_name"] === "string" ? meta["full_name"] : typeof meta["name"] === "string" ? meta["name"] : "";
+  return { email: normalizarEmail(user.email), nome };
+}
+
+/** Cria o perfil da conta Google da sessão. O e-mail vem do Google, nunca do formulário. */
+export async function completarCadastroGoogle(dados: Omit<DadosPerfil, "email">): Promise<RespostaApi<null>> {
+  const conta = await contaSemPerfil();
+  const id = await idDaSessao();
+  if (!conta || !id) throw new Error("Sessão expirada. Entre com o Google de novo.");
+  const perfil: DadosPerfil = { ...dados, email: conta.email };
+  try {
+    validarPerfil(perfil);
+  } catch (e) {
+    mensagem(e);
+  }
+  await mutar(() => registrarPerfil(id, perfil), { exigirLogin: false });
+  return ler(() => null, { usuarioId: id });
+}
+
+/** Desiste do complemento: encerra a sessão e apaga a conta do Auth que ficou sem perfil. */
+export async function cancelarCadastroGoogle(): Promise<RespostaApi<null>> {
+  const conta = await contaSemPerfil();
+  const id = await idDaSessao();
+  await supabaseSessao().auth.signOut();
+  if (conta && id) await supabaseAdmin().auth.admin.deleteUser(id);
+  return ler(() => null, { usuarioId: null });
 }
