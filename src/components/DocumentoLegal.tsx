@@ -22,7 +22,7 @@ export function ContatoControlador({ t }: { t: Traduzir }) {
     <ul>
       <li><strong>{t("legal.contato.controladora")}:</strong> {nome}{cnpj && `, CNPJ ${cnpj}`}.</li>
       {encarregado && <li><strong>{t("legal.contato.encarregado")}:</strong> {encarregado}.</li>}
-      {emailPrivacidade && <li><strong>{t("legal.contato.email")}:</strong> <EmailVisivel email={emailPrivacidade} /> {t("legal.contato.email_obs")}.</li>}
+      {emailPrivacidade && <li><strong>{t("legal.contato.email")}:</strong> <EmailVisivel email={emailPrivacidade} /></li>}
       <li><strong>{t("legal.contato.plataforma")}:</strong> <TextoEmLinha texto={t("legal.contato.links")} /></li>
     </ul>
   );
