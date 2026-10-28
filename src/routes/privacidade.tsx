@@ -221,4 +221,20 @@ const CLAUSULAS = [
       </>
     ),
   },
+  {
+    id: "english", titulo: "Summary in English",
+    texto: (
+      <div lang="en" className="space-y-2">
+        <p>MilSim Ops (milsimops.falaoperador.com.br) is operated by Fala Operador, Brazil, the data controller. This summary covers how we handle Google user data; the full notice above (in Portuguese) prevails.</p>
+        <ul>
+          <li><strong>Data accessed:</strong> if you choose “Sign in with Google”, we receive only your Google account’s name, email address, profile picture and account identifier (scopes <code>openid</code>, <code>email</code>, <code>profile</code>). We do not access Gmail, Drive, Contacts, Calendar or any other Google data.</li>
+          <li><strong>Data usage:</strong> solely to create your account, sign you in and prefill your name during registration. We do not use Google user data for advertising, do not sell it and do not use it to train AI or machine-learning models.</li>
+          <li><strong>Data sharing:</strong> Google user data is stored only with Supabase, our authentication and database provider. It is not shared with event organizers, advertisers, data brokers or any other third party, except when required by law.</li>
+          <li><strong>Data protection:</strong> OAuth 2.0 with PKCE handled by our server; we never receive your Google password or Google API access tokens. Name and email are encrypted at rest (AES-256-GCM) in our database, all traffic uses HTTPS and access is restricted to our server.</li>
+          <li><strong>Retention and deletion:</strong> kept while your account exists. You can request deletion at any time in “Minha área → Privacidade” or by emailing the contact above; Google user data is deleted together with your account. You can also revoke access at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">myaccount.google.com/permissions</a>.</li>
+          <li><strong>Limited Use:</strong> MilSim Ops’ use and transfer to any other app of information received from Google APIs will adhere to the <a href={POLITICA_GOOGLE} target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, including the Limited Use requirements.</li>
+        </ul>
+      </div>
+    ),
+  },
 ];
