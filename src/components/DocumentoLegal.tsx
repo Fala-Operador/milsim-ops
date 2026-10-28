@@ -6,13 +6,21 @@ import { CONTROLADOR } from "@/data/termos";
 export interface Clausula { id: string; titulo: string; texto: ReactNode }
 
 /** Identificação do controlador e canais de contato; campos vazios em CONTROLADOR não aparecem. */
+/**
+ * Link de e-mail que o Cloudflare não troca por "[email protected]": a ofuscação dele só
+ * vale com JavaScript, e a verificação do Google lê o HTML puro.
+ */
+function EmailVisivel({ email }: { email: string }) {
+  return <span dangerouslySetInnerHTML={{ __html: `<!--email_off--><a href="mailto:${email}">${email}</a><!--/email_off-->` }} />;
+}
+
 export function ContatoControlador() {
   const { nome, cnpj, emailPrivacidade, encarregado } = CONTROLADOR;
   return (
     <ul>
       <li><strong>Controladora:</strong> {nome}{cnpj && `, CNPJ ${cnpj}`}.</li>
       {encarregado && <li><strong>Encarregado(a) pelo tratamento de dados (LGPD, art. 41):</strong> {encarregado}.</li>}
-      {emailPrivacidade && <li><strong>E-mail:</strong> <a href={`mailto:${emailPrivacidade}`}>{emailPrivacidade}</a> (não exige conta na plataforma).</li>}
+      {emailPrivacidade && <li><strong>E-mail:</strong> <EmailVisivel email={emailPrivacidade} /> (não exige conta na plataforma).</li>}
       <li><strong>Pela plataforma:</strong> <Link to="/app/privacidade">Minha área → Privacidade</Link> (pedidos LGPD) ou <Link to="/app/suporte">Minha área → Suporte</Link>.</li>
     </ul>
   );
