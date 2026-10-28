@@ -46,10 +46,12 @@ function PaginaRetornoGoogle() {
       trocas.set(code, troca);
     }
     troca
-      .then(({ precisaCompletar }) => {
+      .then(({ precisaCompletar, recuperacao }) => {
         if (!ativo) return;
         const destino = destinoGuardado();
-        if (precisaCompletar) {
+        if (recuperacao) {
+          navigate({ to: "/recuperar-senha", search: { sessao: "recuperacao" }, replace: true });
+        } else if (precisaCompletar) {
           navigate({ to: "/cadastro", search: { redirect: destino, completar: "google" }, replace: true });
         } else {
           navigate({ ...destinoDoLink(destino), replace: true } as { to: string });

@@ -33,14 +33,21 @@ import imgMilsim from "@/assets/modalidade-milsim.jpg";
 interface BuscaInicio { q?: string | undefined; periodo?: "30d" | "90d" | undefined; mod?: string | undefined; ordem?: Ordenacao | undefined }
 
 export const Route = createFileRoute("/")({
-  // Link de recuperação de senha que caiu na página inicial (o Supabase usa o endereço do site
-  // quando o destino pedido não está na lista permitida): segue para a tela de nova senha.
+  // Retorno do Supabase que caiu na página inicial (ele usa o endereço do site quando o destino
+  // pedido não está nas Redirect URLs). token_hash = link de recuperação de senha: vai para a nova
+  // senha. code = PKCE (login com o Google ou link antigo de recuperação): /entrar-google troca o
+  // código e decide pelo tipo do fluxo.
   beforeLoad: ({ location }) => {
     const s = location.search as Record<string, unknown>;
     if (typeof s["token_hash"] === "string" && (s["type"] === "recovery" || s["type"] === undefined)) {
       throw redirect({ to: "/recuperar-senha", search: { token_hash: s["token_hash"], type: "recovery" } });
     }
-    if (typeof s["code"] === "string") throw redirect({ to: "/recuperar-senha", search: { code: s["code"] } });
+    if (typeof s["code"] === "string" || typeof s["error"] === "string") {
+      throw redirect({ to: "/entrar-google", search: {
+        code: typeof s["code"] === "string" ? s["code"] : undefined,
+        error: typeof s["error"] === "string" ? s["error"] : undefined,
+      } });
+    }
   },
   head: () => ({
     meta: [
