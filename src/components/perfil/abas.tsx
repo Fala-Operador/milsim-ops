@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { Campo, EstadoVazio, Modal } from "@/components/ui";
+import { Campo, EstadoVazio, Modal, TextoLivre } from "@/components/ui";
 import { useConfirmacao } from "@/contexts/ConfirmacaoContext";
 import { IconeInsignia } from "./IconeInsignia";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -102,7 +102,7 @@ export function AbaInsignias({ insignias }: { insignias?: InsigniaDTO[] | undefi
                 <span aria-hidden="true" className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 ${i.estado === "conquistada" ? "border-warning bg-warning/15 text-warning" : "border-border bg-secondary text-muted-foreground"}`}><IconeInsignia icone={i.icone} /></span>
                 <div className="min-w-0">
                   <p className="font-display text-base font-semibold uppercase">{i.nome}</p>
-                  <p className="text-xs text-muted-foreground">{i.descricao}</p>
+                  <TextoLivre texto={i.descricao} className="text-xs text-muted-foreground" />
                 </div>
               </div>
               <p className="mt-3 text-xs text-muted-foreground">Critério: {i.criterio}</p>

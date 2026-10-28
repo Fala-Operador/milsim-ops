@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
-import { EstadoVazio, SkeletonPagina } from "@/components/ui";
+import { EstadoVazio, SkeletonPagina, TextoLivre } from "@/components/ui";
 import { formatarDataBR } from "@/lib/domain/money";
 import { dataUrlParaBlobUrl } from "@/lib/imagens";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -178,7 +178,7 @@ function ComunidadeInicio() {
                   <IconeForum forum={forumAtual} ativo tamanho="lg" />
                   <div className="min-w-0">
                     <h2 className="text-xl font-semibold">{forumAtual.nome}</h2>
-                    <p className="text-sm text-muted-foreground">{forumAtual.descricao}</p>
+                    <TextoLivre texto={forumAtual.descricao} className="text-sm text-muted-foreground" />
                   </div>
                 </div>
                 <div className="w-44">
