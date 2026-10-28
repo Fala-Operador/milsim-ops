@@ -27,7 +27,11 @@ import { PreferenciasModal } from "@/components/PreferenciasModalidade";
 import { Header } from "@/components/Header";
 import { MenuInferior } from "@/components/MenuInferior";
 import { ChamadaPlataforma, SobrePlataforma } from "@/components/SobrePlataforma";
+import { IdiomaProvider, useIdioma } from "@/contexts/IdiomaContext";
+import { obterTextosFn } from "@/api/textos.functions";
+import { criarTradutor, IDIOMAS, LANG_HTML, langDaBusca, PREFIXOS_COMUNS, type Idioma } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { Languages } from "lucide-react";
 
 function NotFoundComponent() {
   return (
@@ -83,41 +87,48 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "MilSim Ops — Eventos de Simulação Militar" },
-      {
-        name: "description",
-        content:
-          "Plataforma de divulgação e gestão de eventos de simulação militar, operações e comunidades de participantes.",
-      },
-      { property: "og:title", content: "MilSim Ops — Eventos de Simulação Militar" },
-      {
-        property: "og:description",
-        content: "Descubra operações, inscreva-se e acompanhe sua comunidade.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      // Prévia de links (WhatsApp, redes): precisa de URL absoluta; rotas filhas (ex.: evento) sobrescrevem.
-      { property: "og:image", content: "https://milsimops.falaoperador.com.br/og-image.png" },
-      { name: "twitter:image", content: "https://milsimops.falaoperador.com.br/og-image.png" },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-      { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-      { rel: "manifest", href: "/site.webmanifest" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap",
-      },
-    ],
-  }),
+  // Idioma e textos fixos (public.site_texts) entram no HTML do servidor; ?lang=en|pt troca o idioma.
+  loaderDeps: ({ search }) => ({ lang: langDaBusca(search) }),
+  loader: async ({ deps, location }) => {
+    try {
+      return await obterTextosFn({ data: { lang: deps.lang, caminho: location.pathname, prefixos: [...PREFIXOS_COMUNS] } });
+    } catch (e) {
+      console.error("[textos do site]", e);
+      return { idioma: "pt" as Idioma, textos: {} };
+    }
+  },
+  staleTime: Infinity,
+  head: ({ loaderData }) => {
+    const t = criarTradutor(loaderData?.textos ?? {});
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { title: t("meta.titulo") },
+        { name: "description", content: t("meta.descricao") },
+        { property: "og:title", content: t("meta.titulo") },
+        { property: "og:description", content: t("meta.og_descricao") },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+        // Prévia de links (WhatsApp, redes): precisa de URL absoluta; rotas filhas (ex.: evento) sobrescrevem.
+        { property: "og:image", content: "https://milsimops.falaoperador.com.br/og-image.png" },
+        { name: "twitter:image", content: "https://milsimops.falaoperador.com.br/og-image.png" },
+      ],
+      links: [
+        { rel: "stylesheet", href: appCss },
+        { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+        { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
+        { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+        { rel: "manifest", href: "/site.webmanifest" },
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+        {
+          rel: "stylesheet",
+          href: "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap",
+        },
+      ],
+    };
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
@@ -125,9 +136,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const idioma = useRouterState({ select: (s) => (s.matches[0]?.loaderData as { idioma?: Idioma } | undefined)?.idioma }) ?? "pt";
   return (
     // O script de tema altera a classe do <html> antes da hidratação (intencional).
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang={LANG_HTML[idioma]} suppressHydrationWarning>
       <head>
         <HeadContent />
         {/* Aplica o tema antes da primeira pintura para evitar flashes */}
@@ -150,6 +162,7 @@ const PAGINAS_ESTATICAS = new Set(["/privacidade", "/termos"]);
 
 function Providers({ children }: { children: ReactNode }) {
   const { usuario, carga, recarregar } = useAuth();
+  const { t } = useIdioma();
   // Métricas anônimas são enviadas em lote para a API (só no navegador).
   useEffect(() => {
     definirEnvioAnalytics(enviarRegistros);
@@ -188,19 +201,20 @@ function Providers({ children }: { children: ReactNode }) {
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-sm sm:grid-cols-[1.4fr_1fr_1fr]">
           <div>
             <p className="font-display text-xl font-bold uppercase tracking-[0.04em]">Milsim<span className="text-accent">Ops</span></p>
-            <p className="mt-2 max-w-xs text-muted-foreground">Agenda, inscrição e check-in de operações de airsoft e milsim no Brasil.</p>
+            <p className="mt-2 max-w-xs text-muted-foreground">{t("rodape.descricao")}</p>
           </div>
-          <nav aria-label="Links do rodapé" className="flex flex-col gap-2">
-            <p className="rotulo-tecnico">Plataforma</p>
-            <Link to="/" className="text-muted-foreground hover:text-foreground">Eventos</Link>
-            <Link to="/modalidades" className="text-muted-foreground hover:text-foreground">Modalidades</Link>
-            <Link to="/comunidades" className="text-muted-foreground hover:text-foreground">Comunidades</Link>
+          <nav aria-label={t("rodape.links_aria")} className="flex flex-col gap-2">
+            <p className="rotulo-tecnico">{t("rodape.plataforma")}</p>
+            <Link to="/" className="text-muted-foreground hover:text-foreground">{t("nav.eventos")}</Link>
+            <Link to="/modalidades" className="text-muted-foreground hover:text-foreground">{t("nav.modalidades")}</Link>
+            <Link to="/comunidades" className="text-muted-foreground hover:text-foreground">{t("nav.comunidades")}</Link>
           </nav>
           <div className="flex flex-col gap-2">
-            <p className="rotulo-tecnico">Legal</p>
-            <Link to="/termos" className="text-muted-foreground hover:text-foreground">Termos de uso</Link>
-            <Link to="/privacidade" className="text-muted-foreground hover:text-foreground">Privacidade</Link>
-            <p className="text-xs text-muted-foreground">Pagamentos processados pelo Stripe.</p>
+            <p className="rotulo-tecnico">{t("rodape.legal")}</p>
+            <Link to="/termos" className="text-muted-foreground hover:text-foreground">{t("rodape.termos")}</Link>
+            <Link to="/privacidade" className="text-muted-foreground hover:text-foreground">{t("rodape.privacidade")}</Link>
+            <p className="text-xs text-muted-foreground">{t("rodape.stripe")}</p>
+            <SeletorIdioma />
           </div>
         </div>
       </footer>
@@ -208,6 +222,26 @@ function Providers({ children }: { children: ReactNode }) {
      </ConfirmacaoProvider>
      </SuporteProvider>
     </NotificationProvider>
+  );
+}
+
+/** Troca entre português e inglês. Sem JavaScript, o link ?lang= faz o mesmo pelo servidor. */
+function SeletorIdioma() {
+  const { idioma, t, trocarIdioma } = useIdioma();
+  return (
+    <div role="group" aria-label={t("comum.idioma.rotulo")} className="mt-2 flex items-center gap-1 text-xs">
+      <Languages className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+      {IDIOMAS.map((i, n) => (
+        <span key={i} className="flex items-center gap-1">
+          {n > 0 && <span aria-hidden="true" className="text-muted-foreground">·</span>}
+          <a href={`?lang=${i}`} hrefLang={LANG_HTML[i]} lang={LANG_HTML[i]} aria-current={i === idioma ? "true" : undefined}
+            onClick={(e) => { e.preventDefault(); if (i !== idioma) void trocarIdioma(i); }}
+            className={i === idioma ? "font-semibold text-foreground" : "text-muted-foreground hover:text-foreground"}>
+            {t(`comum.idioma.${i}`)}
+          </a>
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -246,9 +280,11 @@ class LimiteErroRaiz extends Component<{ children: ReactNode }, { quebrou: boole
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { idioma, textos } = Route.useLoaderData();
 
   return (
     <LimiteErroRaiz>
+      <IdiomaProvider idioma={idioma} textos={textos}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <ThemeProvider>
@@ -263,6 +299,7 @@ function RootComponent() {
           </ThemeProvider>
         </AuthProvider>
       </QueryClientProvider>
+      </IdiomaProvider>
     </LimiteErroRaiz>
   );
 }
