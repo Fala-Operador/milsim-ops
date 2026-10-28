@@ -76,6 +76,9 @@ const CLAUSULAS = [
         <p><strong>Como usamos:</strong> apenas para criar a sua conta, identificar você nos próximos logins e preencher o seu nome no cadastro. O e-mail do Google passa a ser o e-mail da sua conta e, se ele já tiver uma conta confirmada aqui, o login com o Google é vinculado a ela. A foto do Google fica registrada no serviço de autenticação e não é publicada.</p>
         <p><strong>O que não fazemos:</strong> não usamos dados do Google para publicidade, não os vendemos, não os compartilhamos com organizações de eventos nem com outros terceiros além dos provedores que hospedam a plataforma, e não os usamos para treinar modelos de inteligência artificial.</p>
         <p>O uso e a transferência, para qualquer outro aplicativo, de informações recebidas das APIs do Google pelo MilSim Ops seguem a <a href={POLITICA_GOOGLE} target="_blank" rel="noopener noreferrer">Política de Dados do Usuário dos Serviços de API do Google</a> (Google API Services User Data Policy), incluindo os requisitos de Uso Limitado (Limited Use).</p>
+        <p><strong>Com quem compartilhamos:</strong> os dados do Google ficam só no Supabase, que hospeda o serviço de autenticação e o banco de dados da plataforma. Não são repassados a organizações de eventos, anunciantes, corretores de dados nem qualquer outro terceiro.</p>
+        <p><strong>Como protegemos:</strong> o login usa OAuth 2.0 com PKCE pelo servidor; não recebemos nem guardamos a sua senha do Google nem tokens de acesso às APIs do Google. No perfil da plataforma, o nome e o e-mail ficam cifrados (AES-256-GCM); a cópia que o serviço de autenticação usa para o login fica no Supabase, com acesso restrito ao servidor da plataforma. Todo o tráfego usa HTTPS.</p>
+        <p><strong>Por quanto tempo guardamos:</strong> enquanto a sua conta existir. Se você desistir do cadastro com o Google antes de concluí-lo, a conta criada é apagada na hora; se pedir a exclusão da conta, os dados recebidos do Google são apagados junto.</p>
         <p><strong>Como remover:</strong> você pode tirar o acesso do MilSim Ops à sua conta Google a qualquer momento em <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">myaccount.google.com/permissions</a>. Os dados recebidos do Google são apagados junto com a sua conta (cláusula “Exclusão da conta”).</p>
       </>
     ),
@@ -207,7 +210,7 @@ const CLAUSULAS = [
   },
   {
     id: "alteracoes", titulo: "Alterações deste aviso",
-    texto: <p>Se mudarmos este aviso, a data no topo é atualizada. Mudanças relevantes, como novos usos ou novos destinatários dos dados, são avisadas na plataforma antes de valer.</p>,
+    texto: <p>Se mudarmos este aviso, a data no topo é atualizada. Mudanças relevantes, como novos usos ou novos destinatários dos dados (inclusive dos dados recebidos do Google), são avisadas na plataforma antes de valer.</p>,
   },
   {
     id: "contato", titulo: "Contato",
