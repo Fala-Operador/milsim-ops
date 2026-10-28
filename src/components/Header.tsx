@@ -11,6 +11,7 @@ import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/com
 import { SeletorCidade } from "./SeletorCidade";
 import { ItensMenuArea, totalPendencias, useMenuArea } from "./MenuLateral";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useIdioma } from "@/contexts/IdiomaContext";
 
 const foco = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 const linha = `flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-foreground hover:bg-secondary/70 ${foco}`;
@@ -138,22 +139,23 @@ function CartaoConta({ fechar }: { fechar: () => void }) {
 }
 
 const NAVEGACAO = [
-  { to: "/" as const, rotulo: "Eventos", icone: Crosshair, exato: true },
+  { to: "/" as const, rotulo: "nav.eventos", icone: Crosshair, exato: true },
   // Modalidades é público: explica o que existe, logado ou não.
-  { to: "/modalidades" as const, rotulo: "Modalidades", icone: Layers },
+  { to: "/modalidades" as const, rotulo: "nav.modalidades", icone: Layers },
   // Comunidades é vitrine pública; o conteúdo continua só para inscritos (decidido ao entrar).
-  { to: "/comunidades" as const, rotulo: "Comunidades", icone: MessagesSquare },
+  { to: "/comunidades" as const, rotulo: "nav.comunidades", icone: MessagesSquare },
 ];
 
 /** Desktop: controle segmentado, a página atual fica em relevo. */
 function NavegacaoTopo() {
+  const { t } = useIdioma();
   return (
     <div className="flex items-center gap-0.5 rounded-lg border border-border bg-secondary/30 p-1">
       {NAVEGACAO.map(({ to, rotulo, icone: Icone, exato }) => (
         <Link key={to} to={to} activeOptions={{ exact: !!exato }}
           className={`flex h-9 items-center gap-2 rounded-md px-3.5 text-sm font-medium text-muted-foreground hover:text-foreground ${foco}`}
           activeProps={{ className: "bg-background !text-foreground shadow-sm ring-1 ring-border [&>svg]:text-accent", "aria-current": "page" }}>
-          <Icone className="h-4 w-4" aria-hidden="true" />{rotulo}
+          <Icone className="h-4 w-4" aria-hidden="true" />{t(rotulo)}
         </Link>
       ))}
     </div>
@@ -162,13 +164,14 @@ function NavegacaoTopo() {
 
 /** Celular: linhas grandes com ícone; a atual ganha a barra de destaque à esquerda. */
 function NavegacaoPainel({ aoNavegar }: { aoNavegar: () => void }) {
+  const { t } = useIdioma();
   return (
     <>
       {NAVEGACAO.map(({ to, rotulo, icone: Icone, exato }) => (
         <Link key={to} to={to} activeOptions={{ exact: !!exato }} onClick={aoNavegar}
           className={`${linha} relative font-medium`}
           activeProps={{ className: "bg-secondary before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent [&>svg]:!text-accent", "aria-current": "page" }}>
-          <Icone className={iconeLinha} aria-hidden="true" />{rotulo}
+          <Icone className={iconeLinha} aria-hidden="true" />{t(rotulo)}
         </Link>
       ))}
     </>
@@ -176,8 +179,9 @@ function NavegacaoPainel({ aoNavegar }: { aoNavegar: () => void }) {
 }
 
 function Marca() {
+  const { t } = useIdioma();
   return (
-    <Link to="/" aria-label="MILSIM OPS — página inicial" className={`flex min-w-0 shrink-0 items-center gap-2 justify-self-start rounded-md ${foco}`}>
+    <Link to="/" aria-label={t("cabecalho.marca_aria")} className={`flex min-w-0 shrink-0 items-center gap-2 justify-self-start rounded-md ${foco}`}>
       <svg aria-hidden="true" viewBox="0 0 32 32" className="h-8 w-8 shrink-0 text-primary">
         <path d="M4 3h24v17.5L16 29 4 20.5Z" fill="currentColor" />
         <path d="m9 12 7-4.5 7 4.5M9 18l7-4.5 7 4.5" fill="none" stroke="var(--background)" strokeWidth="2.6" strokeLinejoin="miter" />
@@ -191,6 +195,7 @@ function Marca() {
 
 export function Header() {
   const { usuario, logout } = useAuth();
+  const { t } = useIdioma();
   const navigate = useNavigate();
   const caminho = useRouterState({ select: (s) => s.location.pathname });
   const [menuAberto, setMenuAberto] = useState(false);
@@ -230,7 +235,7 @@ export function Header() {
         <Marca />
 
         {/* Centro: navegação (desktop) */}
-        <nav className="hidden lg:block" aria-label="Navegação principal">
+        <nav className="hidden lg:block" aria-label={t("cabecalho.navegacao_aria")}>
           <NavegacaoTopo />
         </nav>
 
@@ -259,13 +264,13 @@ export function Header() {
             </div>
           ) : (
             <div className="hidden shrink-0 items-center gap-1.5 lg:flex">
-              <Link to="/login" search={{ redirect: undefined }} className={`flex h-10 items-center rounded-md px-3 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground ${foco}`}>Entrar</Link>
-              <Button asChild className="h-10"><Link to="/cadastro" search={{ redirect: undefined }}>Criar conta</Link></Button>
+              <Link to="/login" search={{ redirect: undefined }} className={`flex h-10 items-center rounded-md px-3 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground ${foco}`}>{t("cabecalho.entrar")}</Link>
+              <Button asChild className="h-10"><Link to="/cadastro" search={{ redirect: undefined }}>{t("cabecalho.criar_conta")}</Link></Button>
             </div>
           )}
           <Sheet open={painelAberto} onOpenChange={setPainelAberto}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="none" aria-label={pendenciasArea > 0 ? `Abrir menu (${pendenciasArea} pendências)` : "Abrir menu"} className={`relative h-11 w-11 shrink-0 lg:hidden ${foco}`}>
+              <Button variant="ghost" size="none" aria-label={pendenciasArea > 0 ? `Abrir menu (${pendenciasArea} pendências)` : t("cabecalho.abrir_menu")} className={`relative h-11 w-11 shrink-0 lg:hidden ${foco}`}>
                 {usuarioVisivel ? <AvatarConta nome={usuarioVisivel.nomeCompleto} foto={usuarioVisivel.fotoUrl} /> : <Menu className="h-5 w-5" aria-hidden="true" />}
                 {pendenciasArea > 0 && (
                   <span aria-hidden="true" className="absolute right-0.5 top-0.5 min-w-4 rounded-full bg-accent px-1 text-center text-[10px] font-bold leading-4 text-accent-foreground">{pendenciasArea}</span>
@@ -274,12 +279,12 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="right" showCloseButton={false} aria-describedby={undefined}
               className="z-[60] flex h-dvh w-[min(22rem,92vw)] flex-col gap-0 overflow-hidden border-border p-0 shadow-2xl sm:max-w-none">
-              <SheetTitle className="sr-only">Menu</SheetTitle>
+              <SheetTitle className="sr-only">{t("cabecalho.menu")}</SheetTitle>
               {/* Topo fixo: marca e fechar sempre à vista. */}
               <div className="flex h-14 shrink-0 items-center justify-between border-b border-border pl-4 pr-2">
                 <Marca />
                 <SheetClose asChild>
-                  <Button variant="ghost" size="none" aria-label="Fechar menu" className={`h-11 w-11 shrink-0 ${foco}`}>
+                  <Button variant="ghost" size="none" aria-label={t("cabecalho.fechar_menu")} className={`h-11 w-11 shrink-0 ${foco}`}>
                     <X className="h-5 w-5" aria-hidden="true" />
                   </Button>
                 </SheetClose>
@@ -289,14 +294,14 @@ export function Header() {
                   <div className="border-b border-border"><CartaoConta fechar={() => setPainelAberto(false)} /></div>
                 ) : (
                   <div className="m-1 mt-3 rounded-lg border border-border bg-secondary/30 p-4">
-                    <p className="font-display text-lg font-bold uppercase leading-tight">Entre na operação</p>
-                    <p className="mt-1 text-sm text-muted-foreground">Crie sua conta para se inscrever, guardar ingressos e entrar nas comunidades.</p>
+                    <p className="font-display text-lg font-bold uppercase leading-tight">{t("cabecalho.convite_titulo")}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{t("cabecalho.convite_texto")}</p>
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <Button asChild className={`h-11 ${foco}`}>
-                        <Link to="/cadastro" search={{ redirect: undefined }} onClick={() => setPainelAberto(false)}>Criar conta</Link>
+                        <Link to="/cadastro" search={{ redirect: undefined }} onClick={() => setPainelAberto(false)}>{t("cabecalho.criar_conta")}</Link>
                       </Button>
                       <Button asChild variant="outline" className={`h-11 ${foco}`}>
-                        <Link to="/login" search={{ redirect: undefined }} onClick={() => setPainelAberto(false)}>Entrar</Link>
+                        <Link to="/login" search={{ redirect: undefined }} onClick={() => setPainelAberto(false)}>{t("cabecalho.entrar")}</Link>
                       </Button>
                     </div>
                   </div>
@@ -308,8 +313,8 @@ export function Header() {
                     <ItensMenuArea grupos={menuArea.grupos} aoNavegar={() => setPainelAberto(false)} />
                   </nav>
                 )}
-                <nav aria-label="Navegação principal" className="pb-1">
-                  <Rotulo>Navegar</Rotulo>
+                <nav aria-label={t("cabecalho.navegacao_aria")} className="pb-1">
+                  <Rotulo>{t("cabecalho.navegar")}</Rotulo>
                   <NavegacaoPainel aoNavegar={() => setPainelAberto(false)} />
                 </nav>
                 {usuarioVisivel && <ItensConta fechar={() => setPainelAberto(false)} aoSair={aoSair} />}
