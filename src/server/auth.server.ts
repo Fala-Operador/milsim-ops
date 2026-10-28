@@ -21,6 +21,17 @@ import { somenteDigitos } from "@/lib/domain/validators";
 import { supabaseAdmin, supabaseSessao } from "@/server/supabase.server";
 import { ERRO_CAPTCHA, erroDeCaptcha } from "@/server/turnstile.server";
 
+/**
+ * Endereço público do site para links de volta (Google, e-mails). Atrás do Cloudflare e do proxy
+ * do Dokploy a requisição chega como http://, e o Supabase recusa um destino http que não está
+ * nas Redirect URLs (cai no Site URL). Fora do ambiente local, o site é sempre https.
+ */
+function urlPublica(caminho: string): URL {
+  const url = new URL(caminho, getRequestUrl({ xForwardedHost: true }));
+  if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(url.hostname)) url.protocol = "https:";
+  return url;
+}
+
 /** `captchaToken` só quando houver (o Supabase recusa sem ele se o CAPTCHA estiver ligado). */
 const comCaptcha = (token: string | undefined) => (token ? { captchaToken: token } : {});
 
@@ -58,7 +69,7 @@ export interface ResultadoCadastro {
 }
 
 /** Endereço que o Supabase usa no link do modelo padrão (o modelo próprio usa {{ .SiteURL }}). */
-const urlConfirmacao = () => new URL(CAMINHO_CONFIRMACAO, getRequestUrl()).toString();
+const urlConfirmacao = () => urlPublica(CAMINHO_CONFIRMACAO).toString();
 
 /**
  * Cria a conta pelo cadastro normal do Supabase, que envia o e-mail de confirmação (com o
@@ -131,7 +142,7 @@ export async function reenviarConfirmacao(email: string, captchaToken?: string):
 
 /** Envia o e-mail de redefinição (sempre responde sucesso para não revelar contas). */
 export async function recuperarSenha(email: string, captchaToken?: string): Promise<void> {
-  const destino = new URL("/recuperar-senha", getRequestUrl()).toString();
+  const destino = urlPublica("/recuperar-senha").toString();
   const { error } = await supabaseSessao().auth.resetPasswordForEmail(normalizarEmail(email), {
     redirectTo: destino, ...comCaptcha(captchaToken),
   });
@@ -185,7 +196,7 @@ export async function iniciarLoginGoogle(redirect: string | undefined): Promise<
   const { data, error } = await supabaseSessao().auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: new URL(CAMINHO_RETORNO_GOOGLE, getRequestUrl()).toString(),
+      redirectTo: urlPublica(CAMINHO_RETORNO_GOOGLE).toString(),
       skipBrowserRedirect: true,
       queryParams: { prompt: "select_account" },
     },
@@ -195,7 +206,7 @@ export async function iniciarLoginGoogle(redirect: string | undefined): Promise<
     throw new Error("Entrar com o Google não está disponível agora. Use e-mail e senha.");
   }
   setCookie(COOKIE_DESTINO_GOOGLE, redirectSeguro(redirect), {
-    path: "/", httpOnly: true, sameSite: "lax", secure: getRequestUrl().protocol === "https:", maxAge: 600,
+    path: "/", httpOnly: true, sameSite: "lax", secure: urlPublica("/").protocol === "https:", maxAge: 600,
   });
   return data.url;
 }
