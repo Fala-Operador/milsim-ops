@@ -9,7 +9,7 @@ import { chaveSiteTurnstile } from "@/server/turnstile.server";
 import { contaParaRepasse, taxaDoComprador } from "@/lib/repasses";
 import { esquemaFicha } from "@/lib/fichaEmergencia";
 import { chamar } from "@/api/cliente";
-import type { DadosCadastro } from "@/services/auth";
+import type { DadosCadastro, DadosPerfil } from "@/services/auth";
 
 // ---------- Server functions ----------
 export const obterVisaoFn = createServerFn({ method: "GET" }).handler(() => ler(() => null));
@@ -48,17 +48,34 @@ export const entrarFn = createServerFn({ method: "POST" })
 
 export const sairFn = createServerFn({ method: "POST" }).handler(() => auth.sair());
 
-const entradaCadastro = z.object({
-  cpf: z.string(), nomeCompleto: z.string().min(1).max(200), dataNascimento: z.string(), email: z.string().max(200),
-  senha: z.string().max(200), confirmacaoSenha: z.string().max(200), whatsapp: z.string(), cep: z.string(),
+const entradaPerfil = z.object({
+  cpf: z.string(), nomeCompleto: z.string().min(1).max(200), dataNascimento: z.string(), whatsapp: z.string(), cep: z.string(),
   logradouro: z.string().max(200), numero: z.string().max(20), complemento: z.string().max(200).optional(),
   bairro: z.string().max(200), cidade: z.string().max(200), uf: z.string().max(2), instagram: z.string().max(100).optional(),
   squad: z.string().max(100).optional(), fotoUrl: z.string().optional(), aceiteTermos: z.boolean(),
-  cienciaPrivacidade: z.boolean(), autorizacaoPromocional: z.boolean(), fichaEmergencia: esquemaFicha.optional(), captcha,
+  cienciaPrivacidade: z.boolean(), autorizacaoPromocional: z.boolean(), fichaEmergencia: esquemaFicha.optional(),
+});
+const entradaCadastro = entradaPerfil.extend({
+  email: z.string().max(200), senha: z.string().max(200), confirmacaoSenha: z.string().max(200), captcha,
 });
 export const cadastrarFn = createServerFn({ method: "POST" })
   .validator(entradaCadastro.parse)
   .handler(({ data: { captcha, ...dados } }) => auth.cadastrar(dados as DadosCadastro, captcha));
+
+// Entrar com o Google: vai ao Google, volta com o código e, se a conta for nova, completa o perfil.
+export const iniciarLoginGoogleFn = createServerFn({ method: "POST" }).handler(() => auth.iniciarLoginGoogle());
+
+export const concluirLoginGoogleFn = createServerFn({ method: "POST" })
+  .validator(z.object({ codigo: z.string().min(1).max(500) }).parse)
+  .handler(({ data }) => auth.concluirLoginGoogle(data.codigo));
+
+export const obterContaSemPerfilFn = createServerFn({ method: "POST" }).handler(() => auth.contaSemPerfil());
+
+export const completarCadastroGoogleFn = createServerFn({ method: "POST" })
+  .validator(entradaPerfil.parse)
+  .handler(({ data }) => auth.completarCadastroGoogle(data as Omit<DadosPerfil, "email">));
+
+export const cancelarCadastroGoogleFn = createServerFn({ method: "POST" }).handler(() => auth.cancelarCadastroGoogle());
 
 export const recuperarSenhaFn = createServerFn({ method: "POST" })
   .validator(z.object({ email: z.string().max(200), captcha }).parse)
@@ -98,3 +115,8 @@ export const validarTokenRecuperacao = (tokenHash: string) => validarTokenRecupe
 export const definirNovaSenha = (senha: string) => chamar(definirNovaSenhaFn({ data: { senha } }));
 export const confirmarEmail = (link: { tokenHash: string } | { codigo: string }) => chamar(confirmarEmailFn({ data: link }));
 export const reenviarConfirmacao = (email: string, captcha?: string) => reenviarConfirmacaoFn({ data: { email, captcha } });
+export const iniciarLoginGoogle = () => iniciarLoginGoogleFn();
+export const concluirLoginGoogle = (codigo: string) => chamar(concluirLoginGoogleFn({ data: { codigo } }));
+export const obterContaSemPerfil = () => obterContaSemPerfilFn();
+export const completarCadastroGoogle = (dados: Omit<DadosPerfil, "email">) => chamar(completarCadastroGoogleFn({ data: dados }));
+export const cancelarCadastroGoogle = () => chamar(cancelarCadastroGoogleFn());

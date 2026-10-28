@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as ConfirmarEmailRouteImport } from './routes/confirmar-email'
+import { Route as EntrarGoogleRouteImport } from './routes/entrar-google'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ModalidadesRouteImport } from './routes/modalidades'
 import { Route as OrganizacaoRouteImport } from './routes/organizacao'
@@ -89,6 +90,11 @@ const CadastroRoute = CadastroRouteImport.update({
 const ConfirmarEmailRoute = ConfirmarEmailRouteImport.update({
   id: '/confirmar-email',
   path: '/confirmar-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntrarGoogleRoute = EntrarGoogleRouteImport.update({
+  id: '/entrar-google',
+  path: '/entrar-google',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -355,6 +361,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/cadastro': typeof CadastroRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
+  '/entrar-google': typeof EntrarGoogleRoute
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/organizacao': typeof OrganizacaoRouteWithChildren
@@ -411,6 +418,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
+  '/entrar-google': typeof EntrarGoogleRoute
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -468,6 +476,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/cadastro': typeof CadastroRoute
   '/confirmar-email': typeof ConfirmarEmailRoute
+  '/entrar-google': typeof EntrarGoogleRoute
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/organizacao': typeof OrganizacaoRouteWithChildren
@@ -528,6 +537,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/cadastro'
     | '/confirmar-email'
+    | '/entrar-google'
     | '/login'
     | '/modalidades'
     | '/organizacao'
@@ -584,6 +594,7 @@ export interface FileRouteTypes {
     | '/'
     | '/cadastro'
     | '/confirmar-email'
+    | '/entrar-google'
     | '/login'
     | '/modalidades'
     | '/privacidade'
@@ -640,6 +651,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/cadastro'
     | '/confirmar-email'
+    | '/entrar-google'
     | '/login'
     | '/modalidades'
     | '/organizacao'
@@ -699,6 +711,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   CadastroRoute: typeof CadastroRoute
   ConfirmarEmailRoute: typeof ConfirmarEmailRoute
+  EntrarGoogleRoute: typeof EntrarGoogleRoute
   LoginRoute: typeof LoginRoute
   ModalidadesRoute: typeof ModalidadesRoute
   OrganizacaoRoute: typeof OrganizacaoRouteWithChildren
@@ -750,6 +763,13 @@ declare module '@tanstack/react-router' {
       path: '/confirmar-email'
       fullPath: '/confirmar-email'
       preLoaderRoute: typeof ConfirmarEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrar-google': {
+      id: '/entrar-google'
+      path: '/entrar-google'
+      fullPath: '/entrar-google'
+      preLoaderRoute: typeof EntrarGoogleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1227,6 +1247,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   CadastroRoute: CadastroRoute,
   ConfirmarEmailRoute: ConfirmarEmailRoute,
+  EntrarGoogleRoute: EntrarGoogleRoute,
   LoginRoute: LoginRoute,
   ModalidadesRoute: ModalidadesRoute,
   OrganizacaoRoute: OrganizacaoRouteWithChildren,
