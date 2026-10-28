@@ -17,13 +17,12 @@ import type { Usuario } from "@/lib/domain/types";
 import { erroSenha } from "@/lib/domain/senha";
 import { erroFicha, montarFicha, type DadosFicha } from "@/lib/fichaEmergencia";
 
-export interface DadosCadastro {
+/** Dados do perfil do participante (cadastro por e-mail ou conta Google sem perfil). */
+export interface DadosPerfil {
   cpf: string;
   nomeCompleto: string;
   dataNascimento: string;
   email: string;
-  senha: string;
-  confirmacaoSenha: string;
   whatsapp: string;
   cep: string;
   logradouro: string;
@@ -42,10 +41,27 @@ export interface DadosCadastro {
   fichaEmergencia?: DadosFicha | undefined;
 }
 
+/** Cadastro por e-mail: o perfil mais a senha da conta. */
+export interface DadosCadastro extends DadosPerfil {
+  senha: string;
+  confirmacaoSenha: string;
+}
+
 export { SENHA_MINIMA } from "@/lib/domain/senha";
 
-/** Valida o formulário de cadastro; devolve os campos normalizados. */
+/** Valida o formulário de cadastro (com senha); devolve os campos normalizados. */
 export function validarCadastro(dados: DadosCadastro) {
+  const normalizados = validarPerfil(dados);
+  const problemaSenha = erroSenha(dados.senha);
+  if (problemaSenha) throw new ErroDominio("senha", problemaSenha);
+  if (dados.senha !== dados.confirmacaoSenha) {
+    throw new ErroDominio("senha_confirmacao", "A confirmação de senha não confere.");
+  }
+  return normalizados;
+}
+
+/** Valida os dados do perfil; devolve os campos normalizados. */
+export function validarPerfil(dados: DadosPerfil) {
   const email = normalizarEmail(dados.email);
   const cpf = somenteDigitos(dados.cpf);
   const whatsapp = somenteDigitos(dados.whatsapp);
@@ -56,11 +72,6 @@ export function validarCadastro(dados: DadosCadastro) {
   if (!emailValido(email)) throw new ErroDominio("email", "Informe um e-mail válido.");
   if (!cpfValido(cpf)) throw new ErroDominio("cpf", "CPF inválido.");
   if (!telefoneValido(whatsapp)) throw new ErroDominio("telefone", "Telefone/WhatsApp inválido.");
-  const problemaSenha = erroSenha(dados.senha);
-  if (problemaSenha) throw new ErroDominio("senha", problemaSenha);
-  if (dados.senha !== dados.confirmacaoSenha) {
-    throw new ErroDominio("senha_confirmacao", "A confirmação de senha não confere.");
-  }
   const idade = idadeEmAnos(dados.dataNascimento);
   if (idade < IDADE_MINIMA) {
     throw new ErroDominio("idade", `É necessário ter ao menos ${IDADE_MINIMA} anos.`);
@@ -71,8 +82,8 @@ export function validarCadastro(dados: DadosCadastro) {
 }
 
 /** Cria o perfil do participante para um usuário já criado no Supabase Auth (`id`). */
-export function registrarPerfil(id: string, dados: DadosCadastro): Usuario {
-  const { email, cpf, whatsapp, idade } = validarCadastro(dados);
+export function registrarPerfil(id: string, dados: DadosPerfil): Usuario {
+  const { email, cpf, whatsapp, idade } = validarPerfil(dados);
   if (dados.fotoUrl) validarFoto(dados.fotoUrl);
   return mutarBase((base) => {
     if (base.usuarios.some((u) => u.cpf === cpf)) {
