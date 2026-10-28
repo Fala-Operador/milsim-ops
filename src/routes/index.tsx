@@ -155,9 +155,6 @@ function PaginaInicial() {
             Operações de airsoft e milsim pelo Brasil
           </h1>
           <p className="mt-3 max-w-xl text-base text-muted-foreground">
-            {base ? `${publicados.length} operações com inscrição aberta.` : "Operações com inscrição aberta."} Escolha a data, a modalidade e garanta a vaga do seu squad.
-          </p>
-          <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             O MilSim Ops reúne agenda, inscrição, ingresso e check-in de eventos de airsoft e milsim.{" "}
             <a href="#sobre" className="text-accent underline-offset-2 hover:underline">Saiba mais</a>
           </p>
