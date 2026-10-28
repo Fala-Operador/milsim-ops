@@ -41,18 +41,19 @@ function carregarScript(): Promise<ApiTurnstile> {
 export function useTurnstile(acao: string) {
   const config = useQuery({ queryKey: ["config-turnstile"], queryFn: obterConfigTurnstile, staleTime: Infinity });
   const chave = config.data?.chaveSite ?? null;
-  const caixa = useRef<HTMLDivElement>(null);
+  // Ref por estado: em formulários por etapas a caixa só aparece depois, e o widget precisa nascer nela.
+  const [caixa, setCaixa] = useState<HTMLDivElement | null>(null);
   const widget = useRef<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [falhou, setFalhou] = useState(false);
 
   useEffect(() => {
-    if (!chave || !caixa.current) return;
+    if (!chave || !caixa) return;
     let ativo = true;
     carregarScript()
       .then((api) => {
-        if (!ativo || !caixa.current) return;
-        widget.current = api.render(caixa.current, {
+        if (!ativo) return;
+        widget.current = api.render(caixa, {
           sitekey: chave,
           action: acao,
           language: "pt-br",
@@ -74,8 +75,9 @@ export function useTurnstile(acao: string) {
       ativo = false;
       if (widget.current) window.turnstile?.remove(widget.current);
       widget.current = null;
+      setToken(null);
     };
-  }, [chave, acao]);
+  }, [chave, acao, caixa]);
 
   const resetar = useCallback(() => {
     setToken(null);
@@ -85,7 +87,7 @@ export function useTurnstile(acao: string) {
   const ativo = !!chave;
   const elemento = ativo ? (
     <div className="space-y-1">
-      <div ref={caixa} className="min-h-[65px]" />
+      <div ref={setCaixa} className="min-h-[65px]" />
       {falhou && (
         <p role="alert" className="text-xs text-destructive">
           A verificação anti-robô não carregou. Recarregue a página ou desative bloqueadores de conteúdo.
