@@ -73,6 +73,17 @@ export const Route = createFileRoute("/modalidades")({
   component: PaginaModalidades,
 });
 
+/**
+ * Rolagem até a seção de uma modalidade. Quem rola é o próprio router (`hashScrollIntoView`
+ * do Link): ele intercepta mudanças de # no endereço e, se outra rolagem estiver em curso,
+ * a substitui por um pulo seco. O scroll-mt da seção desconta o cabeçalho e a barra fixa.
+ * Sem animação para quem pede menos movimento.
+ */
+const rolagemSuave = (): ScrollIntoViewOptions => ({
+  behavior: typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+  block: "start",
+});
+
 function PaginaModalidades() {
   return (
     <div>
@@ -92,9 +103,18 @@ function PaginaModalidades() {
         <ol className="carousel-viewport mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 py-2">
           {MODALIDADES.map((m, i) => (
             <li key={m.id} className="shrink-0">
-              <a href={`#modalidade-${m.id}`} className="flex items-baseline gap-2 rounded-md px-3 py-1.5 text-sm hover:bg-secondary">
+              <Link
+                to="/modalidades"
+                hash={`modalidade-${m.id}`}
+                replace
+                resetScroll={false}
+                hashScrollIntoView={rolagemSuave()}
+                // Teclado e leitor de tela seguem para a seção escolhida (sem novo pulo).
+                onClick={() => document.getElementById(`modalidade-${m.id}`)?.focus({ preventScroll: true })}
+                className="flex items-baseline gap-2 rounded-md px-3 py-1.5 text-sm hover:bg-secondary"
+              >
                 <span className="font-mono text-[11px] text-accent">{String(i + 1).padStart(2, "0")}</span>{m.nome}
-              </a>
+              </Link>
             </li>
           ))}
         </ol>
@@ -105,8 +125,8 @@ function PaginaModalidades() {
           const info = EXPLICACOES[m.id];
           const invertido = i % 2 === 1;
           return (
-            <section key={m.id} id={`modalidade-${m.id}`} aria-labelledby={`t-modalidade-${m.id}`}
-              className="grid scroll-mt-28 items-center lg:scroll-mt-32 gap-8 py-12 lg:grid-cols-2 lg:gap-14">
+            <section key={m.id} id={`modalidade-${m.id}`} aria-labelledby={`t-modalidade-${m.id}`} tabIndex={-1}
+              className="grid scroll-mt-28 items-center gap-8 py-12 outline-none lg:scroll-mt-32 lg:grid-cols-2 lg:gap-14">
               <div className={`relative overflow-hidden rounded-lg border border-border ${invertido ? "lg:order-2" : ""}`}>
                 <img src={info.imagem} alt={`Cena representativa da modalidade ${m.nome}`} loading={i === 0 ? "eager" : "lazy"}
                   width={1280} height={720} className="aspect-[4/3] w-full object-cover" />
