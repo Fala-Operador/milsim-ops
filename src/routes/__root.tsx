@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -25,6 +26,7 @@ import { ConfirmacaoProvider } from "@/contexts/ConfirmacaoContext";
 import { PreferenciasModal } from "@/components/PreferenciasModalidade";
 import { Header } from "@/components/Header";
 import { MenuInferior } from "@/components/MenuInferior";
+import { SobrePlataforma } from "@/components/SobrePlataforma";
 import { Button } from "@/components/ui/button";
 
 function NotFoundComponent() {
@@ -143,6 +145,9 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+/** Rotas que não dependem da visão do servidor. */
+const PAGINAS_ESTATICAS = new Set(["/privacidade", "/termos"]);
+
 function Providers({ children }: { children: ReactNode }) {
   const { usuario, carga, recarregar } = useAuth();
   // Métricas anônimas são enviadas em lote para a API (só no navegador).
@@ -150,22 +155,26 @@ function Providers({ children }: { children: ReactNode }) {
     definirEnvioAnalytics(enviarRegistros);
     return () => definirEnvioAnalytics(null);
   }, []);
+  const caminho = useRouterState({ select: (s) => s.location.pathname });
   // As páginas leem a visão de forma síncrona: só renderizam depois da primeira carga.
   // No SSR e no primeiro desenho do navegador o esqueleto é o mesmo (sem divergência).
+  // Exceções: documentos legais não leem a visão e saem completos no HTML do servidor;
+  // a página inicial mostra a apresentação estática mesmo antes da carga (verificação do Google).
   const conteudo =
-    carga === "pronto" ? children
+    carga === "pronto" || PAGINAS_ESTATICAS.has(caminho) ? children
     : carga === "erro" ? (
       <div className="mx-auto max-w-lg px-4 py-16">
         <ErroSecao titulo="Não foi possível carregar os dados" descricao="Verifique a conexão e tente novamente." onTentar={() => void recarregar()} />
       </div>
     )
     : <SkeletonPagina />;
+  const corpo = carga !== "pronto" && caminho === "/" ? <>{conteudo}<SobrePlataforma /></> : conteudo;
   return (
     <NotificationProvider usuarioId={usuario?.id}>
      <SuporteProvider usuarioId={usuario?.id}>
      <ConfirmacaoProvider>
       <Header />
-      <main>{conteudo}</main>
+      <main>{corpo}</main>
       <footer className="mt-12 border-t border-border">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-sm sm:grid-cols-[1.4fr_1fr_1fr]">
           <div>
