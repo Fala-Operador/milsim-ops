@@ -1,11 +1,12 @@
 // Moldura dos documentos legais (termos, privacidade): índice fixo à esquerda e cláusulas numeradas.
+// Os textos (títulos, cláusulas, rótulos) vêm de public.site_texts no idioma escolhido.
 import type { ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
 import { CONTROLADOR } from "@/data/termos";
+import { criarTradutor, IDIOMAS, LANG_HTML, type Textos, type Traduzir } from "@/lib/i18n";
+import { TextoEmLinha, TextoRico } from "@/components/TextoRico";
 
 export interface Clausula { id: string; titulo: string; texto: ReactNode }
 
-/** Identificação do controlador e canais de contato; campos vazios em CONTROLADOR não aparecem. */
 /**
  * Link de e-mail que o Cloudflare não troca por "[email protected]": a ofuscação dele só
  * vale com JavaScript, e a verificação do Google lê o HTML puro.
@@ -14,19 +15,53 @@ function EmailVisivel({ email }: { email: string }) {
   return <span dangerouslySetInnerHTML={{ __html: `<!--email_off--><a href="mailto:${email}">${email}</a><!--/email_off-->` }} />;
 }
 
-export function ContatoControlador() {
+/** Identificação do controlador e canais de contato; campos vazios em CONTROLADOR não aparecem. */
+export function ContatoControlador({ t }: { t: Traduzir }) {
   const { nome, cnpj, emailPrivacidade, encarregado } = CONTROLADOR;
   return (
     <ul>
-      <li><strong>Controladora:</strong> {nome}{cnpj && `, CNPJ ${cnpj}`}.</li>
-      {encarregado && <li><strong>Encarregado(a) pelo tratamento de dados (LGPD, art. 41):</strong> {encarregado}.</li>}
-      {emailPrivacidade && <li><strong>E-mail:</strong> <EmailVisivel email={emailPrivacidade} /> (não exige conta na plataforma).</li>}
-      <li><strong>Pela plataforma:</strong> <Link to="/app/privacidade">Minha área → Privacidade</Link> (pedidos LGPD) ou <Link to="/app/suporte">Minha área → Suporte</Link>.</li>
+      <li><strong>{t("legal.contato.controladora")}:</strong> {nome}{cnpj && `, CNPJ ${cnpj}`}.</li>
+      {encarregado && <li><strong>{t("legal.contato.encarregado")}:</strong> {encarregado}.</li>}
+      {emailPrivacidade && <li><strong>{t("legal.contato.email")}:</strong> <EmailVisivel email={emailPrivacidade} /></li>}
+      <li><strong>{t("legal.contato.plataforma")}:</strong> <TextoEmLinha texto={t("legal.contato.links")} /></li>
     </ul>
   );
 }
 
-export function DocumentoLegal({ rotulo, titulo, subtitulo, clausulas }: { rotulo: string; titulo: string; subtitulo: string; clausulas: Clausula[] }) {
+const SITE = "https://milsimops.falaoperador.com.br";
+
+/** Título, descrição e versões em cada idioma (hreflang: ?lang=pt / ?lang=en) de um documento legal. */
+export function cabecalhoDocumento(doc: string, caminho: string, textos: Textos | undefined) {
+  const t = criarTradutor(textos ?? {});
+  return {
+    meta: [
+      { title: t(`${doc}.meta.titulo`) },
+      { name: "description", content: t(`${doc}.meta.descricao`) },
+      { property: "og:title", content: t(`${doc}.meta.titulo`) },
+      { property: "og:description", content: t(`${doc}.meta.og_descricao`) },
+    ],
+    links: [
+      ...IDIOMAS.map((i) => ({ rel: "alternate", hrefLang: LANG_HTML[i], href: `${SITE}${caminho}?lang=${i}` })),
+      { rel: "alternate", hrefLang: "x-default", href: `${SITE}${caminho}` },
+    ],
+  };
+}
+
+/**
+ * Documento legal guardado no banco: `doc` é o prefixo das chaves ("privacidade", "termos") e
+ * `ids` a ordem das cláusulas ({doc}.c.{id}.titulo / .texto). [[contato]] vira ContatoControlador.
+ */
+export function DocumentoDoBanco({ doc, ids, t, vars }: { doc: string; ids: readonly string[]; t: Traduzir; vars?: Record<string, string> }) {
+  const especiais = { contato: <ContatoControlador t={t} /> };
+  const clausulas = ids.map((id) => ({
+    id,
+    titulo: t(`${doc}.c.${id}.titulo`),
+    texto: <TextoRico texto={t(`${doc}.c.${id}.texto`)} especiais={especiais} />,
+  }));
+  return <DocumentoLegal t={t} rotulo={t(`${doc}.rotulo`, vars)} titulo={t(`${doc}.titulo`)} subtitulo={t(`${doc}.subtitulo`)} clausulas={clausulas} />;
+}
+
+export function DocumentoLegal({ t, rotulo, titulo, subtitulo, clausulas }: { t: Traduzir; rotulo: string; titulo: string; subtitulo: string; clausulas: Clausula[] }) {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 lg:py-14">
       <header className="border-b border-border pb-6">
@@ -35,8 +70,8 @@ export function DocumentoLegal({ rotulo, titulo, subtitulo, clausulas }: { rotul
         <p className="subtitulo-pagina">{subtitulo}</p>
       </header>
       <div className="mt-8 grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <nav aria-label="Cláusulas" className="lg:sticky lg:top-24 lg:self-start">
-          <p className="rotulo-tecnico mb-2">Neste documento</p>
+        <nav aria-label={t("legal.clausulas_aria")} className="lg:sticky lg:top-24 lg:self-start">
+          <p className="rotulo-tecnico mb-2">{t("legal.neste_documento")}</p>
           <ol className="space-y-1 text-sm">
             {clausulas.map((c, i) => (
               <li key={c.id}>

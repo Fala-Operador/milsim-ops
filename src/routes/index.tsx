@@ -19,6 +19,7 @@ import { SeletorCidade } from "@/components/SeletorCidade";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { SectionCarousel } from "@/components/SectionCarousel";
 import { ChamadaPlataforma, SobrePlataforma } from "@/components/SobrePlataforma";
+import { criarTradutor, textosDaRaiz } from "@/lib/i18n";
 import { usePreferencias } from "@/contexts/PreferenciasContext";
 import {
   ehModalidade, filtrarPorModalidades, MODALIDADES, nomeModalidade, ordenarEventos, ROTULO_ORDENACAO, separarPorPreferencia,
@@ -49,23 +50,19 @@ export const Route = createFileRoute("/")({
       throw redirect({ href: `/entrar-google?${volta}`, reloadDocument: true });
     }
   },
-  head: () => ({
-    meta: [
-      { title: "MilSim Ops — Encontre sua próxima operação" },
-      {
-        name: "description",
-        content:
-          "MilSim Ops é a plataforma de eventos de airsoft e milsim do Brasil: agenda pública, inscrição, ingresso e check-in das operações.",
-      },
-      { property: "og:title", content: "MilSim Ops — Encontre sua próxima operação" },
-      {
-        property: "og:description",
-        content: "Explore eventos de simulação militar, reúna seu squad e prepare-se para a missão.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
+  head: ({ matches }) => {
+    const t = criarTradutor(textosDaRaiz(matches));
+    return {
+      meta: [
+        { title: t("inicio.meta.titulo") },
+        { name: "description", content: t("inicio.meta.descricao") },
+        { property: "og:title", content: t("inicio.meta.titulo") },
+        { property: "og:description", content: t("inicio.meta.og_descricao") },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+    };
+  },
   validateSearch: (s: { q?: unknown; periodo?: unknown; mod?: unknown; ordem?: unknown }): BuscaInicio => ({
     q: typeof s.q === "string" && s.q ? s.q.slice(0, 100) : undefined,
     periodo: s.periodo === "30d" || s.periodo === "90d" ? s.periodo : undefined,
