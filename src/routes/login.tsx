@@ -11,10 +11,13 @@ import { useTurnstile } from "@/components/Turnstile";
 import { ReenviarConfirmacao } from "@/components/ReenviarConfirmacao";
 import { MSG_EMAIL_NAO_CONFIRMADO } from "@/lib/confirmacaoEmail";
 import { EntrarComGoogle, SeparadorOu } from "@/components/EntrarComGoogle";
+import { AVISOS_LOGIN_GOOGLE, type AvisoLoginGoogle } from "@/lib/loginGoogle";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (s: Record<string, unknown>) => ({
+  // ?google=…: aviso da volta do Google que não abriu a sessão (src/routes/entrar-google.tsx).
+  validateSearch: (s: Record<string, unknown>): { redirect?: string | undefined; google?: AvisoLoginGoogle | undefined } => ({
     redirect: typeof s["redirect"] === "string" ? s["redirect"] : undefined,
+    google: typeof s["google"] === "string" && s["google"] in AVISOS_LOGIN_GOOGLE ? (s["google"] as AvisoLoginGoogle) : undefined,
   }),
   head: () => ({
     meta: [
@@ -30,7 +33,7 @@ export const Route = createFileRoute("/login")({
 function PaginaLogin() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const { redirect } = useSearch({ from: "/login" });
+  const { redirect, google } = useSearch({ from: "/login" });
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
@@ -55,6 +58,11 @@ function PaginaLogin() {
   return (
     <LayoutAcesso titulo="Entrar" subtitulo="Use a sua conta Google ou o e-mail da sua conta MilsimOps." rotulo="Ingresso · QR Code · Check-in" frase="Seu ingresso e o briefing da operação no mesmo lugar.">
         <div className="mt-6 space-y-4">
+          {google && (
+            <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {AVISOS_LOGIN_GOOGLE[google]}
+            </p>
+          )}
           <EntrarComGoogle redirect={redirect} />
           <SeparadorOu />
         </div>

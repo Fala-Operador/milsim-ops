@@ -17,11 +17,14 @@ export const Route = createFileRoute("/recuperar-senha")({
   // ?token_hash=…&type=recovery; links antigos (template padrão do Supabase) chegam com ?code=….
   validateSearch: (s: Record<string, unknown>): {
     code?: string | undefined; token_hash?: string | undefined; type?: string | undefined; error_description?: string | undefined;
+    /** "recuperacao": a sessão de recuperação já foi aberta em /entrar-google (código PKCE antigo). */
+    sessao?: "recuperacao" | undefined;
   } => ({
     code: typeof s["code"] === "string" ? s["code"] : undefined,
     token_hash: typeof s["token_hash"] === "string" ? s["token_hash"] : undefined,
     type: typeof s["type"] === "string" ? s["type"] : undefined,
     error_description: typeof s["error_description"] === "string" ? s["error_description"] : undefined,
+    sessao: s["sessao"] === "recuperacao" ? "recuperacao" : undefined,
   }),
   head: () => ({
     meta: [
@@ -35,8 +38,9 @@ export const Route = createFileRoute("/recuperar-senha")({
 });
 
 function PaginaRecuperar() {
-  const { code, token_hash, type, error_description } = Route.useSearch();
-  const link = token_hash && (!type || type === "recovery") ? { tokenHash: token_hash } : code ? { codigo: code } : null;
+  const { code, token_hash, type, error_description, sessao } = Route.useSearch();
+  const link: LinkRecuperacao | null = token_hash && (!type || type === "recovery") ? { tokenHash: token_hash }
+    : code ? { codigo: code } : sessao === "recuperacao" ? { sessaoAberta: true } : null;
   return (
     <LayoutAcesso titulo={link ? "Criar nova senha" : "Recuperar senha"}
       subtitulo={link ? undefined : "Informe o e-mail da conta. Enviamos um link que vale por 1 hora."}
@@ -89,13 +93,17 @@ function PedirLink({ erroLink }: { erroLink?: string | undefined }) {
   );
 }
 
-/** Link do e-mail: token_hash (template atual, qualquer aparelho) ou code (PKCE, links antigos). */
-type LinkRecuperacao = { tokenHash: string } | { codigo: string };
+/**
+ * Link do e-mail: token_hash (template atual, qualquer aparelho) ou code (PKCE, links antigos).
+ * sessaoAberta: o code já foi trocado em /entrar-google.
+ */
+type LinkRecuperacao = { tokenHash: string } | { codigo: string } | { sessaoAberta: true };
 
 // O link é de uso único: se a página montar de novo, reaproveita a mesma validação em vez de
 // gastar o token uma segunda vez (o que daria "link inválido" mesmo com a sessão já aberta).
 const validacoes = new Map<string, Promise<void>>();
 function validarLink(link: LinkRecuperacao): Promise<void> {
+  if ("sessaoAberta" in link) return Promise.resolve();
   const chave = "tokenHash" in link ? `t:${link.tokenHash}` : `c:${link.codigo}`;
   let p = validacoes.get(chave);
   if (!p) {
@@ -113,7 +121,7 @@ function NovaSenha({ link }: { link: LinkRecuperacao }) {
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
 
-  const chave = "tokenHash" in link ? link.tokenHash : link.codigo;
+  const chave = "tokenHash" in link ? link.tokenHash : "codigo" in link ? link.codigo : "sessao";
   useEffect(() => {
     validarLink(link)
       .then(() => setEstado("pronto"))
