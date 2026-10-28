@@ -11,7 +11,7 @@ import { formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
 import { Preco } from "@/components/Preco";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Modal, SkeletonPagina } from "@/components/ui";
+import { Modal, SkeletonPagina, TextoLivre } from "@/components/ui";
 import { ContatoWhatsapp } from "@/components/ContatoWhatsapp";
 
 export const Route = createFileRoute("/eventos/$eventoId")({
@@ -105,8 +105,8 @@ function PaginaEvento() {
         <div className="min-w-0 space-y-10">
           <section>
             <h2 className="rotulo-tecnico">Briefing</h2>
-            <p className="mt-3 max-w-prose text-[17px] leading-relaxed">{evento.enredo}</p>
-            <p className="mt-3 max-w-prose text-muted-foreground">{evento.descricaoResumida}</p>
+            <TextoLivre texto={evento.enredo} className="mt-3 max-w-prose text-[17px] leading-relaxed" />
+            <TextoLivre texto={evento.descricaoResumida} className="mt-3 max-w-prose text-muted-foreground" />
           </section>
 
           <section className="border-t border-border pt-8">
@@ -116,7 +116,7 @@ function PaginaEvento() {
                 <div key={ex.id} className="bg-background p-4">
                   <p className="font-mono text-[11px] text-muted-foreground">{String.fromCharCode(65 + i)} · {ex.capacidade} vagas</p>
                   <p className="mt-1 font-display text-2xl font-bold uppercase">{ex.nome}</p>
-                  {ex.descricao && <p className="mt-1 text-sm text-muted-foreground">{ex.descricao}</p>}
+                  <TextoLivre texto={ex.descricao} className="mt-1 text-sm text-muted-foreground" />
                 </div>
               ))}
             </div>
@@ -130,7 +130,8 @@ function PaginaEvento() {
                   <span className="absolute -left-[29px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-accent bg-background" aria-hidden />
                   <p className="font-mono text-xs text-accent">{formatarDataBR(at.data)} · {at.horario}</p>
                   <p className="mt-0.5 font-semibold">{at.titulo}</p>
-                  <p className="text-sm text-muted-foreground">{at.descricao}{at.local && ` Local: ${at.local}.`}</p>
+                  <TextoLivre texto={at.descricao} className="text-sm text-muted-foreground" />
+                  {at.local && <p className="text-sm text-muted-foreground">Local: {at.local}.</p>}
                 </li>
               ))}
             </ol>

@@ -16,7 +16,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Campo, EstadoVazio, Modal } from "@/components/ui";
+import { Campo, EstadoVazio, Modal, TextoLivre } from "@/components/ui";
 import { useConfirmacao } from "@/contexts/ConfirmacaoContext";
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : "Algo deu errado.");
@@ -87,7 +87,7 @@ export function OperacoesExternas({ externas, proprio, onMudou }: { externas?: O
                   {formatarDataBR(o.data)} · {o.cidade}/{o.uf}{o.modalidade ? ` · ${nomeModalidade(o.modalidade)}` : ""}
                 </p>
                 {o.organizacao && <p className="text-muted-foreground">{o.organizacao}</p>}
-                {o.descricao && <p className="line-clamp-3">{o.descricao}</p>}
+                <TextoLivre texto={o.descricao} className="line-clamp-3" />
                 <div className="pt-1"><BadgeRegistrada /></div>
                 {proprio && (
                   <div className="flex flex-wrap gap-1 pt-2">

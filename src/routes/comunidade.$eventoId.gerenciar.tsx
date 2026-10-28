@@ -27,7 +27,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { Campo, Modal, SkeletonPagina } from "@/components/ui";
+import { Campo, Modal, SkeletonPagina, TextoLivre } from "@/components/ui";
 import { useConfirmacao } from "@/contexts/ConfirmacaoContext";
 import { formatarDataHoraBR } from "@/lib/domain/money";
 import type { Forum } from "@/lib/domain/types";
@@ -93,7 +93,7 @@ function Gerenciar() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="flex items-center gap-2 font-semibold"><IconeForum forum={f} />{f.nome} {f.status === "arquivado" && <Badge>Arquivado</Badge>}</p>
-                    <p className="text-sm text-muted-foreground">{f.descricao}</p>
+                    <TextoLivre texto={f.descricao} className="text-sm text-muted-foreground" />
                     <p className="mt-1 text-xs text-muted-foreground">
                       {publicoNome(f.publico)} · Publicação: {f.publicacao === "gestao" ? "só organização" : "membros"} · Respostas: {f.respostas === "gestao" ? "só organização" : "membros"} · {qtd} publicação(ões)
                     </p>
@@ -130,7 +130,7 @@ function Gerenciar() {
                       <Badge variant={d.status === "pendente" ? "warning" : d.status === "procedente" ? "destructive" : "secondary"}>{d.status}</Badge>{" "}
                       <strong>{MOTIVOS_DENUNCIA[d.motivo]}</strong> · {d.alvo} · {formatarDataHoraBR(d.criadoEm)}
                     </p>
-                    {d.descricao && <p className="mt-1 text-sm text-muted-foreground">“{d.descricao}”</p>}
+                    {d.descricao && <p className="mt-1 text-sm text-muted-foreground whitespace-pre-line [overflow-wrap:anywhere]">“{d.descricao.trim()}”</p>}
                     <p className="mt-1 text-xs text-muted-foreground">Denunciante: {nomeExibicao(base.usuarios.find((u) => u.id === d.denuncianteId))} (visível só para gestão)</p>
                     {item ? (
                       <blockquote className="mt-2 border-l-2 border-border pl-3 text-sm">
