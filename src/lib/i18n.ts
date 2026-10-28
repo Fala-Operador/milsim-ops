@@ -61,3 +61,26 @@ export function langDaBusca(busca: unknown): string | undefined {
 export function textosDaRaiz(matches: readonly { loaderData?: unknown }[]): Textos {
   return (matches[0]?.loaderData as { textos?: Textos } | undefined)?.textos ?? {};
 }
+
+/** Texto de tela nos dois idiomas, lado a lado (dicionários em src/i18n/). */
+export interface Par {
+  pt: string;
+  en: string;
+}
+export type Dicionario = Record<string, Par>;
+export type Vars = Record<string, string | number>;
+
+/** Inglês vazio (ou ausente) cai no português; chave ausente aparece como a própria chave. */
+export function textoDoPar(par: Par | undefined, idioma: Idioma, chave: string, vars?: Vars): string {
+  if (!par) return chave;
+  return interpolar((idioma === "en" && par.en) || par.pt, vars);
+}
+
+/** Locale para datas, números e moeda (toLocaleString, Intl). Inglês britânico: dia/mês e 24 h, como no Brasil. */
+export const LOCALE: Record<Idioma, string> = { pt: "pt-BR", en: "en-GB" };
+
+/** Idioma decidido pela rota raiz, para usar no head() de uma rota filha. */
+export function idiomaDaRaiz(matches: readonly { loaderData?: unknown }[]): Idioma {
+  const idioma = (matches[0]?.loaderData as { idioma?: unknown } | undefined)?.idioma;
+  return ehIdioma(idioma) ? idioma : "pt";
+}

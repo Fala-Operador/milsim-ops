@@ -2,6 +2,7 @@
 // Não depende do fuso de quem executa: o servidor roda em UTC e o navegador em qualquer fuso,
 // e os dois precisam chegar ao mesmo instante para validar o cronograma.
 import type { AtividadeCronograma, Evento } from "@/lib/domain/types";
+import { localeAtual } from "@/i18n/dicionario";
 
 export const FUSO_PADRAO = "America/Sao_Paulo";
 
@@ -60,7 +61,7 @@ export function atividadeNoPeriodo(ev: Pick<Evento, "fuso" | "inicioEm" | "fimEm
 export function formatarNoFuso(iso: string, fuso: string | undefined): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: fusoValido(fuso) });
+  return d.toLocaleString(localeAtual(), { dateStyle: "short", timeStyle: "short", timeZone: fusoValido(fuso) });
 }
 
 /** ISO → valor de `<input type="datetime-local">` ("AAAA-MM-DDTHH:MM") no fuso do evento. */

@@ -41,7 +41,7 @@ export function criarCompraImpulsoNaBase(
     ...(gratis ? { pagoEm: iso, expiraEm: expiracaoDoImpulso(agora, plano.validadeDias).toISOString() } : {}),
   };
   base.impulsosComprados.push(impulso);
-  auditar(base, usuario.id, gratis ? "impulso_confirmado" : "impulso_reservado", impulso.id, `${plano.rotulo} — ${formatarBRL(plano.precoCentavos)}`);
+  auditar(base, usuario.id, gratis ? "impulso_confirmado" : "impulso_reservado", impulso.id, `${plano.rotulo} — ${formatarBRL(plano.precoCentavos, "pt-BR")}`);
   return impulso;
 }
 
@@ -64,7 +64,7 @@ export function confirmarImpulsoNaBase(base: BaseDados, impulsoId: string, strip
   i.expiraEm = expiracaoDoImpulso(agora, i.validadeDias).toISOString();
   i.sessaoId ??= stripe.sessaoId;
   i.intencaoId ??= stripe.intencaoId;
-  auditar(base, i.compradoPor, "impulso_confirmado", i.id, `Pago ${formatarBRL(i.precoCentavos)}`);
+  auditar(base, i.compradoPor, "impulso_confirmado", i.id, `Pago ${formatarBRL(i.precoCentavos, "pt-BR")}`);
   notificar(base, i.compradoPor, "Impulso disponível",
     `Seu impulso de ${rotuloDuracao(i.duracaoHoras)} está pronto. Use em uma operação até ${new Date(i.expiraEm).toLocaleDateString("pt-BR")}.`, agora);
 }
@@ -97,7 +97,7 @@ export function registrarReembolsoImpulsoNaBase(base: BaseDados, impulsoId: stri
     c.status = "encerrado";
     c.atualizadoEm = agora.toISOString();
   }
-  auditar(base, "sistema", "impulso_reembolsado", i.id, formatarBRL(i.precoCentavos));
+  auditar(base, "sistema", "impulso_reembolsado", i.id, formatarBRL(i.precoCentavos, "pt-BR"));
 }
 
 export const impulsoPorIntencao = (base: BaseDados, intencaoId: string) => base.impulsosComprados.find((i) => i.intencaoId === intencaoId);
@@ -152,7 +152,7 @@ export function salvarPlanosImpulsoNaBase(base: BaseDados, admin: Usuario, plano
     if (salvo) Object.assign(salvo, novo);
     else base.planosImpulso.push(novo);
     auditar(base, admin.id, "plano_impulso", d.id,
-      `${antes.rotulo}: ${formatarBRL(d.precoCentavos)}, validade ${d.validadeDias} dias, ${d.ativo ? "à venda" : "fora de venda"}${antes.imagemUrl !== imagemUrl ? ", imagem trocada" : ""}.`);
+      `${antes.rotulo}: ${formatarBRL(d.precoCentavos, "pt-BR")}, validade ${d.validadeDias} dias, ${d.ativo ? "à venda" : "fora de venda"}${antes.imagemUrl !== imagemUrl ? ", imagem trocada" : ""}.`);
   }
 }
 

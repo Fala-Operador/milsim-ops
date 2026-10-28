@@ -5,14 +5,15 @@ import { useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { Crosshair, MessagesSquare, Ticket, UserRound, type LucideIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { tr } from "@/i18n/components/MenuInferior";
 
 const CLASSE_RAIZ = "com-menu-inferior";
 
 const ITENS: { to: "/" | "/app/ingressos" | "/comunidades" | "/app/perfil"; rotulo: string; icone: LucideIcon; exato?: boolean }[] = [
-  { to: "/", rotulo: "Eventos", icone: Crosshair, exato: true },
-  { to: "/app/ingressos", rotulo: "Ingressos", icone: Ticket },
-  { to: "/comunidades", rotulo: "Comunidades", icone: MessagesSquare },
-  { to: "/app/perfil", rotulo: "Meu perfil", icone: UserRound },
+  { to: "/", get rotulo() { return tr("eventos"); }, icone: Crosshair, exato: true },
+  { to: "/app/ingressos", get rotulo() { return tr("ingressos"); }, icone: Ticket },
+  { to: "/comunidades", get rotulo() { return tr("comunidades"); }, icone: MessagesSquare },
+  { to: "/app/perfil", get rotulo() { return tr("meu_perfil"); }, icone: UserRound },
 ];
 
 // A aba atual ganha um traço no topo e o ícone na cor de destaque, sem caixa preenchida.
@@ -33,7 +34,7 @@ export function MenuInferior() {
 
   return (
     <nav
-      aria-label="Atalhos"
+      aria-label={tr("atalhos")}
       className="vt-menu-inferior fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
       <ul className="mx-auto flex h-16 max-w-md items-stretch px-2">

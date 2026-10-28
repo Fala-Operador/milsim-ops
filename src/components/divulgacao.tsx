@@ -18,6 +18,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { SectionCarousel } from "@/components/SectionCarousel";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { tr } from "@/i18n/components/divulgacao";
 
 const UFS = Object.keys(UF_REGIAO).sort();
 
@@ -28,9 +29,9 @@ export function SeletorLocalizacao({
     ? [...new Set(base.eventos.filter((e) => e.uf === valor.uf).map((e) => e.cidade))].sort()
     : [];
   return (
-    <div className="flex flex-wrap items-end gap-2" role="group" aria-label="Escolher localização">
+    <div className="flex flex-wrap items-end gap-2" role="group" aria-label={tr("escolher_localizacao")}>
       <Label className="text-sm font-normal text-inherit">
-        <span className="mb-1 block text-xs text-muted-foreground">Localização</span>
+        <span className="mb-1 block text-xs text-muted-foreground">{tr("localizacao")}</span>
         <NativeSelect
           value={valor.escopo}
           onChange={(e) => {
@@ -38,15 +39,15 @@ export function SeletorLocalizacao({
             onMudar(escopo === "nacional" ? { escopo } : { escopo, regiao: valor.regiao ?? "Sudeste", uf: valor.uf ?? "SP", cidade: valor.cidade });
           }}
         >
-          <option value="nacional">Todo o Brasil</option>
-          <option value="regiao">Região</option>
-          <option value="estado">Estado</option>
-          <option value="cidade">Cidade</option>
+          <option value="nacional">{tr("todo_o_brasil")}</option>
+          <option value="regiao">{tr("regiao")}</option>
+          <option value="estado">{tr("estado")}</option>
+          <option value="cidade">{tr("cidade")}</option>
         </NativeSelect>
       </Label>
       {valor.escopo === "regiao" && (
         <Label className="text-sm font-normal text-inherit">
-          <span className="mb-1 block text-xs text-muted-foreground">Região</span>
+          <span className="mb-1 block text-xs text-muted-foreground">{tr("regiao")}</span>
           <NativeSelect value={valor.regiao} onChange={(e) => onMudar({ escopo: "regiao", regiao: e.target.value as Abrangencia["regiao"] })}>
             {REGIOES.map((r) => <option key={r}>{r}</option>)}
           </NativeSelect>
@@ -54,7 +55,7 @@ export function SeletorLocalizacao({
       )}
       {(valor.escopo === "estado" || valor.escopo === "cidade") && (
         <Label className="text-sm font-normal text-inherit">
-          <span className="mb-1 block text-xs text-muted-foreground">Estado</span>
+          <span className="mb-1 block text-xs text-muted-foreground">{tr("estado")}</span>
           <NativeSelect value={valor.uf} onChange={(e) => onMudar({ escopo: valor.escopo, uf: e.target.value, cidade: undefined })}>
             {UFS.map((u) => <option key={u}>{u}</option>)}
           </NativeSelect>
@@ -62,9 +63,9 @@ export function SeletorLocalizacao({
       )}
       {valor.escopo === "cidade" && (
         <Label className="text-sm font-normal text-inherit">
-          <span className="mb-1 block text-xs text-muted-foreground">Cidade</span>
+          <span className="mb-1 block text-xs text-muted-foreground">{tr("cidade")}</span>
           <NativeSelect value={valor.cidade ?? ""} onChange={(e) => onMudar({ ...valor, cidade: e.target.value })}>
-            <option value="">Selecione</option>
+            <option value="">{tr("selecione")}</option>
             {cidades.map((c) => <option key={c}>{c}</option>)}
           </NativeSelect>
         </Label>
@@ -77,7 +78,7 @@ export function ImagemSegura({ src, alt, className = "", contain = false }: { sr
   const [erro, setErro] = useState(false);
   if (!src || erro) {
     return (
-      <div className={`flex items-center justify-center bg-secondary text-muted-foreground ${className}`} role="img" aria-label={alt || "Imagem indisponível"}>
+      <div className={`flex items-center justify-center bg-secondary text-muted-foreground ${className}`} role="img" aria-label={alt || tr("imagem_indisponivel")}>
         <ImageOff className="h-6 w-6" aria-hidden />
       </div>
     );
@@ -152,7 +153,7 @@ function CartaoParceiro({ p, secao, carrossel }: { p: Parceiro; secao: SecaoInic
   return (
     <div id={`parceiro-${p.id}`} className={`flex flex-col rounded-lg border border-border bg-card p-3 ${carrossel ? "w-60 shrink-0 snap-start" : "h-full"}`}>
       {principal ? (
-        <a href={principal} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${p.nome} (nova aba)`} className="block rounded-md focus-visible:ring-2 focus-visible:ring-ring">
+        <a href={principal} target="_blank" rel="noopener noreferrer" aria-label={tr("abrir_nome_nova_aba", { nome: p.nome })} className="block rounded-md focus-visible:ring-2 focus-visible:ring-ring">
           {logo}
           <p className="mt-2 text-center font-medium underline-offset-2 hover:underline">{p.nome}</p>
         </a>
@@ -170,7 +171,7 @@ function CartaoParceiro({ p, secao, carrossel }: { p: Parceiro; secao: SecaoInic
             const Icone = ICONE_LINK[l.tipo];
             return (
               <Button key={l.id} asChild variant="outline" size="none" className="gap-1 px-2 py-1 text-xs font-normal focus-visible:ring-2 focus-visible:ring-ring">
-                <a href={hrefDoLink(l)!} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${rotuloDoLink(l)} de ${p.nome} (nova aba)`}>
+                <a href={hrefDoLink(l)!} target="_blank" rel="noopener noreferrer" aria-label={tr("abrir_l_de_nome_nova_aba", { l: rotuloDoLink(l), nome: p.nome })}>
                   <Icone className="h-3.5 w-3.5" aria-hidden="true" />
                   {rotuloDoLink(l)}
                 </a>
@@ -194,7 +195,7 @@ function Banner({ secao, base, celular, rastrear }: { secao: SecaoInicial; base:
         <ImagemSegura src={b.imagemDesktop} alt={b.textoAlt} className="hidden aspect-[21/6] max-h-[300px] w-full sm:block" />
       </>;
   const d = b.destino;
-  const botao = b.textoBotao || "Saiba mais";
+  const botao = b.textoBotao || tr("saiba_mais");
   const classeBotao = "inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90";
   let acao: ReactNode = null;
   if (d?.tipo === "evento" && base.eventos.some((e) => e.id === d.valor)) {
@@ -214,11 +215,11 @@ function Banner({ secao, base, celular, rastrear }: { secao: SecaoInicial; base:
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent" aria-hidden="true" />
         <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-3 p-4 sm:p-6">
           <div className="min-w-0 text-white">
-            <span className="inline-block rounded bg-accent px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wider text-accent-foreground">Operação em destaque</span>
+            <span className="inline-block rounded bg-accent px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wider text-accent-foreground">{tr("operacao_em_destaque")}</span>
             <p className="mt-2 font-display text-2xl font-bold uppercase leading-tight sm:text-3xl">{ev.nome}</p>
             <p className="text-sm text-white/85">{formatarDataBR(ev.inicioEm)} · {ev.cidade}/{ev.uf}</p>
           </div>
-          <Link to="/eventos/$eventoId" params={{ eventoId: ev.id }} onClickCapture={() => rastrear && registrarClique({ eventoId: ev.id, origem: "inicio", secaoId: secao.id })} className={classeBotao}>Ver operação</Link>
+          <Link to="/eventos/$eventoId" params={{ eventoId: ev.id }} onClickCapture={() => rastrear && registrarClique({ eventoId: ev.id, origem: "inicio", secaoId: secao.id })} className={classeBotao}>{tr("ver_operacao")}</Link>
         </div>
       </div>
     );
@@ -252,7 +253,7 @@ export function SecoesPublicas({
             <div className="flex flex-wrap items-center gap-2">
               <h2 id={`t-${secao.id}`} className="font-display text-2xl font-semibold uppercase tracking-wide">{secao.titulo}</h2>
               {regional && <Badge>{rotuloAbrangencia(secao.abrangencia)}</Badge>}
-              {secao.status === "rascunho" && <Badge variant="warning">Rascunho</Badge>}
+              {secao.status === "rascunho" && <Badge variant="warning">{tr("rascunho")}</Badge>}
             </div>
             {secao.subtitulo && <p className="text-sm text-muted-foreground">{secao.subtitulo}</p>}
           </>
