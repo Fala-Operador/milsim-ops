@@ -196,6 +196,11 @@ export async function iniciarLoginGoogle(): Promise<string> {
 export interface ResultadoLoginGoogle {
   /** true: conta Google sem perfil; abre o complemento do cadastro. */
   precisaCompletar: boolean;
+  /**
+   * true: o código era de um link antigo de recuperação de senha (PKCE, ?code=…) que caiu aqui
+   * pela página inicial. A sessão de recuperação já está aberta; a tela segue para a nova senha.
+   */
+  recuperacao?: boolean;
 }
 
 /** Troca o código do retorno do Google pela sessão e diz se a conta já tem perfil. */
@@ -206,6 +211,9 @@ export async function concluirLoginGoogle(codigo: string): Promise<RespostaApi<R
     console.error("concluirLoginGoogle:", error);
     throw new Error(MSG_GOOGLE_FALHOU);
   }
+  // O verificador PKCE guardado por resetPasswordForEmail leva a marca "recovery"; a troca a devolve
+  // em `redirectType` (o tipo do supabase-js ainda não declara o campo).
+  if ((data as { redirectType?: string | null }).redirectType === "recovery") return ler(() => ({ precisaCompletar: false, recuperacao: true }), { usuarioId: null });
   const { data: perfil } = await supabaseAdmin().from("users").select("active").eq("id", data.user.id).maybeSingle();
   if (!perfil) return ler(() => ({ precisaCompletar: true }), { usuarioId: null });
   if (!perfil.active) {
