@@ -30,7 +30,7 @@ export function DocumentoLegal({ rotulo, titulo, subtitulo, clausulas }: { rotul
               <h2 id={`t-${c.id}`} className="flex items-baseline gap-3 text-lg font-semibold">
                 <span className="font-display text-2xl font-bold text-accent">{String(i + 1).padStart(2, "0")}</span>{c.titulo}
               </h2>
-              <p className="mt-2 leading-relaxed text-foreground/90">{c.texto}</p>
+              <div className="mt-2 space-y-2 leading-relaxed text-foreground/90 [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-2 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5">{c.texto}</div>
             </section>
           ))}
         </article>
