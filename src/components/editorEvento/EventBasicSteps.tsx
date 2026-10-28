@@ -45,6 +45,7 @@ export function EtapaGeral({ ev, set, erros, organizacoes, podeEscolherOrg }: Pr
       </Campo>
       <Campo rotulo="Enredo" htmlFor="ev-enredo">
         <Textarea id="ev-enredo" rows={5} value={ev.enredo} onChange={(e) => set("enredo", e.target.value)} {...inval(erros, "ev-enredo")} />
+        <Ajuda>Quebras de linha são mantidas. Use **texto** para negrito e *texto* para itálico.</Ajuda>
         <MsgErro erros={erros} id="ev-enredo" />
       </Campo>
       <Campo rotulo="Organização responsável" htmlFor="ev-org">

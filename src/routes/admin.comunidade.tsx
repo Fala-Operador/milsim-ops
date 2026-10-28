@@ -121,7 +121,7 @@ function Denuncias({ q }: { q: UseQueryResult<DenunciaDTO[]> }) {
                   <span className="text-muted-foreground">por {d.denunciante.nome} · {tempoRelativo(d.criadoEm)}</span>
                   {d.post.status !== "publicado" && <Badge variant="secondary">{d.post.status}</Badge>}
                 </div>
-                {d.detalhes && <p className="text-sm">“{d.detalhes}”</p>}
+                {d.detalhes && <p className="text-sm whitespace-pre-line [overflow-wrap:anywhere]">“{d.detalhes.trim()}”</p>}
                 <ConteudoPost autor={d.post.autor} criadoEm={d.post.criadoEm} texto={d.post.texto} imagens={d.post.imagens} />
                 <div className="flex flex-wrap justify-end gap-2">
                   <Button variant="ghost" onClick={() => void descartar(d.id)}>Descartar denúncia</Button>

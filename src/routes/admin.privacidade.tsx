@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ModalTexto } from "@/components/ui";
+import { ModalTexto, TextoLivre } from "@/components/ui";
 
 export const Route = createFileRoute("/admin/privacidade")({
   head: () => ({
@@ -40,7 +40,7 @@ function Privacidade() {
                 <span className="font-medium capitalize">{p.tipo}</span>
                 <Badge variant={p.status === "respondida" ? "success" : "warning"}>{p.status}</Badge>
               </div>
-              <p className="text-sm text-muted-foreground">{p.detalhes}</p>
+              <TextoLivre texto={p.detalhes} className="text-sm text-muted-foreground" />
               {p.status === "aberta" && (
                 <Button
                   variant="outline"

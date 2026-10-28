@@ -1,5 +1,5 @@
 // Composições do app sobre os componentes shadcn/ui de `src/components/ui/`.
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useId, useState, type ReactNode } from "react";
 
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { formatarTexto } from "@/lib/textoFormatado";
 
 export function Campo({
   rotulo,
@@ -31,6 +33,26 @@ export function Campo({
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Texto livre digitado por alguém (enredo, descrições, detalhes): mantém quebras de linha e
+ * parágrafos como foram escritos, entende **negrito** e *itálico* (`formatarTexto`) e quebra
+ * palavras longas (links, hashtags) sem vazar do layout. Nada vira HTML: cada trecho é um
+ * elemento React com o texto escapado.
+ */
+export function TextoLivre({ texto, className, as: Tag = "p" }: { texto?: string | undefined; className?: string; as?: "p" | "div" | "span" }) {
+  const t = texto?.trim();
+  if (!t) return null;
+  return (
+    <Tag className={cn("whitespace-pre-line [overflow-wrap:anywhere]", className)}>
+      {formatarTexto(t).map((tr, i) =>
+        tr.tipo === "negrito" ? <strong key={i} className="font-semibold text-foreground">{tr.texto}</strong>
+        : tr.tipo === "italico" ? <em key={i}>{tr.texto}</em>
+        : <Fragment key={i}>{tr.texto}</Fragment>,
+      )}
+    </Tag>
   );
 }
 
