@@ -26,7 +26,7 @@ import { ConfirmacaoProvider } from "@/contexts/ConfirmacaoContext";
 import { PreferenciasModal } from "@/components/PreferenciasModalidade";
 import { Header } from "@/components/Header";
 import { MenuInferior } from "@/components/MenuInferior";
-import { SobrePlataforma } from "@/components/SobrePlataforma";
+import { ChamadaPlataforma, SobrePlataforma } from "@/components/SobrePlataforma";
 import { Button } from "@/components/ui/button";
 
 function NotFoundComponent() {
@@ -168,7 +168,16 @@ function Providers({ children }: { children: ReactNode }) {
       </div>
     )
     : <SkeletonPagina />;
-  const corpo = carga !== "pronto" && caminho === "/" ? <>{conteudo}<SobrePlataforma /></> : conteudo;
+  // Na página inicial, o título e a finalidade do app vêm antes do esqueleto (verificação do Google).
+  const corpo = carga !== "pronto" && caminho === "/" ? (
+    <>
+      <section className="border-b border-border">
+        <div className="mx-auto max-w-6xl px-4 pb-8 pt-12 sm:pt-16"><ChamadaPlataforma /></div>
+      </section>
+      {conteudo}
+      <SobrePlataforma />
+    </>
+  ) : conteudo;
   return (
     <NotificationProvider usuarioId={usuario?.id}>
      <SuporteProvider usuarioId={usuario?.id}>

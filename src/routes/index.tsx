@@ -18,7 +18,7 @@ import { CardRastreado, ImagemSegura, SecoesPublicas } from "@/components/divulg
 import { SeletorCidade } from "@/components/SeletorCidade";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { SectionCarousel } from "@/components/SectionCarousel";
-import { SobrePlataforma } from "@/components/SobrePlataforma";
+import { ChamadaPlataforma, SobrePlataforma } from "@/components/SobrePlataforma";
 import { usePreferencias } from "@/contexts/PreferenciasContext";
 import {
   ehModalidade, filtrarPorModalidades, MODALIDADES, nomeModalidade, ordenarEventos, ROTULO_ORDENACAO, separarPorPreferencia,
@@ -55,7 +55,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Explore eventos de simulação militar perto de você: busque por operação ou organização, escolha a cidade e o período.",
+          "MilSim Ops é a plataforma de eventos de airsoft e milsim do Brasil: agenda pública, inscrição, ingresso e check-in das operações.",
       },
       { property: "og:title", content: "MilSim Ops — Encontre sua próxima operação" },
       {
@@ -151,13 +151,7 @@ function PaginaInicial() {
         <img src={imgMilsim} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0%,color-mix(in_oklch,var(--background)_88%,transparent)_45%,color-mix(in_oklch,var(--background)_35%,transparent)_100%)]" aria-hidden="true" />
         <div className="relative mx-auto max-w-6xl px-4 pb-8 pt-12 sm:pt-16">
-          <h1 className="max-w-2xl font-display text-4xl font-bold uppercase leading-[0.95] text-foreground sm:text-6xl">
-            Operações de airsoft e milsim pelo Brasil
-          </h1>
-          <p className="mt-3 max-w-xl text-base text-muted-foreground">
-            O MilSim Ops reúne agenda, inscrição, ingresso e check-in de eventos de airsoft e milsim.{" "}
-            <a href="#sobre" className="text-accent underline-offset-2 hover:underline">Saiba mais</a>
-          </p>
+          <ChamadaPlataforma />
 
           <form onSubmit={buscar} role="search" aria-label="Buscar operações"
             className="mt-7 grid overflow-hidden rounded-lg border border-border bg-background shadow-[0_8px_30px_-12px_rgb(0_0_0/0.5)] md:grid-cols-[minmax(0,2fr)_minmax(0,1.2fr)_minmax(0,1fr)_auto]">

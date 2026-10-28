@@ -29,6 +29,12 @@ interface Valor {
 const g = globalThis as unknown as { __prefCtx?: React.Context<Valor | null> };
 const Ctx = (g.__prefCtx ??= createContext<Valor | null>(null));
 
+const ROBOS = /bot|crawler|spider|google|lighthouse|headless|inspection/i;
+
+function navegadorAutomatizado(): boolean {
+  return typeof navigator !== "undefined" && (navigator.webdriver || ROBOS.test(navigator.userAgent));
+}
+
 export function PreferenciasProvider({ children }: { children: ReactNode }) {
   const { usuario } = useAuth();
   const usuarioId = usuario?.id;
@@ -40,7 +46,8 @@ export function PreferenciasProvider({ children }: { children: ReactNode }) {
 
   // Recarrega a cada troca de conta: nunca herda preferências de outra conta.
   useEffect(() => {
-    setDispensado(conviteDispensado());
+    // Robôs (como a verificação do Google) não recebem o convite: o modal cobriria a página inicial.
+    setDispensado(conviteDispensado() || navegadorAutomatizado());
     if (usuarioId) {
       const { efetiva, oferecerAparelho } = resolverAoEntrar(preferenciaDaConta(usuarioId), preferenciaDoAparelho());
       setPreferencia(efetiva);
