@@ -89,10 +89,17 @@ function PaginaEvento() {
   return (
     <div>
       <section className="relative isolate overflow-hidden border-b border-border">
-        {imagem && <img src={imagem} alt={evento.imagem?.alt ?? ""} className="absolute inset-0 -z-10 h-full w-full object-cover" />}
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(0deg,var(--background)_0%,color-mix(in_oklch,var(--background)_70%,transparent)_45%,color-mix(in_oklch,var(--background)_10%,transparent)_100%)]" aria-hidden="true" />
-        <div className="mx-auto flex min-h-[340px] max-w-6xl flex-col justify-end px-4 pb-8 pt-6 sm:min-h-[420px]">
-          <nav aria-label="Breadcrumb" className="mb-auto self-start rounded-sm bg-background/80 px-2 py-1 text-xs text-muted-foreground backdrop-blur">
+        {/* Mobile: imagem inteira, sem corte; o fundo desfocado preenche as sobras. */}
+        {imagem && (
+          <div className="relative overflow-hidden bg-background sm:hidden">
+            <img src={imagem} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-xl" />
+            <img src={imagem} alt={evento.imagem?.alt ?? ""} className="relative mx-auto block h-auto max-h-[70vh] w-full object-contain" />
+          </div>
+        )}
+        {imagem && <img src={imagem} alt={evento.imagem?.alt ?? ""} className="absolute inset-0 -z-10 hidden h-full w-full object-cover sm:block" />}
+        <div className="absolute inset-0 -z-10 hidden bg-[linear-gradient(0deg,var(--background)_0%,color-mix(in_oklch,var(--background)_70%,transparent)_45%,color-mix(in_oklch,var(--background)_10%,transparent)_100%)] sm:block" aria-hidden="true" />
+        <div className={`mx-auto flex max-w-6xl flex-col justify-end px-4 pb-8 pt-6 sm:min-h-[420px] ${imagem ? "" : "min-h-[340px]"}`}>
+          <nav aria-label="Breadcrumb" className="mb-6 self-start sm:mb-auto rounded-sm bg-background/80 px-2 py-1 text-xs text-muted-foreground backdrop-blur">
             <Link to="/" className="hover:text-foreground">Eventos</Link> <span aria-hidden>›</span> <span>{evento.nome}</span>
           </nav>
           <p className="rotulo-tecnico text-accent">{nomeModalidade(evento.modalidade)} · {evento.cidade}/{evento.uf}</p>
