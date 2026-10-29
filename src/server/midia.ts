@@ -3,6 +3,7 @@
 // troca o data URL pela URL pública — o banco guarda só a URL.
 // Recebe o cliente admin por parâmetro para ser usado também pelo script de seed.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { tr } from "@/i18n/server/midia";
 
 const BUCKET = "midia";
 const DATA_URL = /^data:([a-z]+\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/;
@@ -19,13 +20,13 @@ export async function enviarArquivo(admin: SupabaseClient, dataUrl: string): Pro
   const m = DATA_URL.exec(dataUrl);
   const tipo = m?.[1] ?? "";
   const regra = LIMITES[tipo];
-  if (!m || !regra) throw new Error(`Tipo de arquivo não permitido: ${tipo || "desconhecido"}.`);
+  if (!m || !regra) throw new Error(tr("tipo_de_arquivo_nao_permitido_valor", { valor: tipo || "desconhecido" }));
   const bytes = Uint8Array.from(atob(m[2]!), (c) => c.charCodeAt(0));
-  if (bytes.byteLength > regra.max) throw new Error("Arquivo acima do tamanho permitido.");
+  if (bytes.byteLength > regra.max) throw new Error(tr("arquivo_acima_do_tamanho_permitido"));
   const caminho = `${new Date().toISOString().slice(0, 7)}/${crypto.randomUUID()}.${regra.ext}`;
   const storage = admin.storage.from(BUCKET);
   const { error } = await storage.upload(caminho, bytes, { contentType: tipo, upsert: false });
-  if (error) throw new Error(`Falha ao enviar arquivo: ${error.message}`);
+  if (error) throw new Error(tr("falha_ao_enviar_arquivo_message", { message: error.message }));
   return storage.getPublicUrl(caminho).data.publicUrl;
 }
 

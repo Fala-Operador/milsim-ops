@@ -255,13 +255,13 @@ sender_name = "MilSim Ops"
 # nasceram confirmadas). O link usa token_hash (src/routes/confirmar-email.tsx); publique com
 # `npx supabase config push` (o deploy do GitHub Actions não envia este arquivo).
 [auth.email.template.confirmation]
-subject = "Confirme seu e-mail — MilSim Ops"
+subject = "Confirme seu e-mail / Confirm your e-mail — MilSim Ops"
 content_path = "./supabase/templates/confirmar-email.html"
 
 # E-mail "Reset password" em português. O link usa token_hash (src/routes/recuperar-senha.tsx);
 # publique com `npx supabase config push` (o deploy do GitHub Actions não envia este arquivo).
 [auth.email.template.recovery]
-subject = "Redefina sua senha — MilSim Ops"
+subject = "Redefina sua senha / Reset your password — MilSim Ops"
 content_path = "./supabase/templates/recuperar-senha.html"
 
 # Uncomment to customize notification email template

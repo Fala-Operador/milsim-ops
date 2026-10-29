@@ -7,14 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ModalTexto, TextoLivre } from "@/components/ui";
+import { tr } from "@/i18n/routes/admin.privacidade";
 
 export const Route = createFileRoute("/admin/privacidade")({
   head: () => ({
     meta: [
-      { title: "Privacidade — Admin MilSim Ops" },
-      { name: "description", content: "Solicitações de privacidade dos participantes." },
-      { property: "og:title", content: "Privacidade — Admin MilSim Ops" },
-      { property: "og:description", content: "Solicitações de privacidade." },
+      { title: tr("privacidade_admin_milsim_ops") },
+      { name: "description", content: tr("solicitacoes_de_privacidade_dos_particip") },
+      { property: "og:title", content: tr("privacidade_admin_milsim_ops") },
+      { property: "og:description", content: tr("solicitacoes_de_privacidade") },
     ],
   }),
   component: Privacidade,
@@ -29,9 +30,9 @@ function Privacidade() {
 
   return (
     <section>
-      <h2 className="titulo-pagina">Solicitações de privacidade</h2>
+      <h2 className="titulo-pagina">{tr("solicitacoes_de_privacidade_2")}</h2>
       {base.privacidade.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">Nenhuma solicitação.</p>
+        <p className="mt-2 text-sm text-muted-foreground">{tr("nenhuma_solicitacao")}</p>
       ) : (
         <div className="mt-3 space-y-2">
           {base.privacidade.map((p) => (
@@ -46,9 +47,7 @@ function Privacidade() {
                   variant="outline"
                   className="mt-2"
                   onClick={() => setRespondendo(p.id)}
-                >
-                  Responder
-                </Button>
+                >{tr("responder")}</Button>
               )}
             </Card>
           ))}
@@ -56,10 +55,10 @@ function Privacidade() {
       )}
       <ModalTexto
         aberto={!!respondendo}
-        titulo="Responder solicitação"
-        rotulo="Resposta ao participante"
-        descricao="O participante recebe esta resposta e a solicitação passa a respondida."
-        confirmar="Enviar resposta"
+        titulo={tr("responder_solicitacao")}
+        rotulo={tr("resposta_ao_participante")}
+        descricao={tr("o_participante_recebe_esta_resposta_e")}
+        confirmar={tr("enviar_resposta")}
         maximo={2000}
         onFechar={() => setRespondendo(null)}
         onConfirmar={(r) => responderPrivacidade(respondendo!, r).then(() => setVersao((v) => v + 1))}

@@ -4,6 +4,7 @@
 import "@tanstack/react-start/server-only";
 import { ErroDominio } from "@/services/db";
 import { supabaseAdmin } from "@/server/supabase.server";
+import { tr } from "@/i18n/server/documentos.server";
 
 const BUCKET = "documentos";
 export const TAMANHO_MAX_NOTA = 5 * 1024 * 1024;
@@ -21,10 +22,10 @@ export interface ArquivoNota { bytes: Uint8Array; tipo: string; ext: string }
 export function lerArquivoNota(dataUrl: string): ArquivoNota {
   const m = DATA_URL.exec(dataUrl);
   const regra = m && TIPOS[m[1]!];
-  if (!m || !regra) throw new ErroDominio("nota_tipo", "Formato não aceito. Envie PDF, JPEG, PNG ou WebP.");
+  if (!m || !regra) throw new ErroDominio("nota_tipo", tr("formato_nao_aceito_envie_pdf_jpeg"));
   const bytes = Uint8Array.from(atob(m[2]!), (c) => c.charCodeAt(0));
-  if (bytes.byteLength > TAMANHO_MAX_NOTA) throw new ErroDominio("nota_tamanho", "Arquivo acima de 5 MB.");
-  if (!regra.assinatura(bytes)) throw new ErroDominio("nota_invalida", "O conteúdo do arquivo não corresponde ao formato informado.");
+  if (bytes.byteLength > TAMANHO_MAX_NOTA) throw new ErroDominio("nota_tamanho", tr("arquivo_acima_de_5_mb"));
+  if (!regra.assinatura(bytes)) throw new ErroDominio("nota_invalida", tr("o_conteudo_do_arquivo_nao_corresponde"));
   return { bytes, tipo: m[1]!, ext: regra.ext };
 }
 
@@ -40,7 +41,7 @@ export async function gravarNota(usuarioId: string, equipamentoId: string, nome:
   const caminho = `${usuarioId}/${crypto.randomUUID()}.${arq.ext}`;
   const storage = supabaseAdmin().storage.from(BUCKET);
   const { error } = await storage.upload(caminho, arq.bytes, { contentType: arq.tipo, upsert: false });
-  if (error) throw new Error(`Falha ao enviar documento: ${error.message}`);
+  if (error) throw new Error(tr("falha_ao_enviar_documento_message", { message: error.message }));
   const anterior = await docDoEquipamento(equipamentoId);
   const linha = { id: `doc-${equipamentoId}`, user_id: usuarioId, equipment_id: equipamentoId, path: caminho, name: nome, type: arq.tipo, size: arq.bytes.byteLength, uploaded_at: new Date().toISOString() };
   const { error: e2 } = await supabaseAdmin().from("private_documents").upsert(linha, { onConflict: "equipment_id" });
@@ -52,17 +53,17 @@ export async function gravarNota(usuarioId: string, equipamentoId: string, nome:
 /** URL assinada (60 s) — somente para o dono do documento. */
 export async function urlDaNota(usuarioId: string, equipamentoId: string, baixar: boolean): Promise<string> {
   const doc = await docDoEquipamento(equipamentoId);
-  if (!doc || doc.user_id !== usuarioId) throw new ErroDominio("nota", "Documento não encontrado.");
+  if (!doc || doc.user_id !== usuarioId) throw new ErroDominio("nota", tr("documento_nao_encontrado"));
   const { data, error } = await supabaseAdmin().storage.from(BUCKET)
     .createSignedUrl(doc.path, 60, baixar ? { download: doc.name } : undefined);
-  if (error || !data) throw new Error(error?.message ?? "Falha ao gerar link.");
+  if (error || !data) throw new Error(error?.message ?? tr("falha_ao_gerar_link"));
   return data.signedUrl;
 }
 
 export async function removerNota(usuarioId: string, equipamentoId: string): Promise<void> {
   const doc = await docDoEquipamento(equipamentoId);
   if (!doc) return;
-  if (doc.user_id !== usuarioId) throw new ErroDominio("nota", "Documento não encontrado.");
+  if (doc.user_id !== usuarioId) throw new ErroDominio("nota", tr("documento_nao_encontrado"));
   await supabaseAdmin().storage.from(BUCKET).remove([doc.path]);
   await supabaseAdmin().from("private_documents").delete().eq("id", doc.id);
 }

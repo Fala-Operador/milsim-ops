@@ -11,14 +11,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EstadoVazio } from "@/components/ui";
+import { tr } from "@/i18n/routes/admin.notificacoes";
 
 export const Route = createFileRoute("/admin/notificacoes")({
   head: () => ({
     meta: [
-      { title: "Notificações — Administração — MilSim Ops" },
-      { name: "description", content: "Todas as notificações de eventos, inscrições e solicitações da plataforma." },
-      { property: "og:title", content: "Notificações — Administração — MilSim Ops" },
-      { property: "og:description", content: "Todas as notificações da plataforma." },
+      { title: tr("notificacoes_administracao_milsim_ops") },
+      { name: "description", content: tr("todas_as_notificacoes_de_eventos_inscric") },
+      { property: "og:title", content: tr("notificacoes_administracao_milsim_ops") },
+      { property: "og:description", content: tr("todas_as_notificacoes_da_plataforma") },
     ],
   }),
   component: NotificacoesAdmin,
@@ -57,24 +58,20 @@ function NotificacoesAdmin() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="titulo-pagina">Notificações</h2>
-          <p className="subtitulo-pagina">
-            Todas as notificações de eventos, inscrições e solicitações da plataforma.
-          </p>
+          <h2 className="titulo-pagina">{tr("notificacoes")}</h2>
+          <p className="subtitulo-pagina">{tr("todas_as_notificacoes_de_eventos_inscric")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setSoNaoLidas((v) => !v)}>
-            {soNaoLidas ? "Mostrar todas" : `Somente não lidas (${naoLidas})`}
+            {soNaoLidas ? tr("mostrar_todas") : tr("somente_nao_lidas_naolidas", { naoLidas })}
           </Button>
-          <Button variant="ghost" onClick={marcarTodasLidas} disabled={naoLidas === 0}>
-            Marcar todas como lidas
-          </Button>
+          <Button variant="ghost" onClick={marcarTodasLidas} disabled={naoLidas === 0}>{tr("marcar_todas_como_lidas")}</Button>
         </div>
       </div>
 
       {lista.length === 0 ? (
         <div className="mt-4">
-          <EstadoVazio titulo="Nenhuma notificação" descricao="Nenhuma notificação registrada na plataforma." />
+          <EstadoVazio titulo={tr("nenhuma_notificacao")} descricao={tr("nenhuma_notificacao_registrada_na_plataf")} />
         </div>
       ) : (
         <ul className="mt-4 space-y-2">
@@ -84,30 +81,25 @@ function NotificacoesAdmin() {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                   <div className="min-w-0">
                     <p className="font-medium">
-                      {!n.lida && <span className="mr-2 inline-block h-2 w-2 rounded-full bg-accent" aria-label="Não lida" />}
+                      {!n.lida && <span className="mr-2 inline-block h-2 w-2 rounded-full bg-accent" aria-label={tr("nao_lida")} />}
                       {n.titulo}
                       {PADRAO_EVENTOS.test(`${n.titulo} ${n.corpo}`) && (
-                        <span className="ml-2"><Badge>eventos/inscrições</Badge></span>
+                        <span className="ml-2"><Badge>{tr("eventos_inscricoes")}</Badge></span>
                       )}
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">{n.corpo}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Para: {n.destinatario} · {formatarDataHoraBR(n.criadoEm)}
+                    <p className="mt-1 text-xs text-muted-foreground">{tr("para_destinatario_criadoem", { destinatario: n.destinatario, criadoEm: formatarDataHoraBR(n.criadoEm) })}
                     </p>
                     {n.link && (
                       <Link
                         {...(destinoDoLink(resolverLinkSuporte(carregarBase(), usuarioLink, n.link)) as { to: string })}
                         className="mt-1 inline-block text-sm text-accent hover:underline"
                         onClick={() => marcarLida(n.id)}
-                      >
-                        Ver conteúdo relacionado →
-                      </Link>
+                      >{tr("ver_conteudo_relacionado")}</Link>
                     )}
                   </div>
                   {!n.lida && (
-                    <Button variant="ghost" className="-ml-4 self-start sm:ml-0 sm:shrink-0" onClick={() => marcarLida(n.id)}>
-                      Marcar como lida
-                    </Button>
+                    <Button variant="ghost" className="-ml-4 self-start sm:ml-0 sm:shrink-0" onClick={() => marcarLida(n.id)}>{tr("marcar_como_lida")}</Button>
                   )}
                 </div>
               </Card>

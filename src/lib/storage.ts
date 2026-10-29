@@ -1,3 +1,4 @@
+import { tr } from "@/i18n/lib/storage";
 // Serviço central de armazenamento local (único ponto de acesso ao localStorage).
 // Componentes e contextos NUNCA acessam localStorage diretamente.
 
@@ -24,7 +25,7 @@ export const storage = {
       window.localStorage.setItem(PREFIXO + chave, JSON.stringify(valor));
     } catch {
       throw new Error(
-        "Espaço de armazenamento do navegador insuficiente. Libere espaço e tente novamente.",
+        tr("espaco_de_armazenamento_do_navegador_ins"),
       );
     }
   },

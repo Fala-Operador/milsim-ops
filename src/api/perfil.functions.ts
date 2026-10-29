@@ -10,6 +10,7 @@ import { gravarNota, lerArquivoNota, removerNota, urlDaNota } from "@/server/doc
 import { relacaoCom } from "@/server/social.server";
 import { chamar } from "@/api/cliente";
 import type { PrivacidadePerfil } from "@/lib/domain/types";
+import { tr } from "@/i18n/api/perfil.functions";
 
 const id = z.string().min(1).max(120);
 const vis = z.enum(["eu", "autenticados"]);
@@ -98,13 +99,13 @@ async function exigirDono(equipamentoId: string) {
   const { base, usuario } = await contextoSomenteLeitura();
   const u = exigirUsuario(usuario);
   if (!base.equipamentos.some((e) => e.id === equipamentoId && e.usuarioId === u.id)) {
-    throw new Error("Equipamento não encontrado.");
+    throw new Error(tr("equipamento_nao_encontrado"));
   }
   return u;
 }
 const tratar = (e: unknown): never => {
   if (e instanceof ErroDominio) throw new Error(e.message);
-  throw e instanceof Error ? e : new Error("Não foi possível concluir.");
+  throw e instanceof Error ? e : new Error(tr("nao_foi_possivel_concluir"));
 };
 
 export const enviarNotaFn = createServerFn({ method: "POST" })

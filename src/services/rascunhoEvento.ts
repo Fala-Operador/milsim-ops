@@ -3,6 +3,7 @@
 // - alterações de eventos já publicados, mantidas separadas dos dados públicos
 //   até "Salvar alterações".
 import type { Evento } from "@/lib/domain/types";
+import { tr } from "@/i18n/services/rascunhoEvento";
 
 export interface RascunhoLocal {
   eventoId: string;
@@ -19,7 +20,7 @@ function abrir(): Promise<IDBDatabase> {
     const req = indexedDB.open(BANCO, 1);
     req.onupgradeneeded = () => req.result.createObjectStore(LOJA, { keyPath: "eventoId" });
     req.onsuccess = () => ok(req.result);
-    req.onerror = () => falha(req.error ?? new Error("Armazenamento local indisponível."));
+    req.onerror = () => falha(req.error ?? new Error(tr("armazenamento_local_indisponivel")));
   });
 }
 
@@ -30,7 +31,7 @@ async function operar<T>(modo: IDBTransactionMode, fn: (loja: IDBObjectStore) =>
       const tx = db.transaction(LOJA, modo);
       const req = fn(tx.objectStore(LOJA));
       tx.oncomplete = () => ok(req.result as T);
-      tx.onerror = () => falha(tx.error ?? new Error("Falha no armazenamento local."));
+      tx.onerror = () => falha(tx.error ?? new Error(tr("falha_no_armazenamento_local")));
     });
   } finally {
     db.close();

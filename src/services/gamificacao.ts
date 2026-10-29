@@ -3,6 +3,7 @@
 import { ErroDominio, gerarId } from "@/services/db";
 import { recalcularProgressao } from "@/services/progressao";
 import type { BaseDados, CampanhaRecompensa, CriterioInsignia, TipoBeneficio, Usuario } from "@/lib/domain/types";
+import { tr } from "@/i18n/services/gamificacao";
 
 const TIPOS_CRITERIO = new Set<CriterioInsignia["tipo"]>(["operacoes", "estados", "modalidades", "missoes"]);
 
@@ -11,7 +12,7 @@ function auditar(base: BaseDados, autor: Usuario, acao: string, entidade: string
 }
 
 function exigirAdmin(u: Usuario) {
-  if (u.perfil !== "admin") throw new ErroDominio("sem_permissao", "Apenas administradores podem fazer isso.");
+  if (u.perfil !== "admin") throw new ErroDominio("sem_permissao", tr("apenas_administradores_podem_fazer_isso"));
 }
 
 export interface DadosInsignia {
@@ -26,10 +27,10 @@ export interface DadosInsignia {
 export function salvarInsignia(base: BaseDados, u: Usuario, d: DadosInsignia): void {
   exigirAdmin(u);
   const nome = d.nome.trim();
-  if (!nome || nome.length > 60) throw new ErroDominio("nome", "Informe um nome de até 60 caracteres.");
-  if (!TIPOS_CRITERIO.has(d.criterio.tipo)) throw new ErroDominio("criterio", "Critério não suportado.");
+  if (!nome || nome.length > 60) throw new ErroDominio("nome", tr("informe_um_nome_de_ate_60"));
+  if (!TIPOS_CRITERIO.has(d.criterio.tipo)) throw new ErroDominio("criterio", tr("criterio_nao_suportado"));
   const meta = Math.floor(d.criterio.meta);
-  if (!(meta >= 1 && meta <= 1000)) throw new ErroDominio("meta", "A meta deve estar entre 1 e 1000.");
+  if (!(meta >= 1 && meta <= 1000)) throw new ErroDominio("meta", tr("a_meta_deve_estar_entre_1"));
   const icone = [...d.icone.trim()].slice(0, 2).join("") || "🎖️";
   const agora = new Date().toISOString();
   const existente = d.id ? base.insignias.find((i) => i.id === d.id) : undefined;
@@ -76,29 +77,29 @@ export function podeGerirCampanha(u: Usuario, organizacaoId: string): boolean {
 }
 
 export function salvarCampanha(base: BaseDados, u: Usuario, d: DadosCampanha): void {
-  if (!podeGerirCampanha(u, d.organizacaoId)) throw new ErroDominio("sem_permissao", "Você só pode oferecer benefícios nos eventos da sua organização.");
+  if (!podeGerirCampanha(u, d.organizacaoId)) throw new ErroDominio("sem_permissao", tr("voce_so_pode_oferecer_beneficios_nos"));
   // A administração não cria obrigação para uma organização sem oferta autorizada registrada.
   const autorizacao = d.autorizacao?.trim();
   if (u.perfil === "admin" && u.organizacaoId !== d.organizacaoId && !autorizacao) {
-    throw new ErroDominio("autorizacao", "Informe a referência da oferta autorizada pela organização responsável.");
+    throw new ErroDominio("autorizacao", tr("informe_a_referencia_da_oferta_autorizad"));
   }
   const nome = d.nome.trim();
-  if (!nome) throw new ErroDominio("nome", "Informe o nome da campanha.");
-  if (!base.insignias.some((i) => i.id === d.insigniaId)) throw new ErroDominio("insignia", "Escolha a conquista necessária.");
-  if (!d.eventosElegiveis.length) throw new ErroDominio("eventos", "Escolha ao menos um evento elegível.");
+  if (!nome) throw new ErroDominio("nome", tr("informe_o_nome_da_campanha"));
+  if (!base.insignias.some((i) => i.id === d.insigniaId)) throw new ErroDominio("insignia", tr("escolha_a_conquista_necessaria"));
+  if (!d.eventosElegiveis.length) throw new ErroDominio("eventos", tr("escolha_ao_menos_um_evento_elegivel"));
   for (const id of d.eventosElegiveis) {
     const e = base.eventos.find((x) => x.id === id);
-    if (!e || e.organizacaoId !== d.organizacaoId) throw new ErroDominio("eventos", "Os eventos elegíveis precisam ser da organização responsável.");
+    if (!e || e.organizacaoId !== d.organizacaoId) throw new ErroDominio("eventos", tr("os_eventos_elegiveis_precisam_ser_da"));
   }
   const tiposValidos = new Set(base.eventos.filter((e) => d.eventosElegiveis.includes(e.id)).flatMap((e) => e.tipos.map((t) => t.id)));
-  if (d.tiposElegiveis.some((t) => !tiposValidos.has(t))) throw new ErroDominio("tipos", "Tipo de ingresso inválido para os eventos escolhidos.");
+  if (d.tiposElegiveis.some((t) => !tiposValidos.has(t))) throw new ErroDominio("tipos", tr("tipo_de_ingresso_invalido_para_os"));
   const valor = Math.floor(d.valor);
-  if (d.tipo === "percentual" && !(valor >= 1 && valor <= 100)) throw new ErroDominio("valor", "O percentual deve estar entre 1 e 100.");
-  if (d.tipo === "fixo" && !(valor >= 1)) throw new ErroDominio("valor", "Informe o valor do desconto.");
-  if (!(d.maximo >= 1) || !(d.limitePorParticipante >= 1)) throw new ErroDominio("limites", "Quantidade e limite precisam ser maiores que zero.");
+  if (d.tipo === "percentual" && !(valor >= 1 && valor <= 100)) throw new ErroDominio("valor", tr("o_percentual_deve_estar_entre_1"));
+  if (d.tipo === "fixo" && !(valor >= 1)) throw new ErroDominio("valor", tr("informe_o_valor_do_desconto"));
+  if (!(d.maximo >= 1) || !(d.limitePorParticipante >= 1)) throw new ErroDominio("limites", tr("quantidade_e_limite_precisam_ser_maiores"));
   const ini = new Date(d.inicioEm), conq = new Date(d.conquistarAte), resg = new Date(d.resgatarAte);
-  if ([ini, conq, resg].some((x) => Number.isNaN(x.getTime()))) throw new ErroDominio("datas", "Datas inválidas.");
-  if (conq < ini || resg < conq) throw new ErroDominio("datas", "O prazo de resgate precisa ser depois do prazo para conquistar, que vem depois do início.");
+  if ([ini, conq, resg].some((x) => Number.isNaN(x.getTime()))) throw new ErroDominio("datas", tr("datas_invalidas"));
+  if (conq < ini || resg < conq) throw new ErroDominio("datas", tr("o_prazo_de_resgate_precisa_ser"));
 
   const dados = {
     nome, descricao: d.descricao.trim().slice(0, 500), insigniaId: d.insigniaId, organizacaoId: d.organizacaoId, tipo: d.tipo,
@@ -108,9 +109,9 @@ export function salvarCampanha(base: BaseDados, u: Usuario, d: DadosCampanha): v
     regras: d.regras.trim().slice(0, 1000), aceitaAnteriores: d.aceitaAnteriores, ativa: d.ativa, autorizacao: autorizacao || undefined,
   };
   const existente = d.id ? base.campanhasRecompensa.find((c) => c.id === d.id) : undefined;
-  if (d.id && !existente) throw new ErroDominio("campanha", "Campanha não encontrada.");
+  if (d.id && !existente) throw new ErroDominio("campanha", tr("campanha_nao_encontrada"));
   if (existente) {
-    if (!podeGerirCampanha(u, existente.organizacaoId)) throw new ErroDominio("sem_permissao", "Sem permissão para esta campanha.");
+    if (!podeGerirCampanha(u, existente.organizacaoId)) throw new ErroDominio("sem_permissao", tr("sem_permissao_para_esta_campanha"));
     // Vouchers já emitidos guardam as condições da época; a edição vale para os próximos.
     Object.assign(existente, dados, { versao: existente.versao + 1 });
     auditar(base, u, "campanha_editada", "campanha", existente.id, `versão ${existente.versao}`);
@@ -127,10 +128,10 @@ export function corrigirParticipacao(
 ): void {
   exigirAdmin(u);
   const just = d.justificativa.trim();
-  if (just.length < 5) throw new ErroDominio("justificativa", "Descreva a justificativa da correção.");
-  if (d.usuarioId === u.id) throw new ErroDominio("proprio", "Não é possível corrigir a própria participação.");
+  if (just.length < 5) throw new ErroDominio("justificativa", tr("descreva_a_justificativa_da_correcao"));
+  if (d.usuarioId === u.id) throw new ErroDominio("proprio", tr("nao_e_possivel_corrigir_a_propria"));
   const ins = base.inscricoes.find((i) => i.usuarioId === d.usuarioId && i.eventoId === d.eventoId && i.status === "confirmada");
-  if (!ins) throw new ErroDominio("inscricao", "A pessoa não tem inscrição confirmada neste evento.");
+  if (!ins) throw new ErroDominio("inscricao", tr("a_pessoa_nao_tem_inscricao_confirmada"));
   const id = gerarId("cor");
   base.correcoesParticipacao.push({ id, usuarioId: d.usuarioId, eventoId: d.eventoId, tipo: d.tipo, justificativa: just, autorId: u.id, criadoEm: new Date().toISOString() });
   auditar(base, u, `participacao_${d.tipo}`, "participacao", `${d.usuarioId}:${d.eventoId}`, just);
