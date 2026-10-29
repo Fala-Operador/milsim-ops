@@ -252,14 +252,14 @@ sender_name = "MilSim Ops"
 # content_path = "./supabase/templates/invite.html"
 
 # E-mail "Confirm signup" em português: confirmação obrigatória do cadastro (contas antigas já
-# nasceram confirmadas). O link usa token_hash (src/routes/confirmar-email.tsx); publique com
-# `npx supabase config push` (o deploy do GitHub Actions não envia este arquivo).
+# nasceram confirmadas). O link usa token_hash (src/routes/confirmar-email.tsx); o deploy do GitHub Actions
+# publica o assunto e o HTML (.github/scripts/publicar-modelos-email.py).
 [auth.email.template.confirmation]
 subject = "Confirme seu e-mail / Confirm your e-mail — MilSim Ops"
 content_path = "./supabase/templates/confirmar-email.html"
 
 # E-mail "Reset password" em português. O link usa token_hash (src/routes/recuperar-senha.tsx);
-# publique com `npx supabase config push` (o deploy do GitHub Actions não envia este arquivo).
+# o deploy do GitHub Actions publica o assunto e o HTML (.github/scripts/publicar-modelos-email.py).
 [auth.email.template.recovery]
 subject = "Redefina sua senha / Reset your password — MilSim Ops"
 content_path = "./supabase/templates/recuperar-senha.html"

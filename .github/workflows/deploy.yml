@@ -1,4 +1,4 @@
-# Aplica as migrations e publica as Edge Functions no projeto Supabase de cada
+# Aplica as migrations, publica as Edge Functions e os modelos de e-mail no projeto Supabase de cada
 # ambiente (inclusive no merge de um PR). Também roda pela aba Actions.
 #   push no main → ambiente `production` (projeto de produção)
 #   push no hml  → ambiente `homologacao` (projeto de homologação)
@@ -24,6 +24,8 @@ on:
       - "supabase/migrations/**"
       - "supabase/functions/**"
       - "supabase/config.toml"
+      - "supabase/templates/**"
+      - ".github/scripts/publicar-modelos-email.py"
       - ".github/workflows/deploy.yml"
       - ".github/scripts/conferir-ambiente.sh"
   workflow_dispatch:
@@ -72,3 +74,8 @@ jobs:
 
       - name: Publicar Edge Functions
         run: supabase functions deploy --use-api --yes
+
+      # Só assunto e HTML dos e-mails de confirmação e de redefinição de senha
+      # (supabase/templates); o resto do config.toml não é enviado.
+      - name: Publicar modelos de e-mail
+        run: python3 .github/scripts/publicar-modelos-email.py

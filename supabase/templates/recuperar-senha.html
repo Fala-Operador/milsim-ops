@@ -7,7 +7,7 @@
 <title>{{ if and .Data.idioma (eq .Data.idioma "en") }}Reset your password{{ else }}Redefina sua senha{{ end }} — MilSim Ops</title>
 </head>
 <!--
-  Template do Supabase Auth: "Reset password" (recovery). Publicado por `supabase config push`
+  Template do Supabase Auth: "Reset password" (recovery). Publicado pelo deploy (.github/scripts/publicar-modelos-email.py)
   (supabase/config.toml → [auth.email.template.recovery]).
   O link usa token_hash (verificação no servidor, em src/routes/recuperar-senha.tsx), que funciona
   em qualquer aparelho. Usa {{ .SiteURL }} (site_url do config.toml), e não {{ .RedirectTo }}: atrás
