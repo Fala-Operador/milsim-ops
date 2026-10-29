@@ -17,12 +17,13 @@ import { EstadoVazio } from "@/components/ui";
 import { StatusInscricao } from "@/components/StatusInscricao";
 import { Financeiro, TabelaInscritos } from "@/components/organizacao";
 import { IncluirParticipante } from "@/components/IncluirParticipante";
+import { tr } from "@/i18n/routes/admin.eventos.$eventoId";
 
 export const Route = createFileRoute("/admin/eventos/$eventoId")({
   head: () => ({
     meta: [
-      { title: "Visão geral do evento — Admin MilSim Ops" },
-      { name: "description", content: "Ingressos, estornos, financeiro, suporte e engajamento de um evento." },
+      { title: tr("visao_geral_do_evento_admin_milsim") },
+      { name: "description", content: tr("ingressos_estornos_financeiro_suporte_e") },
     ],
   }),
   component: VisaoGeral,
@@ -30,10 +31,10 @@ export const Route = createFileRoute("/admin/eventos/$eventoId")({
 
 type Aba = "resumo" | "financeiro" | "inscricoes" | "suporte";
 const ABAS: { id: Aba; rotulo: string }[] = [
-  { id: "resumo", rotulo: "Resumo" },
-  { id: "financeiro", rotulo: "Financeiro" },
-  { id: "inscricoes", rotulo: "Inscrições" },
-  { id: "suporte", rotulo: "Suporte" },
+  { id: "resumo", get rotulo() { return tr("resumo"); } },
+  { id: "financeiro", get rotulo() { return tr("financeiro"); } },
+  { id: "inscricoes", get rotulo() { return tr("inscricoes"); } },
+  { id: "suporte", get rotulo() { return tr("suporte"); } },
 ];
 
 function Indicador({ rotulo, valor, detalhe }: { rotulo: string; valor: string | number; detalhe?: string | undefined }) {
@@ -57,8 +58,8 @@ function VisaoGeral() {
   if (!evento || !v) {
     return (
       <div className="space-y-4">
-        <Link to="/admin"><Button variant="outline"><ArrowLeft aria-hidden="true" /> Voltar ao dashboard</Button></Link>
-        <EstadoVazio titulo="Evento não encontrado" descricao="O evento pode ter sido removido ou o endereço está incorreto." />
+        <Link to="/admin"><Button variant="outline"><ArrowLeft aria-hidden="true" />{" "}{tr("voltar_ao_dashboard")}</Button></Link>
+        <EstadoVazio titulo={tr("evento_nao_encontrado")} descricao={tr("o_evento_pode_ter_sido_removido")} />
       </div>
     );
   }
@@ -73,8 +74,7 @@ function VisaoGeral() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <Link to="/admin" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="size-3" aria-hidden="true" /> Dashboard
-          </Link>
+            <ArrowLeft className="size-3" aria-hidden="true" />{" "}{tr("dashboard")}</Link>
           <h2 className="mt-1 break-words font-display text-xl font-semibold uppercase">{evento.nome}</h2>
           <p className="text-sm text-muted-foreground">
             {org?.nome ?? "—"} · {formatarDataBR(evento.inicioEm)} · {evento.cidade}/{evento.uf} · {nomeModalidade(evento.modalidade)}
@@ -83,23 +83,23 @@ function VisaoGeral() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link to="/eventos/$eventoId" params={{ eventoId }}>
-            <Button variant="outline">Página pública</Button>
+            <Button variant="outline">{tr("pagina_publica")}</Button>
           </Link>
           {evento.status === "publicado" && (
             <Link to="/admin/divulgacao" search={{ aba: "impulsionamentos", evento: eventoId }}>
-              <Button variant="outline">Impulsionar operação</Button>
+              <Button variant="outline">{tr("impulsionar_operacao")}</Button>
             </Link>
           )}
         </div>
       </div>
 
-      <section aria-label="Indicadores do evento" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <Indicador rotulo="Vendidos" valor={`${ingressos.confirmados}/${ingressos.capacidade}`} detalhe={`${ingressos.ocupacao}% de ocupação`} />
-        <Indicador rotulo="Aguardando pagamento" valor={ingressos.aguardandoPagamento} />
-        <Indicador rotulo="Estornados" valor={ingressos.estornados} detalhe={pagamentos.reembolsosPendentes ? `${pagamentos.reembolsosPendentes} reembolso(s) pendente(s)` : undefined} />
-        <Indicador rotulo="Cancelados" valor={ingressos.cancelados} />
-        <Indicador rotulo="Check-in" valor={`${checkin.presentes}/${checkin.confirmados}`} detalhe={`${checkin.percentual}% presentes`} />
-        <Indicador rotulo="Suporte" valor={suporte.total} detalhe={`${suporte.emAberto} em aberto`} />
+      <section aria-label={tr("indicadores_do_evento")} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <Indicador rotulo={tr("vendidos")} valor={`${ingressos.confirmados}/${ingressos.capacidade}`} detalhe={tr("ocupacao_de_ocupacao", { ocupacao: ingressos.ocupacao })} />
+        <Indicador rotulo={tr("aguardando_pagamento")} valor={ingressos.aguardandoPagamento} />
+        <Indicador rotulo={tr("estornados")} valor={ingressos.estornados} detalhe={pagamentos.reembolsosPendentes ? tr("reembolsospendentes_reembolso_s_pendente", { reembolsosPendentes: pagamentos.reembolsosPendentes }) : undefined} />
+        <Indicador rotulo={tr("cancelados")} valor={ingressos.cancelados} />
+        <Indicador rotulo={tr("check_in")} valor={`${checkin.presentes}/${checkin.confirmados}`} detalhe={tr("percentual_presentes", { percentual: checkin.percentual })} />
+        <Indicador rotulo={tr("suporte")} valor={suporte.total} detalhe={tr("emaberto_em_aberto", { emAberto: suporte.emAberto })} />
       </section>
 
       <Tabs value={aba} onValueChange={(x) => setAba(x as Aba)}>
@@ -136,48 +136,47 @@ function Resumo({ eventoId, v }: { eventoId: string; v: NonNullable<ReturnType<t
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-2">
         <section>
-          <h3 className="font-display text-base font-semibold uppercase">Por tipo de ingresso</h3>
+          <h3 className="font-display text-base font-semibold uppercase">{tr("por_tipo_de_ingresso")}</h3>
           <Table className="tabela-cards mt-2 w-full text-sm">
             <TableHeader>
               <TableRow className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-                <TableHead className="py-2 pr-3">Tipo</TableHead>
-                <TableHead className="py-2">Vendidos / limite</TableHead>
+                <TableHead className="py-2 pr-3">{tr("tipo")}</TableHead>
+                <TableHead className="py-2">{tr("vendidos_limite")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {v.porTipo.map((t) => (
                 <TableRow key={t.id} className="border-b border-border/50">
                   <TableCell className="py-2 pr-3">
-                    {t.nome} {t.arquivado && <Badge variant="secondary">arquivado</Badge>}
+                    {t.nome} {t.arquivado && <Badge variant="secondary">{tr("arquivado")}</Badge>}
                   </TableCell>
-                  <TableCell data-rotulo="Vendidos / limite" className="py-2 font-mono">{t.vendidos}/{t.limite}</TableCell>
+                  <TableCell data-rotulo={tr("vendidos_limite")} className="py-2 font-mono">{t.vendidos}/{t.limite}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
           {origens.length > 0 && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              Origem dos confirmados: {origens.map((o) => `${ROTULO_ORIGEM[o]} ${v.porOrigem[o]}`).join(" · ")}
+            <p className="mt-2 text-xs text-muted-foreground">{tr("origem_dos_confirmados")}{" "}{origens.map((o) => `${ROTULO_ORIGEM[o]} ${v.porOrigem[o]}`).join(" · ")}
             </p>
           )}
         </section>
 
         <section>
-          <h3 className="font-display text-base font-semibold uppercase">Por exército</h3>
+          <h3 className="font-display text-base font-semibold uppercase">{tr("por_exercito")}</h3>
           <Table className="tabela-cards mt-2 w-full text-sm">
             <TableHeader>
               <TableRow className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-                <TableHead className="py-2 pr-3">Exército</TableHead>
-                <TableHead className="py-2 pr-3">Confirmados</TableHead>
-                <TableHead className="py-2">Check-in</TableHead>
+                <TableHead className="py-2 pr-3">{tr("exercito")}</TableHead>
+                <TableHead className="py-2 pr-3">{tr("confirmados")}</TableHead>
+                <TableHead className="py-2">{tr("check_in")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {v.porExercito.map((x) => (
                 <TableRow key={x.id} className="border-b border-border/50">
                   <TableCell className="py-2 pr-3">{x.nome}</TableCell>
-                  <TableCell data-rotulo="Confirmados" className="py-2 pr-3 font-mono">{x.confirmados}/{x.capacidade}</TableCell>
-                  <TableCell data-rotulo="Check-in" className="py-2 font-mono">{x.presentes}</TableCell>
+                  <TableCell data-rotulo={tr("confirmados")} className="py-2 pr-3 font-mono">{x.confirmados}/{x.capacidade}</TableCell>
+                  <TableCell data-rotulo={tr("check_in")} className="py-2 font-mono">{x.presentes}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -186,40 +185,39 @@ function Resumo({ eventoId, v }: { eventoId: string; v: NonNullable<ReturnType<t
       </div>
 
       <section>
-        <h3 className="font-display text-base font-semibold uppercase">Pagamentos online</h3>
+        <h3 className="font-display text-base font-semibold uppercase">{tr("pagamentos_online")}</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          {v.pagamentos.pagosOnline} pago(s) · {v.pagamentos.reembolsados} reembolsado(s) · {v.pagamentos.reembolsosPendentes} reembolso(s) pendente(s) ·{" "}
+          {tr("pagosonline_pago_s_reembolsados_reembols", { pagosOnline: v.pagamentos.pagosOnline, reembolsados: v.pagamentos.reembolsados, reembolsosPendentes: v.pagamentos.reembolsosPendentes })}{" "}
           <span className={v.pagamentos.contestacoesAbertas ? "font-medium text-destructive" : undefined}>
-            {v.pagamentos.contestacoesAbertas} contestação(ões) em aberto
-          </span>
+            {tr("contestacoesabertas_contestacao_oes_em_a", { contestacoesAbertas: v.pagamentos.contestacoesAbertas })}</span>
         </p>
       </section>
 
       <section>
-        <h3 className="font-display text-base font-semibold uppercase">Cancelamentos e estornos</h3>
+        <h3 className="font-display text-base font-semibold uppercase">{tr("cancelamentos_e_estornos")}</h3>
         {cancelamentos.length === 0 ? (
-          <p className="mt-1 text-sm text-muted-foreground">Nenhum cancelamento ou estorno.</p>
+          <p className="mt-1 text-sm text-muted-foreground">{tr("nenhum_cancelamento_ou_estorno")}</p>
         ) : (
           <div className="mt-2 overflow-x-auto">
             <Table className="tabela-cards w-full text-sm">
               <TableHeader>
                 <TableRow className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-                  <TableHead className="py-2 pr-3">Participante</TableHead>
-                  <TableHead className="py-2 pr-3">Quando</TableHead>
-                  <TableHead className="py-2 pr-3">Motivo</TableHead>
-                  <TableHead className="py-2">Status</TableHead>
+                  <TableHead className="py-2 pr-3">{tr("participante")}</TableHead>
+                  <TableHead className="py-2 pr-3">{tr("quando")}</TableHead>
+                  <TableHead className="py-2 pr-3">{tr("motivo")}</TableHead>
+                  <TableHead className="py-2">{tr("status")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {cancelamentos.map((i) => (
                   <TableRow key={i.id} className="border-b border-border/50">
                     <TableCell className="py-2 pr-3">
-                      <p>{base.usuarios.find((u) => u.id === i.usuarioId)?.nomeCompleto ?? "Participante"}</p>
+                      <p>{base.usuarios.find((u) => u.id === i.usuarioId)?.nomeCompleto ?? tr("participante")}</p>
                       <p className="font-mono text-xs text-muted-foreground">{i.codigo}</p>
                     </TableCell>
-                    <TableCell data-rotulo="Quando" className="py-2 pr-3">{i.canceladoEm ? formatarDataHoraBR(i.canceladoEm) : "—"}</TableCell>
-                    <TableCell data-rotulo="Motivo" className="py-2 pr-3 break-words">{i.motivoCancelamento ?? "—"}</TableCell>
-                    <TableCell data-rotulo="Status" className="py-2"><StatusInscricao status={i.status} /></TableCell>
+                    <TableCell data-rotulo={tr("quando")} className="py-2 pr-3">{i.canceladoEm ? formatarDataHoraBR(i.canceladoEm) : "—"}</TableCell>
+                    <TableCell data-rotulo={tr("motivo")} className="py-2 pr-3 break-words">{i.motivoCancelamento ?? "—"}</TableCell>
+                    <TableCell data-rotulo={tr("status")} className="py-2"><StatusInscricao status={i.status} /></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -228,12 +226,7 @@ function Resumo({ eventoId, v }: { eventoId: string; v: NonNullable<ReturnType<t
         )}
       </section>
 
-      <p className="text-xs text-muted-foreground">
-        Engajamento: {e.missoes} missão(ões), {e.entregas} entrega(s)
-        {e.entregasAguardandoAvaliacao ? ` (${e.entregasAguardandoAvaliacao} aguardando avaliação)` : ""},{" "}
-        {e.publicacoes} publicação(ões) na comunidade, {e.denunciasPendentes} denúncia(s) pendente(s),{" "}
-        {e.impulsionamentosAtivos} impulsionamento(s) ativo(s).
-      </p>
+      <p className="text-xs text-muted-foreground">{tr("engajamento_missoes_missao_oes_entregas", { missoes: e.missoes, entregas: e.entregas })}{e.entregasAguardandoAvaliacao ? ` ${tr("entregasaguardandoavaliacao_aguardando_a", { entregasAguardandoAvaliacao: e.entregasAguardandoAvaliacao })}` : ""}{tr("publicacoes_publicacao_oes_na_comunidade", { publicacoes: e.publicacoes, denunciasPendentes: e.denunciasPendentes, impulsionamentosAtivos: e.impulsionamentosAtivos })}</p>
     </div>
   );
 }
@@ -241,7 +234,7 @@ function Resumo({ eventoId, v }: { eventoId: string; v: NonNullable<ReturnType<t
 function Suporte({ v }: { v: NonNullable<ReturnType<typeof visaoGeralEvento>> }) {
   const base = carregarBase();
   const status = Object.entries(v.suporte.porStatus) as [keyof typeof ROTULO_STATUS_EXIBIDO, number][];
-  if (v.suporte.total === 0) return <EstadoVazio titulo="Nenhum chamado" descricao="Nenhum chamado de suporte foi aberto sobre este evento." />;
+  if (v.suporte.total === 0) return <EstadoVazio titulo={tr("nenhum_chamado")} descricao={tr("nenhum_chamado_de_suporte_foi_aberto")} />;
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
@@ -253,10 +246,10 @@ function Suporte({ v }: { v: NonNullable<ReturnType<typeof visaoGeralEvento>> })
         <Table className="tabela-cards w-full text-sm">
           <TableHeader>
             <TableRow className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-              <TableHead className="py-2 pr-3">Chamado</TableHead>
-              <TableHead className="py-2 pr-3">Categoria</TableHead>
-              <TableHead className="py-2 pr-3">Status</TableHead>
-              <TableHead className="py-2">Ações</TableHead>
+              <TableHead className="py-2 pr-3">{tr("chamado")}</TableHead>
+              <TableHead className="py-2 pr-3">{tr("categoria")}</TableHead>
+              <TableHead className="py-2 pr-3">{tr("status")}</TableHead>
+              <TableHead className="py-2">{tr("acoes")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -265,16 +258,16 @@ function Suporte({ v }: { v: NonNullable<ReturnType<typeof visaoGeralEvento>> })
                 <TableCell className="py-2 pr-3">
                   <p className="break-words font-medium">{c.assunto}</p>
                   <p className="text-xs text-muted-foreground">
-                    {protocolo(c)} · {base.usuarios.find((u) => u.id === c.solicitanteId)?.nomeCompleto ?? "Participante"} · {formatarDataBR(c.criadoEm)}
+                    {protocolo(c)} · {base.usuarios.find((u) => u.id === c.solicitanteId)?.nomeCompleto ?? tr("participante")} · {formatarDataBR(c.criadoEm)}
                   </p>
                 </TableCell>
-                <TableCell data-rotulo="Categoria" className="py-2 pr-3">{c.categoria}</TableCell>
-                <TableCell data-rotulo="Status" className="py-2 pr-3">
+                <TableCell data-rotulo={tr("categoria")} className="py-2 pr-3">{c.categoria}</TableCell>
+                <TableCell data-rotulo={tr("status")} className="py-2 pr-3">
                   <Badge variant="secondary">{ROTULO_STATUS_EXIBIDO[statusExibido(base, c)]}</Badge>
                 </TableCell>
                 <TableCell className="celula-acoes py-2">
                   <Link to="/admin/suporte" search={{ c: c.id }}>
-                    <Button variant="outline">Abrir</Button>
+                    <Button variant="outline">{tr("abrir")}</Button>
                   </Link>
                 </TableCell>
               </TableRow>

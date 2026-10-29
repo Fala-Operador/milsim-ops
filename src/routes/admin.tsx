@@ -12,6 +12,7 @@ import { ErroSecao, SkeletonPagina } from "@/components/ui";
 import { LayoutMenuLateral, type GrupoMenuLateral } from "@/components/MenuLateral";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
 import type { ErrorComponentProps } from "@tanstack/react-router";
+import { tr } from "@/i18n/routes/admin";
 
 function ErroAdmin({ error, reset }: ErrorComponentProps) {
   console.error(error);
@@ -24,10 +25,10 @@ function ErroAdmin({ error, reset }: ErrorComponentProps) {
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Administração — MilSim Ops" },
-      { name: "description", content: "Administração global: dashboard, suporte, comunidade, solicitações, usuários, privacidade e auditoria." },
-      { property: "og:title", content: "Administração — MilSim Ops" },
-      { property: "og:description", content: "Administração global." },
+      { title: tr("administracao_milsim_ops") },
+      { name: "description", content: tr("administracao_global_dashboard_suporte_c") },
+      { property: "og:title", content: tr("administracao_milsim_ops") },
+      { property: "og:description", content: tr("administracao_global") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -57,33 +58,33 @@ function LayoutAdmin() {
 
   const nDenuncias = denuncias.data?.length ?? 0;
   const grupos: GrupoMenuLateral[] = [
-    { titulo: "Visão geral", itens: [
-      { to: "/admin", rotulo: "Dashboard", icone: LayoutDashboard, exato: true },
-      { to: "/admin/metricas", rotulo: "Métricas", icone: BarChart3 },
+    { titulo: tr("visao_geral"), itens: [
+      { to: "/admin", rotulo: tr("dashboard"), icone: LayoutDashboard, exato: true },
+      { to: "/admin/metricas", rotulo: tr("metricas"), icone: BarChart3 },
     ] },
-    { titulo: "Atendimento", itens: [
-      { to: "/admin/suporte", rotulo: "Suporte", icone: LifeBuoy, contador: atencaoEquipe, rotuloContador: `${atencaoEquipe} chamados exigem atenção` },
-      { to: "/admin/comunidade", rotulo: "Comunidade", icone: MessagesSquare, contador: nDenuncias, rotuloContador: `${nDenuncias} denúncias pendentes` },
-      { to: "/admin/solicitacoes", rotulo: "Solicitações", icone: Inbox },
+    { titulo: tr("atendimento"), itens: [
+      { to: "/admin/suporte", rotulo: tr("suporte"), icone: LifeBuoy, contador: atencaoEquipe, rotuloContador: tr("atencaoequipe_chamados_exigem_atencao", { atencaoEquipe }) },
+      { to: "/admin/comunidade", rotulo: tr("comunidade"), icone: MessagesSquare, contador: nDenuncias, rotuloContador: tr("ndenuncias_denuncias_pendentes", { nDenuncias }) },
+      { to: "/admin/solicitacoes", rotulo: tr("solicitacoes"), icone: Inbox },
     ] },
-    { titulo: "Conteúdo", itens: [
-      { to: "/admin/divulgacao", rotulo: "Página inicial e divulgação", icone: Megaphone },
-      { to: "/admin/gamificacao", rotulo: "Gamificação e recompensas", icone: Trophy },
-      { to: "/admin/notificacoes", rotulo: "Notificações", icone: Bell },
+    { titulo: tr("conteudo"), itens: [
+      { to: "/admin/divulgacao", rotulo: tr("pagina_inicial_e_divulgacao"), icone: Megaphone },
+      { to: "/admin/gamificacao", rotulo: tr("gamificacao_e_recompensas"), icone: Trophy },
+      { to: "/admin/notificacoes", rotulo: tr("notificacoes"), icone: Bell },
     ] },
-    { titulo: "Financeiro", itens: [
-      { to: "/admin/pagamentos", rotulo: "Pagamentos", icone: CreditCard },
-      { to: "/admin/loja", rotulo: "Loja da plataforma", icone: Store },
+    { titulo: tr("financeiro"), itens: [
+      { to: "/admin/pagamentos", rotulo: tr("pagamentos"), icone: CreditCard },
+      { to: "/admin/loja", rotulo: tr("loja_da_plataforma"), icone: Store },
     ] },
-    { titulo: "Contas e segurança", itens: [
-      { to: "/admin/usuarios", rotulo: "Usuários", icone: Users },
-      { to: "/admin/privacidade", rotulo: "Privacidade", icone: ShieldCheck },
-      { to: "/admin/auditoria", rotulo: "Auditoria", icone: ScrollText },
+    { titulo: tr("contas_e_seguranca"), itens: [
+      { to: "/admin/usuarios", rotulo: tr("usuarios"), icone: Users },
+      { to: "/admin/privacidade", rotulo: tr("privacidade"), icone: ShieldCheck },
+      { to: "/admin/auditoria", rotulo: tr("auditoria"), icone: ScrollText },
     ] },
   ];
 
   return (
-    <LayoutMenuLateral titulo="Administração" rotuloNav="Seções da administração" grupos={grupos}>
+    <LayoutMenuLateral titulo={tr("administracao")} rotuloNav={tr("secoes_da_administracao")} grupos={grupos}>
       <Outlet />
     </LayoutMenuLateral>
   );

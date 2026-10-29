@@ -94,7 +94,7 @@ export function PlanosImpulso({ base }: { base: BaseDados }) {
         { rotulo: tr("impulsos_vendidos"), valor: String(pagos.length) },
         { rotulo: tr("receita_bruta"), valor: formatarBRL(receita) },
         { rotulo: tr("comprados_e_nao_usados"), valor: String(disponiveis) },
-        { rotulo: tr("tipos_a_venda"), valor: `${linhas.filter((l) => l.ativo).length} de ${linhas.length}` },
+        { rotulo: tr("tipos_a_venda"), valor: tr("x_de_y", { x: linhas.filter((l) => l.ativo).length, y: linhas.length }) },
       ]} />
 
       <section aria-labelledby="t-catalogo">
