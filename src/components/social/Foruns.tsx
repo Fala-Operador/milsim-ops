@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Campo, EstadoVazio, ErroSecao, Modal, SkeletonCartao, TextoLivre } from "@/components/ui";
+import { tr } from "@/i18n/components/social/Foruns";
 
 /** Foto do fórum (quadrada) ou a inicial do nome. */
 export function FotoForum({ nome, fotoUrl, tamanho = "h-12 w-12", texto = "text-lg" }: { nome: string; fotoUrl?: string | undefined; tamanho?: string; texto?: string }) {
@@ -36,15 +37,15 @@ export function FotoForum({ nome, fotoUrl, tamanho = "h-12 w-12", texto = "text-
 
 export function SeloVisibilidade({ v }: { v: VisibilidadeForum }) {
   return v === "privado"
-    ? <Badge variant="secondary"><Lock aria-hidden="true" />Privado</Badge>
-    : <Badge variant="success"><Globe aria-hidden="true" />Público</Badge>;
+    ? <Badge variant="secondary"><Lock aria-hidden="true" />{tr("privado")}</Badge>
+    : <Badge variant="success"><Globe aria-hidden="true" />{tr("publico")}</Badge>;
 }
 
 function SituacaoNoForum({ f }: { f: ForumDTO }) {
-  if (f.meuPapel === "dono") return <Badge variant="warning">Dono</Badge>;
-  if (f.meuPapel === "moderador") return <Badge variant="warning">Moderador</Badge>;
-  if (f.minhaSituacao === "aprovado") return <Badge variant="accent">Membro</Badge>;
-  if (f.minhaSituacao === "pendente") return <Badge>Pedido enviado</Badge>;
+  if (f.meuPapel === "dono") return <Badge variant="warning">{tr("dono")}</Badge>;
+  if (f.meuPapel === "moderador") return <Badge variant="warning">{tr("moderador")}</Badge>;
+  if (f.minhaSituacao === "aprovado") return <Badge variant="accent">{tr("membro")}</Badge>;
+  if (f.minhaSituacao === "pendente") return <Badge>{tr("pedido_enviado")}</Badge>;
   return null;
 }
 
@@ -62,9 +63,9 @@ export function CartaoForum({ f }: { f: ForumDTO }) {
       <TextoLivre texto={f.descricao} className="mt-1 line-clamp-2 text-sm text-muted-foreground" />
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" aria-hidden="true" /> {f.membros} {f.membros === 1 ? "membro" : "membros"}</span>
-        <span>· criado por {f.dono.nome}</span>
+        <span>{tr("criado_por_nome", { nome: f.dono.nome })}</span>
         <SituacaoNoForum f={f} />
-        {f.pedidosPendentes > 0 && <Badge variant="destructive">{f.pedidosPendentes} pedido{f.pedidosPendentes > 1 ? "s" : ""}</Badge>}
+        {f.pedidosPendentes > 0 && <Badge variant="destructive">{tr("pedidospendentes_pedido", { pedidosPendentes: f.pedidosPendentes })}{f.pedidosPendentes > 1 ? "s" : ""}</Badge>}
       </div>
     </Link>
   );
@@ -97,14 +98,14 @@ export function ModalForum({ aberto, forum, onFechar, onSalvo }: {
       };
       onSalvo(forum ? await editarForum(forum.id, dados) : await criarForum(dados));
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível salvar o fórum.");
+      setErro(e instanceof Error ? e.message : tr("nao_foi_possivel_salvar_o_forum"));
     } finally {
       setSalvando(false);
     }
   };
 
   return (
-    <Modal aberto={aberto} titulo={forum ? "Editar fórum" : "Criar fórum"} onFechar={onFechar}>
+    <Modal aberto={aberto} titulo={forum ? tr("editar_forum") : tr("criar_forum")} onFechar={onFechar}>
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <FotoForum nome={nome || "?"} fotoUrl={foto} tamanho="h-16 w-16" texto="text-2xl" />
@@ -121,35 +122,35 @@ export function ModalForum({ aberto, forum, onFechar, onSalvo }: {
                   setFoto(dados);
                   setErro("");
                 } catch (er) {
-                  setErro(er instanceof Error ? er.message : "Não foi possível ler a imagem.");
+                  setErro(er instanceof Error ? er.message : tr("nao_foi_possivel_ler_a_imagem"));
                 }
               }} />
             <Button variant="outline" type="button" onClick={() => entradaFoto.current?.click()}>
-              <ImagePlus className="h-4 w-4" /> {foto ? "Trocar foto" : "Adicionar foto"}
+              <ImagePlus className="h-4 w-4" /> {foto ? tr("trocar_foto") : tr("adicionar_foto")}
             </Button>
-            {foto && <Button variant="ghost" type="button" onClick={() => setFoto(undefined)}>Remover</Button>}
+            {foto && <Button variant="ghost" type="button" onClick={() => setFoto(undefined)}>{tr("remover")}</Button>}
           </div>
         </div>
-        <Campo rotulo="Nome" htmlFor="frm-nome">
+        <Campo rotulo={tr("nome")} htmlFor="frm-nome">
           <Input id="frm-nome" maxLength={NOME_FORUM_MAX} value={nome} onChange={(e) => { setNome(e.target.value); setErro(""); }} autoFocus />
         </Campo>
-        <Campo rotulo={`Descrição (opcional, até ${DESCRICAO_FORUM_MAX} caracteres)`} htmlFor="frm-desc">
+        <Campo rotulo={tr("descricao_opcional_ate_descricao_forum_m", { DESCRICAO_FORUM_MAX })} htmlFor="frm-desc">
           <Textarea id="frm-desc" rows={3} maxLength={DESCRICAO_FORUM_MAX} value={descricao} onChange={(e) => setDescricao(e.target.value)} />
         </Campo>
-        <Campo rotulo="Quem pode ler" htmlFor="frm-vis" erro={erro}>
+        <Campo rotulo={tr("quem_pode_ler")} htmlFor="frm-vis" erro={erro}>
           <NativeSelect id="frm-vis" value={visibilidade} onChange={(e) => setVisibilidade(e.target.value as VisibilidadeForum)}>
-            <option value="publico">Público — qualquer pessoa lê e entra na hora</option>
-            <option value="privado">Privado — só membros aprovados leem; você aprova quem entra</option>
+            <option value="publico">{tr("publico_qualquer_pessoa_le_e_entra")}</option>
+            <option value="privado">{tr("privado_so_membros_aprovados_leem_voce")}</option>
           </NativeSelect>
         </Campo>
         {forum && forum.visibilidade === "privado" && visibilidade === "publico" && (
-          <p className="text-xs text-muted-foreground">Ao tornar o fórum público, os pedidos pendentes são aceitos e o conteúdo fica visível para todos.</p>
+          <p className="text-xs text-muted-foreground">{tr("ao_tornar_o_forum_publico_os")}</p>
         )}
-        {!forum && <p className="text-xs text-muted-foreground">Cada conta pode ter até {LIMITE_FORUNS_POR_CONTA} fóruns ativos. Publicações do fórum não aparecem no feed geral.</p>}
+        {!forum && <p className="text-xs text-muted-foreground">{tr("cada_conta_pode_ter_ate_limite", { LIMITE_FORUNS_POR_CONTA })}</p>}
       </div>
       <div className="mt-4 flex justify-end gap-2">
-        <Button variant="ghost" onClick={onFechar} disabled={salvando}>Cancelar</Button>
-        <Button onClick={salvar} disabled={salvando}>{salvando ? "Salvando..." : forum ? "Salvar" : "Criar fórum"}</Button>
+        <Button variant="ghost" onClick={onFechar} disabled={salvando}>{tr("cancelar")}</Button>
+        <Button onClick={salvar} disabled={salvando}>{salvando ? tr("salvando") : forum ? tr("salvar") : tr("criar_forum")}</Button>
       </div>
     </Modal>
   );
@@ -174,27 +175,26 @@ export function ListaForuns() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-0 flex-1 sm:max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
-          <Input aria-label="Buscar fórum pelo nome" placeholder="Buscar fórum pelo nome" value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-9" />
+          <Input aria-label={tr("buscar_forum_pelo_nome")} placeholder={tr("buscar_forum_pelo_nome")} value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-9" />
         </div>
         {usuario && (
           <Label className="flex items-center gap-2 text-sm font-normal">
-            <Switch checked={meus} onCheckedChange={setMeus} /> Só os meus
-          </Label>
+            <Switch checked={meus} onCheckedChange={setMeus} />{" "}{tr("so_os_meus")}</Label>
         )}
         {usuario ? (
-          <Button onClick={() => setCriando(true)} className="ml-auto"><Plus className="h-4 w-4" /> Criar fórum</Button>
+          <Button onClick={() => setCriando(true)} className="ml-auto"><Plus className="h-4 w-4" />{" "}{tr("criar_forum")}</Button>
         ) : (
-          <Link to="/login" search={{ redirect: "/comunidades?aba=foruns" }} className="ml-auto text-sm text-accent hover:underline">Entre para criar ou participar →</Link>
+          <Link to="/login" search={{ redirect: "/comunidades?aba=foruns" }} className="ml-auto text-sm text-accent hover:underline">{tr("entre_para_criar_ou_participar")}</Link>
         )}
       </div>
       {q.isPending ? (
         <div className="grid gap-3 sm:grid-cols-2"><SkeletonCartao /><SkeletonCartao /></div>
       ) : q.isError ? (
-        <ErroSecao titulo="Não foi possível carregar os fóruns" descricao={q.error.message} onTentar={() => void q.refetch()} />
+        <ErroSecao titulo={tr("nao_foi_possivel_carregar_os_foruns")} descricao={q.error.message} onTentar={() => void q.refetch()} />
       ) : q.data.length === 0 ? (
         <EstadoVazio
-          titulo={termo || meus ? "Nenhum fórum encontrado" : "Nenhum fórum ainda"}
-          descricao={termo || meus ? "Ajuste a busca." : "Crie o primeiro fórum: do seu time, da sua cidade ou de um tema."}
+          titulo={termo || meus ? tr("nenhum_forum_encontrado") : tr("nenhum_forum_ainda")}
+          descricao={termo || meus ? tr("ajuste_a_busca") : tr("crie_o_primeiro_forum_do_seu")}
         />
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">{q.data.map((f) => <li key={f.id}><CartaoForum f={f} /></li>)}</ul>

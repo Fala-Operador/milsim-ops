@@ -26,7 +26,7 @@ export const garantirForunsFn = createServerFn({ method: "POST" })
   .validator(z.object({ eventoId: id }).parse)
   .handler(({ data }) =>
     mutar(({ base, usuario }) => {
-      if (!c.papelNoEvento(base, usuario, data.eventoId)) throw new ErroDominio("sem_acesso", c.MSG_SEM_ACESSO);
+      if (!c.papelNoEvento(base, usuario, data.eventoId)) throw new ErroDominio("sem_acesso", c.MSG_SEM_ACESSO());
       c.garantirForuns(data.eventoId);
     }),
   );

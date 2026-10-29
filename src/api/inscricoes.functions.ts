@@ -22,6 +22,7 @@ import {
   type ResultadoCompra,
 } from "@/server/pagamentos.server";
 import { chamar } from "@/api/cliente";
+import { tr } from "@/i18n/api/inscricoes.functions";
 
 const id = z.string().min(1).max(100);
 
@@ -74,7 +75,7 @@ export const cancelarInscricaoFn = createServerFn({ method: "POST" })
       const evento = ins && base.eventos.find((e) => e.id === ins.eventoId);
       // Titular da inscrição, organização do evento ou admin.
       if (!ins || !evento || (ins.usuarioId !== u.id && !gereEvento(u, evento))) {
-        throw new ErroDominio("inscricao", "Inscrição não encontrada.");
+        throw new ErroDominio("inscricao", tr("inscricao_nao_encontrada"));
       }
       return cancelar(data.inscricaoId, data.motivo, u.id);
     });
@@ -104,7 +105,7 @@ export const incluirParticipantesFn = createServerFn({ method: "POST" })
       const u = exigirUsuario(usuario);
       const evento = base.eventos.find((e) => e.id === data.eventoId);
       if (!evento || !gereEvento(u, evento)) {
-        throw new ErroDominio("permissao", "Você só pode gerenciar eventos da sua organização.");
+        throw new ErroDominio("permissao", tr("voce_so_pode_gerenciar_eventos_da"));
       }
       return incluir(data, u);
     }),

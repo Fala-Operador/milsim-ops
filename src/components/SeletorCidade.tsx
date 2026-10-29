@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
+import { tr } from "@/i18n/components/SeletorCidade";
 
 // "cabecalho": sem caixa, para a barra do topo; "campo": botão com borda (padrão).
 export function SeletorCidade({ compacto = false, className = "", variante = "campo" }: { compacto?: boolean; className?: string; variante?: "campo" | "cabecalho" }) {
@@ -36,8 +37,8 @@ export function SeletorCidade({ compacto = false, className = "", variante = "ca
   };
 
   const escolher = (e: Estado) => { definirLocal({ escopo: "estado", uf: e.uf }); fechar(); };
-  const rotulo = montado ? rotuloCurto(local) : "Todo o Brasil";
-  const sigla = montado && local.escopo !== "nacional" && local.uf ? local.uf : "Brasil";
+  const rotulo = montado ? rotuloCurto(local) : tr("todo_o_brasil");
+  const sigla = montado && local.escopo !== "nacional" && local.uf ? local.uf : tr("brasil");
   const obtendo = montado && status === "obtendo";
   const aviso = montado ? mensagemStatus(status) : null;
   const selecionado = (e: Estado) => local.escopo !== "nacional" && local.uf === e.uf;
@@ -46,11 +47,11 @@ export function SeletorCidade({ compacto = false, className = "", variante = "ca
     <>
       <div className="flex items-start justify-between gap-2">
         {celular ? (
-          <SheetTitle id={idTitulo} className="uppercase tracking-wide">Onde você quer encontrar operações?</SheetTitle>
+          <SheetTitle id={idTitulo} className="uppercase tracking-wide">{tr("onde_voce_quer_encontrar_operacoes")}</SheetTitle>
         ) : (
-          <h2 id={idTitulo} className="font-display text-lg font-semibold uppercase tracking-wide">Onde você quer encontrar operações?</h2>
+          <h2 id={idTitulo} className="font-display text-lg font-semibold uppercase tracking-wide">{tr("onde_voce_quer_encontrar_operacoes")}</h2>
         )}
-        <Button variant="ghost" size="none" type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 text-muted-foreground"><X className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="none" type="button" onClick={fechar} aria-label={tr("fechar")} className="rounded p-1 text-muted-foreground"><X className="h-4 w-4" /></Button>
       </div>
       <Button variant="plain" size="none"
         type="button"
@@ -59,11 +60,11 @@ export function SeletorCidade({ compacto = false, className = "", variante = "ca
         className="mt-3 flex w-full items-center gap-2 rounded-md border border-border px-3 py-2 text-left text-sm hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-60"
       >
         {obtendo ? <Loader2 className="h-4 w-4 animate-spin text-accent" /> : <Crosshair className="h-4 w-4 text-accent" />}
-        <span className="flex-1">{obtendo ? "Obtendo sua localização…" : "Usar minha localização atual"}</span>
-        {modo === "atual" && <span className="text-xs text-muted-foreground">em uso</span>}
+        <span className="flex-1">{obtendo ? tr("obtendo_sua_localizacao") : tr("usar_minha_localizacao_atual")}</span>
+        {modo === "atual" && <span className="text-xs text-muted-foreground">{tr("em_uso")}</span>}
       </Button>
       {aviso && status !== "obtendo" && <p role="status" className="mt-2 text-xs text-muted-foreground">{aviso}</p>}
-      <Label className="mt-3 block text-xs font-medium text-muted-foreground" htmlFor={`${idTitulo}-busca`}>Buscar estado</Label>
+      <Label className="mt-3 block text-xs font-medium text-muted-foreground" htmlFor={`${idTitulo}-busca`}>{tr("buscar_estado")}</Label>
       <div className="relative mt-1">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -72,15 +73,15 @@ export function SeletorCidade({ compacto = false, className = "", variante = "ca
           type="search"
           value={termo}
           onChange={(e) => setTermo(e.target.value)}
-          placeholder="Ex.: São Paulo ou SP"
+          placeholder={tr("ex_sao_paulo_ou_sp")}
           className="w-full rounded-md border border-input bg-background py-2 pl-8 pr-3 text-sm focus:border-ring focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </div>
-      <ul className="mt-2 max-h-[min(18rem,50dvh)] min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1" aria-label="Estados">
+      <ul className="mt-2 max-h-[min(18rem,50dvh)] min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1" aria-label={tr("estados")}>
         <li>
           <Button variant="plain" size="none" type="button" onClick={() => { definirLocal(NACIONAL); fechar(); }} aria-pressed={local.escopo === "nacional"}
             className="flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring">
-            <span className="font-medium">Todo o Brasil</span>
+            <span className="font-medium">{tr("todo_o_brasil")}</span>
             {local.escopo === "nacional" && <Check className="h-4 w-4 text-accent" />}
           </Button>
         </li>
@@ -93,10 +94,10 @@ export function SeletorCidade({ compacto = false, className = "", variante = "ca
             </Button>
           </li>
         ))}
-        {resultados.length === 0 && <li className="px-3 py-2 text-sm text-muted-foreground">Nenhum estado encontrado.</li>}
+        {resultados.length === 0 && <li className="px-3 py-2 text-sm text-muted-foreground">{tr("nenhum_estado_encontrado")}</li>}
       </ul>
       <p className="mt-2 text-[11px] text-muted-foreground">
-        {montado && modo === "manual" ? "Localização escolhida manualmente." : montado && modo === "atual" ? "Localização atual obtida pelo aparelho." : "Mostrando todo o Brasil."}
+        {montado && modo === "manual" ? tr("localizacao_escolhida_manualmente") : montado && modo === "atual" ? tr("localizacao_atual_obtida_pelo_aparelho") : tr("mostrando_todo_o_brasil")}
       </p>
     </>
   );
@@ -104,7 +105,7 @@ export function SeletorCidade({ compacto = false, className = "", variante = "ca
   const gatilho = (
     <Button variant="plain" size="none"
       type="button"
-      aria-label={obtendo ? "Obtendo sua localização" : `Localização: ${rotulo}. Alterar localização`}
+      aria-label={obtendo ? tr("obtendo_sua_localizacao_2") : tr("localizacao_rotulo_alterar_localizacao", { rotulo })}
       className={variante === "cabecalho"
         ? "flex h-11 max-w-full items-center gap-1.5 rounded-md px-2 text-sm hover:bg-secondary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:px-2.5"
         : `flex max-w-full items-center gap-1.5 rounded-md border border-border bg-secondary/40 text-sm hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${compacto ? "h-10 px-3" : "h-10 w-full px-3"}`}
@@ -114,7 +115,7 @@ export function SeletorCidade({ compacto = false, className = "", variante = "ca
         // Só a sigla do estado (ou "Brasil"): o nome completo não cabe ao lado do menu central; ele aparece ao abrir.
         <span className="truncate font-medium text-foreground">{obtendo ? "…" : sigla}</span>
       ) : (
-        <span className={`truncate font-medium text-foreground ${compacto ? "max-w-[11rem]" : ""}`}>{obtendo ? "Localizando…" : rotulo}</span>
+        <span className={`truncate font-medium text-foreground ${compacto ? "max-w-[11rem]" : ""}`}>{obtendo ? tr("localizando") : rotulo}</span>
       )}
       <ChevronDown className={`ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none ${aberto ? "rotate-180" : ""}`} aria-hidden="true" />
     </Button>

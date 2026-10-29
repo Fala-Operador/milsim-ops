@@ -9,6 +9,7 @@ import { NOMES_UF } from "@/lib/localizacao";
 import type {
   BaseDados, CampanhaRecompensa, ConcessaoInsignia, CriterioInsignia, Evento, Insignia, Voucher,
 } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/participacao";
 
 export type EstadoParticipacao = "participando" | "participou";
 /** Como a presença foi decidida (interno; nunca vira badge). */
@@ -114,10 +115,10 @@ export function dataDaConquista(criterio: CriterioInsignia, ps: Participacao[]):
 }
 
 export const ROTULO_CRITERIO: Record<CriterioInsignia["tipo"], string> = {
-  operacoes: "operações concluídas",
-  estados: "estados diferentes",
-  modalidades: "modalidades diferentes",
-  missoes: "missões pré-evento concluídas",
+  get operacoes() { return tr("operacoes_concluidas"); },
+  get estados() { return tr("estados_diferentes"); },
+  get modalidades() { return tr("modalidades_diferentes"); },
+  get missoes() { return tr("missoes_pre_evento_concluidas"); },
 };
 
 export function descreverCriterio(c: CriterioInsignia): string {
@@ -167,7 +168,7 @@ export function descontoDoBeneficio(b: Pick<CampanhaRecompensa, "tipo" | "valor"
 }
 
 export function descreverBeneficio(b: Pick<CampanhaRecompensa, "tipo" | "valor">): string {
-  if (b.tipo === "gratuito") return "Ingresso gratuito";
-  if (b.tipo === "percentual") return `${b.valor}% de desconto`;
-  return `R$ ${(b.valor / 100).toFixed(2).replace(".", ",")} de desconto`;
+  if (b.tipo === "gratuito") return tr("ingresso_gratuito");
+  if (b.tipo === "percentual") return tr("valor_de_desconto", { valor: b.valor });
+  return tr("r_valor_de_desconto", { valor: (b.valor / 100).toFixed(2).replace(".", ",") });
 }

@@ -11,6 +11,7 @@ import { lateralDaComunidade, linkPrincipal, type CartaoEventoResolvido } from "
 import { formatarDataBR } from "@/lib/domain/money";
 import { CardRastreado, ImagemSegura } from "@/components/divulgacao";
 import type { BaseDados, SecaoInicial } from "@/lib/domain/types";
+import { tr } from "@/i18n/components/social/LateralComunidade";
 
 function destinoDoBanner(base: BaseDados, s: SecaoInicial): { interno?: string; externo?: string } {
   const d = s.banner?.destino;
@@ -29,7 +30,7 @@ function BannerLateral({ base, secao }: { base: BaseDados; secao: SecaoInicial }
       {(b.chamada || destino.interno || destino.externo) && (
         <div className="p-3">
           {b.chamada && <p className="text-sm font-medium">{b.chamada}</p>}
-          {(destino.interno || destino.externo) && <p className="mt-1 text-xs font-medium text-accent">{b.textoBotao || "Saiba mais"} →</p>}
+          {(destino.interno || destino.externo) && <p className="mt-1 text-xs font-medium text-accent">{b.textoBotao || tr("saiba_mais")} →</p>}
         </div>
       )}
     </div>
@@ -49,7 +50,7 @@ function OperacaoLateral({ c }: { c: CartaoEventoResolvido }) {
       <div className="min-w-0">
         <p className="line-clamp-2 text-sm font-semibold leading-tight">{e.nome}</p>
         <p className="mt-0.5 text-xs text-muted-foreground">{formatarDataBR(e.inicioEm)} · {e.cidade}/{e.uf}</p>
-        {c.esgotado && <p className="text-xs font-medium text-destructive">Esgotado</p>}
+        {c.esgotado && <p className="text-xs font-medium text-destructive">{tr("esgotado")}</p>}
       </div>
     </Link>
   );
@@ -74,11 +75,11 @@ export function LateralComunidade({ compacta = false }: { compacta?: boolean }) 
   // Celular: um destaque só, no topo do feed (banner primeiro; senão a primeira operação).
   if (compacta) {
     const primeiro = banners[0];
-    if (primeiro) return <aside aria-label="Destaque" className="lg:hidden"><BannerLateral base={base} secao={primeiro} /></aside>;
+    if (primeiro) return <aside aria-label={tr("destaque")} className="lg:hidden"><BannerLateral base={base} secao={primeiro} /></aside>;
     const op = operacoes[0];
     return op ? (
-      <aside aria-label="Operação em destaque" className="space-y-1 lg:hidden">
-        <p className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Operação em destaque</p>
+      <aside aria-label={tr("operacao_em_destaque")} className="space-y-1 lg:hidden">
+        <p className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">{tr("operacao_em_destaque")}</p>
         {cartaoOperacao(op, 0)}
       </aside>
     ) : null;
@@ -89,13 +90,13 @@ export function LateralComunidade({ compacta = false }: { compacta?: boolean }) 
       {banners.map((s) => <BannerLateral key={s.id} base={base} secao={s} />)}
       {operacoes.length > 0 && (
         <section aria-labelledby="lat-operacoes" className="space-y-2">
-          <h2 id="lat-operacoes" className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Operações em destaque</h2>
+          <h2 id="lat-operacoes" className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">{tr("operacoes_em_destaque")}</h2>
           {operacoes.map(cartaoOperacao)}
         </section>
       )}
       {patrocinadores.length > 0 && (
         <section aria-labelledby="lat-patrocinadores" className="space-y-2">
-          <h2 id="lat-patrocinadores" className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">Patrocinadores</h2>
+          <h2 id="lat-patrocinadores" className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">{tr("patrocinadores")}</h2>
           <ul className="grid grid-cols-2 gap-2">
             {patrocinadores.map((p) => {
               const href = linkPrincipal(p);
@@ -104,7 +105,7 @@ export function LateralComunidade({ compacta = false }: { compacta?: boolean }) 
                 : <span className="block truncate text-center text-xs font-medium">{p.nome}</span>;
               return (
                 <li key={p.id} className="rounded-md border border-border bg-card p-2">
-                  {href ? <a href={href} target="_blank" rel="noopener noreferrer" aria-label={`${p.nome} (nova aba)`} className="block">{logo}</a> : logo}
+                  {href ? <a href={href} target="_blank" rel="noopener noreferrer" aria-label={tr("nome_nova_aba", { nome: p.nome })} className="block">{logo}</a> : logo}
                 </li>
               );
             })}

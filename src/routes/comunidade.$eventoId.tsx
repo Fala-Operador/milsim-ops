@@ -1,6 +1,7 @@
 import { createFileRoute, notFound, Outlet } from "@tanstack/react-router";
 import { obterEventoFn } from "@/api/sessao.functions";
 import { SkeletonPagina } from "@/components/ui";
+import { tr } from "@/i18n/routes/comunidade.$eventoId";
 
 // Layout da comunidade do evento: Comunidade → Fórum → Publicação.
 export const Route = createFileRoute("/comunidade/$eventoId")({
@@ -12,14 +13,14 @@ export const Route = createFileRoute("/comunidade/$eventoId")({
   head: ({ loaderData }) => ({
     meta: loaderData
       ? [
-          { title: `Comunidade — ${loaderData.eventoNome}` },
-          { name: "description", content: "Comunidade privada do evento: fóruns, avisos e conversas entre participantes." },
-          { property: "og:title", content: `Comunidade — ${loaderData.eventoNome}` },
-          { property: "og:description", content: "Comunidade privada do evento." },
+          { title: tr("comunidade_eventonome", { eventoNome: loaderData.eventoNome }) },
+          { name: "description", content: tr("comunidade_privada_do_evento_foruns_avis") },
+          { property: "og:title", content: tr("comunidade_eventonome", { eventoNome: loaderData.eventoNome }) },
+          { property: "og:description", content: tr("comunidade_privada_do_evento") },
           { property: "og:type", content: "website" },
           { name: "twitter:card", content: "summary" },
         ]
-      : [{ title: "Comunidade — MilSim Ops" }, { name: "robots", content: "noindex" }],
+      : [{ title: tr("comunidade_milsim_ops") }, { name: "robots", content: "noindex" }],
   }),
   pendingComponent: SkeletonPagina,
   component: () => <Outlet />,

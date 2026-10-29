@@ -13,7 +13,7 @@ import { Campo, ErroSecao, SkeletonPagina } from "@/components/ui";
 
 const ABAS = ["perfil", "emergencia", "equipamentos", "operacoes", "insignias", "privacidade"] as const;
 type Aba = (typeof ABAS)[number];
-const ROTULOS: Record<Aba, string> = { perfil: "Meu perfil", emergencia: "Ficha de emergência", equipamentos: "Meus equipamentos", operacoes: "Operações e mapa", insignias: "Insígnias e recompensas", privacidade: "Privacidade" };
+const ROTULOS: Record<Aba, string> = { get perfil() { return tr("meu_perfil"); }, get emergencia() { return tr("ficha_de_emergencia"); }, get equipamentos() { return tr("meus_equipamentos"); }, get operacoes() { return tr("operacoes_e_mapa"); }, get insignias() { return tr("insignias_e_recompensas"); }, get privacidade() { return tr("privacidade"); } };
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { formatarDataBR } from "@/lib/domain/money";
@@ -30,6 +30,7 @@ import { nomeModalidade } from "@/lib/modalidades";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { tr } from "@/i18n/routes/app.perfil";
 
 export const Route = createFileRoute("/app/perfil")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -37,10 +38,10 @@ export const Route = createFileRoute("/app/perfil")({
   }),
   head: () => ({
     meta: [
-      { title: "Perfil — MilSim Ops" },
-      { name: "description", content: "Seus dados de perfil e preferências." },
-      { property: "og:title", content: "Perfil — MilSim Ops" },
-      { property: "og:description", content: "Perfil e preferências." },
+      { title: tr("perfil_milsim_ops") },
+      { name: "description", content: tr("seus_dados_de_perfil_e_preferencias") },
+      { property: "og:title", content: tr("perfil_milsim_ops") },
+      { property: "og:description", content: tr("perfil_e_preferencias") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -63,23 +64,23 @@ function Perfil() {
             ? <img src={usuario.fotoUrl} alt="" className="size-16 rounded-lg object-cover" />
             : <span aria-hidden className="grid size-16 place-items-center rounded-lg bg-primary font-display text-3xl font-bold text-primary-foreground">{usuario.nomeCompleto.slice(0, 1).toUpperCase()}</span>}
           <div className="min-w-0">
-            <h1 className="titulo-pagina">Meu perfil</h1>
+            <h1 className="titulo-pagina">{tr("meu_perfil")}</h1>
             <p className="mt-1 truncate font-mono text-xs uppercase tracking-wider text-muted-foreground">{usuario.nomeCompleto} · {usuario.endereco.cidade}/{usuario.endereco.uf}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-start gap-2">
-          <Link to="/operador/$usuarioId" params={{ usuarioId: usuario.id }} search={{ aba: undefined }}><Button variant="outline">Ver perfil público</Button></Link>
+          <Link to="/operador/$usuarioId" params={{ usuarioId: usuario.id }} search={{ aba: undefined }}><Button variant="outline">{tr("ver_perfil_publico")}</Button></Link>
           <CompartilharPerfil usuarioId={usuario.id} />
         </div>
       </div>
       <div className="sm:hidden">
-        <Label htmlFor="aba-meu-perfil" className="sr-only text-[length:inherit] font-normal text-inherit">Seção</Label>
+        <Label htmlFor="aba-meu-perfil" className="sr-only text-[length:inherit] font-normal text-inherit">{tr("secao")}</Label>
         <NativeSelect id="aba-meu-perfil" value={aba} onChange={(e) => irPara(e.target.value as Aba)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
           {ABAS.map((a) => <option key={a} value={a}>{ROTULOS[a]}</option>)}
         </NativeSelect>
       </div>
       <Tabs value={aba} onValueChange={(v) => irPara(v as typeof aba)}>
-        <TabsList aria-label="Seções do meu perfil" className="hidden flex-wrap gap-1 border-b border-border sm:flex">
+        <TabsList aria-label={tr("secoes_do_meu_perfil")} className="hidden flex-wrap gap-1 border-b border-border sm:flex">
           {ABAS.map((a) => (
             <TabsTrigger key={a} value={a}
               className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring ${aba === a ? "border-accent text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
@@ -102,7 +103,7 @@ function GestaoPerfil({ aba, usuarioId }: { aba: Exclude<Aba, "perfil">; usuario
   const [editar, setEditar] = useState(false);
   const [priv, setPriv] = useState(false);
   if (q.isPending) return <SkeletonPagina />;
-  if (q.isError || !q.data) return <ErroSecao titulo="Perfil indisponível" onTentar={() => q.refetch()} />;
+  if (q.isError || !q.data) return <ErroSecao titulo={tr("perfil_indisponivel")} onTentar={() => q.refetch()} />;
   const p = q.data;
   if (aba === "equipamentos") return <AbaEquipamentos equipamentos={p.equipamentos} proprio onMudou={recarregar} />;
   if (aba === "operacoes") return (
@@ -115,16 +116,16 @@ function GestaoPerfil({ aba, usuarioId }: { aba: Exclude<Aba, "perfil">; usuario
   if (aba === "insignias") return (
     <div className="space-y-6">
       <AbaInsignias insignias={p.insignias} />
-      {p.recompensas && <section><h2 className="mb-2 font-display text-lg font-semibold uppercase">Minhas recompensas</h2><AbaRecompensas recompensas={p.recompensas} /></section>}
+      {p.recompensas && <section><h2 className="mb-2 font-display text-lg font-semibold uppercase">{tr("minhas_recompensas")}</h2><AbaRecompensas recompensas={p.recompensas} /></section>}
     </div>
   );
   return (
     <section className="border-t border-border pt-6 first:border-t-0 first:pt-0">
-      <h2 className="font-display text-lg font-semibold uppercase">Privacidade do perfil</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Escolha o que outras pessoas veem: histórico, mapa, insígnias, equipamentos e fotos. Notas fiscais nunca são públicas.</p>
+      <h2 className="font-display text-lg font-semibold uppercase">{tr("privacidade_do_perfil")}</h2>
+      <p className="mt-1 text-sm text-muted-foreground">{tr("escolha_o_que_outras_pessoas_veem")}</p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button onClick={() => setPriv(true)}>Configurar privacidade</Button>
-        <Button variant="outline" onClick={() => setEditar(true)}>Editar perfil social</Button>
+        <Button onClick={() => setPriv(true)}>{tr("configurar_privacidade")}</Button>
+        <Button variant="outline" onClick={() => setEditar(true)}>{tr("editar_perfil_social")}</Button>
       </div>
       {priv && <Privacidade perfil={p} aberto onFechar={() => setPriv(false)} onSalvo={recarregar} />}
       {editar && <EditarPerfil perfil={p} aberto onFechar={() => setEditar(false)} onSalvo={recarregar} />}
@@ -151,19 +152,19 @@ function DadosConta() {
   if (!usuario) return null;
   const [a, m, d] = usuario.dataNascimento.split("-");
   const dados: [string, string][] = [
-    ["Nome", usuario.nomeCompleto], ["E-mail", usuario.email], ["CPF", mascararCpf(usuario.cpf)], ["Nascimento", `${d}/${m}/${a}`],
-    ["WhatsApp", mascararTelefone(usuario.whatsapp)],
-    ...(usuario.squad ? [["Squad", usuario.squad] as [string, string]] : []),
-    ...(usuario.instagram ? [["Instagram", usuario.instagram] as [string, string]] : []),
-    ["Aceite dos termos", `${usuario.aceiteTermosVersao} em ${formatarDataBR(usuario.aceiteTermosEm)}`],
+    [tr("nome"), usuario.nomeCompleto], [tr("e_mail"), usuario.email], ["CPF", mascararCpf(usuario.cpf)], [tr("nascimento"), `${d}/${m}/${a}`],
+    [tr("whatsapp"), mascararTelefone(usuario.whatsapp)],
+    ...(usuario.squad ? [[tr("squad"), usuario.squad] as [string, string]] : []),
+    ...(usuario.instagram ? [[tr("instagram"), usuario.instagram] as [string, string]] : []),
+    [tr("aceite_dos_termos"), tr("versao_em_data", { versao: usuario.aceiteTermosVersao, data: formatarDataBR(usuario.aceiteTermosEm) })],
   ];
   const end = usuario.endereco;
-  const endereco = `${end.logradouro}, ${end.numero}${end.complemento ? ` — ${end.complemento}` : ""} · ${end.bairro} · ${end.cidade}/${end.uf} · CEP ${mascaraCep(end.cep)}`;
+  const endereco = tr("logradouro_numerovalor_bairro_cidade_uf", { logradouro: end.logradouro, numero: end.numero, valor: end.complemento ? ` — ${end.complemento}` : "", bairro: end.bairro, cidade: end.cidade, uf: end.uf, cep: mascaraCep(end.cep) });
   return (
     <div>
-      <Secao titulo="Meus dados" descricao="Vêm do seu cadastro. CPF e telefone aparecem mascarados. CPF e e-mail só mudam pelo suporte.">
+      <Secao titulo={tr("meus_dados")} descricao={tr("vem_do_seu_cadastro_cpf_e")}>
         <div className="mb-3 flex justify-end">
-          <Button variant="outline" size="sm" onClick={() => setEditando(true)}><Pencil className="h-4 w-4" aria-hidden="true" /> Editar dados</Button>
+          <Button variant="outline" size="sm" onClick={() => setEditando(true)}><Pencil className="h-4 w-4" aria-hidden="true" />{" "}{tr("editar_dados")}</Button>
         </div>
         <dl className="grid border-y border-border text-sm sm:grid-cols-2">
           {dados.map(([r, v]) => (
@@ -173,19 +174,19 @@ function DadosConta() {
           ))}
         </dl>
         <dl className="flex flex-col gap-1 border-b border-border py-2.5 text-sm sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
-          <dt className="rotulo-tecnico shrink-0">Endereço</dt><dd className="sm:text-right">{endereco}</dd>
+          <dt className="rotulo-tecnico shrink-0">{tr("endereco")}</dt><dd className="sm:text-right">{endereco}</dd>
         </dl>
         {editando && <EditarDadosConta usuario={usuario} aberto onFechar={() => setEditando(false)} />}
       </Secao>
-      <Secao titulo="Foto" descricao="Aparece na comunidade dos eventos e no seu perfil público.">
+      <Secao titulo={tr("foto")} descricao={tr("aparece_na_comunidade_dos_eventos_e")}>
         <FotoPerfil />
       </Secao>
-      <Secao titulo="Nome na comunidade" descricao="Como os outros operadores veem você nos fóruns.">
+      <Secao titulo={tr("nome_na_comunidade")} descricao={tr("como_os_outros_operadores_veem_voce")}>
         <NomeExibicaoForm />
       </Secao>
-      <Secao titulo="Aparência" descricao="Vale para esta conta, neste navegador.">
-        <RadioGroup value={tema} onValueChange={(v) => definirTema(v as "dark" | "light")} aria-label="Aparência" className="grid max-w-md grid-cols-2 gap-3">
-          {([["dark", "Escuro", "Verde-oliva", "dark"], ["light", "Claro", "TAN", "tema-claro"]] as const).map(([v, r, sub, classe]) => (
+      <Secao titulo={tr("aparencia")} descricao={tr("vale_para_esta_conta_neste_navegador")}>
+        <RadioGroup value={tema} onValueChange={(v) => definirTema(v as "dark" | "light")} aria-label={tr("aparencia")} className="grid max-w-md grid-cols-2 gap-3">
+          {([["dark", tr("escuro"), tr("verde_oliva"), "dark"], ["light", tr("claro"), "TAN", "tema-claro"]] as const).map(([v, r, sub, classe]) => (
             <Label key={v} htmlFor={`tema-${v}`} className="cursor-pointer rounded-lg border p-2 font-normal has-[[data-state=checked]]:border-accent has-[[data-state=checked]]:ring-1 has-[[data-state=checked]]:ring-accent">
               <span className={`${classe} block overflow-hidden rounded-md border border-border bg-background`} aria-hidden>
                 <span className="flex items-center gap-1.5 border-b border-border bg-card px-2 py-1.5"><span className="h-1.5 w-8 rounded-full bg-accent" /><span className="h-1.5 w-5 rounded-full bg-muted-foreground/40" /></span>
@@ -206,16 +207,16 @@ function PreferenciasEventos() {
   const { sel, setSel, alternar } = useSelecaoModalidades([]);
   useEffect(() => { setSel(p.preferencia.modalidades); }, [p.preferencia, setSel]);
   const atual = p.preferencia.estado === "selecionadas" ? p.preferencia.modalidades.map(nomeModalidade).join(", ")
-    : p.preferencia.estado === "todas" ? "Explorar todas" : "Ainda não escolhidas";
+    : p.preferencia.estado === "todas" ? tr("explorar_todas") : tr("ainda_nao_escolhidas");
   return (
-    <Secao titulo="Modalidades favoritas" descricao="Suas favoritas aparecem primeiro em “Para você”, sem esconder as demais.">
-      <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">Atual: {atual}</p>
+    <Secao titulo={tr("modalidades_favoritas")} descricao={tr("suas_favoritas_aparecem_primeiro_em_para")}>
+      <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">{tr("atual_atual", { atual })}</p>
       {p.montado && (
         <>
           <div className="mt-3"><OpcoesModalidade selecionadas={sel} onAlternar={alternar} nome="perfil-mod" /></div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button disabled={!sel.length} onClick={() => p.salvar(sel)}>Salvar preferências</Button>
-            <Button variant="secondary" onClick={p.explorarTodas}>Explorar todas</Button>
+            <Button disabled={!sel.length} onClick={() => p.salvar(sel)}>{tr("salvar_preferencias")}</Button>
+            <Button variant="secondary" onClick={p.explorarTodas}>{tr("explorar_todas")}</Button>
           </div>
         </>
       )}

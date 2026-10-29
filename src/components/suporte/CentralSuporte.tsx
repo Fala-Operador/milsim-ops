@@ -20,6 +20,7 @@ import {
   canalDe,
   type StatusExibido,
   CATEGORIAS_SUPORTE,
+  rotuloCategoria,
   acoesPermitidas,
   ativo,
   estadoCompositor,
@@ -51,6 +52,7 @@ import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { Label } from "@/components/ui/label";
 import { useConfirmacao } from "@/contexts/ConfirmacaoContext";
+import { tr } from "@/i18n/components/suporte/CentralSuporte";
 
 const TOM: Record<StatusExibido, "secondary" | "success" | "warning" | "accent"> = {
   aberto: "accent",
@@ -63,7 +65,7 @@ const TOM: Record<StatusExibido, "secondary" | "success" | "warning" | "accent">
 const nome = (u: Usuario | undefined) => (u ? u.nomeExibicao || u.nomeCompleto : "—");
 /** Chamado de evento cujo evento não está mais visível (ex.: voltou a rascunho) não vira "Plataforma". */
 const nomeEvento = (c: Chamado, ev: { nome: string } | undefined) =>
-  c.eventoId ? (ev?.nome ?? "Evento indisponível") : "Plataforma";
+  c.eventoId ? (ev?.nome ?? tr("evento_indisponivel")) : tr("plataforma");
 
 export function StatusChamadoBadge({ s }: { s: StatusExibido }) {
   return <Badge variant={TOM[s]}>{ROTULO_STATUS_EXIBIDO[s]}</Badge>;
@@ -74,12 +76,10 @@ export function Indisponivel({ onVoltar }: { onVoltar: () => void }) {
   return (
     <div className="space-y-3">
       <EstadoVazio
-        titulo="Esta solicitação não está disponível para sua conta."
-        descricao="Ela pode ter sido removida ou pertencer a outra pessoa."
+        titulo={tr("esta_solicitacao_nao_esta_disponivel_par")}
+        descricao={tr("ela_pode_ter_sido_removida_ou")}
       />
-      <Button type="button" variant="outline" onClick={onVoltar}>
-        Voltar para meus atendimentos
-      </Button>
+      <Button type="button" variant="outline" onClick={onVoltar}>{tr("voltar_para_meus_atendimentos")}</Button>
     </div>
   );
 }
@@ -240,14 +240,13 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
         <div className="grid h-full min-h-0 grid-cols-1 @min-[760px]:grid-cols-[340px_minmax(0,1fr)]">
           {/* ---------- Lista ---------- */}
           <section
-            aria-label="Chamados"
+            aria-label={tr("chamados")}
             className={`${mostrandoPainel ? "hidden @min-[760px]:flex" : "flex"} min-h-0 min-w-0 flex-col border-border @min-[760px]:border-r`}
           >
             <div className="space-y-2.5 border-b border-border p-3">
               <div className="flex items-center gap-2">
                 <Label className="relative min-w-0 flex-1 text-[length:inherit] font-normal text-inherit">
-                  <span className="sr-only">
-                    Buscar por protocolo, assunto{modo === "equipe" ? " ou solicitante" : ""}
+                  <span className="sr-only">{tr("buscar_por_protocolo_assunto")}{modo === "equipe" ? ` ${tr("ou_solicitante")}` : ""}
                   </span>
                   <Search
                     aria-hidden="true"
@@ -257,27 +256,23 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                     value={busca}
                     onChange={(e) => setBusca(e.target.value)}
                     placeholder={
-                      modo === "equipe" ? "Protocolo, assunto ou solicitante" : "Buscar chamados"
+                      modo === "equipe" ? tr("protocolo_assunto_ou_solicitante") : tr("buscar_chamados")
                     }
                     className="h-9 w-full min-w-0 rounded-md border border-input bg-background pl-8 pr-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40 py-0"
                   />
                 </Label>
                 {modo === "participante" ? (
                   <Button type="button" className="h-9 shrink-0 !px-3" onClick={() => abrirNovo()}>
-                    <Plus className="h-4 w-4" />
-                    Novo
-                  </Button>
+                    <Plus className="h-4 w-4" />{tr("novo")}</Button>
                 ) : (
                   <Button type="button" variant="outline" className="relative h-9 shrink-0 !px-3" aria-expanded={verFiltros} onClick={() => setVerFiltros((v) => !v)}>
-                    <SlidersHorizontal className="h-4 w-4" />
-                    Filtros
-                    {filtrosAtivos > 0 && <span className="rounded-full bg-accent px-1.5 text-[10px] font-bold leading-4 text-accent-foreground">{filtrosAtivos}</span>}
+                    <SlidersHorizontal className="h-4 w-4" />{tr("filtros")}{filtrosAtivos > 0 && <span className="rounded-full bg-accent px-1.5 text-[10px] font-bold leading-4 text-accent-foreground">{filtrosAtivos}</span>}
                   </Button>
                 )}
               </div>
               {modo === "participante" && (
-                <div role="group" aria-label="Situação" className="grid grid-cols-3 gap-0.5 rounded-md bg-secondary/50 p-0.5 text-xs font-medium">
-                  {([["todos", `Todos · ${meus.length}`], ["andamento", `Abertos · ${emAndamento}`], ["encerrados", `Encerrados · ${meus.length - emAndamento}`]] as const).map(([v, r]) => (
+                <div role="group" aria-label={tr("situacao")} className="grid grid-cols-3 gap-0.5 rounded-md bg-secondary/50 p-0.5 text-xs font-medium">
+                  {([["todos", tr("todos_length", { length: meus.length })], ["andamento", tr("abertos_emandamento", { emAndamento })], ["encerrados", tr("encerrados_valor", { valor: meus.length - emAndamento })]] as const).map(([v, r]) => (
                     <Button key={v} type="button" variant="plain" size="none" aria-pressed={situacao === v} onClick={() => setSituacao(v)}
                       className={`h-7 truncate rounded px-2 ${situacao === v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
                       {r}
@@ -288,12 +283,12 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
               {modo === "equipe" && verFiltros && (
                 <div className="grid grid-cols-2 gap-2">
                   <NativeSelect
-                    aria-label="Filtrar por evento"
+                    aria-label={tr("filtrar_por_evento")}
                     value={filtro.evento}
                     onChange={(e) => setFiltro({ ...filtro, evento: e.target.value })}
                   >
-                    <option value="">Todos os eventos</option>
-                    {usuario.perfil === "admin" && <option value="plataforma">Plataforma</option>}
+                    <option value="">{tr("todos_os_eventos")}</option>
+                    {usuario.perfil === "admin" && <option value="plataforma">{tr("plataforma")}</option>}
                     {eventosDaLista.map(
                       (e) =>
                         e && (
@@ -304,21 +299,21 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                     )}
                   </NativeSelect>
                   <NativeSelect
-                    aria-label="Filtrar por categoria"
+                    aria-label={tr("filtrar_por_categoria")}
                     value={filtro.categoria}
                     onChange={(e) => setFiltro({ ...filtro, categoria: e.target.value })}
                   >
-                    <option value="">Todas as categorias</option>
+                    <option value="">{tr("todas_as_categorias")}</option>
                     {CATEGORIAS_SUPORTE.map((c) => (
-                      <option key={c}>{c}</option>
+                      <option key={c} value={c}>{rotuloCategoria(c)}</option>
                     ))}
                   </NativeSelect>
                   <NativeSelect
-                    aria-label="Filtrar por status"
+                    aria-label={tr("filtrar_por_status")}
                     value={filtro.status}
                     onChange={(e) => setFiltro({ ...filtro, status: e.target.value })}
                   >
-                    <option value="">Todos os status</option>
+                    <option value="">{tr("todos_os_status")}</option>
                     {(Object.keys(ROTULO_STATUS_EXIBIDO) as StatusExibido[]).map((s) => (
                       <option key={s} value={s}>
                         {ROTULO_STATUS_EXIBIDO[s]}
@@ -326,13 +321,13 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                     ))}
                   </NativeSelect>
                   <NativeSelect
-                    aria-label="Filtrar por responsável"
+                    aria-label={tr("filtrar_por_responsavel")}
                     value={filtro.responsavel}
                     onChange={(e) => setFiltro({ ...filtro, responsavel: e.target.value })}
                   >
-                    <option value="">Qualquer responsável</option>
-                    <option value="eu">Comigo</option>
-                    <option value="nenhum">Sem responsável</option>
+                    <option value="">{tr("qualquer_responsavel")}</option>
+                    <option value="eu">{tr("comigo")}</option>
+                    <option value="nenhum">{tr("sem_responsavel")}</option>
                     {usuario.perfil === "admin" &&
                       equipe
                         .filter((u) => u.id !== usuario.id)
@@ -349,11 +344,11 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
               {ordenados.length === 0 && (
                 <li className="p-4">
                   <EstadoVazio
-                    titulo="Nenhum chamado"
+                    titulo={tr("nenhum_chamado")}
                     descricao={
                       modo === "participante"
-                        ? "Abra um chamado para falar com a administração."
-                        : "Nenhum chamado com esses filtros."
+                        ? tr("abra_um_chamado_para_falar_com")
+                        : tr("nenhum_chamado_com_esses_filtros")
                     }
                   />
                 </li>
@@ -387,14 +382,14 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                       </div>
                       {ult && (
                         <p className="mt-1 line-clamp-1 break-all text-xs text-muted-foreground">
-                          {ult.corpo || (ult.anexo ? "📎 Anexo" : "")}
+                          {ult.corpo || (ult.anexo ? tr("anexo") : "")}
                         </p>
                       )}
                       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
                         <StatusChamadoBadge s={statusExibido(base, c)} />
-                        {modo === "equipe" && retornoRecebido(base, c) && <Badge variant="accent">Retorno do organizador</Badge>}
+                        {modo === "equipe" && retornoRecebido(base, c) && <Badge variant="accent">{tr("retorno_do_organizador")}</Badge>}
                         {modo === "equipe" && pendenteDeResposta(c) && (
-                          <Badge variant="warning">Aguardando resposta</Badge>
+                          <Badge variant="warning">{tr("aguardando_resposta")}</Badge>
                         )}
                         <span className="min-w-0 truncate text-[11px] text-muted-foreground">
                           {c.eventoId ? <CalendarDays className="mr-1 inline h-3 w-3 align-[-2px]" aria-hidden="true" /> : <LifeBuoy className="mr-1 inline h-3 w-3 align-[-2px]" aria-hidden="true" />}
@@ -402,7 +397,7 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                           {modo === "equipe" ? ` · ${nome(base.usuarios.find((u) => u.id === c.solicitanteId))}` : ""}
                         </span>
                         {n > 0 && (
-                          <span className="ml-auto shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold leading-none text-accent-foreground" aria-label={`${n} não lidas`}>
+                          <span className="ml-auto shrink-0 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold leading-none text-accent-foreground" aria-label={tr("n_nao_lidas", { n })}>
                             {n}
                           </span>
                         )}
@@ -411,7 +406,7 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                         <span className="truncate">{protocolo(c)}</span>
                         {modo === "equipe" && (
                           <span className="shrink-0 normal-case tracking-normal">
-                            {resp ? `Resp.: ${resp === usuario.id ? "você" : nome(base.usuarios.find((u) => u.id === resp))}` : "Sem responsável"}
+                            {resp ? tr("resp_valor", { valor: resp === usuario.id ? tr("voce_minusculo") : nome(base.usuarios.find((u) => u.id === resp)) }) : tr("sem_responsavel")}
                           </span>
                         )}
                       </p>
@@ -425,15 +420,13 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
                 role="status"
                 className="flex items-center gap-1.5 border-t border-border px-3 py-2 text-xs text-warning"
               >
-                <WifiOff className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                Sem conexão. Tentando novamente…
-              </p>
+                <WifiOff className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />{tr("sem_conexao_tentando_novamente")}</p>
             )}
           </section>
 
           {/* ---------- Conversa / novo chamado ---------- */}
           <section
-            aria-label="Conversa"
+            aria-label={tr("conversa")}
             className={`${mostrandoPainel ? "flex" : "hidden @min-[760px]:flex"} relative min-h-0 min-w-0 flex-col`}
           >
             {novo ? (
@@ -510,14 +503,14 @@ export function CentralSuporte({ modo, usuario, selecionado, onSelecionar, event
 /** Sem chamado aberto (participante): como o atendimento funciona, em três passos. */
 function ComoFunciona({ onNovo }: { onNovo: () => void }) {
   const passos = [
-    { icone: MessageSquareText, titulo: "Abra um chamado", texto: "Escolha se é sobre uma operação ou sobre a plataforma e descreva o que aconteceu." },
-    { icone: LifeBuoy, titulo: "A administração responde", texto: "Quando o assunto é do evento, ela consulta a organização. Você recebe as respostas nas notificações." },
-    { icone: CheckCircle2, titulo: "Resolvido", texto: "Se ainda precisar de ajuda, reabra o chamado em vez de abrir outro." },
+    { icone: MessageSquareText, titulo: tr("abra_um_chamado"), texto: tr("escolha_se_e_sobre_uma_operacao") },
+    { icone: LifeBuoy, titulo: tr("a_administracao_responde"), texto: tr("quando_o_assunto_e_do_evento") },
+    { icone: CheckCircle2, titulo: tr("resolvido"), texto: tr("se_ainda_precisar_de_ajuda_reabra") },
   ];
   return (
     <div className="w-full max-w-md text-left">
-      <p className="rotulo-tecnico">Central de suporte</p>
-      <h2 className="mt-1 font-display text-2xl font-bold uppercase leading-tight">Como funciona o atendimento</h2>
+      <p className="rotulo-tecnico">{tr("central_de_suporte")}</p>
+      <h2 className="mt-1 font-display text-2xl font-bold uppercase leading-tight">{tr("como_funciona_o_atendimento")}</h2>
       <ol className="mt-5 space-y-4">
         {passos.map(({ icone: Icone, titulo, texto }, i) => (
           <li key={titulo} className="flex gap-3">
@@ -529,7 +522,7 @@ function ComoFunciona({ onNovo }: { onNovo: () => void }) {
           </li>
         ))}
       </ol>
-      <Button type="button" className="mt-6" onClick={onNovo}><Plus className="h-4 w-4" />Abrir um chamado</Button>
+      <Button type="button" className="mt-6" onClick={onNovo}><Plus className="h-4 w-4" />{tr("abrir_um_chamado")}</Button>
     </div>
   );
 }
@@ -537,14 +530,14 @@ function ComoFunciona({ onNovo }: { onNovo: () => void }) {
 /** Sem chamado aberto (equipe): o que pede atenção na fila agora. */
 function ResumoFila({ semResponsavel, aguardando, comigo }: { semResponsavel: number; aguardando: number; comigo: number }) {
   const itens = [
-    { rotulo: "Sem responsável", valor: semResponsavel, texto: "Assuma para começar o atendimento." },
-    { rotulo: "Aguardando resposta", valor: aguardando, texto: "O participante escreveu por último." },
-    { rotulo: "Com você", valor: comigo, texto: "Chamados ativos sob sua responsabilidade." },
+    { rotulo: tr("sem_responsavel"), valor: semResponsavel, texto: tr("assuma_para_comecar_o_atendimento") },
+    { rotulo: tr("aguardando_resposta"), valor: aguardando, texto: tr("o_participante_escreveu_por_ultimo") },
+    { rotulo: tr("com_voce"), valor: comigo, texto: tr("chamados_ativos_sob_sua_responsabilidade") },
   ];
   return (
     <div className="w-full max-w-md text-left">
-      <p className="rotulo-tecnico">Fila de atendimento</p>
-      <h2 className="mt-1 font-display text-2xl font-bold uppercase leading-tight">Escolha um chamado na lista</h2>
+      <p className="rotulo-tecnico">{tr("fila_de_atendimento")}</p>
+      <h2 className="mt-1 font-display text-2xl font-bold uppercase leading-tight">{tr("escolha_um_chamado_na_lista")}</h2>
       <dl className="mt-5 divide-y divide-border rounded-lg border border-border bg-background/40">
         {itens.map((i) => (
           <div key={i.rotulo} className="flex items-center gap-4 px-4 py-3">
@@ -575,19 +568,16 @@ function AreasAtendimento({ base, c, usuario, rodape }: { base: BaseDados; c: Ch
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <Tabs value={aba} onValueChange={(v) => setAba(v as typeof aba)}>
-      <TabsList aria-label="Área do atendimento" className="min-w-0 border-b border-border">
-        <TabsTrigger value="participante" className={abaCls(aba === "participante")}>
-          Conversa com o participante
-        </TabsTrigger>
-        <TabsTrigger value="interno" className={abaCls(aba === "interno")}>
-          Encaminhamento ao organizador{encs.length > 0 && ` (${encs.length})`}
-          {retorno && <span className="ml-1.5 whitespace-nowrap rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">Retorno</span>}
+      <TabsList aria-label={tr("area_do_atendimento")} className="min-w-0 border-b border-border">
+        <TabsTrigger value="participante" className={abaCls(aba === "participante")}>{tr("conversa_com_o_participante")}</TabsTrigger>
+        <TabsTrigger value="interno" className={abaCls(aba === "interno")}>{tr("encaminhamento_ao_organizador")}{encs.length > 0 && ` (${encs.length})`}
+          {retorno && <span className="ml-1.5 whitespace-nowrap rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">{tr("retorno")}</span>}
         </TabsTrigger>
       </TabsList>
       </Tabs>
       {aba === "participante" ? (
         <Conversa key={c.id} base={base} chamado={c} usuarioId={usuario.id} rodape={rodape}
-          rotuloEnviar="Responder ao participante" aviso="Visível para o participante." />
+          rotuloEnviar={tr("responder_ao_participante")} aviso={tr("visivel_para_o_participante")} />
       ) : (
         <PainelEncaminhamento key={c.id} base={base} c={c} usuario={usuario} />
       )}
@@ -599,9 +589,7 @@ function BotaoVoltar({ onClick }: { onClick: () => void }) {
   return (
     <div className="border-b border-border px-2 py-1.5 @min-[760px]:hidden">
       <Button type="button" variant="ghost" className="!px-2 !py-1 text-sm" onClick={onClick}>
-        <ArrowLeft className="h-4 w-4" />
-        Voltar aos chamados
-      </Button>
+        <ArrowLeft className="h-4 w-4" />{tr("voltar_aos_chamados")}</Button>
     </div>
   );
 }
@@ -638,7 +626,7 @@ function CabecalhoConversa({
           <span aria-hidden="true">·</span>
           <span className="truncate">{nomeEvento(c, c.eventoId ? base.eventos.find((e) => e.id === c.eventoId) : undefined)}</span>
           <span aria-hidden="true">·</span>
-          <span>{c.categoria}</span>
+          <span>{rotuloCategoria(c.categoria)}</span>
           {solicitante && <><span aria-hidden="true">·</span><span className="truncate">{solicitante}</span></>}
         </div>
       </div>
@@ -646,7 +634,7 @@ function CabecalhoConversa({
         ref={botao}
         type="button"
         variant={detalhes ? "secondary" : "ghost"}
-        aria-label="Detalhes do chamado"
+        aria-label={tr("detalhes_do_chamado")}
         className="shrink-0 !px-2.5"
         onClick={onDetalhes}
         aria-expanded={detalhes}
@@ -654,7 +642,7 @@ function CabecalhoConversa({
         aria-haspopup="dialog"
       >
         <Info className="h-4 w-4" />
-        <span className="hidden @min-[480px]:inline">Detalhes</span>
+        <span className="hidden @min-[480px]:inline">{tr("detalhes")}</span>
       </Button>
     </header>
   );
@@ -684,7 +672,7 @@ function RodapeStatus({
       await alterarStatusChamado(c.id, "reabrir");
       sinalizar(c.id);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Falha ao reabrir.");
+      setErro(e instanceof Error ? e.message : tr("falha_ao_reabrir"));
     } finally {
       setOcupado(false);
     }
@@ -694,8 +682,8 @@ function RodapeStatus({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="min-w-0 text-sm text-muted-foreground">
           {estado === "resolvido"
-            ? "Este chamado foi resolvido."
-            : "Este chamado foi fechado e está disponível somente para leitura."}
+            ? tr("este_chamado_foi_resolvido")
+            : tr("este_chamado_foi_fechado_e_esta")}
         </p>
         {estado === "resolvido" && (
           <Button
@@ -705,13 +693,11 @@ function RodapeStatus({
             disabled={ocupado}
             onClick={reabrir}
           >
-            {ocupado ? "Reabrindo…" : "Reabrir chamado"}
+            {ocupado ? tr("reabrindo") : tr("reabrir_chamado")}
           </Button>
         )}
         {estado === "fechado" && modo === "participante" && (
-          <Button type="button" variant="outline" className="shrink-0" onClick={onNovoVinculado}>
-            Abrir novo chamado
-          </Button>
+          <Button type="button" variant="outline" className="shrink-0" onClick={onNovoVinculado}>{tr("abrir_novo_chamado")}</Button>
         )}
       </div>
       {erro && (
@@ -788,7 +774,7 @@ function PainelDetalhes({
       setResolvendo(false);
       setTextoSolucao("");
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Falha.");
+      setErro(e instanceof Error ? e.message : tr("falha"));
     } finally {
       setOcupado(false);
     }
@@ -812,49 +798,47 @@ function PainelDetalhes({
       className="absolute inset-y-0 right-0 z-20 flex w-[min(22rem,100%)] flex-col border-l border-border bg-card text-sm shadow-2xl max-sm:fixed max-sm:inset-0 max-sm:z-50 max-sm:w-full max-sm:border-l-0"
     >
       <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <h3 id="detalhes-titulo" className="font-display text-base font-semibold">
-          Detalhes do chamado
-        </h3>
+        <h3 id="detalhes-titulo" className="font-display text-base font-semibold">{tr("detalhes_do_chamado")}</h3>
         <Button
           ref={fechar}
           type="button"
           variant="ghost"
           className="shrink-0 !px-2 !py-1"
           onClick={onFechar}
-          aria-label="Fechar detalhes"
+          aria-label={tr("fechar_detalhes")}
         >
           <X className="h-4 w-4" />
         </Button>
       </div>
       <div className="rolagem-discreta min-h-0 flex-1 px-4 py-4">
         <dl className="space-y-3">
-          {campo("Assunto", c.assunto)}
-          {campo("Protocolo", protocolo(c), true)}
-          {campo("Status", <StatusChamadoBadge s={statusExibido(base, c)} />)}
+          {campo(tr("assunto"), c.assunto)}
+          {campo(tr("protocolo"), protocolo(c), true)}
+          {campo(tr("status"), <StatusChamadoBadge s={statusExibido(base, c)} />)}
           {campo(
-            "Tipo",
-            tipoDoChamado(c) === "evento" ? "Suporte do evento" : "Suporte da plataforma",
+            tr("tipo"),
+            tipoDoChamado(c) === "evento" ? tr("suporte_do_evento") : tr("suporte_da_plataforma"),
           )}
-          {campo("Evento", nomeEvento(c, ev))}
-          {campo("Categoria", c.categoria)}
+          {campo(tr("evento"), nomeEvento(c, ev))}
+          {campo(tr("categoria"), rotuloCategoria(c.categoria))}
           {modo === "equipe" &&
-            campo("Solicitante", nome(base.usuarios.find((u) => u.id === c.solicitanteId)))}
-          {campo("Aberto em", formatarDataHoraBR(c.criadoEm))}
-          {campo("Última atualização", formatarDataHoraBR(ultimaAtividade(c)))}
+            campo(tr("solicitante"), nome(base.usuarios.find((u) => u.id === c.solicitanteId)))}
+          {campo(tr("aberto_em"), formatarDataHoraBR(c.criadoEm))}
+          {campo(tr("ultima_atualizacao"), formatarDataHoraBR(ultimaAtividade(c)))}
           {campo(
-            "Responsável",
-            resp ? nome(base.usuarios.find((u) => u.id === resp)) : "Aguardando a equipe assumir",
+            tr("responsavel"),
+            resp ? nome(base.usuarios.find((u) => u.id === resp)) : tr("aguardando_a_equipe_assumir"),
           )}
           {anterior &&
             campo(
-              "Continuação de",
+              tr("continuacao_de"),
               (() => {
                 const a = base.chamados.find((x) => x.id === anterior);
                 return a ? protocolo(a) : "—";
               })(),
               true,
             )}
-          {sol && campo("Solução", <span className="whitespace-pre-wrap">{sol}</span>)}
+          {sol && campo(tr("solucao"), <span className="whitespace-pre-wrap">{sol}</span>)}
         </dl>
 
         {erro && (
@@ -872,25 +856,23 @@ function PainelDetalhes({
                   className="w-full"
                   disabled={ocupado}
                   onClick={() => executar(() => assumirChamado(c.id))}
-                >
-                  Assumir atendimento
-                </Button>
+                >{tr("assumir_atendimento")}</Button>
               )}
               {usuario.perfil === "admin" && (
                 <div className="flex min-w-0 flex-wrap gap-2">
                   <div className="min-w-0 flex-1">
                     <NativeSelect
-                      aria-label="Atribuir a"
+                      aria-label={tr("atribuir_a")}
                       value={atribuir}
                       onChange={(e) => setAtribuir(e.target.value)}
                     >
-                      <option value="">Atribuir a…</option>
+                      <option value="">{tr("atribuir_a_2")}</option>
                       {elegiveis
                         .filter((u) => u.id !== resp)
                         .map((u) => (
                           <option key={u.id} value={u.id}>
                             {nome(u)}
-                            {u.perfil === "admin" ? " (admin)" : " (organização)"}
+                            {u.perfil === "admin" ? ` ${tr("admin")}` : ` ${tr("organizacao")}`}
                           </option>
                         ))}
                     </NativeSelect>
@@ -901,9 +883,7 @@ function PainelDetalhes({
                     className="shrink-0 !px-3"
                     disabled={!atribuir || ocupado}
                     onClick={() => executar(() => assumirChamado(c.id, atribuir))}
-                  >
-                    Atribuir
-                  </Button>
+                  >{tr("atribuir")}</Button>
                 </div>
               )}
               {pode("aguardar") && c.status !== "aguardando_participante" && (
@@ -913,15 +893,11 @@ function PainelDetalhes({
                   className="w-full"
                   disabled={ocupado}
                   onClick={() => acao("aguardar")}
-                >
-                  Aguardar participante
-                </Button>
+                >{tr("aguardar_participante")}</Button>
               )}
               {resolvendo ? (
                 <div className="space-y-2 rounded-md border border-border p-2">
-                  <Label htmlFor="sol" className="text-xs font-medium text-inherit">
-                    Descrição da solução
-                  </Label>
+                  <Label htmlFor="sol" className="text-xs font-medium text-inherit">{tr("descricao_da_solucao")}</Label>
                   <Textarea
                     id="sol"
                     rows={3}
@@ -935,17 +911,13 @@ function PainelDetalhes({
                       variant="outline"
                       className="flex-1 !py-1"
                       onClick={() => setResolvendo(false)}
-                    >
-                      Cancelar
-                    </Button>
+                    >{tr("cancelar")}</Button>
                     <Button
                       type="button"
                       className="flex-1 !py-1"
                       disabled={ocupado || !textoSolucao.trim()}
                       onClick={() => acao("resolver", textoSolucao)}
-                    >
-                      Resolver
-                    </Button>
+                    >{tr("resolver")}</Button>
                   </div>
                 </div>
               ) : (
@@ -956,9 +928,7 @@ function PainelDetalhes({
                     className="w-full"
                     disabled={ocupado}
                     onClick={() => setResolvendo(true)}
-                  >
-                    Marcar como resolvido
-                  </Button>
+                  >{tr("marcar_como_resolvido")}</Button>
                 )
               )}
             </>
@@ -970,9 +940,7 @@ function PainelDetalhes({
               className="w-full"
               disabled={ocupado}
               onClick={() => acao("reabrir")}
-            >
-              Reabrir chamado
-            </Button>
+            >{tr("reabrir_chamado")}</Button>
           )}
           {/* Fechar: só quando a regra permite; para a equipe, como antes, após resolver. */}
           {pode("fechar") && (modo === "participante" || c.status === "resolvido") && (
@@ -982,17 +950,13 @@ function PainelDetalhes({
               className="w-full"
               disabled={ocupado}
               onClick={async () => {
-                if (await confirmar({ titulo: "Fechar este chamado?", descricao: "Depois de fechado, ele fica somente para leitura.", confirmar: "Fechar chamado" }))
+                if (await confirmar({ titulo: tr("fechar_este_chamado"), descricao: tr("depois_de_fechado_ele_fica_somente"), confirmar: tr("fechar_chamado") }))
                   void acao("fechar");
               }}
-            >
-              Fechar chamado
-            </Button>
+            >{tr("fechar_chamado")}</Button>
           )}
           {c.status === "fechado" && modo === "participante" && (
-            <Button type="button" variant="outline" className="w-full" onClick={onNovoVinculado}>
-              Abrir novo chamado
-            </Button>
+            <Button type="button" variant="outline" className="w-full" onClick={onNovoVinculado}>{tr("abrir_novo_chamado")}</Button>
           )}
         </div>
       </div>

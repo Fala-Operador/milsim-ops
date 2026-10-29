@@ -1,3 +1,4 @@
+import { tr } from "@/i18n/lib/moderacao";
 // Moderação de conteúdo da comunidade geral: ponto ÚNICO de decisão antes de publicar.
 // Hoje: lista de termos (instantânea, sem custo). Conteúdo adulto — sexo, drogas e morte/violência
 // real — é recusado. Amanhã: um classificador (IA de texto e imagem) entra aqui, atrás da mesma
@@ -14,9 +15,9 @@ export type ResultadoModeracao =
   | { aprovado: false; categoria: CategoriaBloqueio; motivo: string };
 
 const MOTIVO: Record<CategoriaBloqueio, string> = {
-  sexo: "Conteúdo sexual não é permitido na comunidade.",
-  drogas: "Conteúdo sobre drogas ilícitas não é permitido na comunidade.",
-  violencia: "Conteúdo de morte ou violência real não é permitido na comunidade.",
+  get sexo() { return tr("conteudo_sexual_nao_e_permitido_na"); },
+  get drogas() { return tr("conteudo_sobre_drogas_ilicitas_nao_e"); },
+  get violencia() { return tr("conteudo_de_morte_ou_violencia_real"); },
 };
 
 // Termos já normalizados (minúsculas, sem acento). Raízes casam o começo de palavra:

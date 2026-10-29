@@ -9,13 +9,14 @@ import { EstadoVazio, SkeletonCartao } from "@/components/ui";
 import { CartaoPost } from "@/components/social/CartaoPost";
 import { Compositor } from "@/components/social/Compositor";
 import { ListaPosts } from "@/components/social/ListaPosts";
+import { tr } from "@/i18n/routes/comunidades.p.$postId";
 
 // Publicação da comunidade geral com as respostas. Visitante vê se o autor tem perfil público.
 export const Route = createFileRoute("/comunidades/p/$postId")({
   head: () => ({
     meta: [
-      { title: "Publicação — Comunidade MilSim Ops" },
-      { name: "description", content: "Publicação na comunidade geral do MilSim Ops." },
+      { title: tr("publicacao_comunidade_milsim_ops") },
+      { name: "description", content: tr("publicacao_na_comunidade_geral_do_milsim") },
     ],
   }),
   component: DetalhePost,
@@ -37,42 +38,40 @@ function DetalhePost() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 py-6">
-      <Button variant="ghost" onClick={voltar} className="-ml-2"><ArrowLeft className="h-4 w-4" /> Voltar</Button>
+      <Button variant="ghost" onClick={voltar} className="-ml-2"><ArrowLeft className="h-4 w-4" />{" "}{tr("voltar")}</Button>
       {q.isPending ? (
         <SkeletonCartao />
       ) : q.isError || !q.data ? (
         <div className="space-y-3">
-          <EstadoVazio titulo="Publicação indisponível" descricao="Ela pode ter sido excluída, ocultada pela moderação ou ser de um perfil privado." />
-          <Link to="/comunidades" className="inline-block text-sm text-accent hover:underline">Ver a comunidade →</Link>
+          <EstadoVazio titulo={tr("publicacao_indisponivel")} descricao={tr("ela_pode_ter_sido_excluida_ocultada")} />
+          <Link to="/comunidades" className="inline-block text-sm text-accent hover:underline">{tr("ver_a_comunidade")}</Link>
         </div>
       ) : (
         <>
           {q.data.pai && (
             <div className="opacity-80">
-              <p className="mb-1 text-xs text-muted-foreground">Em resposta a</p>
+              <p className="mb-1 text-xs text-muted-foreground">{tr("em_resposta_a")}</p>
               <CartaoPost post={q.data.pai} onMudou={atualizar} />
             </div>
           )}
           {forum.data && (
-            <Link to="/comunidades/f/$forumId" params={{ forumId: forum.data.forum.id }} className="inline-block text-xs text-muted-foreground hover:underline">
-              Fórum: {forum.data.forum.nome}
+            <Link to="/comunidades/f/$forumId" params={{ forumId: forum.data.forum.id }} className="inline-block text-xs text-muted-foreground hover:underline">{tr("forum_nome", { nome: forum.data.forum.nome })}
             </Link>
           )}
           <CartaoPost post={q.data.post} moderar={moderar} onMudou={() => { atualizar(); if (q.data.post.proprio) void router.navigate({ to: "/comunidades" }); }} destaque />
           {usuario ? (
-            <Compositor respondendoA={postId} placeholder="Escreva sua resposta" onPublicado={atualizar} />
+            <Compositor respondendoA={postId} placeholder={tr("escreva_sua_resposta")} onPublicado={atualizar} />
           ) : (
             <p className="text-sm text-muted-foreground">
-              <Link to="/login" search={{ redirect: `/comunidades/p/${postId}` }} className="text-accent hover:underline">Entre</Link> para responder.
-            </p>
+              <Link to="/login" search={{ redirect: `/comunidades/p/${postId}` }} className="text-accent hover:underline">{tr("entre")}</Link>{" "}{tr("para_responder")}</p>
           )}
           <section aria-labelledby="respostas" className="space-y-3">
-            <h2 id="respostas" className="font-display text-base font-semibold uppercase tracking-wide text-muted-foreground">Respostas</h2>
+            <h2 id="respostas" className="font-display text-base font-semibold uppercase tracking-wide text-muted-foreground">{tr("respostas")}</h2>
             <ListaPosts
               chave={["social", "respostas", postId, usuario?.id ?? "visitante"]}
               carregar={(c) => lerRespostas(postId, c)}
               moderar={moderar}
-              vazio={{ titulo: "Nenhuma resposta ainda" }}
+              vazio={{ titulo: tr("nenhuma_resposta_ainda") }}
             />
           </section>
         </>

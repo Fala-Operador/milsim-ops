@@ -9,6 +9,7 @@ import { erroPost, LIMITE_POST, MAX_FOTOS, type PostDTO } from "@/lib/comunidade
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AvatarAutor } from "./CartaoPost";
+import { tr } from "@/i18n/components/social/Compositor";
 
 export function Compositor({ respondendoA, forumId, forumPublico = false, onPublicado, placeholder }: {
   respondendoA?: string | undefined;
@@ -38,7 +39,7 @@ export function Compositor({ respondendoA, forumId, forumPublico = false, onPubl
       try {
         novas.push(await arquivoParaDataUrl(a, 1600));
       } catch (e) {
-        setErro(e instanceof Error ? e.message : "Não foi possível ler a imagem.");
+        setErro(e instanceof Error ? e.message : tr("nao_foi_possivel_ler_a_imagem"));
       }
     }
     setFotos((f) => [...f, ...novas].slice(0, MAX_FOTOS));
@@ -56,7 +57,7 @@ export function Compositor({ respondendoA, forumId, forumPublico = false, onPubl
       setFotos([]);
       onPublicado(post);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível publicar.");
+      setErro(e instanceof Error ? e.message : tr("nao_foi_possivel_publicar"));
     } finally {
       setEnviando(false);
     }
@@ -68,20 +69,20 @@ export function Compositor({ respondendoA, forumId, forumPublico = false, onPubl
         <AvatarAutor nome={usuario.nomeExibicao || usuario.nomeCompleto} fotoUrl={usuario.fotoUrl} />
         <div className="min-w-0 flex-1">
           <Textarea
-            aria-label={respondendoA ? "Escreva sua resposta" : "Escreva uma publicação"}
-            placeholder={placeholder ?? "O que está rolando no campo?"}
+            aria-label={respondendoA ? tr("escreva_sua_resposta") : tr("escreva_uma_publicacao")}
+            placeholder={placeholder ?? tr("o_que_esta_rolando_no_campo")}
             rows={respondendoA ? 2 : 3}
             value={texto}
             onChange={(e) => { setTexto(e.target.value); setErro(""); }}
             className="resize-none border-0 bg-transparent px-0 text-[15px] shadow-none focus-visible:ring-0"
           />
           {fotos.length > 0 && (
-            <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Fotos selecionadas">
+            <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label={tr("fotos_selecionadas")}>
               {fotos.map((f, i) => (
                 <li key={i} className="relative">
-                  <img src={f} alt={`Foto ${i + 1}`} className="aspect-square w-full rounded-md object-cover" />
+                  <img src={f} alt={tr("foto_valor", { valor: i + 1 })} className="aspect-square w-full rounded-md object-cover" />
                   <Button variant="plain" size="none" type="button" onClick={() => setFotos((l) => l.filter((_, j) => j !== i))}
-                    aria-label={`Remover foto ${i + 1}`} className="absolute right-1 top-1 rounded-full bg-background/90 p-1 hover:bg-background">
+                    aria-label={tr("remover_foto_valor", { valor: i + 1 })} className="absolute right-1 top-1 rounded-full bg-background/90 p-1 hover:bg-background">
                     <X className="h-3.5 w-3.5" />
                   </Button>
                 </li>
@@ -89,7 +90,7 @@ export function Compositor({ respondendoA, forumId, forumPublico = false, onPubl
             </ul>
           )}
           {forumPublico && usuario.comunidadePrivada && (
-            <p className="mt-2 text-xs text-muted-foreground">Seu perfil é privado, mas publicações em fórum público ficam visíveis para todos que leem o fórum.</p>
+            <p className="mt-2 text-xs text-muted-foreground">{tr("seu_perfil_e_privado_mas_publicacoes")}</p>
           )}
           {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
           <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2">
@@ -97,7 +98,7 @@ export function Compositor({ respondendoA, forumId, forumPublico = false, onPubl
               <input ref={entrada} type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" tabIndex={-1}
                 onChange={(e) => { void adicionar(e.target.files); e.target.value = ""; }} />
               <Button variant="ghost" type="button" disabled={fotos.length >= MAX_FOTOS} onClick={() => entrada.current?.click()}
-                aria-label={`Adicionar foto (${fotos.length} de ${MAX_FOTOS})`} className="h-8 px-2 text-accent">
+                aria-label={tr("adicionar_foto_length_de_max_fotos", { length: fotos.length, MAX_FOTOS })} className="h-8 px-2 text-accent">
                 <ImagePlus className="h-5 w-5" />
               </Button>
             </div>
@@ -106,7 +107,7 @@ export function Compositor({ respondendoA, forumId, forumPublico = false, onPubl
                 {restantes}
               </span>
               <Button type="button" onClick={publicar} disabled={enviando || restantes < 0 || (!texto.trim() && fotos.length === 0)}>
-                {enviando ? "Publicando..." : respondendoA ? "Responder" : "Publicar"}
+                {enviando ? tr("publicando") : respondendoA ? tr("responder") : tr("publicar")}
               </Button>
             </div>
           </div>

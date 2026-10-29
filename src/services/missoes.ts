@@ -131,8 +131,8 @@ export function publicarMissao(b: BaseDados, u: Usuario, missaoId: string): Miss
   m.rascunho = false;
   if (m.anunciadaEm) return m;
   m.anunciadaEm = agoraIso();
-  const quando = m.abreEm && Date.parse(m.abreEm) > Date.now() ? `Abre em ${formatarDataHoraBR(m.abreEm)}` : "Já está aberta";
-  const texto = `🎯 Nova missão pré-evento: ${m.titulo}\n\n${m.descricao}\n\n${quando} · prazo ${formatarDataHoraBR(m.prazo)}${m.pontos ? ` · vale ${m.pontos} pontos para o seu exército` : ""}.\nEnvie em Minhas missões.`;
+  const quando = m.abreEm && Date.parse(m.abreEm) > Date.now() ? `Abre em ${formatarDataHoraBR(m.abreEm, "pt-BR")}` : "Já está aberta";
+  const texto = `🎯 Nova missão pré-evento: ${m.titulo}\n\n${m.descricao}\n\n${quando} · prazo ${formatarDataHoraBR(m.prazo, "pt-BR")}${m.pontos ? ` · vale ${m.pontos} pontos para o seu exército` : ""}.\nEnvie em Minhas missões.`;
   const postou = postarNaComunidade(b, u, ev.id, m.publico, texto.slice(0, 2000), m.imagemUrl);
   if (!postou) {
     // Sem fórum do exército: avisa direto os inscritos destinatários.

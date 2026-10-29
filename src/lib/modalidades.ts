@@ -1,5 +1,6 @@
 // Catálogo, validação, preferências e ordenação por modalidade (regras puras).
 import type { Evento } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/modalidades";
 
 export const MODALIDADES = [
   { id: "real_action", nome: "Real Action" },
@@ -10,14 +11,13 @@ export const MODALIDADES = [
 ] as const;
 
 export type ModalidadeId = (typeof MODALIDADES)[number]["id"];
-export const SEM_MODALIDADE = "Modalidade não informada";
 
 export function ehModalidade(v: unknown): v is ModalidadeId {
   return typeof v === "string" && MODALIDADES.some((m) => m.id === v);
 }
 
 export function nomeModalidade(id: string | undefined | null): string {
-  return MODALIDADES.find((m) => m.id === id)?.nome ?? SEM_MODALIDADE;
+  return MODALIDADES.find((m) => m.id === id)?.nome ?? tr("modalidade_nao_informada");
 }
 
 /** Preferência declarada: pendente (não respondeu), todas (explorar tudo) ou selecionadas. */
@@ -55,7 +55,7 @@ export function resolverAoEntrar(conta: PreferenciaModalidades, aparelho: Prefer
 
 /** Exigência para publicar: modalidade válida. Rascunhos podem ficar sem. */
 export function erroModalidadeParaPublicar(evento: Pick<Evento, "modalidade">): string | null {
-  return ehModalidade(evento.modalidade) ? null : "Selecione a modalidade principal antes de publicar.";
+  return ehModalidade(evento.modalidade) ? null : tr("selecione_a_modalidade_principal_antes_d");
 }
 
 /** Nenhuma seleção = todas; várias = qualquer uma delas. */
@@ -66,9 +66,9 @@ export function filtrarPorModalidades<T extends Pick<Evento, "modalidade">>(even
 
 export type Ordenacao = "para_voce" | "data" | "recentes";
 export const ROTULO_ORDENACAO: Record<Ordenacao, string> = {
-  para_voce: "Para você",
-  data: "Data mais próxima",
-  recentes: "Publicados recentemente",
+  get para_voce() { return tr("para_voce"); },
+  get data() { return tr("data_mais_proxima"); },
+  get recentes() { return tr("publicados_recentemente"); },
 };
 
 type Ordenavel = Pick<Evento, "modalidade" | "inicioEm" | "criadoEm">;

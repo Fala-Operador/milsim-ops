@@ -5,6 +5,7 @@ import { storage } from "@/lib/storage";
 import type { Abrangencia } from "@/lib/domain/types";
 import { LOCAL_PADRAO, aplicarLeituraDoAparelho, paraEstado, type LocalSalvo, type ModoLocal } from "@/lib/localizacao";
 import { consultarPermissao, detectarCidade, ErroLocalizacao, type FalhaLocal } from "@/services/geolocalizacao";
+import { tr } from "@/i18n/contexts/LocalizacaoContext";
 
 export type StatusLocal = "ocioso" | "obtendo" | "detectado" | FalhaLocal;
 
@@ -92,12 +93,12 @@ export function useLocalizacao(): Valor {
 
 export function mensagemStatus(s: StatusLocal): string | null {
   switch (s) {
-    case "obtendo": return "Obtendo sua localização…";
-    case "negada": return "Permissão de localização negada. Escolha o estado manualmente.";
-    case "indisponivel": return "Localização indisponível neste aparelho. Escolha o estado manualmente.";
-    case "tempo": return "A localização demorou demais. Tente de novo ou escolha o estado.";
-    case "sem_suporte": return "Este navegador não informa a localização. Escolha o estado manualmente.";
-    case "cidade_nao_resolvida": return "Não conseguimos identificar seu estado. Escolha manualmente.";
+    case "obtendo": return tr("obtendo_sua_localizacao");
+    case "negada": return tr("permissao_de_localizacao_negada_escolha");
+    case "indisponivel": return tr("localizacao_indisponivel_neste_aparelho");
+    case "tempo": return tr("a_localizacao_demorou_demais_tente_de");
+    case "sem_suporte": return tr("este_navegador_nao_informa_a_localizacao");
+    case "cidade_nao_resolvida": return tr("nao_conseguimos_identificar_seu_estado_e");
     default: return null;
   }
 }

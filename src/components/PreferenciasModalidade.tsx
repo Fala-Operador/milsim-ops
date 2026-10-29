@@ -7,11 +7,12 @@ import { usePreferencias } from "@/contexts/PreferenciasContext";
 import { useLocalizacao } from "@/contexts/LocalizacaoContext";
 import { MODALIDADES, nomeModalidade, type ModalidadeId } from "@/lib/modalidades";
 import { Toggle } from "@/components/ui/toggle";
+import { tr } from "@/i18n/components/PreferenciasModalidade";
 
 /** Opções selecionáveis: estado marcado indicado por ícone + texto, não só cor. */
 export function OpcoesModalidade({ selecionadas, onAlternar, nome = "mod" }: { selecionadas: ModalidadeId[]; onAlternar: (id: ModalidadeId) => void; nome?: string }) {
   return (
-    <div role="group" aria-label="Modalidades" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+    <div role="group" aria-label={tr("modalidades")} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
       {MODALIDADES.map((m) => {
         const ativo = selecionadas.includes(m.id);
         return (
@@ -21,7 +22,7 @@ export function OpcoesModalidade({ selecionadas, onAlternar, nome = "mod" }: { s
               {ativo && <Check className="h-3.5 w-3.5" />}
             </span>
             {m.nome}
-            {ativo && <span className="sr-only">(selecionada)</span>}
+            {ativo && <span className="sr-only">{tr("selecionada")}</span>}
           </Toggle>
         );
       })}
@@ -62,13 +63,13 @@ export function PreferenciasModal() {
   if (p.ofertaAparelho && caminho === "/") {
     return (
       <div role="status" className="fixed inset-x-3 bottom-3 z-40 mx-auto max-w-lg rounded-lg border border-border bg-popover p-4 text-sm text-popover-foreground shadow-xl">
-        <p className="font-medium">Usar as modalidades salvas neste aparelho na sua conta?</p>
+        <p className="font-medium">{tr("usar_as_modalidades_salvas_neste_aparelh")}</p>
         <p className="mt-1 text-muted-foreground">
-          {p.ofertaAparelho.estado === "todas" ? "Explorar todas" : p.ofertaAparelho.modalidades.map(nomeModalidade).join(", ")}
+          {p.ofertaAparelho.estado === "todas" ? tr("explorar_todas") : p.ofertaAparelho.modalidades.map(nomeModalidade).join(", ")}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button onClick={p.aceitarAparelho}>Usar na conta</Button>
-          <Button variant="secondary" onClick={p.recusarAparelho}>Não, obrigado</Button>
+          <Button onClick={p.aceitarAparelho}>{tr("usar_na_conta")}</Button>
+          <Button variant="secondary" onClick={p.recusarAparelho}>{tr("nao_obrigado")}</Button>
         </div>
       </div>
     );
@@ -78,16 +79,16 @@ export function PreferenciasModal() {
     <Dialog open={aberto} onOpenChange={(abrir) => !abrir && p.agoraNao()}>
       <DialogContent data-pref showCloseButton={false}
         className="bottom-0 top-auto block max-h-[85vh] w-full max-w-none translate-y-0 overflow-y-auto rounded-t-xl p-5 sm:bottom-auto sm:top-[50%] sm:w-[calc(100%-2rem)] sm:max-w-lg sm:translate-y-[-50%] sm:rounded-lg">
-        <DialogTitle className="text-xl uppercase">Que tipo de operação você curte?</DialogTitle>
-        <DialogDescription className="mt-1">Escolha suas modalidades favoritas para encontrar primeiro os eventos que combinam com você.</DialogDescription>
+        <DialogTitle className="text-xl uppercase">{tr("que_tipo_de_operacao_voce_curte")}</DialogTitle>
+        <DialogDescription className="mt-1">{tr("escolha_suas_modalidades_favoritas_para")}</DialogDescription>
         <div className="mt-4"><OpcoesModalidade selecionadas={sel} onAlternar={alternar} nome="pref-modal" /></div>
         <p className="mt-3 text-xs text-muted-foreground">
-          {p.daConta ? "Salvo na sua conta." : "Salvo neste aparelho — não é necessário criar conta."}
+          {p.daConta ? tr("salvo_na_sua_conta") : tr("salvo_neste_aparelho_nao_e_necessario")}
         </p>
         <div className="sticky bottom-0 mt-4 grid grid-cols-2 gap-2 bg-popover pb-[env(safe-area-inset-bottom)] pt-2 sm:flex sm:flex-wrap sm:pb-0">
-          <Button className="col-span-2" disabled={!sel.length} onClick={() => p.salvar(sel)}>Salvar preferências</Button>
-          <Button variant="secondary" onClick={p.explorarTodas}>Explorar todas</Button>
-          <Button variant="outline" onClick={p.agoraNao}>Agora não</Button>
+          <Button className="col-span-2" disabled={!sel.length} onClick={() => p.salvar(sel)}>{tr("salvar_preferencias")}</Button>
+          <Button variant="secondary" onClick={p.explorarTodas}>{tr("explorar_todas")}</Button>
+          <Button variant="outline" onClick={p.agoraNao}>{tr("agora_nao")}</Button>
         </div>
       </DialogContent>
     </Dialog>

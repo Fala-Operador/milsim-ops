@@ -5,6 +5,7 @@ import { atualizarNomeExibicao } from "@/api/comunidade.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Campo } from "@/components/ui";
+import { tr } from "@/i18n/components/NomeExibicaoForm";
 
 /** Nome de exibição usado na comunidade (o nome completo segue nos contextos administrativos). */
 export function NomeExibicaoForm() {
@@ -14,7 +15,7 @@ export function NomeExibicaoForm() {
   if (!usuario) return null;
   return (
     <div className="max-w-sm space-y-2">
-      <Campo rotulo="Nome de exibição na comunidade" htmlFor="nome-exib">
+      <Campo rotulo={tr("nome_de_exibicao_na_comunidade")} htmlFor="nome-exib">
         <Input id="nome-exib" maxLength={40} placeholder={nomeExibicao({ ...usuario, nomeExibicao: undefined })} value={nome} onChange={(e) => setNome(e.target.value)} />
       </Campo>
       <Button
@@ -22,14 +23,12 @@ export function NomeExibicaoForm() {
         onClick={async () => {
           try {
             await atualizarNomeExibicao(nome);
-            setAviso("Nome de exibição salvo.");
+            setAviso(tr("nome_de_exibicao_salvo"));
           } catch (e) {
-            setAviso(e instanceof Error ? e.message : "Erro ao salvar.");
+            setAviso(e instanceof Error ? e.message : tr("erro_ao_salvar"));
           }
         }}
-      >
-        Salvar nome
-      </Button>
+      >{tr("salvar_nome")}</Button>
       {aviso && <p role="status" className="text-sm text-muted-foreground">{aviso}</p>}
     </div>
   );
