@@ -43,4 +43,5 @@ export const tr = dicionario("components/impulsos", {
   "impulsos_atualizados": { pt: "Impulsos atualizados. Os novos valores valem para as próximas compras.", en: "Boosts updated. New values apply to future purchases." },
   "produtos_do_stripe_em_dia": { pt: "Produtos do Stripe em dia.", en: "Stripe products up to date." },
   "ultima_sincronizacao_valor": { pt: "Última sincronização: {valor}.", en: "Last sync: {valor}." },
+  "x_de_y": { pt: "{x} de {y}", en: "{x} of {y}" },
 });
