@@ -349,7 +349,7 @@ export function AbaFotos({ fotos, proprio, onMudou }: { fotos?: FotoDTO[] | unde
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           {fotos.map((f, i) => (
             <li key={f.id} className="overflow-hidden rounded-md border border-border bg-card">
-              <Button variant="plain" size="none" type="button" onClick={() => setAmpliada(i)} className="block w-full focus-visible:outline-2 focus-visible:outline-ring" aria-label={tr("ampliar_valor", { valor: f.legenda ?? `foto ${i + 1}` })}>
+              <Button variant="plain" size="none" type="button" onClick={() => setAmpliada(i)} className="block w-full focus-visible:outline-2 focus-visible:outline-ring" aria-label={tr("ampliar_valor", { valor: f.legenda ?? tr("foto_valor", { valor: i + 1 }) })}>
                 <img src={f.url} alt={f.alt ?? ""} className="aspect-square w-full object-cover" />
               </Button>
               {(f.legenda || proprio) && (

@@ -3,6 +3,7 @@
 // e os dois precisam chegar ao mesmo instante para validar o cronograma.
 import type { AtividadeCronograma, Evento } from "@/lib/domain/types";
 import { localeAtual } from "@/i18n/dicionario";
+import { tr } from "@/i18n/lib/fusoHorario";
 
 export const FUSO_PADRAO = "America/Sao_Paulo";
 
@@ -93,13 +94,13 @@ export function formatarPeriodoNoFuso(inicioIso: string, fimIso: string, fuso: s
     if (Number.isNaN(d.getTime())) return null;
     const z = fusoValido(fuso);
     return {
-      data: d.toLocaleDateString("pt-BR", { timeZone: z }),
-      hora: d.toLocaleTimeString("pt-BR", { timeZone: z, hour: "2-digit", minute: "2-digit" }),
+      data: d.toLocaleDateString(localeAtual(), { timeZone: z }),
+      hora: d.toLocaleTimeString(localeAtual(), { timeZone: z, hour: "2-digit", minute: "2-digit" }),
     };
   };
   const ini = partes(inicioIso);
   const fim = partes(fimIso);
   if (!ini || !fim) return "";
-  if (ini.data === fim.data) return `${ini.data} Início às ${ini.hora}, fim às ${fim.hora}`;
-  return `Início em ${ini.data} às ${ini.hora}, fim em ${fim.data} às ${fim.hora}`;
+  if (ini.data === fim.data) return tr("data_inicio_as_hora_fim_as", { data: ini.data, hora: ini.hora, hora2: fim.hora });
+  return tr("inicio_em_data_as_hora_fim", { data: ini.data, hora: ini.hora, data2: fim.data, hora2: fim.hora });
 }

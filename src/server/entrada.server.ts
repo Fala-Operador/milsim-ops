@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/server/supabase.server";
 import { idDaSessao } from "@/server/unidade.server";
 import { ErroDominio } from "@/services/db";
 import { entradaAtiva, type RegistroCheckin } from "@/lib/checkin";
+import { tr } from "@/i18n/server/entrada.server";
 
 export interface SituacaoEntrada {
   confirmada: boolean;
@@ -15,18 +16,18 @@ export interface SituacaoEntrada {
 
 export async function situacaoEntrada(inscricaoId: string): Promise<SituacaoEntrada> {
   const sessao = await idDaSessao();
-  if (!sessao) throw new ErroDominio("sem_sessao", "Entre na sua conta para continuar.");
+  if (!sessao) throw new ErroDominio("sem_sessao", tr("entre_na_sua_conta_para_continuar"));
   const db = supabaseAdmin();
   const ins = await db.from("registrations").select("user_id").eq("id", inscricaoId).maybeSingle();
-  if (ins.error) throw new Error(`Falha ao ler a inscrição: ${ins.error.message}`);
+  if (ins.error) throw new Error(tr("falha_ao_ler_a_inscricao_message", { message: ins.error.message }));
   // Só o dono do ingresso consulta; para os demais o ingresso "não existe".
   if (!ins.data || ins.data.user_id !== sessao)
-    throw new ErroDominio("sem_ingresso", "Ingresso indisponível.");
+    throw new ErroDominio("sem_ingresso", tr("ingresso_indisponivel"));
   const r = await db
     .from("check_ins")
     .select("id, type, reverted_id, sync_status, occurred_at")
     .eq("registration_id", inscricaoId);
-  if (r.error) throw new Error(`Falha ao ler o check-in: ${r.error.message}`);
+  if (r.error) throw new Error(tr("falha_ao_ler_o_check_in", { message: r.error.message }));
   const registros = (r.data ?? []).map((c) => ({
     id: c.id,
     inscricaoId,

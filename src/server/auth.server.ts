@@ -21,6 +21,7 @@ import { somenteDigitos } from "@/lib/domain/validators";
 import { supabaseAdmin, supabaseSessao } from "@/server/supabase.server";
 import { ERRO_CAPTCHA, erroDeCaptcha } from "@/server/turnstile.server";
 import { tr } from "@/i18n/server/auth.server";
+import { idiomaAtual } from "@/lib/idiomaAtual";
 
 /**
  * Endereço público do site para links de volta (Google, e-mails). Atrás do Cloudflare e do proxy
@@ -91,7 +92,8 @@ export async function cadastrar(dados: DadosCadastro, captchaToken?: string): Pr
 
   const sessao = supabaseSessao();
   const { data, error } = await sessao.auth.signUp({
-    email, password: dados.senha, options: { emailRedirectTo: urlConfirmacao(), ...comCaptcha(captchaToken) },
+    // idioma vai para user_metadata: os modelos de e-mail do Supabase escolhem PT ou EN por ele.
+    email, password: dados.senha, options: { emailRedirectTo: urlConfirmacao(), data: { idioma: idiomaAtual() }, ...comCaptcha(captchaToken) },
   });
   if (erroDeCaptcha(error)) throw new Error(ERRO_CAPTCHA());
   if (error?.code === "weak_password") throw new Error(mensagemSenhaFraca(motivosSenhaFraca(error)));

@@ -6,6 +6,7 @@ import { ErroDominio } from "@/services/db";
 import { supabaseAdmin } from "@/server/supabase.server";
 import { lerArquivoNota } from "@/server/documentos.server";
 import type { AnexoChamado } from "@/lib/domain/types";
+import { tr } from "@/i18n/server/anexosSuporte.server";
 
 const BUCKET = "documentos";
 
@@ -15,14 +16,14 @@ export async function gravarAnexo(chamadoId: string, clienteId: string, nome: st
   // Caminho determinístico por mensagem: reenvio sobrescreve em vez de duplicar.
   const caminho = `suporte/${chamadoId}/${clienteId}.${arq.ext}`;
   const { error } = await supabaseAdmin().storage.from(BUCKET).upload(caminho, arq.bytes, { contentType: arq.tipo, upsert: true });
-  if (error) throw new Error(`Falha ao enviar anexo: ${error.message}`);
+  if (error) throw new Error(tr("falha_ao_enviar_anexo_message", { message: error.message }));
   return { caminho, nome: seguro, tipo: arq.tipo, tamanho: arq.bytes.byteLength };
 }
 
 export async function urlDoAnexo(anexo: AnexoChamado, baixar: boolean): Promise<string> {
-  if (!anexo.caminho.startsWith("suporte/")) throw new ErroDominio("anexo", "Anexo não encontrado.");
+  if (!anexo.caminho.startsWith("suporte/")) throw new ErroDominio("anexo", tr("anexo_nao_encontrado"));
   const { data, error } = await supabaseAdmin().storage.from(BUCKET)
     .createSignedUrl(anexo.caminho, 60, baixar ? { download: anexo.nome } : undefined);
-  if (error || !data) throw new Error(error?.message ?? "Falha ao gerar link.");
+  if (error || !data) throw new Error(error?.message ?? tr("falha_ao_gerar_link"));
   return data.signedUrl;
 }

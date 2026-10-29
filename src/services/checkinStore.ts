@@ -4,6 +4,7 @@
 // 3) Registros locais + fila de sincronização — IndexedDB, gravados na mesma transação.
 import { carregarBase } from "@/services/db";
 import type { IngressoCredenciamento, RegistroCheckin } from "@/lib/checkin";
+import { tr } from "@/i18n/services/checkinStore";
 
 const NOME_DB = "milsim-checkin";
 
@@ -26,7 +27,7 @@ let dbPromise: Promise<IDBDatabase> | null = null;
 export const idbDisponivel = () => typeof indexedDB !== "undefined";
 
 function abrir(): Promise<IDBDatabase> {
-  if (!idbDisponivel()) return Promise.reject(new Error("IndexedDB indisponível neste navegador."));
+  if (!idbDisponivel()) return Promise.reject(new Error(tr("indexeddb_indisponivel_neste_navegador")));
   dbPromise ??= new Promise((ok, falha) => {
     const req = indexedDB.open(NOME_DB, 1);
     req.onupgradeneeded = () => {

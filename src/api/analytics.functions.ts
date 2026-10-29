@@ -4,6 +4,7 @@ import { z } from "zod";
 import { tratarErro } from "@/server/unidade.server";
 import * as analytics from "@/server/analytics.server";
 import type { OrigemCampanha, RegistroAnalytics } from "@/lib/analytics";
+import { tr } from "@/i18n/api/analytics.functions";
 
 const curto = z.string().min(1).max(120);
 const registro = z.object({
@@ -36,7 +37,7 @@ export const registrarAnalyticsFn = createServerFn({ method: "POST" })
 export const listarAnalyticsFn = createServerFn({ method: "GET" }).handler(() => comMensagem(() => analytics.listar()));
 
 export const criarCampanhaFn = createServerFn({ method: "POST" })
-  .validator(z.object({ eventoId: curto, nome: z.string().trim().min(1, "Digite um nome para identificar a campanha.").max(60), origem: z.enum(["instagram", "whatsapp", "parceiro", "lancamento", "outro"]) }).parse)
+  .validator(z.object({ eventoId: curto, nome: z.string().trim().max(60).refine((s) => s.length > 0, () => ({ message: tr("digite_um_nome_para_identificar_a_campanha") })), origem: z.enum(["instagram", "whatsapp", "parceiro", "lancamento", "outro"]) }).parse)
   .handler(({ data }) => comMensagem(() => analytics.criarCampanha(data.eventoId, data.nome, data.origem)));
 
 // ---------- Uso no navegador ----------

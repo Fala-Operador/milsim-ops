@@ -9,6 +9,7 @@ import { exigirUsuario, mutar, type Contexto } from "@/server/unidade.server";
 import { expirarSessoes, processarEstornos } from "@/server/pagamentos.server";
 import { chamar } from "@/api/cliente";
 import type { Evento } from "@/lib/domain/types";
+import { tr } from "@/i18n/api/organizador.functions";
 
 const id = z.string().min(1).max(100);
 const texto = (max = 200) => z.string().max(max);
@@ -17,7 +18,7 @@ const texto = (max = 200) => z.string().max(max);
 function exigirGestor({ base, usuario }: Contexto, eventoId: string) {
   const u = exigirUsuario(usuario);
   const evento = base.eventos.find((e) => e.id === eventoId);
-  if (!evento || !gereEvento(u, evento)) throw new ErroDominio("permissao", "Você só pode gerenciar eventos da sua organização.");
+  if (!evento || !gereEvento(u, evento)) throw new ErroDominio("permissao", tr("voce_so_pode_gerenciar_eventos_da"));
   return u;
 }
 
@@ -35,7 +36,7 @@ export const reenviarSolicitacaoFn = createServerFn({ method: "POST" })
     mutar(({ base, usuario }) => {
       const u = exigirUsuario(usuario);
       const sol = base.solicitacoes.find((s) => s.id === data.solicitacaoId);
-      if (!sol || sol.usuarioId !== u.id) throw new ErroDominio("solicitacao", "Solicitação não encontrada.");
+      if (!sol || sol.usuarioId !== u.id) throw new ErroDominio("solicitacao", tr("solicitacao_nao_encontrada"));
       return org.reenviarSolicitacao(data.solicitacaoId, data.dados);
     }),
   );
@@ -54,7 +55,7 @@ export const salvarEventoFn = createServerFn({ method: "POST" })
       const evento: Evento = { ...data };
       const existente = base.eventos.find((e) => e.id === evento.id);
       if (existente) {
-        if (!gereEvento(u, existente)) throw new ErroDominio("permissao", "Você só pode gerenciar eventos da sua organização.");
+        if (!gereEvento(u, existente)) throw new ErroDominio("permissao", tr("voce_so_pode_gerenciar_eventos_da"));
         // Status muda só por publicar/cancelar; dono e criação não mudam.
         evento.status = existente.status;
         evento.organizacaoId = existente.organizacaoId;
@@ -62,7 +63,7 @@ export const salvarEventoFn = createServerFn({ method: "POST" })
       } else {
         const permitido = u.perfil === "admin" || (u.perfil === "organizador" && u.organizacaoId === evento.organizacaoId);
         if (!permitido || !base.organizacoes.some((o) => o.id === evento.organizacaoId)) {
-          throw new ErroDominio("permissao", "Você só pode criar eventos da sua organização.");
+          throw new ErroDominio("permissao", tr("voce_so_pode_criar_eventos_da"));
         }
         evento.status = "rascunho";
         evento.criadoEm = new Date().toISOString();
@@ -122,7 +123,7 @@ export const atualizarCupomFn = createServerFn({ method: "POST" })
   .handler(({ data }) =>
     mutar((ctx) => {
       const cupom = ctx.base.cupons.find((c) => c.id === data.cupomId);
-      if (!cupom) throw new ErroDominio("cupom", "Cupom não encontrado.");
+      if (!cupom) throw new ErroDominio("cupom", tr("cupom_nao_encontrado"));
       exigirGestor(ctx, cupom.eventoId);
       return org.atualizarCupom(data.cupomId, data.dados);
     }),

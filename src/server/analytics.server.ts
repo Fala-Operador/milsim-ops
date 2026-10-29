@@ -8,6 +8,7 @@ import { gereEvento } from "@/lib/visao";
 import { contextoSomenteLeitura } from "@/server/unidade.server";
 import { supabaseAdmin } from "@/server/supabase.server";
 import type { Campanha, OrigemCampanha, RegistroAnalytics } from "@/lib/analytics";
+import { tr } from "@/i18n/server/analytics.server";
 
 const DIA = 86400000;
 const PAGINA = 1000;
@@ -50,7 +51,7 @@ export async function registrar(registros: RegistroAnalytics[]): Promise<number>
 export async function listar(): Promise<{ registros: RegistroAnalytics[]; campanhas: Campanha[] }> {
   const { base, usuario } = await contextoSomenteLeitura();
   if (!usuario || (usuario.perfil !== "admin" && usuario.perfil !== "organizador")) {
-    throw new ErroDominio("sem_permissao", "Sem acesso às métricas.");
+    throw new ErroDominio("sem_permissao", tr("sem_acesso_as_metricas"));
   }
   const ids = base.eventos.filter((e) => gereEvento(usuario, e)).map((e) => e.id);
   const registros: RegistroAnalytics[] = [];
@@ -67,8 +68,8 @@ export async function listar(): Promise<{ registros: RegistroAnalytics[]; campan
 export async function criarCampanha(eventoId: string, nome: string, origem: OrigemCampanha): Promise<Campanha> {
   const { base, usuario } = await contextoSomenteLeitura();
   const evento = base.eventos.find((e) => e.id === eventoId);
-  if (!evento || !gereEvento(usuario, evento)) throw new ErroDominio("sem_permissao", "Você não pode criar campanhas para este evento.");
-  if (!nome.trim()) throw new ErroDominio("nome", "Informe o nome da campanha.");
+  if (!evento || !gereEvento(usuario, evento)) throw new ErroDominio("sem_permissao", tr("voce_nao_pode_criar_campanhas_para"));
+  if (!nome.trim()) throw new ErroDominio("nome", tr("informe_o_nome_da_campanha"));
   const c: Campanha = {
     id: `cmp-${crypto.randomUUID().slice(0, 12)}`, eventoId, nome: nome.trim().slice(0, 60), origem, criadoEm: new Date().toISOString(),
   };
