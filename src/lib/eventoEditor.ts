@@ -7,15 +7,17 @@ import { disponibilidadeTipo, type OcupacaoLote } from "@/lib/vendas";
 import { validarParaPublicacao } from "@/services/organizador";
 import { errosContatoEvento } from "@/lib/contatoEvento";
 import { atividadeNoPeriodo, formatarNoFuso, formatarPeriodoNoFuso, instanteDaAtividade } from "@/lib/fusoHorario";
+import { tr } from "@/i18n/lib/eventoEditor";
+import { localeAtual } from "@/i18n/dicionario";
 
 export const ETAPAS = [
-  { id: "geral", titulo: "Informações gerais" },
-  { id: "local", titulo: "Data e localização" },
-  { id: "imagem", titulo: "Banner e imagem" },
-  { id: "exercitos", titulo: "Capacidade e exércitos" },
-  { id: "ingressos", titulo: "Ingressos e lotes" },
-  { id: "cronograma", titulo: "Cronograma e regras" },
-  { id: "revisao", titulo: "Revisão e publicação" },
+  { id: "geral", get titulo() { return tr("informacoes_gerais"); } },
+  { id: "local", get titulo() { return tr("data_e_localizacao"); } },
+  { id: "imagem", get titulo() { return tr("banner_e_imagem"); } },
+  { id: "exercitos", get titulo() { return tr("capacidade_e_exercitos"); } },
+  { id: "ingressos", get titulo() { return tr("ingressos_e_lotes"); } },
+  { id: "cronograma", get titulo() { return tr("cronograma_e_regras"); } },
+  { id: "revisao", get titulo() { return tr("revisao_e_publicacao"); } },
 ] as const;
 
 /** Problema encontrado: `campo` é o id do elemento que recebe o foco. */
@@ -43,80 +45,80 @@ function schemaEtapa(i: number, oc: Ocupacao) {
   return evento.superRefine((ev, ctx) => {
     switch (ETAPAS[i]?.id) {
       case "geral":
-        if (vazio(ev.nome)) erro(ctx, "ev-nome", "Informe o nome do evento.");
-        if (!ehModalidade(ev.modalidade)) erro(ctx, "ev-mod", "Selecione a modalidade principal.");
-        if (vazio(ev.descricaoResumida)) erro(ctx, "ev-desc", "Escreva uma descrição resumida.");
-        else if (ev.descricaoResumida.length > 200) erro(ctx, "ev-desc", "Use no máximo 200 caracteres.");
-        if (vazio(ev.enredo)) erro(ctx, "ev-enredo", "Descreva o enredo da operação.");
+        if (vazio(ev.nome)) erro(ctx, "ev-nome", tr("informe_o_nome_do_evento"));
+        if (!ehModalidade(ev.modalidade)) erro(ctx, "ev-mod", tr("selecione_a_modalidade_principal"));
+        if (vazio(ev.descricaoResumida)) erro(ctx, "ev-desc", tr("escreva_uma_descricao_resumida"));
+        else if (ev.descricaoResumida.length > 200) erro(ctx, "ev-desc", tr("use_no_maximo_200_caracteres"));
+        if (vazio(ev.enredo)) erro(ctx, "ev-enredo", tr("descreva_o_enredo_da_operacao"));
         for (const p of errosContatoEvento(ev)) erro(ctx, p.campo, p.mensagem);
         break;
       case "local":
-        if (!dataValida(ev.inicioEm)) erro(ctx, "ev-ini", "Informe data e horário de início.");
-        if (!dataValida(ev.fimEm)) erro(ctx, "ev-fim", "Informe data e horário de término.");
-        else if (new Date(ev.fimEm) <= new Date(ev.inicioEm)) erro(ctx, "ev-fim", "O término deve ser depois do início.");
+        if (!dataValida(ev.inicioEm)) erro(ctx, "ev-ini", tr("informe_data_e_horario_de_inicio"));
+        if (!dataValida(ev.fimEm)) erro(ctx, "ev-fim", tr("informe_data_e_horario_de_termino"));
+        else if (new Date(ev.fimEm) <= new Date(ev.inicioEm)) erro(ctx, "ev-fim", tr("o_termino_deve_ser_depois_do"));
         // Só antes de publicar: operações já publicadas podem estar em andamento ou encerradas.
         if (ev.status === "rascunho" && dataValida(ev.inicioEm) && new Date(ev.inicioEm) <= new Date()) {
-          erro(ctx, "ev-ini", "O início da operação já passou.");
+          erro(ctx, "ev-ini", tr("o_inicio_da_operacao_ja_passou"));
         }
-        if (vazio(ev.local)) erro(ctx, "ev-local", "Informe o nome do local ou campo.");
-        if (ev.cep && !/^\d{5}-?\d{3}$/.test(ev.cep.trim())) erro(ctx, "ev-cep", "CEP inválido. Use o formato 00000-000.");
-        if (vazio(ev.cidade)) erro(ctx, "ev-cid", "Informe a cidade.");
+        if (vazio(ev.local)) erro(ctx, "ev-local", tr("informe_o_nome_do_local_ou"));
+        if (ev.cep && !/^\d{5}-?\d{3}$/.test(ev.cep.trim())) erro(ctx, "ev-cep", tr("cep_invalido_use_o_formato_00000"));
+        if (vazio(ev.cidade)) erro(ctx, "ev-cid", tr("informe_a_cidade"));
         break;
       case "imagem":
-        if (ev.imagem && vazio(ev.imagem.alt)) erro(ctx, "ev-img-alt", "Descreva a imagem no texto alternativo.");
+        if (ev.imagem && vazio(ev.imagem.alt)) erro(ctx, "ev-img-alt", tr("descreva_a_imagem_no_texto_alternativo"));
         break;
       case "exercitos": {
-        if (!(ev.capacidadeTotal >= 1)) erro(ctx, "ev-cap", "A capacidade total deve ser de pelo menos 1 vaga.");
-        else if (ev.capacidadeTotal < oc.total) erro(ctx, "ev-cap", `Já existem ${oc.total} inscrições confirmadas; a capacidade não pode ficar abaixo disso.`);
-        if (ev.exercitos.length === 0) erro(ctx, "ev-ex-add", "Cadastre ao menos um exército.");
+        if (!(ev.capacidadeTotal >= 1)) erro(ctx, "ev-cap", tr("a_capacidade_total_deve_ser_de"));
+        else if (ev.capacidadeTotal < oc.total) erro(ctx, "ev-cap", tr("ja_existem_total_inscricoes_confirmadas", { total: oc.total }));
+        if (ev.exercitos.length === 0) erro(ctx, "ev-ex-add", tr("cadastre_ao_menos_um_exercito"));
         const vistos = new Set<string>();
         ev.exercitos.forEach((x) => {
           const nome = x.nome.trim().toLowerCase();
-          if (!nome) erro(ctx, `ex-nome-${x.id}`, "Dê um nome ao exército.");
-          else if (vistos.has(nome)) erro(ctx, `ex-nome-${x.id}`, `Já existe um exército chamado "${x.nome.trim()}".`);
+          if (!nome) erro(ctx, `ex-nome-${x.id}`, tr("de_um_nome_ao_exercito"));
+          else if (vistos.has(nome)) erro(ctx, `ex-nome-${x.id}`, tr("ja_existe_um_exercito_chamado_valor", { valor: x.nome.trim() }));
           vistos.add(nome);
           const ocup = oc.porExercito[x.id] ?? 0;
-          if (!(x.capacidade >= 1)) erro(ctx, `ex-cap-${x.id}`, "Capacidade mínima de 1 vaga.");
-          else if (x.capacidade < ocup) erro(ctx, `ex-cap-${x.id}`, `Este exército já tem ${ocup} inscritos.`);
+          if (!(x.capacidade >= 1)) erro(ctx, `ex-cap-${x.id}`, tr("capacidade_minima_de_1_vaga"));
+          else if (x.capacidade < ocup) erro(ctx, `ex-cap-${x.id}`, tr("este_exercito_ja_tem_ocup_inscritos", { ocup }));
         });
         const soma = ev.exercitos.reduce((t, x) => t + (x.capacidade || 0), 0);
         if (ev.exercitos.length && soma > 0 && soma < ev.capacidadeTotal) {
-          erro(ctx, "ev-cap", `Os exércitos somam ${soma} vagas, menos que a capacidade total (${ev.capacidadeTotal}).`);
+          erro(ctx, "ev-cap", tr("os_exercitos_somam_soma_vagas_menos", { soma, capacidadeTotal: ev.capacidadeTotal }));
         }
         break;
       }
       case "ingressos":
-        if (ev.tipos.length === 0) erro(ctx, "ev-tp-add", "Cadastre ao menos um tipo de ingresso.");
+        if (ev.tipos.length === 0) erro(ctx, "ev-tp-add", tr("cadastre_ao_menos_um_tipo_de"));
         ev.tipos.forEach((t) => {
-          if (vazio(t.nome)) erro(ctx, `tp-nome-${t.id}`, "Dê um nome ao ingresso.");
-          if (!(t.precoBaseCentavos >= 0)) erro(ctx, `tp-preco-${t.id}`, "Preço inválido.");
-          if (!(t.quantidadeMaxima >= 1)) erro(ctx, `tp-qt-${t.id}`, "Quantidade mínima de 1.");
+          if (vazio(t.nome)) erro(ctx, `tp-nome-${t.id}`, tr("de_um_nome_ao_ingresso"));
+          if (!(t.precoBaseCentavos >= 0)) erro(ctx, `tp-preco-${t.id}`, tr("preco_invalido"));
+          if (!(t.quantidadeMaxima >= 1)) erro(ctx, `tp-qt-${t.id}`, tr("quantidade_minima_de_1"));
         });
         ev.lotes.forEach((l) => {
-          if (vazio(l.nome)) erro(ctx, `lt-nome-${l.id}`, "Dê um nome ao lote.");
+          if (vazio(l.nome)) erro(ctx, `lt-nome-${l.id}`, tr("de_um_nome_ao_lote"));
           if (!dataValida(l.inicioVendas) || !dataValida(l.fimVendas) || new Date(l.fimVendas) <= new Date(l.inicioVendas)) {
-            erro(ctx, `lt-fim-${l.id}`, "O fim das vendas deve ser depois do início.");
+            erro(ctx, `lt-fim-${l.id}`, tr("o_fim_das_vendas_deve_ser"));
           } else if (l.status !== "arquivado" && dataValida(ev.fimEm) && new Date(l.fimVendas) > new Date(ev.fimEm)) {
-            erro(ctx, `lt-fim-${l.id}`, `As vendas devem terminar até o término da operação (${formatarNoFuso(ev.fimEm, ev.fuso)}).`);
+            erro(ctx, `lt-fim-${l.id}`, tr("as_vendas_devem_terminar_ate_o", { fimEm: formatarNoFuso(ev.fimEm, ev.fuso) }));
           }
-          if (l.itens.length === 0) erro(ctx, `lt-nome-${l.id}`, "Inclua pelo menos um tipo de ingresso no lote.");
+          if (l.itens.length === 0) erro(ctx, `lt-nome-${l.id}`, tr("inclua_pelo_menos_um_tipo_de"));
           l.itens.forEach((it) => {
-            if (!ev.tipos.some((t) => t.id === it.tipoId)) erro(ctx, `lt-nome-${l.id}`, "O lote inclui um ingresso removido.");
-            if (!(it.precoCentavos >= 0)) erro(ctx, `lt-pr-${l.id}-${it.tipoId}`, "Preço inválido.");
-            if (!(it.quantidade >= 1)) erro(ctx, `lt-qt-${l.id}-${it.tipoId}`, "Quantidade mínima de 1.");
+            if (!ev.tipos.some((t) => t.id === it.tipoId)) erro(ctx, `lt-nome-${l.id}`, tr("o_lote_inclui_um_ingresso_removido"));
+            if (!(it.precoCentavos >= 0)) erro(ctx, `lt-pr-${l.id}-${it.tipoId}`, tr("preco_invalido"));
+            if (!(it.quantidade >= 1)) erro(ctx, `lt-qt-${l.id}-${it.tipoId}`, tr("quantidade_minima_de_1"));
           });
         });
         break;
       case "cronograma": {
-        if (ev.cronograma.length === 0) erro(ctx, "ev-at-add", "Adicione ao menos uma atividade ao cronograma.");
+        if (ev.cronograma.length === 0) erro(ctx, "ev-at-add", tr("adicione_ao_menos_uma_atividade_ao"));
         ev.cronograma.forEach((a) => {
-          if (vazio(a.titulo)) erro(ctx, `at-titulo-${a.id}`, "Dê um nome à atividade.");
-          if (Number.isNaN(instanteDaAtividade(ev, a).getTime())) erro(ctx, `at-data-${a.id}`, "Informe data e horário.");
+          if (vazio(a.titulo)) erro(ctx, `at-titulo-${a.id}`, tr("de_um_nome_a_atividade"));
+          if (Number.isNaN(instanteDaAtividade(ev, a).getTime())) erro(ctx, `at-data-${a.id}`, tr("informe_data_e_horario"));
           else if (!atividadeNoPeriodo(ev, a)) {
-            erro(ctx, `at-data-${a.id}`, `Fora do período da operação (${formatarPeriodoNoFuso(ev.inicioEm, ev.fimEm, ev.fuso)}).`);
+            erro(ctx, `at-data-${a.id}`, tr("fora_do_periodo_da_operacao_inicioem", { inicioEm: formatarPeriodoNoFuso(ev.inicioEm, ev.fimEm, ev.fuso) }));
           }
         });
-        if (ev.regras && vazio(ev.regras.titulo)) erro(ctx, "ev-regras-titulo", "Informe o título do caderno de regras.");
+        if (ev.regras && vazio(ev.regras.titulo)) erro(ctx, "ev-regras-titulo", tr("informe_o_titulo_do_caderno_de"));
         break;
       }
     }
@@ -166,11 +168,11 @@ export function validarEtapa(ev: Evento, etapa: number, oc: Ocupacao = SEM_OCUPA
 
 export type SituacaoIngresso = "disponivel" | "agendado" | "sem_lote" | "encerrado" | "esgotado";
 export const TEXTO_SITUACAO: Record<SituacaoIngresso, string> = {
-  disponivel: "Disponível para venda",
-  agendado: "Vendas agendadas",
-  sem_lote: "Sem lote configurado",
-  encerrado: "Lote encerrado",
-  esgotado: "Esgotado",
+  get disponivel() { return tr("disponivel_para_venda"); },
+  get agendado() { return tr("vendas_agendadas"); },
+  get sem_lote() { return tr("sem_lote_configurado"); },
+  get encerrado() { return tr("lote_encerrado"); },
+  get esgotado() { return tr("esgotado"); },
 };
 
 export function situacaoIngresso(ev: Evento, tipoId: string, ocupacao: OcupacaoLote = () => 0, agora = new Date()): SituacaoIngresso {
@@ -186,7 +188,7 @@ export function situacaoIngresso(ev: Evento, tipoId: string, ocupacao: OcupacaoL
 export function revisarEvento(ev: Evento, oc: Ocupacao = SEM_OCUPACAO, agora = new Date(), ocupacaoLote?: OcupacaoLote) {
   const erros: Problema[] = [];
   for (let i = 0; i < ETAPAS.length - 1; i++) erros.push(...validarEtapa(ev, i, oc));
-  if (!ev.imagemUrl) erros.push({ etapa: 2, campo: "ev-img-arquivo", mensagem: "Adicione a imagem principal do evento." });
+  if (!ev.imagemUrl) erros.push({ etapa: 2, campo: "ev-img-arquivo", mensagem: tr("adicione_a_imagem_principal_do_evento") });
   // Regras do servidor que ainda não foram cobertas pelas etapas.
   for (const m of validarParaPublicacao(ev)) {
     if (!erros.some((e) => e.mensagem === m) && !/obrigat|Cadastre|cronograma precisa|fora do período|as vendas devem terminar|início da operação já|imagem principal|modalidade/i.test(m)) {
@@ -197,18 +199,18 @@ export function revisarEvento(ev: Evento, oc: Ocupacao = SEM_OCUPACAO, agora = n
   const tipos = ev.tipos.filter((t) => !t.arquivado);
   const situacoes = tipos.map((t) => ({ t, s: situacaoIngresso(ev, t.id, ocupacaoLote, agora) }));
   if (tipos.length && !situacoes.some(({ s }) => s === "disponivel" || s === "agendado")) {
-    erros.push({ etapa: 4, campo: "ev-lt-add", mensagem: "Nenhum ingresso tem venda aberta ou agendada. Crie um lote ativo com período de vendas válido." });
+    erros.push({ etapa: 4, campo: "ev-lt-add", mensagem: tr("nenhum_ingresso_tem_venda_aberta_ou") });
   }
   for (const { t, s } of situacoes) {
     if (s === "agendado") {
       const prox = ev.lotes
         .filter((l) => l.status === "ativo" && l.itens.some((it) => it.tipoId === t.id) && new Date(l.inicioVendas) > agora)
         .sort((a, b) => a.inicioVendas.localeCompare(b.inicioVendas))[0];
-      avisos.push({ etapa: 4, campo: `tp-nome-${t.id}`, mensagem: `${t.nome || "Ingresso"}: vendas começam em ${prox ? new Date(prox.inicioVendas).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "data futura"}.` });
+      avisos.push({ etapa: 4, campo: `tp-nome-${t.id}`, mensagem: tr("nome_vendas_comecam_em", { nome: t.nome || tr("ingresso"), data: prox ? new Date(prox.inicioVendas).toLocaleString(localeAtual(), { dateStyle: "short", timeStyle: "short" }) : tr("data_futura") }) });
     } else if (s !== "disponivel") {
-      avisos.push({ etapa: 4, campo: `tp-nome-${t.id}`, mensagem: `${t.nome || "Ingresso"}: ${TEXTO_SITUACAO[s].toLowerCase()}.` });
+      avisos.push({ etapa: 4, campo: `tp-nome-${t.id}`, mensagem: `${t.nome || tr("ingresso")}: ${TEXTO_SITUACAO[s].toLowerCase()}.` });
     }
   }
-  if (!ev.regras) avisos.push({ etapa: 5, campo: "ev-regras-arquivo", mensagem: "O evento ficará sem caderno de regras." });
+  if (!ev.regras) avisos.push({ etapa: 5, campo: "ev-regras-arquivo", mensagem: tr("o_evento_ficara_sem_caderno_de") });
   return { erros, avisos };
 }

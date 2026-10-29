@@ -2,8 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
 import { CameraOff, Loader2 } from "lucide-react";
+import { tr } from "@/i18n/components/LeitorQr";
 
-const ALTERNATIVA = "Enquanto isso, use a busca ou digite o código do ingresso.";
+const alternativa = () => tr("enquanto_isso_use_a_busca");
 
 /**
  * Explica por que a câmera não abriu. "NotAllowedError" cobre três casos bem diferentes:
@@ -12,25 +13,25 @@ const ALTERNATIVA = "Enquanto isso, use a busca ou digite o código do ingresso.
  */
 async function motivoFalhaCamera(e: DOMException | undefined): Promise<string> {
   const nome = e?.name ?? "";
-  if (nome === "NotFoundError" || nome === "OverconstrainedError") return `Nenhuma câmera encontrada neste aparelho. ${ALTERNATIVA}`;
-  if (nome === "NotReadableError") return `A câmera está em uso por outro aplicativo ou aba. Feche-o e tente de novo. ${ALTERNATIVA}`;
-  if (nome !== "NotAllowedError" && nome !== "SecurityError") return `Câmera indisponível. ${ALTERNATIVA}`;
-  if (typeof window !== "undefined" && !window.isSecureContext) return `A câmera só funciona em endereço seguro (https). ${ALTERNATIVA}`;
+  if (nome === "NotFoundError" || nome === "OverconstrainedError") return tr("nenhuma_camera_encontrada_neste_aparelho", { ALTERNATIVA: alternativa() });
+  if (nome === "NotReadableError") return tr("a_camera_esta_em_uso_por", { ALTERNATIVA: alternativa() });
+  if (nome !== "NotAllowedError" && nome !== "SecurityError") return tr("camera_indisponivel_alternativa", { ALTERNATIVA: alternativa() });
+  if (typeof window !== "undefined" && !window.isSecureContext) return tr("a_camera_so_funciona_em_endereco", { ALTERNATIVA: alternativa() });
   // Chrome/Edge expõem a política do documento; outros navegadores caem nos casos abaixo.
   const politica = (document as Document & { permissionsPolicy?: { allowsFeature(f: string): boolean }; featurePolicy?: { allowsFeature(f: string): boolean } });
   const pol = politica.permissionsPolicy ?? politica.featurePolicy;
   if (pol && !pol.allowsFeature("camera")) {
-    return `A câmera está bloqueada pela configuração do site (Permissions-Policy). Avise a administração da plataforma. ${ALTERNATIVA}`;
+    return tr("a_camera_esta_bloqueada_pela_configuraca", { ALTERNATIVA: alternativa() });
   }
   try {
     const p = await navigator.permissions?.query({ name: "camera" as PermissionName });
     if (p?.state === "denied") {
-      return `O navegador está bloqueando a câmera para este site. Toque no cadeado ao lado do endereço, permita a câmera e reabra o leitor. ${ALTERNATIVA}`;
+      return tr("o_navegador_esta_bloqueando_a_camera", { ALTERNATIVA: alternativa() });
     }
   } catch {
     /* navegador sem consulta de permissão de câmera */
   }
-  return `Acesso à câmera negado. Verifique a permissão do navegador e, no computador, se o sistema libera a câmera para o navegador. ${ALTERNATIVA}`;
+  return tr("acesso_a_camera_negado_verifique_a", { ALTERNATIVA: alternativa() });
 }
 
 export function LeitorQr({ pausado, onLeitura, onErro }: {
@@ -49,7 +50,7 @@ export function LeitorQr({ pausado, onLeitura, onErro }: {
     let quadro = 0;
     let vivo = true;
     const falhar = (m: string) => { setEstado("erro"); setErro(m); onErro(m); };
-    if (!navigator.mediaDevices?.getUserMedia) { falhar("Câmera indisponível neste aparelho ou navegador."); return; }
+    if (!navigator.mediaDevices?.getUserMedia) { falhar(tr("camera_indisponivel_neste_aparelho_ou_na")); return; }
     navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false })
       .then(async (s) => {
         if (!vivo) { s.getTracks().forEach((t) => t.stop()); return; }
@@ -84,10 +85,10 @@ export function LeitorQr({ pausado, onLeitura, onErro }: {
 
   return (
     <div className="relative mx-auto aspect-square w-full max-w-sm overflow-hidden rounded-lg border-2 border-primary bg-secondary">
-      <video ref={video} playsInline muted className="h-full w-full object-cover" aria-label="Imagem da câmera" />
+      <video ref={video} playsInline muted className="h-full w-full object-cover" aria-label={tr("imagem_da_camera")} />
       <canvas ref={canvas} className="hidden" />
       {estado === "ativo" && <div className="pointer-events-none absolute inset-10 rounded-md border-4 border-dashed border-accent/80" aria-hidden="true" />}
-      {estado === "iniciando" && <div className="absolute inset-0 grid place-items-center text-sm"><span className="inline-flex items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" />Solicitando acesso à câmera…</span></div>}
+      {estado === "iniciando" && <div className="absolute inset-0 grid place-items-center text-sm"><span className="inline-flex items-center gap-2"><Loader2 className="h-5 w-5 animate-spin" />{tr("solicitando_acesso_a_camera")}</span></div>}
       {estado === "erro" && (
         <div role="alert" className="absolute inset-0 grid place-items-center p-6 text-center text-sm">
           <span><CameraOff className="mx-auto mb-2 h-8 w-8" />{erro}</span>

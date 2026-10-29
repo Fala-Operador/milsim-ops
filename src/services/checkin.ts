@@ -14,6 +14,7 @@ import {
   registrarLocal, salvarSnapshot, type SnapshotOffline,
 } from "@/services/checkinStore";
 import type { BaseDados, Evento, Usuario } from "@/lib/domain/types";
+import { tr } from "@/i18n/services/checkin";
 
 const novoId = () => `ck-${Date.now().toString(36)}-${aleatorioSeguro(8)}`;
 
@@ -29,7 +30,7 @@ export function podeOperar(usuario: Usuario | null, evento: Evento | undefined):
 }
 function exigirPermissao(usuario: Usuario | null, eventoId: string) {
   const evento = carregarBase().eventos.find((e) => e.id === eventoId);
-  if (!podeOperar(usuario, evento)) throw new ErroDominio("sem_permissao", "Você não tem acesso ao check-in deste evento.");
+  if (!podeOperar(usuario, evento)) throw new ErroDominio("sem_permissao", tr("voce_nao_tem_acesso_ao_check"));
   return usuario!;
 }
 
@@ -43,7 +44,7 @@ export function garantirTokens(eventoId?: string): void {
 /** Token do participante (só o dono da inscrição). */
 export function tokenDaInscricao(inscricaoId: string, usuarioId: string): string {
   const ins = carregarBase().inscricoes.find((i) => i.id === inscricaoId && i.usuarioId === usuarioId);
-  if (!ins || ins.status !== "confirmada" || !ins.tokenEntrada) throw new ErroDominio("sem_ingresso", "Ingresso indisponível.");
+  if (!ins || ins.status !== "confirmada" || !ins.tokenEntrada) throw new ErroDominio("sem_ingresso", tr("ingresso_indisponivel"));
   return ins.tokenEntrada;
 }
 
@@ -107,7 +108,7 @@ export async function confirmarEntrada(p: {
   usuario: Usuario | null; eventoId: string; inscricaoId: string; origem: OrigemEntrada; motivo?: string | undefined; online: boolean;
 }): Promise<{ resultado: ResultadoValidacao; registro?: RegistroCheckin }> {
   const usuario = exigirPermissao(p.usuario, p.eventoId);
-  if (p.origem !== "qr" && !p.motivo?.trim()) throw new ErroDominio("motivo", "Informe o motivo do check-in manual.");
+  if (p.origem !== "qr" && !p.motivo?.trim()) throw new ErroDominio("motivo", tr("informe_o_motivo_do_check_in"));
   const fonte = await carregarFonte(p.eventoId, p.online);
   const resultado = validarEntrada(fonte, p.eventoId, { inscricaoId: p.inscricaoId });
   if (resultado.tipo !== "valido") return { resultado };
@@ -123,7 +124,7 @@ export async function confirmarEntrada(p: {
 /** Desfaz um check-in: preserva o original e adiciona uma reversão. */
 export async function reverterEntrada(p: { usuario: Usuario | null; registro: RegistroCheckin; motivo: string }): Promise<RegistroCheckin> {
   const usuario = exigirPermissao(p.usuario, p.registro.eventoId);
-  if (!p.motivo.trim()) throw new ErroDominio("motivo", "Informe a justificativa para desfazer o check-in.");
+  if (!p.motivo.trim()) throw new ErroDominio("motivo", tr("informe_a_justificativa_para_desfazer_o"));
   const rev: RegistroCheckin = {
     id: novoId(), eventoId: p.registro.eventoId, inscricaoId: p.registro.inscricaoId, tipo: "reversao",
     revertidoId: p.registro.id, origem: p.registro.origem, motivo: p.motivo.trim(), operadorId: usuario.id,
@@ -155,13 +156,13 @@ export async function prepararOffline(usuario: Usuario | null, eventoId: string)
 export function aplicarSincronizacao(usuario: Usuario, ops: RegistroCheckin[]): RegistroCheckin[] {
   return mutarBase((b) => ops.map((op) => {
     const evento = b.eventos.find((e) => e.id === op.eventoId);
-    if (!podeOperar(usuario, evento)) throw new ErroDominio("sem_permissao", "Você não tem acesso ao check-in deste evento.");
+    if (!podeOperar(usuario, evento)) throw new ErroDominio("sem_permissao", tr("voce_nao_tem_acesso_ao_check"));
     const inscricao = b.inscricoes.find((i) => i.id === op.inscricaoId);
     if (!inscricao || inscricao.eventoId !== op.eventoId) {
-      return { ...op, sync: "conflito" as const, conflito: "Ingresso não pertence a este evento." };
+      return { ...op, sync: "conflito" as const, conflito: tr("ingresso_nao_pertence_a_este_evento") };
     }
     if (op.operadorId !== usuario.id) {
-      return { ...op, sync: "conflito" as const, conflito: "Registro feito por outro operador; sincronize com a conta dele." };
+      return { ...op, sync: "conflito" as const, conflito: tr("registro_feito_por_outro_operador_sincro") };
     }
     const r = resolverSincronizacao(b.checkins, op, inscricao.status);
     const final: RegistroCheckin = { ...op, sync: r.status, conflito: r.conflito };

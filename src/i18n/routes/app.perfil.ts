@@ -43,7 +43,7 @@ export const tr = dicionario("routes/app.perfil", {
   "claro": { pt: "Claro", en: "Light" },
   "explorar_todas": { pt: "Explorar todas", en: "Explore all" },
   "ainda_nao_escolhidas": { pt: "Ainda não escolhidas", en: "Not chosen yet" },
-  "modalidades_favoritas": { pt: "Modalidades favoritas", en: "Favorite game types" },
+  "modalidades_favoritas": { pt: "Modalidades favoritas", en: "Favorite game modes" },
   "suas_favoritas_aparecem_primeiro_em_para": { pt: "Suas favoritas aparecem primeiro em “Para você”, sem esconder as demais.", en: "Your favorites appear first in “For you”, without hiding the others." },
   "atual_atual": { pt: "Atual: {atual}", en: "Current: {atual}" },
   "salvar_preferencias": { pt: "Salvar preferências", en: "Save preferences" },

@@ -1,5 +1,6 @@
 import { ETAPAS } from "@/lib/eventoEditor";
 import { Button } from "@/components/ui/button";
+import { tr } from "@/i18n/components/editorEvento/EventStepNavigation";
 
 /**
  * Etapas concluídas, atual e pendentes. Só permite ir até a etapa mais avançada já validada.
@@ -18,7 +19,7 @@ export function EventStepNavigation({
 }) {
   const pendentes = ETAPAS.map((e, i) => ({ e, i })).filter(({ i }) => comErro.has(i));
   return (
-    <nav aria-label="Etapas do formulário">
+    <nav aria-label={tr("etapas_do_formulario")}>
       {/* Celular: indicador compacto, sem barra horizontal */}
       <div className="md:hidden">
         <p className="text-xs text-muted-foreground">{ETAPAS[atual]?.titulo}</p>
@@ -29,7 +30,7 @@ export function EventStepNavigation({
         </div>
         {pendentes.length > 0 && (
           <p className="mt-1.5 flex flex-wrap gap-x-2 gap-y-1 text-xs text-destructive">
-            <span>Pendências em:</span>
+            <span>{tr("pendencias_em")}</span>
             {pendentes.map(({ e, i }) => (
               <Button key={e.id} variant="plain" size="none" type="button" disabled={i > alcancada} onClick={() => irPara(i)} className="underline underline-offset-2">
                 {i + 1}. {e.titulo}
@@ -57,7 +58,7 @@ export function EventStepNavigation({
               >
                 <span aria-hidden className="grid h-5 w-5 place-items-center rounded-full border border-current font-mono text-[10px]">{erro ? "!" : estado === "concluida" ? "✓" : i + 1}</span>
                 {e.titulo}
-                <span className="sr-only">{erro ? " (com pendências)" : estado === "concluida" ? " (concluída)" : estado === "pendente" ? " (pendente)" : " (atual)"}</span>
+                <span className="sr-only">{erro ? ` ${tr("com_pendencias")}` : estado === "concluida" ? ` ${tr("concluida")}` : estado === "pendente" ? ` ${tr("pendente")}` : ` ${tr("atual")}`}</span>
               </Button>
             </li>
           );

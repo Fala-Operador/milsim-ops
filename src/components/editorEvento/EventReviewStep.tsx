@@ -4,13 +4,14 @@ import type { Evento } from "@/lib/domain/types";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { nomeModalidade } from "@/lib/modalidades";
 import { ETAPAS, type Problema } from "@/lib/eventoEditor";
+import { tr } from "@/i18n/components/editorEvento/EventReviewStep";
 
 function Bloco({ titulo, etapa, irPara, children }: { titulo: string; etapa: number; irPara: (e: number, campo?: string) => void; children: ReactNode }) {
   return (
     <section className="rounded-md border border-border bg-elevated p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
         <h3 className="font-display text-sm font-semibold uppercase tracking-wide">{titulo}</h3>
-        <Button type="button" variant="ghost" onClick={() => irPara(etapa)} aria-label={`Editar ${titulo}`}>Editar</Button>
+        <Button type="button" variant="ghost" onClick={() => irPara(etapa)} aria-label={tr("editar_titulo", { titulo })}>{tr("editar")}</Button>
       </div>
       <div className="space-y-1 text-sm">{children}</div>
     </section>
@@ -39,44 +40,44 @@ export function EtapaRevisao({ ev, erros, avisos, irPara }: { ev: Evento; erros:
   const banner = ev.imagem?.bannerUrl || ev.imagemUrl;
   return (
     <div className="space-y-4">
-      <ListaProblemas titulo="Corrija antes de publicar" itens={erros} tom="erro" irPara={irPara} />
-      <ListaProblemas titulo="Avisos" itens={avisos} tom="aviso" irPara={irPara} />
-      {erros.length === 0 && <p role="status" className="rounded-md border border-success/50 bg-success/10 p-3 text-sm">Tudo pronto. Revise o resumo abaixo.</p>}
+      <ListaProblemas titulo={tr("corrija_antes_de_publicar")} itens={erros} tom="erro" irPara={irPara} />
+      <ListaProblemas titulo={tr("avisos")} itens={avisos} tom="aviso" irPara={irPara} />
+      {erros.length === 0 && <p role="status" className="rounded-md border border-success/50 bg-success/10 p-3 text-sm">{tr("tudo_pronto_revise_o_resumo_abaixo")}</p>}
 
-      <Bloco titulo="Banner e card" etapa={2} irPara={irPara}>
+      <Bloco titulo={tr("banner_e_card")} etapa={2} irPara={irPara}>
         {banner ? (
           <div className="grid gap-3 sm:grid-cols-[3fr_2fr]">
             <img src={banner} alt={ev.imagem?.alt ?? ""} className="aspect-[21/9] w-full rounded object-cover" />
             {ev.imagemUrl && <img src={ev.imagemUrl} alt="" className="aspect-video w-full rounded object-cover" />}
           </div>
-        ) : <p className="text-muted-foreground">Sem imagem.</p>}
+        ) : <p className="text-muted-foreground">{tr("sem_imagem")}</p>}
       </Bloco>
       <div className="grid gap-4 lg:grid-cols-2">
-        <Bloco titulo="Informações gerais" etapa={0} irPara={irPara}>
+        <Bloco titulo={tr("informacoes_gerais")} etapa={0} irPara={irPara}>
           <p className="font-medium">{ev.nome || "—"}</p>
-          <p>Modalidade: {nomeModalidade(ev.modalidade)}</p>
-          <p className="text-muted-foreground">{ev.descricaoResumida || "Sem descrição."}</p>
+          <p>{tr("modalidade_modalidade", { modalidade: nomeModalidade(ev.modalidade) })}</p>
+          <p className="text-muted-foreground">{ev.descricaoResumida || tr("sem_descricao")}</p>
         </Bloco>
-        <Bloco titulo="Data e localização" etapa={1} irPara={irPara}>
+        <Bloco titulo={tr("data_e_localizacao")} etapa={1} irPara={irPara}>
           <p>{formatarDataBR(ev.inicioEm)} → {formatarDataBR(ev.fimEm)}</p>
           <p>{ev.local || "—"}</p>
           <p className="text-muted-foreground">{[ev.endereco, ev.cep].filter(Boolean).join(" · ")} {ev.cidade}/{ev.uf}</p>
         </Bloco>
-        <Bloco titulo="Exércitos e capacidade" etapa={3} irPara={irPara}>
-          <p>Capacidade total: {ev.capacidadeTotal}</p>
-          <ul className="text-muted-foreground">{ev.exercitos.map((x) => <li key={x.id}>{x.nome || "Sem nome"} · {x.capacidade} vagas</li>)}</ul>
+        <Bloco titulo={tr("exercitos_e_capacidade")} etapa={3} irPara={irPara}>
+          <p>{tr("capacidade_total_capacidadetotal", { capacidadeTotal: ev.capacidadeTotal })}</p>
+          <ul className="text-muted-foreground">{ev.exercitos.map((x) => <li key={x.id}>{x.nome || tr("sem_nome")}{" "}{tr("capacidade_vagas", { capacidade: x.capacidade })}</li>)}</ul>
         </Bloco>
-        <Bloco titulo="Ingressos e lotes" etapa={4} irPara={irPara}>
-          <ul>{ev.tipos.map((t) => <li key={t.id}>{t.nome || "Sem nome"} · base {formatarBRL(t.precoBaseCentavos)} · {t.quantidadeMaxima} un.</li>)}</ul>
+        <Bloco titulo={tr("ingressos_e_lotes")} etapa={4} irPara={irPara}>
+          <ul>{ev.tipos.map((t) => <li key={t.id}>{t.nome || tr("sem_nome")}{" "}{tr("base_precobasecentavos_quantidademaxima", { precoBaseCentavos: formatarBRL(t.precoBaseCentavos), quantidadeMaxima: t.quantidadeMaxima })}</li>)}</ul>
           <ul className="text-muted-foreground">{ev.lotes.map((l) => <li key={l.id}>{l.nome} ({l.status}) · {formatarDataBR(l.inicioVendas)} → {formatarDataBR(l.fimVendas)}</li>)}</ul>
-          {ev.lotes.length === 0 && <p className="text-warning">Nenhum lote.</p>}
+          {ev.lotes.length === 0 && <p className="text-warning">{tr("nenhum_lote")}</p>}
         </Bloco>
-        <Bloco titulo="Cronograma" etapa={5} irPara={irPara}>
-          <ul>{[...ev.cronograma].sort((a, b) => a.ordem - b.ordem).map((a) => <li key={a.id}>{a.data ? formatarDataBR(a.data) : "Sem data"}{a.horario ? ` às ${a.horario}` : ""} · {a.titulo || "Sem nome"}</li>)}</ul>
-          {ev.cronograma.length === 0 && <p className="text-muted-foreground">Sem atividades.</p>}
+        <Bloco titulo={tr("cronograma")} etapa={5} irPara={irPara}>
+          <ul>{[...ev.cronograma].sort((a, b) => a.ordem - b.ordem).map((a) => <li key={a.id}>{a.data ? formatarDataBR(a.data) : tr("sem_data")}{a.horario ? ` ${tr("as_horario", { horario: a.horario })}` : ""} · {a.titulo || tr("sem_nome")}</li>)}</ul>
+          {ev.cronograma.length === 0 && <p className="text-muted-foreground">{tr("sem_atividades")}</p>}
         </Bloco>
-        <Bloco titulo="Documento de regras" etapa={5} irPara={irPara}>
-          {ev.regras ? <p>{ev.regras.titulo} · v{ev.regras.versao} · {ev.regras.nomeArquivo ?? ev.regras.formato.toUpperCase()}</p> : <p className="text-muted-foreground">Sem caderno de regras.</p>}
+        <Bloco titulo={tr("documento_de_regras")} etapa={5} irPara={irPara}>
+          {ev.regras ? <p>{tr("titulo_vversao_valor", { titulo: ev.regras.titulo, versao: ev.regras.versao, valor: ev.regras.nomeArquivo ?? ev.regras.formato.toUpperCase() })}</p> : <p className="text-muted-foreground">{tr("sem_caderno_de_regras")}</p>}
         </Bloco>
       </div>
     </div>
