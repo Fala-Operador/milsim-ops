@@ -224,7 +224,7 @@ export function SkeletonCartao() {
 }
 
 /** Lista/tabela carregando: linhas com avatar ou posição, texto e valor à direita. */
-export function SkeletonLista({ linhas = 5, rotulo = "Carregando lista" }: { linhas?: number; rotulo?: string }) {
+export function SkeletonLista({ linhas = 5, rotulo = tr("carregando_lista") }: { linhas?: number; rotulo?: string }) {
   return (
     <div className="divide-y divide-border rounded-md border border-border" role="status" aria-label={rotulo}>
       {Array.from({ length: linhas }, (_, i) => (
@@ -265,8 +265,8 @@ export function SkeletonPagina() {
 
 // Limite de erro de uma seção: mostra recuperação em vez de tela em branco.
 export function ErroSecao({
-  titulo = "Esta seção não carregou",
-  descricao = "Algo deu errado ao exibir este conteúdo. Tente novamente ou volte ao início.",
+  titulo = tr("esta_secao_nao_carregou"),
+  descricao = tr("algo_deu_errado_ao_exibir_este"),
   onTentar,
 }: {
   titulo?: string;
@@ -290,7 +290,7 @@ export function ErroSecao({
   );
 }
 
-export function Spinner({ texto = "Carregando..." }: { texto?: string }) {
+export function Spinner({ texto = tr("carregando") }: { texto?: string }) {
   return (
     <div className="flex items-center justify-center gap-2 p-8 text-muted-foreground" role="status">
       <span className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-primary" />

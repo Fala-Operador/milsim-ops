@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { iniciarLoginGoogle } from "@/api/sessao.functions";
 import { Button } from "@/components/ui/button";
+import { tr } from "@/i18n/components/EntrarComGoogle";
 
 function LogoGoogle() {
   return (
@@ -15,7 +16,7 @@ function LogoGoogle() {
   );
 }
 
-export function EntrarComGoogle({ redirect, texto = "Entrar com o Google" }: { redirect: string | undefined; texto?: string }) {
+export function EntrarComGoogle({ redirect, texto = tr("entrar_com_o_google") }: { redirect: string | undefined; texto?: string }) {
   const [indo, setIndo] = useState(false);
   const [erro, setErro] = useState("");
 
@@ -25,7 +26,7 @@ export function EntrarComGoogle({ redirect, texto = "Entrar com o Google" }: { r
     try {
       window.location.assign(await iniciarLoginGoogle(redirect));
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível abrir o Google.");
+      setErro(e instanceof Error ? e.message : tr("nao_foi_possivel_abrir_o_google"));
       setIndo(false);
     }
   };
@@ -34,7 +35,7 @@ export function EntrarComGoogle({ redirect, texto = "Entrar com o Google" }: { r
     <div className="space-y-2">
       <Button type="button" variant="outline" size="lg" className="w-full gap-3" onClick={entrar} disabled={indo}>
         <LogoGoogle />
-        {indo ? "Abrindo o Google..." : texto}
+        {indo ? tr("abrindo_o_google") : texto}
       </Button>
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
     </div>
@@ -45,7 +46,7 @@ export function EntrarComGoogle({ redirect, texto = "Entrar com o Google" }: { r
 export function SeparadorOu() {
   return (
     <div className="flex items-center gap-3 font-mono text-[11px] uppercase tracking-wider text-muted-foreground" aria-hidden="true">
-      <span className="h-px flex-1 bg-border" />ou<span className="h-px flex-1 bg-border" />
+      <span className="h-px flex-1 bg-border" />{tr("ou")}<span className="h-px flex-1 bg-border" />
     </div>
   );
 }

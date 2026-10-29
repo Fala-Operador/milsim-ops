@@ -10,8 +10,8 @@ import { idDoVisitante } from "@/services/analytics";
 import { ImagemSegura } from "@/components/divulgacao";
 import { Button } from "@/components/ui/button";
 import imgRealAction from "@/assets/modalidade-real-action.jpg";
+import { tr } from "@/i18n/components/LayoutAcesso";
 
-const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
 function useImpulsionadas(limite: number): CartaoEventoResolvido[] | null {
   const versao = useVersaoBase();
@@ -37,8 +37,8 @@ function OperacoesEmDestaque({ cartoes }: { cartoes: CartaoEventoResolvido[] | n
   return (
     <section aria-labelledby="t-destaque-acesso" className="mb-8 lg:hidden">
       <div className="mb-2 flex items-baseline justify-between">
-        <h2 id="t-destaque-acesso" className="rotulo-tecnico">Em destaque agora</h2>
-        <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">Ver todas</Link>
+        <h2 id="t-destaque-acesso" className="rotulo-tecnico">{tr("em_destaque_agora")}</h2>
+        <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">{tr("ver_todas")}</Link>
       </div>
       <ul className="carousel-viewport -mx-4 flex snap-x gap-2 px-4 sm:mx-0 sm:grid sm:grid-cols-3 sm:px-0">
         {(cartoes ?? [null, null, null]).map((c, i) => {
@@ -52,7 +52,7 @@ function OperacoesEmDestaque({ cartoes }: { cartoes: CartaoEventoResolvido[] | n
                 <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" aria-hidden />
                 <span className="absolute inset-x-0 bottom-0 p-2.5 text-white">
                   <span className="block font-mono text-[10px] uppercase tracking-wider text-white/75">
-                    {String(d.getDate()).padStart(2, "0")} {MESES[d.getMonth()]} · {c.evento.cidade}/{c.evento.uf}
+                    {String(d.getDate()).padStart(2, "0")} {tr("meses").split(",")[d.getMonth()]} · {c.evento.cidade}/{c.evento.uf}
                   </span>
                   <span className="mt-0.5 line-clamp-2 block text-[13px] font-semibold leading-tight">{c.evento.nome}</span>
                 </span>
@@ -86,18 +86,17 @@ function PainelLateral({ cartoes, imagem, frase, rotulo }: {
       {c && d ? (
         <div className="absolute inset-x-0 bottom-0 p-8 text-white">
           <p className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-white/80">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />Operação em destaque
-          </p>
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />{tr("operacao_em_destaque")}</p>
           <p className="mt-2 max-w-md font-display text-5xl font-bold uppercase leading-[0.95]">{c.evento.nome}</p>
           <p className="mt-3 font-mono text-xs uppercase tracking-wider text-white/80">
-            {String(d.getDate()).padStart(2, "0")} {MESES[d.getMonth()]} {d.getFullYear()} · {c.evento.cidade}/{c.evento.uf}
+            {String(d.getDate()).padStart(2, "0")} {tr("meses").split(",")[d.getMonth()]} {d.getFullYear()} · {c.evento.cidade}/{c.evento.uf}
           </p>
           {c.chamada && <p className="mt-2 max-w-sm text-sm text-white/80">{c.chamada}</p>}
           <div className="mt-5 flex items-center justify-between gap-4">
             <Link to="/eventos/$eventoId" params={{ eventoId: c.evento.id }}
-              className="inline-flex items-center rounded-md border border-white/40 bg-black/30 px-4 py-2 text-sm font-semibold hover:bg-black/50">Ver operação</Link>
+              className="inline-flex items-center rounded-md border border-white/40 bg-black/30 px-4 py-2 text-sm font-semibold hover:bg-black/50">{tr("ver_operacao")}</Link>
             {total > 1 && (
-              <div className="flex gap-1.5" role="tablist" aria-label="Operações em destaque">
+              <div className="flex gap-1.5" role="tablist" aria-label={tr("operacoes_em_destaque")}>
                 {cartoes!.map((x, i) => (
                   <Button key={x.evento.id} variant="plain" size="none" role="tab" aria-selected={i === atual % total} aria-label={x.evento.nome}
                     onClick={() => setAtual(i)} className={`h-1 rounded-full transition-all ${i === atual % total ? "w-8 bg-white" : "w-4 bg-white/40 hover:bg-white/70"}`} />
