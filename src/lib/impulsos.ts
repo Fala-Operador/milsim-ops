@@ -6,6 +6,7 @@ import type { BaseDados, Evento, ImpulsoComprado, PlanoImpulso, PlanoImpulsoId, 
 import { POSICAO_COMUNIDADE, POSICAO_LISTAGEM } from "@/lib/domain/types";
 import { NACIONAL } from "@/lib/divulgacao";
 import { secoesCompativeis } from "@/lib/impulsionamento";
+import { tr } from "@/i18n/lib/impulsos";
 
 const HORA = 3_600_000;
 const DIA = 24 * HORA;
@@ -84,14 +85,17 @@ export function planosDeImpulso(base: Pick<BaseDados, "planosImpulso">): PlanoEx
 }
 
 export const rotuloDuracao = (horas: number) => (horas === 24 ? "24h" : `${Math.round(horas / 24)} dias`);
+/** Duração e nome do impulso na tela; `rotuloDuracao` e `rotulo` seguem em português para o Stripe e a auditoria. */
+export const duracaoNaTela = (horas: number) => (horas === 24 ? "24h" : tr("duracao_dias", { n: Math.round(horas / 24) }));
+export const nomeImpulso = (horas: number) => (horas === 24 ? tr("nome_impulso_24h") : tr("nome_impulso_dias", { n: Math.round(horas / 24) }));
 
 /** Erro ao salvar um tipo (preço e validade); "" quando ok. */
 export function erroPlano(p: Pick<PlanoImpulso, "precoCentavos" | "validadeDias">): string {
   if (!Number.isInteger(p.precoCentavos) || p.precoCentavos < 0 || p.precoCentavos > PRECO_MAXIMO_CENTAVOS) {
-    return "O preço deve ficar entre R$ 0,00 e R$ 10.000,00.";
+    return tr("o_preco_deve_ficar_entre_r");
   }
   if (!Number.isInteger(p.validadeDias) || p.validadeDias < 1 || p.validadeDias > VALIDADE_MAXIMA_DIAS) {
-    return `A validade deve ficar entre 1 e ${VALIDADE_MAXIMA_DIAS} dias.`;
+    return tr("a_validade_deve_ficar_entre_1", { VALIDADE_MAXIMA_DIAS });
   }
   return "";
 }
@@ -103,13 +107,13 @@ export const expiracaoDoImpulso = (pagoEm: Date, validadeDias: number) => new Da
 export type StatusExibidoImpulso = "aguardando_pagamento" | "processando" | "disponivel" | "usado" | "expirado" | "cancelado" | "reembolsado";
 
 export const ROTULO_STATUS_IMPULSO: Record<StatusExibidoImpulso, string> = {
-  aguardando_pagamento: "Aguardando pagamento",
-  processando: "Pagamento em processamento",
-  disponivel: "Disponível",
-  usado: "Usado",
-  expirado: "Expirado",
-  cancelado: "Cancelado",
-  reembolsado: "Reembolsado",
+  get aguardando_pagamento() { return tr("aguardando_pagamento"); },
+  get processando() { return tr("pagamento_em_processamento"); },
+  get disponivel() { return tr("disponivel"); },
+  get usado() { return tr("usado"); },
+  get expirado() { return tr("expirado"); },
+  get cancelado() { return tr("cancelado"); },
+  get reembolsado() { return tr("reembolsado"); },
 };
 
 /** Compra aguardando pagamento passou do prazo do checkout (o Stripe expira a sessão). */
@@ -175,16 +179,16 @@ export function periodoDoImpulso(base: BaseDados, evento: Evento, duracaoHoras: 
 /** Motivos que impedem usar o impulso neste evento (lista vazia = pode usar). */
 export function pendenciasUso(base: BaseDados, i: ImpulsoComprado, evento: Evento | undefined, agora: Date): string[] {
   const st = statusDoImpulso(i, agora);
-  if (st === "expirado") return ["Este impulso expirou e não pode mais ser usado."];
-  if (st !== "disponivel") return ["Este impulso não está disponível para uso."];
-  if (!evento || evento.organizacaoId !== i.organizacaoId) return ["Selecione uma operação da sua organização."];
+  if (st === "expirado") return [tr("este_impulso_expirou_e_nao_pode")];
+  if (st !== "disponivel") return [tr("este_impulso_nao_esta_disponivel_para")];
+  if (!evento || evento.organizacaoId !== i.organizacaoId) return [tr("selecione_uma_operacao_da_sua_organizaca")];
   const erros: string[] = [];
-  if (evento.status !== "publicado") erros.push("A operação precisa estar publicada.");
-  if (ms(evento.fimEm) <= agora.getTime()) erros.push("A operação já terminou.");
+  if (evento.status !== "publicado") erros.push(tr("a_operacao_precisa_estar_publicada"));
+  if (ms(evento.fimEm) <= agora.getTime()) erros.push(tr("a_operacao_ja_terminou"));
   else if (ms(periodoDoImpulso(base, evento, i.duracaoHoras, agora).inicioEm) >= ms(evento.fimEm)) {
-    erros.push("A operação termina antes de os impulsos já agendados acabarem.");
+    erros.push(tr("a_operacao_termina_antes_de_os"));
   }
-  if (!evento.imagemUrl) erros.push("A operação precisa de uma imagem para aparecer em destaque.");
+  if (!evento.imagemUrl) erros.push(tr("a_operacao_precisa_de_uma_imagem"));
   return erros;
 }
 

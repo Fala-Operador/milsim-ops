@@ -210,7 +210,7 @@ function pagamentoInicial(
 ): PagamentoInscricao {
   const org = base.organizacoes.find((o) => o.id === evento.organizacaoId);
   const contaDestino = contaParaRepasse(org);
-  if (!contaDestino) throw new ErroDominio("sem_recebimento", MSG_SEM_RECEBIMENTO);
+  if (!contaDestino) throw new ErroDominio("sem_recebimento", MSG_SEM_RECEBIMENTO());
   // Taxa de serviço do comprador, definida pela organização: somada ao ingresso e repassada a ela.
   const taxaComprador = taxaPlataforma(valorCentavos, taxaDoComprador(org));
   return {

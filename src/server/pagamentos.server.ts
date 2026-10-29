@@ -133,7 +133,7 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
       urlCancelamento: `${origem}/inscricao/${d.eventoId}?pagamento=cancelado`,
     });
     // Sem conta de recebimento apta (desativada ou trocada depois da reserva) não há venda.
-    if (!existente && !d.contaDestino) throw new Error(MSG_SEM_RECEBIMENTO);
+    if (!existente && !d.contaDestino) throw new Error(MSG_SEM_RECEBIMENTO());
     try {
       sessao = existente ?? await criar();
     } catch (e) {
@@ -141,7 +141,7 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
       // de produção): a venda não acontece até a organização refazer o cadastro.
       if (!(d.contaDestino && e instanceof ErroStripe && destinoInvalido(e.status, e.message))) throw e;
       console.warn("Stripe: conta de destino inválida, venda bloqueada", d.contaDestino, e.message);
-      throw new Error(MSG_SEM_RECEBIMENTO);
+      throw new Error(MSG_SEM_RECEBIMENTO());
     }
   } catch (e) {
     if (!(e instanceof ErroStripe || e instanceof TypeError)) throw e;

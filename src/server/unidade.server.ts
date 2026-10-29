@@ -21,6 +21,7 @@ import { enviarMidia } from "@/server/midia";
 import { recalcularProgressao } from "@/services/progressao";
 import { supabaseAdmin, supabaseSessao } from "@/server/supabase.server";
 import type { BaseDados, Usuario } from "@/lib/domain/types";
+import { tr } from "@/i18n/server/unidade.server";
 
 const armazenamento = new AsyncLocalStorage<ContextoBase>();
 registrarProvedorContexto({ obter: () => armazenamento.getStore() });
@@ -163,9 +164,9 @@ export function tratarErro(e: unknown): never {
   const codigo = randomUUID().slice(0, 8).toUpperCase();
   console.error(`[erro ${codigo}]`, e);
   if (e instanceof ErroIndisponivel) {
-    throw new Error(`O servidor de dados não respondeu. Tente novamente em instantes. (código ${codigo})`);
+    throw new Error(tr("servidor_nao_respondeu", { codigo }));
   }
-  throw new Error(`Não foi possível concluir a operação. Tente novamente. (código ${codigo})`);
+  throw new Error(tr("erro_generico", { codigo }));
 }
 
 /**

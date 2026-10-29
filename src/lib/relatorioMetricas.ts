@@ -1,11 +1,12 @@
 // Monta o relatório de métricas (somente agregados) e o converte em CSV/PDF.
 import type { Indicadores, LinhaGrupo } from "@/lib/analytics";
+import { tr } from "@/i18n/lib/relatorioMetricas";
 
 export interface SecaoRelatorio { titulo: string; cabecalho: string[]; linhas: string[][] }
 export interface Relatorio { titulo: string; filtros: [string, string][]; secoes: SecaoRelatorio[] }
 
 const n = (v: number) => String(v);
-const p = (v: number | null) => (v === null ? "Sem dados" : `${v.toFixed(1).replace(".", ",")}%`);
+const p = (v: number | null) => (v === null ? tr("sem_dados") : `${v.toFixed(1).replace(".", ",")}%`);
 
 export function montarRelatorio(a: {
   evento: string; periodo: string; origem: string; ind: Indicadores;
@@ -16,23 +17,23 @@ export function montarRelatorio(a: {
   const i = a.ind;
   const grupo = (titulo: string, rot: string, lista: LinhaGrupo[], nome: (k: string) => string): SecaoRelatorio => ({
     titulo,
-    cabecalho: [rot, "Exibições", "Cliques", "CTR", "Visitas", "Visitantes", "Confirmadas", "Conversão"],
+    cabecalho: [rot, tr("exibicoes"), tr("cliques"), "CTR", tr("visitas"), tr("visitantes"), tr("confirmadas"), tr("conversao")],
     linhas: lista.map((g) => [nome(g.chave), n(g.ind.exibicoes), n(g.ind.cliques), p(g.ind.ctr), n(g.ind.visitas), n(g.ind.visitantes), n(g.ind.confirmadas), p(g.ind.conversao)]),
   });
   return {
-    titulo: "Relatório de métricas",
-    filtros: [["Evento", a.evento], ["Período", a.periodo], ["Origem ou campanha", a.origem], ["Gerado em", a.geradoEm]],
+    titulo: tr("relatorio_de_metricas"),
+    filtros: [[tr("evento"), a.evento], [tr("periodo"), a.periodo], [tr("origem_ou_campanha"), a.origem], [tr("gerado_em"), a.geradoEm]],
     secoes: [
-      { titulo: "Indicadores", cabecalho: ["Indicador", "Valor"], linhas: [
-        ["Exibições dos cards", n(i.exibicoes)], ["Cliques nos cards", n(i.cliques)], ["CTR dos cards", p(i.ctr)],
-        ["Visitas", n(i.visitas)], ["Visitantes únicos estimados", n(i.visitantes)], ["Cliques em Inscrever-se", n(i.cliquesInscrever)],
-        ["Inscrições iniciadas", n(i.iniciadas)], ["Inscrições confirmadas", n(i.confirmadas)], ["Conversão de visitantes", p(i.conversao)],
-        ["Conclusão da inscrição", p(i.conclusao)], ["Fluxos não concluídos", n(i.naoConcluidos)],
-        ["Cortesias resgatadas", n(i.cortesias)], ["Inclusões administrativas", n(i.inclusoes)],
+      { titulo: tr("indicadores"), cabecalho: [tr("indicador"), tr("valor")], linhas: [
+        [tr("exibicoes_dos_cards"), n(i.exibicoes)], [tr("cliques_nos_cards"), n(i.cliques)], [tr("ctr_dos_cards"), p(i.ctr)],
+        [tr("visitas"), n(i.visitas)], [tr("visitantes_unicos_estimados"), n(i.visitantes)], [tr("cliques_em_inscrever_se"), n(i.cliquesInscrever)],
+        [tr("inscricoes_iniciadas"), n(i.iniciadas)], [tr("inscricoes_confirmadas"), n(i.confirmadas)], [tr("conversao_de_visitantes"), p(i.conversao)],
+        [tr("conclusao_da_inscricao"), p(i.conclusao)], [tr("fluxos_nao_concluidos"), n(i.naoConcluidos)],
+        [tr("cortesias_resgatadas"), n(i.cortesias)], [tr("inclusoes_administrativas"), n(i.inclusoes)],
       ] },
-      grupo("Por origem", "Origem", a.porOrigem, a.nomeOrigem),
-      grupo("Por seção da página inicial", "Seção", a.porSecao, a.nomeSecao),
-      grupo("Por evento", "Evento", a.porEvento, a.nomeEvento),
+      grupo(tr("por_origem"), tr("origem"), a.porOrigem, a.nomeOrigem),
+      grupo(tr("por_secao_da_pagina_inicial"), tr("secao"), a.porSecao, a.nomeSecao),
+      grupo(tr("por_evento"), tr("evento"), a.porEvento, a.nomeEvento),
     ].filter((s) => s.linhas.length > 0),
   };
 }
@@ -78,6 +79,6 @@ export async function baixarPdf(r: Relatorio, nome: string) {
     if (y > 180) { doc.addPage(); y = 16; }
   }
   doc.setFontSize(8);
-  doc.text("Somente dados agregados e anônimos.", 14, doc.internal.pageSize.getHeight() - 8);
+  doc.text(tr("somente_dados_agregados_e_anonimos"), 14, doc.internal.pageSize.getHeight() - 8);
   baixar(doc.output("blob"), nome);
 }

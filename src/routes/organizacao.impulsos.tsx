@@ -7,7 +7,7 @@ import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { comprarImpulso, retomarPagamentoImpulso, sincronizarPagamentoImpulso, usarImpulso } from "@/api/impulsos.functions";
 import {
   ROTULO_STATUS_IMPULSO, eventosImpulsionaveis, impulsosDaOrganizacao, pendenciasUso, periodoDoImpulso, planosDeImpulso,
-  rotuloDuracao, statusDoImpulso, type StatusExibidoImpulso,
+  duracaoNaTela, nomeImpulso, statusDoImpulso, type StatusExibidoImpulso,
 } from "@/lib/impulsos";
 import { statusExibido } from "@/lib/impulsionamento";
 import { StatusImpulsionamento } from "@/components/impulsionamentos";
@@ -18,14 +18,15 @@ import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Campo, EstadoVazio, Modal } from "@/components/ui";
 import type { BaseDados, ImpulsoComprado } from "@/lib/domain/types";
+import { tr } from "@/i18n/routes/organizacao.impulsos";
 
 export const Route = createFileRoute("/organizacao/impulsos")({
   head: () => ({
     meta: [
-      { title: "Impulsionar — Organização MilSim Ops" },
-      { name: "description", content: "Compre impulsos e destaque as operações da sua organização na página inicial e na listagem." },
-      { property: "og:title", content: "Impulsionar — Organização MilSim Ops" },
-      { property: "og:description", content: "Impulsos de destaque para as operações da organização." },
+      { title: tr("impulsionar_organizacao_milsim_ops") },
+      { name: "description", content: tr("compre_impulsos_e_destaque_as_operacoes") },
+      { property: "og:title", content: tr("impulsionar_organizacao_milsim_ops") },
+      { property: "og:description", content: tr("impulsos_de_destaque_para_as_operacoes") },
     ],
   }),
   // Retorno do checkout do Stripe: ?pagamento=sucesso&sessao=cs_...
@@ -46,7 +47,7 @@ type Aviso = { tom: "ok" | "perigo"; texto: string };
 /** Confere o pagamento ao voltar do checkout e repete por alguns segundos enquanto o Stripe confirma. */
 function useRetornoDoCheckout(sessao: string | undefined, cancelado: boolean, usuarioId: string | undefined): Aviso | null {
   const navigate = useNavigate();
-  const [aviso, setAviso] = useState<Aviso | null>(cancelado ? { tom: "perigo", texto: "Pagamento não concluído. Você pode tentar de novo quando quiser." } : null);
+  const [aviso, setAviso] = useState<Aviso | null>(cancelado ? { tom: "perigo", texto: tr("pagamento_nao_concluido_voce_pode_tentar") } : null);
   const feito = useRef<string | null>(null);
   const montada = useRef(true);
   useEffect(() => {
@@ -62,14 +63,14 @@ function useRetornoDoCheckout(sessao: string | undefined, cancelado: boolean, us
         try {
           const i = await sincronizarPagamentoImpulso(sessao);
           if (!montada.current) return;
-          if (i?.status === "disponivel") setAviso({ tom: "ok", texto: "Pagamento confirmado. Seu impulso já está disponível para usar." });
-          else if (i?.status === "cancelado") setAviso({ tom: "perigo", texto: "O pagamento não foi aprovado." });
+          if (i?.status === "disponivel") setAviso({ tom: "ok", texto: tr("pagamento_confirmado_seu_impulso_ja_esta") });
+          else if (i?.status === "cancelado") setAviso({ tom: "perigo", texto: tr("o_pagamento_nao_foi_aprovado") });
           else {
-            setAviso({ tom: "ok", texto: "Ainda não recebemos a confirmação do pagamento. Esta página atualiza sozinha." });
+            setAviso({ tom: "ok", texto: tr("ainda_nao_recebemos_a_confirmacao_do") });
             if (++tentativas < 6) setTimeout(conferir, 3000);
           }
         } catch (err) {
-          if (montada.current) setAviso({ tom: "perigo", texto: err instanceof Error ? err.message : "Não foi possível conferir o pagamento." });
+          if (montada.current) setAviso({ tom: "perigo", texto: err instanceof Error ? err.message : tr("nao_foi_possivel_conferir_o_pagamento") });
         }
       };
       void conferir();
@@ -90,7 +91,7 @@ function Impulsos() {
   const [usando, setUsando] = useState<ImpulsoComprado | null>(null);
   const organizacaoId = usuario?.organizacaoId;
   if (!usuario || !organizacaoId || usuario.perfil !== "organizador") {
-    return <EstadoVazio titulo="Impulsos são da organização" descricao="Entre com a conta de organizador para comprar e usar impulsos." />;
+    return <EstadoVazio titulo={tr("impulsos_sao_da_organizacao")} descricao={tr("entre_com_a_conta_de_organizador")} />;
   }
   const base = carregarBase();
   const agora = new Date();
@@ -114,10 +115,8 @@ function Impulsos() {
   return (
     <section className="space-y-8">
       <div>
-        <h1 className="titulo-pagina">Impulsionar</h1>
-        <p className="subtitulo-pagina">
-          Compre um impulso e use numa operação publicada: ela aparece nos destaques da página inicial e no topo da listagem de eventos, em todo o Brasil, pelo período do impulso.
-        </p>
+        <h1 className="titulo-pagina">{tr("impulsionar")}</h1>
+        <p className="subtitulo-pagina">{tr("compre_um_impulso_e_use_numa")}</p>
       </div>
       {aviso && (
         <p role="status" className={`border-l-2 px-4 py-3 text-sm ${aviso.tom === "ok" ? "border-success bg-success/10 text-success" : "border-destructive bg-destructive/10 text-destructive"}`}>
@@ -126,11 +125,11 @@ function Impulsos() {
       )}
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
 
-      <ol className="grid overflow-hidden rounded-lg border border-border sm:grid-cols-3 sm:divide-x sm:divide-border" aria-label="Como funciona">
+      <ol className="grid overflow-hidden rounded-lg border border-border sm:grid-cols-3 sm:divide-x sm:divide-border" aria-label={tr("como_funciona")}>
         {[
-          ["Compre o pacote", "Pagamento pelo Stripe. O prazo de uso conta do pagamento."],
-          ["Escolha a operação", "Qualquer operação publicada da sua organização."],
-          ["Fique em destaque", "Destaques da página inicial e topo da listagem, em todo o Brasil."],
+          [tr("compre_o_pacote"), tr("pagamento_pelo_stripe_o_prazo_de")],
+          [tr("escolha_a_operacao"), tr("qualquer_operacao_publicada_da_sua_organ")],
+          [tr("fique_em_destaque"), tr("destaques_da_pagina_inicial_e_topo")],
         ].map(([t, d], k) => (
           <li key={t} className="flex gap-3 p-4">
             <span className="font-display text-3xl font-bold leading-none text-accent">{String(k + 1).padStart(2, "0")}</span>
@@ -142,11 +141,10 @@ function Impulsos() {
       {meus.length > 0 && (
         <section aria-labelledby="t-meus">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 id="t-meus" className="text-lg font-semibold">Seus impulsos</h2>
+            <h2 id="t-meus" className="text-lg font-semibold">{tr("seus_impulsos")}</h2>
             {disponiveis.length > 0 && (
               <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
-                {disponiveis.length === 1 ? "1 disponível" : `${disponiveis.length} disponíveis`} · expira se não for usado
-              </span>
+                {disponiveis.length === 1 ? tr("1_disponivel") : tr("length_disponiveis", { length: disponiveis.length })}{" "}{tr("expira_se_nao_for_usado")}</span>
             )}
           </div>
           <ul className="mt-3 divide-y divide-border border-y border-border">
@@ -159,21 +157,21 @@ function Impulsos() {
       )}
 
       <section aria-labelledby="t-pacotes">
-        <h2 id="t-pacotes" className="text-lg font-semibold">Pacotes</h2>
-        {meus.length === 0 && <p className="mt-1 text-sm text-muted-foreground">Você ainda não tem impulsos. Escolha um pacote para começar.</p>}
+        <h2 id="t-pacotes" className="text-lg font-semibold">{tr("pacotes")}</h2>
+        {meus.length === 0 && <p className="mt-1 text-sm text-muted-foreground">{tr("voce_ainda_nao_tem_impulsos_escolha")}</p>}
         {planos.length === 0 ? (
-          <div className="mt-3"><EstadoVazio titulo="Nenhum pacote à venda no momento" descricao="A plataforma ainda não liberou pacotes de impulso." /></div>
+          <div className="mt-3"><EstadoVazio titulo={tr("nenhum_pacote_a_venda_no_momento")} descricao={tr("a_plataforma_ainda_nao_liberou_pacotes")} /></div>
         ) : (
           <ul className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {planos.map((p) => (
               <li key={p.id} className="flex flex-col overflow-hidden rounded-lg border border-border">
-                {p.imagemUrl ? <img src={p.imagemUrl} alt={p.rotulo} loading="lazy" className="aspect-[16/9] w-full object-cover" /> : <div className="aspect-[16/9] bg-secondary" />}
+                {p.imagemUrl ? <img src={p.imagemUrl} alt={nomeImpulso(p.duracaoHoras)} loading="lazy" className="aspect-[16/9] w-full object-cover" /> : <div className="aspect-[16/9] bg-secondary" />}
                 <div className="flex flex-1 flex-col gap-1 p-4">
-                  <p className="font-semibold">{p.rotulo}</p>
-                  <p className="font-display text-4xl font-bold leading-none tabular-nums">{p.precoCentavos === 0 ? "Grátis" : <Preco centavos={p.precoCentavos} />}</p>
-                  <p className="mt-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Use em até {p.validadeDias} dias após a compra</p>
+                  <p className="font-semibold">{nomeImpulso(p.duracaoHoras)}</p>
+                  <p className="font-display text-4xl font-bold leading-none tabular-nums">{p.precoCentavos === 0 ? tr("gratis") : <Preco centavos={p.precoCentavos} />}</p>
+                  <p className="mt-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">{tr("use_em_ate_validadedias_dias_apos", { validadeDias: p.validadeDias })}</p>
                   <Button className="mt-4" disabled={ocupado !== null} onClick={() => void comprar(p.id)}>
-                    <Rocket className="size-4" aria-hidden />{ocupado === p.id ? "Abrindo pagamento…" : "Comprar"}
+                    <Rocket className="size-4" aria-hidden />{ocupado === p.id ? tr("abrindo_pagamento") : tr("comprar")}
                   </Button>
                 </div>
               </li>
@@ -199,24 +197,23 @@ function LinhaImpulso({ base, impulso: i, agora, ocupado, onUsar, onPagar }: {
       <span className={`grid size-10 shrink-0 place-items-center rounded-md border ${st === "disponivel" ? "border-accent/50 bg-accent/10 text-accent" : "border-border text-muted-foreground"}`} aria-hidden><Rocket className="size-4" /></span>
       <div className="min-w-0 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-medium">Impulso de {rotuloDuracao(i.duracaoHoras)}</span>
+          <span className="font-medium">{tr("impulso_de_duracaohoras", { duracaoHoras: duracaoNaTela(i.duracaoHoras) })}</span>
           <Badge variant={TOM[st]}>{ROTULO_STATUS_IMPULSO[st]}</Badge>
           {campanha && <StatusImpulsionamento s={statusExibido(base, campanha, agora)} />}
         </div>
-        <p className="text-xs text-muted-foreground">
-          Comprado em {formatarDataBR(i.criadoEm)} · {i.precoCentavos === 0 ? "grátis" : <Preco centavos={i.precoCentavos} />}
-          {st === "disponivel" && i.expiraEm && <> · <Clock className="inline h-3 w-3" /> use até {formatarDataHoraBR(i.expiraEm)}</>}
-          {st === "expirado" && i.expiraEm && <> · expirou em {formatarDataBR(i.expiraEm)}</>}
+        <p className="text-xs text-muted-foreground">{tr("comprado_em_criadoem", { criadoEm: formatarDataBR(i.criadoEm) })}{" "}{i.precoCentavos === 0 ? tr("gratis_2") : <Preco centavos={i.precoCentavos} />}
+          {st === "disponivel" && i.expiraEm && <> · <Clock className="inline h-3 w-3" />{" "}{tr("use_ate_expiraem", { expiraEm: formatarDataHoraBR(i.expiraEm) })}</>}
+          {st === "expirado" && i.expiraEm && <>{" "}{tr("expirou_em_expiraem", { expiraEm: formatarDataBR(i.expiraEm) })}</>}
         </p>
         {campanha && (
           <p className="text-xs text-muted-foreground">
-            {evento?.nome ?? "Operação"}: {formatarDataHoraBR(campanha.inicioEm)} → {formatarDataHoraBR(campanha.fimEm)}
+            {evento?.nome ?? tr("operacao")}: {formatarDataHoraBR(campanha.inicioEm)} → {formatarDataHoraBR(campanha.fimEm)}
           </p>
         )}
       </div>
       </div>
-      {st === "disponivel" && <Button onClick={onUsar}>Usar em uma operação</Button>}
-      {st === "aguardando_pagamento" && <Button variant="outline" disabled={ocupado} onClick={onPagar}>{ocupado ? "Abrindo…" : "Pagar"}</Button>}
+      {st === "disponivel" && <Button onClick={onUsar}>{tr("usar_em_uma_operacao")}</Button>}
+      {st === "aguardando_pagamento" && <Button variant="outline" disabled={ocupado} onClick={onPagar}>{ocupado ? tr("abrindo") : tr("pagar")}</Button>}
     </li>
   );
 }
@@ -244,12 +241,12 @@ function ModalUsar({ base, impulso, onFechar }: { base: BaseDados; impulso: Impu
   };
 
   return (
-    <Modal aberto titulo={`Usar impulso de ${rotuloDuracao(impulso.duracaoHoras)}`} onFechar={onFechar}>
+    <Modal aberto titulo={tr("usar_impulso_de_duracaohoras", { duracaoHoras: duracaoNaTela(impulso.duracaoHoras) })} onFechar={onFechar}>
       {eventos.length === 0 ? (
-        <EstadoVazio titulo="Nenhuma operação publicada" descricao="Publique uma operação para poder impulsionar." />
+        <EstadoVazio titulo={tr("nenhuma_operacao_publicada")} descricao={tr("publique_uma_operacao_para_poder_impulsi")} />
       ) : (
         <div className="space-y-4">
-          <Campo rotulo="Operação" htmlFor="imp-evento">
+          <Campo rotulo={tr("operacao")} htmlFor="imp-evento">
             <NativeSelect id="imp-evento" value={eventoId} onChange={(e) => setEventoId(e.target.value)}>
               {eventos.map((e) => <option key={e.id} value={e.id}>{e.nome} ({formatarDataBR(e.inicioEm)})</option>)}
             </NativeSelect>
@@ -261,16 +258,16 @@ function ModalUsar({ base, impulso, onFechar }: { base: BaseDados; impulso: Impu
           )}
           {periodo && (
             <div className="space-y-1 rounded-md border border-border bg-secondary/40 p-3 text-sm">
-              <p>Em destaque de <strong>{formatarDataHoraBR(periodo.inicioEm)}</strong> até <strong>{formatarDataHoraBR(periodo.fimEm)}</strong>.</p>
-              {periodo.enfileirado && <p className="text-muted-foreground">Esta operação já tem um impulso em andamento: este começa quando o anterior terminar.</p>}
-              {periodo.cortado && <p className="text-warning">A operação termina antes do fim do impulso; o tempo restante será perdido.</p>}
-              <p className="text-muted-foreground">Depois de usado, o impulso não pode ser trocado de operação.</p>
+              <p>{tr("em_destaque_de")}{" "}<strong>{formatarDataHoraBR(periodo.inicioEm)}</strong>{" "}{tr("ate")}{" "}<strong>{formatarDataHoraBR(periodo.fimEm)}</strong>.</p>
+              {periodo.enfileirado && <p className="text-muted-foreground">{tr("esta_operacao_ja_tem_um_impulso")}</p>}
+              {periodo.cortado && <p className="text-warning">{tr("a_operacao_termina_antes_do_fim")}</p>}
+              <p className="text-muted-foreground">{tr("depois_de_usado_o_impulso_nao")}</p>
             </div>
           )}
           {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onFechar}>Cancelar</Button>
-            <Button disabled={!periodo || salvando} onClick={() => void confirmar()}>{salvando ? "Impulsionando…" : "Impulsionar"}</Button>
+            <Button variant="outline" onClick={onFechar}>{tr("cancelar")}</Button>
+            <Button disabled={!periodo || salvando} onClick={() => void confirmar()}>{salvando ? tr("impulsionando") : tr("impulsionar")}</Button>
           </div>
         </div>
       )}

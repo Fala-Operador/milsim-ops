@@ -68,10 +68,10 @@ describe("taxa e destino da cobrança", () => {
   });
 
   it("sem conta ativa não há venda paga; com conta ativa vai para a organização", async () => {
-    await expect(reservar()).rejects.toThrow(MSG_SEM_RECEBIMENTO);
+    await expect(reservar()).rejects.toThrow(MSG_SEM_RECEBIMENTO());
     expect(base.inscricoes.filter((i) => i.eventoId === EVT)).toHaveLength(0);
     registrarRecebimentoNaBase(base, org().id, { id: "acct_1", details_submitted: true });
-    await expect(reservar()).rejects.toThrow(MSG_SEM_RECEBIMENTO);
+    await expect(reservar()).rejects.toThrow(MSG_SEM_RECEBIMENTO());
     registrarRecebimentoNaBase(base, org().id, contaAtiva);
     const comConta = await reservar();
     expect(comConta.pagamento).toMatchObject({ contaDestino: "acct_1", taxaCentavos: 2000, valorCentavos: 20000 });

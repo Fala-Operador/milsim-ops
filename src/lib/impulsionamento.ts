@@ -4,21 +4,23 @@
 import type { Abrangencia, BaseDados, Evento, Impulsionamento, SecaoInicial } from "@/lib/domain/types";
 import { POSICAO_COMUNIDADE, POSICAO_LISTAGEM } from "@/lib/domain/types";
 import { areasSobrepostas, esgotado, UF_REGIAO } from "@/lib/divulgacao";
+import { tr } from "@/i18n/lib/impulsionamento";
+import { localeAtual } from "@/i18n/dicionario";
 
 export type StatusExibidoImpulsionamento =
   | "rascunho" | "agendado" | "ativo" | "pausado" | "pausado_esgotado" | "encerrado" | "suspenso";
 
 export const ROTULO_STATUS_IMPULSIONAMENTO: Record<StatusExibidoImpulsionamento, string> = {
-  rascunho: "Rascunho",
-  agendado: "Agendado",
-  ativo: "Ativo",
-  pausado: "Pausado",
-  pausado_esgotado: "Pausado (esgotado)",
-  encerrado: "Encerrado",
-  suspenso: "Suspenso (evento indisponível)",
+  get rascunho() { return tr("rascunho"); },
+  get agendado() { return tr("agendado"); },
+  get ativo() { return tr("ativo"); },
+  get pausado() { return tr("pausado"); },
+  get pausado_esgotado() { return tr("pausado_esgotado"); },
+  get encerrado() { return tr("encerrado"); },
+  get suspenso() { return tr("suspenso_evento_indisponivel"); },
 };
 
-export const ROTULO_OBJETIVO = { divulgacao: "Divulgar a operação", inscricoes: "Promover inscrições" } as const;
+export const ROTULO_OBJETIVO = { get divulgacao() { return tr("divulgar_a_operacao"); }, get inscricoes() { return tr("promover_inscricoes"); } } as const;
 
 const ms = (iso: string) => new Date(iso).getTime();
 
@@ -45,26 +47,26 @@ export function secoesCompativeis(base: BaseDados): SecaoInicial[] {
 }
 
 export function rotuloPosicao(base: BaseDados, posicao: string): string {
-  if (posicao === POSICAO_LISTAGEM) return "Listagem de eventos";
-  if (posicao === POSICAO_COMUNIDADE) return "Lateral da comunidade";
-  return base.secoesInicio.find((s) => s.id === posicao)?.titulo ?? "Seção removida";
+  if (posicao === POSICAO_LISTAGEM) return tr("listagem_de_eventos");
+  if (posicao === POSICAO_COMUNIDADE) return tr("lateral_da_comunidade");
+  return base.secoesInicio.find((s) => s.id === posicao)?.titulo ?? tr("secao_removida");
 }
 
 /** Motivos que impedem ativar ou retomar (lista vazia = pode ativar). */
 export function pendenciasAtivacao(base: BaseDados, c: Pick<Impulsionamento, "eventoId" | "objetivo" | "posicoes" | "inicioEm" | "fimEm" | "imagemPromocional">, agora: Date): string[] {
   const erros: string[] = [];
   const e = base.eventos.find((x) => x.id === c.eventoId);
-  if (!e) return ["Selecione a operação."];
-  if (e.status !== "publicado") erros.push("A operação precisa estar publicada.");
-  if (ms(e.fimEm) <= agora.getTime()) erros.push("A operação já terminou.");
-  if (!c.inicioEm || !c.fimEm || ms(c.fimEm) <= ms(c.inicioEm)) erros.push("O término deve ser depois do início.");
-  else if (ms(c.fimEm) <= agora.getTime()) erros.push("O período de divulgação já terminou.");
-  if (c.fimEm && ms(c.fimEm) > ms(e.fimEm)) erros.push("O impulsionamento não pode continuar após o término da operação.");
+  if (!e) return [tr("selecione_a_operacao")];
+  if (e.status !== "publicado") erros.push(tr("a_operacao_precisa_estar_publicada"));
+  if (ms(e.fimEm) <= agora.getTime()) erros.push(tr("a_operacao_ja_terminou"));
+  if (!c.inicioEm || !c.fimEm || ms(c.fimEm) <= ms(c.inicioEm)) erros.push(tr("o_termino_deve_ser_depois_do"));
+  else if (ms(c.fimEm) <= agora.getTime()) erros.push(tr("o_periodo_de_divulgacao_ja_terminou"));
+  if (c.fimEm && ms(c.fimEm) > ms(e.fimEm)) erros.push(tr("o_impulsionamento_nao_pode_continuar_apo"));
   const validas = new Set([POSICAO_LISTAGEM, POSICAO_COMUNIDADE, ...secoesCompativeis(base).map((s) => s.id)]);
-  if (!c.posicoes.length) erros.push("Escolha pelo menos um local de divulgação.");
-  else if (c.posicoes.some((p) => !validas.has(p))) erros.push("Há um local de divulgação que não existe mais ou está desativado.");
-  if (!(c.imagemPromocional || e.imagemUrl)) erros.push("A operação precisa de uma imagem para a apresentação.");
-  if (c.objetivo === "inscricoes" && esgotado(base, e)) erros.push("Para promover inscrições, a operação precisa ter vagas.");
+  if (!c.posicoes.length) erros.push(tr("escolha_pelo_menos_um_local_de"));
+  else if (c.posicoes.some((p) => !validas.has(p))) erros.push(tr("ha_um_local_de_divulgacao_que"));
+  if (!(c.imagemPromocional || e.imagemUrl)) erros.push(tr("a_operacao_precisa_de_uma_imagem"));
+  if (c.objetivo === "inscricoes" && esgotado(base, e)) erros.push(tr("para_promover_inscricoes_a_operacao_prec"));
   return erros;
 }
 
@@ -185,22 +187,22 @@ export function diagnosticarPosicao(base: BaseDados, posicao: string, local: Abr
     .filter((c) => c.status !== "encerrado" || ms(c.fimEm) > agora.getTime() - 30 * 86400000)
     .map((c): DiagnosticoCampanha => {
       if (ordem.has(c.id)) {
-        const motivos = ["Ativa no período, nesta posição e nesta área."];
-        motivos.push(c.prioridade === "alta" ? "Prioridade alta." : "Prioridade normal.");
+        const motivos = [tr("ativa_no_periodo_nesta_posicao_e")];
+        motivos.push(c.prioridade === "alta" ? tr("prioridade_alta") : tr("prioridade_normal"));
         return { campanha: c, aparece: true, ordem: ordem.get(c.id), motivos };
       }
       const motivos: string[] = [];
       const st = statusExibido(base, c, agora);
-      if (st !== "ativo") motivos.push(`Status: ${ROTULO_STATUS_IMPULSIONAMENTO[st]}.`);
-      if (st === "agendado") motivos.push(`Começa em ${new Date(c.inicioEm).toLocaleString("pt-BR")}.`);
-      if (!c.posicoes.includes(posicao)) motivos.push("Esta posição não foi escolhida na campanha.");
-      if (!areasSobrepostas(c.abrangencia, local)) motivos.push("A área escolhida fica fora da abrangência da campanha.");
+      if (st !== "ativo") motivos.push(tr("status_valor", { valor: ROTULO_STATUS_IMPULSIONAMENTO[st] }));
+      if (st === "agendado") motivos.push(tr("comeca_em_valor", { valor: new Date(c.inicioEm).toLocaleString(localeAtual()) }));
+      if (!c.posicoes.includes(posicao)) motivos.push(tr("esta_posicao_nao_foi_escolhida_na"));
+      if (!areasSobrepostas(c.abrangencia, local)) motivos.push(tr("a_area_escolhida_fica_fora_da"));
       if (!motivos.length) {
         const vencedora = exibidas.find((x) => x.eventoId === c.eventoId);
         motivos.push(
-          vencedora ? "Outra campanha da mesma operação tem precedência (a operação aparece uma vez só)."
-            : c.impulsoId ? `Fora do rodízio desta prévia: até ${LIMITE_IMPULSOS_COMPRADOS} impulsos comprados por bloco, sorteados por visitante a cada ${RODADA_RODIZIO_MIN} minutos.`
-            : "Não atende às regras de exibição.",
+          vencedora ? tr("outra_campanha_da_mesma_operacao_tem")
+            : c.impulsoId ? tr("fora_do_rodizio_desta_previa_ate", { LIMITE_IMPULSOS_COMPRADOS, RODADA_RODIZIO_MIN })
+            : tr("nao_atende_as_regras_de_exibicao"),
         );
       }
       return { campanha: c, aparece: false, motivos };

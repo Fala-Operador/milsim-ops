@@ -1,3 +1,5 @@
+import { tr } from "@/i18n/lib/analytics";
+import { localeAtual } from "@/i18n/dicionario";
 // Tipos e agregações puras das métricas de evento (sem dados pessoais).
 // Fórmulas:
 //  CTR dos cards = cliques ÷ exibições × 100
@@ -19,12 +21,12 @@ export type TipoAnalytics =
 export type OrigemAcesso = "inicio" | "destaques" | "regional" | "busca" | "campanha" | "direto";
 
 export const ROTULO_ORIGEM: Record<OrigemAcesso, string> = {
-  inicio: "Página inicial",
-  destaques: "Operações em destaque",
-  regional: "Seção regional",
-  busca: "Busca de eventos",
-  campanha: "Link de campanha",
-  direto: "Link direto ou origem desconhecida",
+  get inicio() { return tr("pagina_inicial"); },
+  get destaques() { return tr("operacoes_em_destaque"); },
+  get regional() { return tr("secao_regional"); },
+  get busca() { return tr("busca_de_eventos"); },
+  get campanha() { return tr("link_de_campanha"); },
+  get direto() { return tr("link_direto_ou_origem_desconhecida"); },
 };
 
 /** Registro anônimo: apenas ids aleatórios, nunca nome, e-mail, CPF ou conteúdo de formulário. */
@@ -45,7 +47,7 @@ export interface RegistroAnalytics {
 
 export type OrigemCampanha = "instagram" | "whatsapp" | "parceiro" | "lancamento" | "outro";
 export const ROTULO_ORIGEM_CAMPANHA: Record<OrigemCampanha, string> = {
-  instagram: "Instagram", whatsapp: "WhatsApp", parceiro: "Parceiro", lancamento: "Campanha de lançamento", outro: "Outro",
+  get instagram() { return tr("instagram"); }, get whatsapp() { return tr("whatsapp"); }, get parceiro() { return tr("parceiro"); }, get lancamento() { return tr("campanha_de_lancamento"); }, get outro() { return tr("outro"); },
 };
 export interface Campanha {
   id: string;
@@ -162,7 +164,7 @@ export function serieDiaria(regs: RegistroAnalytics[], desde: number, ate: numbe
   const inicio = new Date(desde); inicio.setHours(0, 0, 0, 0);
   const dias: { dia: string; chave: number; visitas: number; cliques: number }[] = [];
   for (let t = inicio.getTime(); t <= ate; t += DIA) {
-    dias.push({ dia: new Date(t).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }), chave: t, visitas: 0, cliques: 0 });
+    dias.push({ dia: new Date(t).toLocaleDateString(localeAtual(), { day: "2-digit", month: "2-digit" }), chave: t, visitas: 0, cliques: 0 });
   }
   for (const r of regs) {
     if (r.tipo !== "visita" && r.tipo !== "clique") continue;
