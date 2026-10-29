@@ -28,7 +28,8 @@ export function useEventosOrg() {
   const versao = useVersaoBase();
   return useMemo(() => {
     const base = carregarBase();
-    const orgId = usuario && usuario.perfil !== "admin" ? usuario.organizacaoId : undefined;
+    // O admin com organização vê só a dele; o admin sem organização vê todas.
+    const orgId = usuario?.organizacaoId;
     const eventos = base.eventos.filter((e) => !orgId || e.organizacaoId === orgId);
     return { base, eventos, orgId };
   }, [usuario, versao]);
