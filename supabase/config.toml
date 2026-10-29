@@ -246,29 +246,59 @@ pass = "env(RESEND_API_KEY)"
 admin_email = "nao-responda@milsimops.falaoperador.com.br"
 sender_name = "MilSim Ops"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Modelos de e-mail do Supabase Auth em PT e EN (o idioma vem de user_metadata.idioma; sem ele,
+# PT). O deploy do GitHub Actions publica assunto e HTML de cada [auth.email.template.*] e
+# [auth.email.notification.*] (.github/scripts/publicar-modelos-email.py); quais avisos de
+# segurança estão ligados continua sendo escolhido no painel do Supabase.
+[auth.email.template.invite]
+subject = "Convite para o MilSim Ops / You are invited to MilSim Ops"
+content_path = "./supabase/templates/convite.html"
+
+[auth.email.template.magic_link]
+subject = "Seu link de acesso / Your sign-in link — MilSim Ops"
+content_path = "./supabase/templates/link-magico.html"
+
+[auth.email.template.email_change]
+subject = "Confirme o novo e-mail / Confirm your new e-mail — MilSim Ops"
+content_path = "./supabase/templates/trocar-email.html"
+
+[auth.email.template.reauthentication]
+subject = "Código de verificação / Verification code — MilSim Ops"
+content_path = "./supabase/templates/reautenticacao.html"
 
 # E-mail "Confirm signup" em português: confirmação obrigatória do cadastro (contas antigas já
-# nasceram confirmadas). O link usa token_hash (src/routes/confirmar-email.tsx); publique com
-# `npx supabase config push` (o deploy do GitHub Actions não envia este arquivo).
+# nasceram confirmadas). O link usa token_hash (src/routes/confirmar-email.tsx); o deploy do GitHub Actions
+# publica o assunto e o HTML (.github/scripts/publicar-modelos-email.py).
 [auth.email.template.confirmation]
 subject = "Confirme seu e-mail / Confirm your e-mail — MilSim Ops"
 content_path = "./supabase/templates/confirmar-email.html"
 
 # E-mail "Reset password" em português. O link usa token_hash (src/routes/recuperar-senha.tsx);
-# publique com `npx supabase config push` (o deploy do GitHub Actions não envia este arquivo).
+# o deploy do GitHub Actions publica o assunto e o HTML (.github/scripts/publicar-modelos-email.py).
 [auth.email.template.recovery]
 subject = "Redefina sua senha / Reset your password — MilSim Ops"
 content_path = "./supabase/templates/recuperar-senha.html"
 
-# Uncomment to customize notification email template
-# [auth.email.notification.password_changed]
-# enabled = true
-# subject = "Your password has been changed"
-# content_path = "./supabase/templates/password_changed_notification.html"
+# Avisos de segurança ligados no painel (telefone alterado fica desligado e sem modelo).
+[auth.email.notification.password_changed]
+enabled = true
+subject = "Sua senha foi alterada / Your password was changed — MilSim Ops"
+content_path = "./supabase/templates/aviso-senha-alterada.html"
+
+[auth.email.notification.email_changed]
+enabled = true
+subject = "Seu e-mail foi alterado / Your e-mail was changed — MilSim Ops"
+content_path = "./supabase/templates/aviso-email-alterado.html"
+
+[auth.email.notification.identity_linked]
+enabled = true
+subject = "Nova forma de entrar / New sign-in method — MilSim Ops"
+content_path = "./supabase/templates/aviso-login-vinculado.html"
+
+[auth.email.notification.identity_unlinked]
+enabled = true
+subject = "Forma de entrar removida / Sign-in method removed — MilSim Ops"
+content_path = "./supabase/templates/aviso-login-removido.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.

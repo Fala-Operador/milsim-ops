@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="{{ if and .Data.idioma (eq .Data.idioma "en") }}en{{ else }}pt-BR{{ end }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>{{ if and .Data.idioma (eq .Data.idioma "en") }}Your verification code{{ else }}Seu código de verificação{{ end }} — MilSim Ops</title>
+</head>
+<!--
+  Template do Supabase Auth: "Reauthentication". Publicado pelo deploy (.github/scripts/publicar-modelos-email.py)
+  a partir de supabase/config.toml → [auth.email.template.reauthentication].
+  Só leva o código ({{ .Token }}, 8 dígitos).
+  Idioma: user_metadata.idioma ("pt" ou "en", gravado no cadastro); sem ele, o e-mail sai em PT.
+-->
+<body style="margin:0;padding:0;background-color:#121a13;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">{{ if and .Data.idioma (eq .Data.idioma "en") }}Use this code to confirm it is you on MilSim Ops.{{ else }}Use este código para confirmar que é você no MilSim Ops.{{ end }}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#121a13;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+          <tr>
+            <td style="padding:0 0 20px 0;font-family:'Barlow Condensed',Arial,Helvetica,sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;color:#eef1e6;">
+              <span style="display:inline-block;background-color:#a3b86a;color:#121a13;border-radius:6px;padding:4px 8px;margin-right:8px;font-size:16px;">MS</span>MILSIM OPS
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#1d261c;border:1px solid #3e4a37;border-radius:10px;padding:32px 28px;font-family:Inter,Arial,Helvetica,sans-serif;color:#eef1e6;">
+              <h1 style="margin:0 0 12px 0;font-family:'Barlow Condensed',Arial,Helvetica,sans-serif;font-size:26px;line-height:1.2;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#eef1e6;">{{ if and .Data.idioma (eq .Data.idioma "en") }}Your verification code{{ else }}Seu código de verificação{{ end }}</h1>
+              <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#d6dccb;">
+                {{ if and .Data.idioma (eq .Data.idioma "en") }}To complete a protected action on the account <strong style="color:#eef1e6;">{{ .Email }}</strong>, enter the code below on MilSim Ops.{{ else }}Para concluir uma ação protegida na conta <strong style="color:#eef1e6;">{{ .Email }}</strong>, digite o código abaixo no MilSim Ops.{{ end }}
+              </p>
+              <p style="margin:0 0 20px 0;font-family:'Courier New',Courier,monospace;font-size:30px;font-weight:700;letter-spacing:6px;color:#eef1e6;background-color:#121a13;border:1px solid #3e4a37;border-radius:8px;padding:14px 18px;text-align:center;">{{ .Token }}</p>
+              <p style="margin:0 0 20px 0;font-size:13px;line-height:1.6;color:#b5bda6;">
+                {{ if and .Data.idioma (eq .Data.idioma "en") }}The code is valid for <strong style="color:#d6dccb;">1 hour</strong> and can only be used once.{{ else }}O código vale por <strong style="color:#d6dccb;">1 hora</strong> e só pode ser usado uma vez.{{ end }}
+              </p>
+              <p style="margin:0;padding-top:16px;border-top:1px solid #3e4a37;font-size:13px;line-height:1.6;color:#b5bda6;">
+                {{ if and .Data.idioma (eq .Data.idioma "en") }}Did not ask for this code? Someone may be trying to use your account: change your password under "Forgot password".{{ else }}Não pediu este código? Alguém pode estar tentando usar a sua conta: troque a senha em "Esqueci a senha".{{ end }}
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 4px 0 4px;font-family:Inter,Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#8e977f;">
+              {{ if and .Data.idioma (eq .Data.idioma "en") }}You received this e-mail because it is the address of your MilSim Ops account.{{ else }}Você recebeu este e-mail porque ele é o endereço da sua conta no MilSim Ops.{{ end }}
+              {{ if and .Data.idioma (eq .Data.idioma "en") }}We never ask for your password by e-mail or WhatsApp.{{ else }}Nunca pedimos sua senha por e-mail ou WhatsApp.{{ end }}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
