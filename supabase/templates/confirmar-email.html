@@ -7,7 +7,7 @@
 <title>{{ if and .Data.idioma (eq .Data.idioma "en") }}Confirm your e-mail{{ else }}Confirme seu e-mail{{ end }} — MilSim Ops</title>
 </head>
 <!--
-  Template do Supabase Auth: "Confirm signup" (confirmation). Publicado por `supabase config push`
+  Template do Supabase Auth: "Confirm signup" (confirmation). Publicado pelo deploy (.github/scripts/publicar-modelos-email.py)
   (supabase/config.toml → [auth.email.template.confirmation]).
   O link usa token_hash (verificação no servidor, em src/routes/confirmar-email.tsx), que funciona
   em qualquer aparelho. Usa {{ .SiteURL }} (site_url do config.toml), e não {{ .RedirectTo }}: atrás
