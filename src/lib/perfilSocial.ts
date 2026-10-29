@@ -11,6 +11,7 @@ import { perfilVisivel, type RelacaoSeguir } from "@/lib/comunidadeGeral";
 import type {
   BaseDados, BeneficioVoucher, PerfilOperador, PrivacidadePerfil, TipoEquipamento, Usuario, VisibilidadeBloco,
 } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/perfilSocial";
 
 export const PRIVACIDADE_PADRAO: PrivacidadePerfil = {
   historico: "eu", mapa: "eu", insignias: "eu", equipamentos: "eu", fotos: "eu",
@@ -128,11 +129,11 @@ function paraInsigniaDTO(p: ProgressoInsignia, criterio: string): InsigniaDTO {
 
 export function completudePerfil(u: Usuario, p: PerfilOperador): { percentual: number; sugestoes: string[] } {
   const itens: [boolean, string][] = [
-    [!!u.fotoUrl, "Adicione uma foto de perfil"],
-    [!!p.callsign, "Escolha um callsign"],
-    [!!p.bio, "Escreva uma biografia curta"],
-    [!!p.capaUrl, "Personalize a capa"],
-    [!!p.insigniaDestaque, "Destaque uma insígnia conquistada"],
+    [!!u.fotoUrl, tr("adicione_uma_foto_de_perfil")],
+    [!!p.callsign, tr("escolha_um_callsign")],
+    [!!p.bio, tr("escreva_uma_biografia_curta")],
+    [!!p.capaUrl, tr("personalize_a_capa")],
+    [!!p.insigniaDestaque, tr("destaque_uma_insignia_conquistada")],
   ];
   const feitos = itens.filter(([ok]) => ok).length;
   return { percentual: Math.round((feitos / itens.length) * 100), sugestoes: itens.filter(([ok]) => !ok).map(([, s]) => s) };
@@ -243,7 +244,7 @@ export function montarPerfil(
         const ins = conc && base.insignias.find((i) => i.id === conc.insigniaId);
         return {
           id: v.id, codigo: v.codigo, status: statusVoucher(v, agora), beneficio: v.beneficio,
-          origem: ins ? `${ins.icone} ${ins.nome}` : "Conquista",
+          origem: ins ? `${ins.icone} ${ins.nome}` : tr("conquista"),
           eventos: v.beneficio.eventosElegiveis.flatMap((id) => {
             const e = base.eventos.find((x) => x.id === id);
             return e ? [{ id: e.id, nome: e.nome }] : [];

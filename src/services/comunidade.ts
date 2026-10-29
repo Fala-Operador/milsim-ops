@@ -13,18 +13,19 @@ import type {
   Resposta,
   Usuario,
 } from "@/lib/domain/types";
+import { tr } from "@/i18n/services/comunidade";
 
 export const LIMITE_TEXTO = 2000;
 export const LIMITE_IMAGENS = 4;
 export const TAMANHO_PAGINA = 8;
-export const MSG_SEM_ACESSO = "Conteúdo indisponível ou você não tem acesso a ele.";
+export const MSG_SEM_ACESSO = () => tr("conteudo_indisponivel_ou_voce_nao_tem");
 
 export const MOTIVOS_DENUNCIA: Record<MotivoDenuncia, string> = {
-  ofensa: "Ofensa ou assédio",
-  spam: "Spam",
-  dados_pessoais: "Exposição de dados pessoais",
-  inadequado: "Conteúdo inadequado",
-  outro: "Outro motivo",
+  get ofensa() { return tr("ofensa_ou_assedio"); },
+  get spam() { return tr("spam"); },
+  get dados_pessoais() { return tr("exposicao_de_dados_pessoais"); },
+  get inadequado() { return tr("conteudo_inadequado"); },
+  get outro() { return tr("outro_motivo"); },
 };
 
 // ---------- Fóruns iniciais ----------
@@ -144,7 +145,7 @@ export function forunsVisiveis(base: BaseDados, usuario: Usuario | null, eventoI
 
 // ---------- Leitura ----------
 export function nomeExibicao(u: Usuario | undefined): string {
-  if (!u) return "Participante";
+  if (!u) return tr("participante");
   if (u.nomeExibicao?.trim()) return u.nomeExibicao.trim();
   const partes = u.nomeCompleto.split(" ");
   return partes.length > 1 ? `${partes[0]} ${partes[partes.length - 1]}` : partes[0]!;
@@ -248,14 +249,14 @@ export function notificacaoAcessivel(usuario: Usuario, link: string | undefined)
 
 // ---------- Helpers internos ----------
 function exigirUsuario(usuario: Usuario | null): Usuario {
-  if (!usuario) throw new ErroDominio("sem_sessao", "Entre na sua conta para continuar.");
+  if (!usuario) throw new ErroDominio("sem_sessao", tr("entre_na_sua_conta_para_continuar"));
   return usuario;
 }
 
 function exigirGestao(base: BaseDados, usuario: Usuario | null, eventoId: string): Usuario {
   const u = exigirUsuario(usuario);
   if (papelNoEvento(base, u, eventoId) !== "gestao") {
-    throw new ErroDominio("sem_permissao", "Apenas a organização do evento e a administração podem fazer isso.");
+    throw new ErroDominio("sem_permissao", tr("apenas_a_organizacao_do_evento_e"));
   }
   return u;
 }
@@ -283,21 +284,21 @@ function notificarOrganizacao(b: BaseDados, eventoId: string, autorId: string, t
 
 function validarConteudo(texto: string, imagens: ImagemPost[], maxImagens: number) {
   const t = texto.trim();
-  if (t.length > LIMITE_TEXTO) throw new ErroDominio("texto_longo", `O texto pode ter no máximo ${LIMITE_TEXTO} caracteres.`);
-  if (imagens.length > maxImagens) throw new ErroDominio("imagens", `Envie no máximo ${maxImagens} imagem(ns).`);
-  if (!t && imagens.length === 0) throw new ErroDominio("vazio", "Escreva um texto ou adicione uma imagem.");
+  if (t.length > LIMITE_TEXTO) throw new ErroDominio("texto_longo", tr("o_texto_pode_ter_no_maximo", { LIMITE_TEXTO }));
+  if (imagens.length > maxImagens) throw new ErroDominio("imagens", tr("envie_no_maximo_maximagens_imagem_ns", { maxImagens }));
+  if (!t && imagens.length === 0) throw new ErroDominio("vazio", tr("escreva_um_texto_ou_adicione_uma"));
   return t;
 }
 
 function obterPub(b: BaseDados, id: string): Publicacao {
   const p = b.publicacoes.find((x) => x.id === id);
-  if (!p) throw new ErroDominio("nao_encontrado", MSG_SEM_ACESSO);
+  if (!p) throw new ErroDominio("nao_encontrado", MSG_SEM_ACESSO());
   return p;
 }
 
 function obterResposta(b: BaseDados, id: string): Resposta {
   const r = b.respostas.find((x) => x.id === id);
-  if (!r) throw new ErroDominio("nao_encontrado", MSG_SEM_ACESSO);
+  if (!r) throw new ErroDominio("nao_encontrado", MSG_SEM_ACESSO());
   return r;
 }
 
@@ -309,9 +310,9 @@ export function criarPublicacao(
   const u = exigirUsuario(usuario);
   return mutarBase((b) => {
     const forum = b.foruns.find((f) => f.id === dados.forumId);
-    if (!forum || !podeVerForum(b, u, forum)) throw new ErroDominio("sem_acesso", MSG_SEM_ACESSO);
+    if (!forum || !podeVerForum(b, u, forum)) throw new ErroDominio("sem_acesso", MSG_SEM_ACESSO());
     if (!podePublicar(b, u, forum)) {
-      throw new ErroDominio("sem_permissao", forum.status !== "ativo" ? "Este fórum está arquivado." : "Você não pode publicar neste fórum.");
+      throw new ErroDominio("sem_permissao", forum.status !== "ativo" ? tr("este_forum_esta_arquivado") : tr("voce_nao_pode_publicar_neste_forum"));
     }
     const texto = validarConteudo(dados.texto, dados.imagens, LIMITE_IMAGENS);
     const gestao = papelNoEvento(b, u, forum.eventoId) === "gestao";
@@ -351,10 +352,10 @@ export function editarPublicacao(usuario: Usuario | null, pubId: string, texto: 
   const u = exigirUsuario(usuario);
   mutarBase((b) => {
     const p = obterPub(b, pubId);
-    if (p.autorId !== u.id) throw new ErroDominio("sem_permissao", "Você só pode editar suas próprias publicações.");
-    if (!publicacaoVisivel(b, u, p) || p.removidaPeloAutor) throw new ErroDominio("sem_acesso", MSG_SEM_ACESSO);
+    if (p.autorId !== u.id) throw new ErroDominio("sem_permissao", tr("voce_so_pode_editar_suas_proprias"));
+    if (!publicacaoVisivel(b, u, p) || p.removidaPeloAutor) throw new ErroDominio("sem_acesso", MSG_SEM_ACESSO());
     const forum = b.foruns.find((f) => f.id === p.forumId)!;
-    if (forum.status !== "ativo") throw new ErroDominio("arquivado", "Este fórum está arquivado.");
+    if (forum.status !== "ativo") throw new ErroDominio("arquivado", tr("este_forum_esta_arquivado"));
     p.texto = validarConteudo(texto, imagens, LIMITE_IMAGENS);
     p.imagens = imagens;
     p.editadoEm = new Date().toISOString();
@@ -365,7 +366,7 @@ export function excluirPublicacao(usuario: Usuario | null, pubId: string): void 
   const u = exigirUsuario(usuario);
   mutarBase((b) => {
     const p = obterPub(b, pubId);
-    if (p.autorId !== u.id) throw new ErroDominio("sem_permissao", "Você só pode excluir suas próprias publicações.");
+    if (p.autorId !== u.id) throw new ErroDominio("sem_permissao", tr("voce_so_pode_excluir_suas_proprias"));
     const temRespostas = b.respostas.some((r) => r.publicacaoId === p.id);
     if (temRespostas) {
       p.removidaPeloAutor = true;
@@ -383,8 +384,8 @@ export function alternarCurtida(usuario: Usuario | null, pubId: string): boolean
   const u = exigirUsuario(usuario);
   return mutarBase((b) => {
     const p = obterPub(b, pubId);
-    if (!publicacaoVisivel(b, u, p)) throw new ErroDominio("sem_acesso", MSG_SEM_ACESSO);
-    if (!podeCurtir(b, u, p)) throw new ErroDominio("sem_permissao", "Você não pode curtir esta publicação no momento.");
+    if (!publicacaoVisivel(b, u, p)) throw new ErroDominio("sem_acesso", MSG_SEM_ACESSO());
+    if (!podeCurtir(b, u, p)) throw new ErroDominio("sem_permissao", tr("voce_nao_pode_curtir_esta_publicacao"));
     const existente = b.curtidas.find((c) => c.publicacaoId === pubId && c.usuarioId === u.id);
     if (existente) {
       b.curtidas = b.curtidas.filter((c) => c !== existente);
@@ -406,8 +407,8 @@ export function responder(usuario: Usuario | null, pubId: string, texto: string,
   const u = exigirUsuario(usuario);
   return mutarBase((b) => {
     const p = obterPub(b, pubId);
-    if (!publicacaoVisivel(b, u, p)) throw new ErroDominio("sem_acesso", MSG_SEM_ACESSO);
-    if (!podeResponder(b, u, p)) throw new ErroDominio("sem_permissao", "Respostas indisponíveis para esta publicação.");
+    if (!publicacaoVisivel(b, u, p)) throw new ErroDominio("sem_acesso", MSG_SEM_ACESSO());
+    if (!podeResponder(b, u, p)) throw new ErroDominio("sem_permissao", tr("respostas_indisponiveis_para_esta_public"));
     const t = validarConteudo(texto, imagem ? [imagem] : [], 1);
     const r: Resposta = { id: gerarId("res"), publicacaoId: p.id, autorId: u.id, texto: t, imagem, oculta: false, criadoEm: new Date().toISOString() };
     b.respostas.push(r);
@@ -429,10 +430,10 @@ export function editarResposta(usuario: Usuario | null, respostaId: string, text
   const u = exigirUsuario(usuario);
   mutarBase((b) => {
     const r = obterResposta(b, respostaId);
-    if (r.autorId !== u.id) throw new ErroDominio("sem_permissao", "Você só pode editar suas próprias respostas.");
+    if (r.autorId !== u.id) throw new ErroDominio("sem_permissao", tr("voce_so_pode_editar_suas_proprias_2"));
     const p = obterPub(b, r.publicacaoId);
     const forum = b.foruns.find((f) => f.id === p.forumId)!;
-    if (!podeVerForum(b, u, forum) || forum.status !== "ativo") throw new ErroDominio("sem_permissao", "Não é possível editar agora.");
+    if (!podeVerForum(b, u, forum) || forum.status !== "ativo") throw new ErroDominio("sem_permissao", tr("nao_e_possivel_editar_agora"));
     r.texto = validarConteudo(texto, imagem ? [imagem] : [], 1);
     r.imagem = imagem;
     r.editadoEm = new Date().toISOString();
@@ -443,7 +444,7 @@ export function excluirResposta(usuario: Usuario | null, respostaId: string): vo
   const u = exigirUsuario(usuario);
   mutarBase((b) => {
     const r = obterResposta(b, respostaId);
-    if (r.autorId !== u.id) throw new ErroDominio("sem_permissao", "Você só pode excluir suas próprias respostas.");
+    if (r.autorId !== u.id) throw new ErroDominio("sem_permissao", tr("voce_so_pode_excluir_suas_proprias_2"));
     b.respostas = b.respostas.filter((x) => x.id !== r.id);
   });
 }
@@ -456,7 +457,7 @@ export function denunciar(
   const u = exigirUsuario(usuario);
   mutarBase((b) => {
     const pub = dados.alvo === "publicacao" ? obterPub(b, dados.alvoId) : obterPub(b, obterResposta(b, dados.alvoId).publicacaoId);
-    if (!publicacaoVisivel(b, u, pub)) throw new ErroDominio("sem_acesso", MSG_SEM_ACESSO);
+    if (!publicacaoVisivel(b, u, pub)) throw new ErroDominio("sem_acesso", MSG_SEM_ACESSO());
     b.denuncias.push({
       id: gerarId("den"),
       eventoId: pub.eventoId,
@@ -481,7 +482,7 @@ export function listarDenuncias(usuario: Usuario | null, eventoId: string) {
 export function analisarDenuncia(usuario: Usuario | null, denunciaId: string, decisao: "procedente" | "descartada"): void {
   mutarBase((b) => {
     const d = b.denuncias.find((x) => x.id === denunciaId);
-    if (!d) throw new ErroDominio("nao_encontrado", "Denúncia não encontrada.");
+    if (!d) throw new ErroDominio("nao_encontrado", tr("denuncia_nao_encontrada"));
     const u = exigirGestao(b, usuario, d.eventoId);
     d.status = decisao;
     registrarModeracao(b, d.eventoId, u.id, `denuncia_${decisao}`, d.id);
@@ -512,7 +513,7 @@ export function ocultarConteudo(usuario: Usuario | null, alvo: "publicacao" | "r
     const item = alvo === "publicacao" ? obterPub(b, alvoId) : obterResposta(b, alvoId);
     const eventoId = alvo === "publicacao" ? (item as Publicacao).eventoId : obterPub(b, (item as Resposta).publicacaoId).eventoId;
     const u = exigirGestao(b, usuario, eventoId);
-    if (ocultar && !justificativa.trim()) throw new ErroDominio("justificativa", "Informe a justificativa.");
+    if (ocultar && !justificativa.trim()) throw new ErroDominio("justificativa", tr("informe_a_justificativa"));
     item.oculta = ocultar;
     item.motivoOcultacao = ocultar ? justificativa.trim() : undefined;
     registrarModeracao(b, eventoId, u.id, ocultar ? `ocultar_${alvo}` : `restaurar_${alvo}`, alvoId, justificativa.trim() || undefined);
@@ -534,11 +535,11 @@ export function moverPublicacao(usuario: Usuario | null, pubId: string, forumDes
     const u = exigirGestao(b, usuario, p.eventoId);
     const origem = b.foruns.find((f) => f.id === p.forumId)!;
     const destino = b.foruns.find((f) => f.id === forumDestinoId);
-    if (!destino || destino.eventoId !== p.eventoId) throw new ErroDominio("destino", "Fórum de destino inválido.");
+    if (!destino || destino.eventoId !== p.eventoId) throw new ErroDominio("destino", tr("forum_de_destino_invalido"));
     if (destino.publico !== origem.publico) {
-      throw new ErroDominio("publico_diferente", "Só é possível mover entre fóruns com o mesmo público.");
+      throw new ErroDominio("publico_diferente", tr("so_e_possivel_mover_entre_foruns"));
     }
-    if (destino.status !== "ativo") throw new ErroDominio("arquivado", "O fórum de destino está arquivado.");
+    if (destino.status !== "ativo") throw new ErroDominio("arquivado", tr("o_forum_de_destino_esta_arquivado"));
     p.forumId = destino.id;
     registrarModeracao(b, p.eventoId, u.id, "mover_publicacao", p.id, `${origem.nome} → ${destino.nome}`);
   });
@@ -547,7 +548,7 @@ export function moverPublicacao(usuario: Usuario | null, pubId: string, forumDes
 export function suspenderUsuario(usuario: Usuario | null, eventoId: string, usuarioId: string, justificativa: string): void {
   mutarBase((b) => {
     const u = exigirGestao(b, usuario, eventoId);
-    if (!justificativa.trim()) throw new ErroDominio("justificativa", "Informe a justificativa.");
+    if (!justificativa.trim()) throw new ErroDominio("justificativa", tr("informe_a_justificativa"));
     if (estaSuspenso(b, usuarioId, eventoId)) return;
     b.restricoesComunidade.push({ id: gerarId("rst"), eventoId, usuarioId, justificativa: justificativa.trim(), ativa: true, criadoEm: new Date().toISOString() });
     registrarModeracao(b, eventoId, u.id, "suspender_usuario", usuarioId, justificativa.trim());
@@ -578,10 +579,10 @@ export interface DadosForum {
 }
 
 function validarForum(b: BaseDados, eventoId: string, d: DadosForum) {
-  if (!d.nome.trim()) throw new ErroDominio("nome", "Informe o nome do fórum.");
-  if (!d.descricao.trim()) throw new ErroDominio("descricao", "Informe uma descrição.");
+  if (!d.nome.trim()) throw new ErroDominio("nome", tr("informe_o_nome_do_forum"));
+  if (!d.descricao.trim()) throw new ErroDominio("descricao", tr("informe_uma_descricao"));
   if (d.publico !== "todos" && !eventoDe(b, eventoId)?.exercitos.some((e) => e.id === d.publico)) {
-    throw new ErroDominio("publico", "Público inválido.");
+    throw new ErroDominio("publico", tr("publico_invalido"));
   }
 }
 
@@ -613,12 +614,12 @@ export function criarForum(usuario: Usuario | null, eventoId: string, d: DadosFo
 export function editarForum(usuario: Usuario | null, forumId: string, d: DadosForum): void {
   mutarBase((b) => {
     const f = b.foruns.find((x) => x.id === forumId);
-    if (!f) throw new ErroDominio("nao_encontrado", "Fórum não encontrado.");
+    if (!f) throw new ErroDominio("nao_encontrado", tr("forum_nao_encontrado"));
     const u = exigirGestao(b, usuario, f.eventoId);
     validarForum(b, f.eventoId, d);
     const temConteudo = b.publicacoes.some((p) => p.forumId === f.id);
     if (temConteudo && d.publico !== f.publico) {
-      throw new ErroDominio("publico", "Não é possível mudar o público de um fórum com publicações (evita exposição involuntária).");
+      throw new ErroDominio("publico", tr("nao_e_possivel_mudar_o_publico"));
     }
     Object.assign(f, {
       nome: d.nome.trim(),
@@ -649,7 +650,7 @@ export function moverOrdemForum(usuario: Usuario | null, forumId: string, direca
 export function alternarArquivoForum(usuario: Usuario | null, forumId: string): void {
   mutarBase((b) => {
     const f = b.foruns.find((x) => x.id === forumId);
-    if (!f) throw new ErroDominio("nao_encontrado", "Fórum não encontrado.");
+    if (!f) throw new ErroDominio("nao_encontrado", tr("forum_nao_encontrado"));
     const u = exigirGestao(b, usuario, f.eventoId);
     f.status = f.status === "ativo" ? "arquivado" : "ativo";
     registrarModeracao(b, f.eventoId, u.id, f.status === "arquivado" ? "arquivar_forum" : "reativar_forum", f.id);
@@ -659,10 +660,10 @@ export function alternarArquivoForum(usuario: Usuario | null, forumId: string): 
 export function excluirForum(usuario: Usuario | null, forumId: string): void {
   mutarBase((b) => {
     const f = b.foruns.find((x) => x.id === forumId);
-    if (!f) throw new ErroDominio("nao_encontrado", "Fórum não encontrado.");
+    if (!f) throw new ErroDominio("nao_encontrado", tr("forum_nao_encontrado"));
     const u = exigirGestao(b, usuario, f.eventoId);
     if (b.publicacoes.some((p) => p.forumId === f.id)) {
-      throw new ErroDominio("com_conteudo", "Fóruns com conteúdo devem ser arquivados, não excluídos.");
+      throw new ErroDominio("com_conteudo", tr("foruns_com_conteudo_devem_ser_arquivados"));
     }
     b.foruns = b.foruns.filter((x) => x.id !== f.id);
     registrarModeracao(b, f.eventoId, u.id, "excluir_forum", f.id);
@@ -678,7 +679,7 @@ export function definirPreferenciaForum(usuario: Usuario | null, forumId: string
   const u = exigirUsuario(usuario);
   mutarBase((b) => {
     const f = b.foruns.find((x) => x.id === forumId);
-    if (!f || !podeVerForum(b, u, f)) throw new ErroDominio("sem_acesso", MSG_SEM_ACESSO);
+    if (!f || !podeVerForum(b, u, f)) throw new ErroDominio("sem_acesso", MSG_SEM_ACESSO());
     b.preferenciasForum = b.preferenciasForum.filter((p) => !(p.usuarioId === u.id && p.forumId === forumId));
     if (modo !== "padrao") b.preferenciasForum.push({ usuarioId: u.id, forumId, modo });
   });
@@ -697,7 +698,7 @@ export function membrosParaModeracao(usuario: Usuario | null, eventoId: string) 
 export function atualizarNomeExibicao(usuario: Usuario | null, nome: string): void {
   const u = exigirUsuario(usuario);
   const n = nome.trim();
-  if (n.length > 40) throw new ErroDominio("nome", "Use no máximo 40 caracteres.");
+  if (n.length > 40) throw new ErroDominio("nome", tr("use_no_maximo_40_caracteres"));
   mutarBase((b) => {
     const alvo = b.usuarios.find((x) => x.id === u.id);
     if (alvo) alvo.nomeExibicao = n || undefined;

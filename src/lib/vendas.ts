@@ -1,6 +1,7 @@
 // Regras puras de venda: disponibilidade de ingressos por lote e situação de cupons.
 // Usadas igualmente na tela de inscrição, na gestão do evento e na confirmação no servidor.
 import type { Cupom, Evento, Lote } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/vendas";
 
 export type MotivoIndisponivel = "nao_configurado" | "agendado" | "encerrado" | "inativo" | "esgotado" | "tipo_esgotado";
 
@@ -12,12 +13,12 @@ export type Disponibilidade =
 export type OcupacaoLote = (loteId: string, tipoId: string) => number;
 
 export const TEXTO_MOTIVO: Record<MotivoIndisponivel, string> = {
-  nao_configurado: "nenhum lote de venda configurado",
-  agendado: "as vendas ainda não começaram",
-  encerrado: "o período de vendas terminou",
-  inativo: "o lote de venda está inativo",
-  esgotado: "as vagas do lote esgotaram",
-  tipo_esgotado: "este tipo de ingresso esgotou",
+  get nao_configurado() { return tr("nenhum_lote_de_venda_configurado"); },
+  get agendado() { return tr("as_vendas_ainda_nao_comecaram"); },
+  get encerrado() { return tr("o_periodo_de_vendas_terminou"); },
+  get inativo() { return tr("o_lote_de_venda_esta_inativo"); },
+  get esgotado() { return tr("as_vagas_do_lote_esgotaram"); },
+  get tipo_esgotado() { return tr("este_tipo_de_ingresso_esgotou"); },
 };
 
 /**
@@ -85,29 +86,29 @@ export function validarDadosCupom(
 ): Partial<Record<keyof DadosCupom, string>> {
   const e: Partial<Record<keyof DadosCupom, string>> = {};
   const codigo = normalizarCodigoCupom(d.codigo);
-  if (!codigo) e.codigo = "Informe o código do cupom.";
-  else if (!/^[A-Z0-9_-]{3,40}$/.test(codigo)) e.codigo = "Use de 3 a 40 letras, números, hífen ou sublinhado, sem espaços.";
-  else if (ctx.codigosExistentes.map(normalizarCodigoCupom).includes(codigo)) e.codigo = "Já existe um cupom com este código nesta operação.";
+  if (!codigo) e.codigo = tr("informe_o_codigo_do_cupom");
+  else if (!/^[A-Z0-9_-]{3,40}$/.test(codigo)) e.codigo = tr("use_de_3_a_40_letras");
+  else if (ctx.codigosExistentes.map(normalizarCodigoCupom).includes(codigo)) e.codigo = tr("ja_existe_um_cupom_com_este");
   if (!Number.isFinite(d.descontoPercentual) || !Number.isInteger(d.descontoPercentual) || d.descontoPercentual <= 0 || d.descontoPercentual > 100) {
-    e.descontoPercentual = "O desconto deve ser um número inteiro maior que 0 e de até 100%.";
+    e.descontoPercentual = tr("o_desconto_deve_ser_um_numero");
   }
   if (d.limiteUsos !== null && (!Number.isInteger(d.limiteUsos) || d.limiteUsos < 1)) {
-    e.limiteUsos = "O limite deve ser um número inteiro positivo.";
+    e.limiteUsos = tr("o_limite_deve_ser_um_numero");
   }
-  if (!d.validoDe || Number.isNaN(Date.parse(d.validoDe))) e.validoDe = "Informe o início da validade.";
+  if (!d.validoDe || Number.isNaN(Date.parse(d.validoDe))) e.validoDe = tr("informe_o_inicio_da_validade");
   if (d.validoAte !== null) {
-    if (Number.isNaN(Date.parse(d.validoAte))) e.validoAte = "Informe o fim da validade ou marque “Sem data de término”.";
-    else if (!e.validoDe && Date.parse(d.validoAte) <= Date.parse(d.validoDe)) e.validoAte = "O fim deve ser posterior ao início.";
+    if (Number.isNaN(Date.parse(d.validoAte))) e.validoAte = tr("informe_o_fim_da_validade_ou");
+    else if (!e.validoDe && Date.parse(d.validoAte) <= Date.parse(d.validoDe)) e.validoAte = tr("o_fim_deve_ser_posterior_ao");
   }
   if (d.tiposElegiveis.length === 0 || d.tiposElegiveis.some((t) => !ctx.tiposDoEvento.includes(t))) {
-    e.tiposElegiveis = "Selecione pelo menos um tipo de ingresso desta operação.";
+    e.tiposElegiveis = tr("selecione_pelo_menos_um_tipo_de");
   }
   return e;
 }
 
 export function resumoCupom(d: Pick<DadosCupom, "codigo" | "descontoPercentual" | "limiteUsos">, todosOsTipos: boolean) {
-  const codigo = normalizarCodigoCupom(d.codigo) || "CÓDIGO";
-  const usos = d.limiteUsos === null ? "sem limite de utilizações" : `com até ${d.limiteUsos} ${d.limiteUsos === 1 ? "utilização" : "utilizações"}`;
-  const alvo = todosOsTipos ? "em todos os ingressos" : "nos ingressos selecionados";
-  return `${codigo} concede ${d.descontoPercentual || 0}% de desconto, ${usos}, ${alvo} desta operação.`;
+  const codigo = normalizarCodigoCupom(d.codigo) || tr("codigo");
+  const usos = d.limiteUsos === null ? tr("sem_limite_de_utilizacoes") : tr.plural(d.limiteUsos, "com_ate_uma_utilizacao", "com_ate_n_utilizacoes");
+  const alvo = todosOsTipos ? tr("em_todos_os_ingressos") : tr("nos_ingressos_selecionados");
+  return tr("codigo_concede_valor_de_desconto_usos", { codigo, valor: d.descontoPercentual || 0, usos, alvo });
 }

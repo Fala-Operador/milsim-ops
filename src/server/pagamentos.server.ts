@@ -74,10 +74,11 @@ import {
   statusDoImpulso, type PlanoExibido,
 } from "@/lib/impulsos";
 import type { ImpulsoComprado, Inscricao, PlanoImpulsoId } from "@/lib/domain/types";
+import { tr } from "@/i18n/server/pagamentos.server";
 
 export { stripeConfigurado };
 
-const MSG_FALHA_STRIPE = "Não foi possível abrir o pagamento agora. Tente novamente em instantes.";
+const MSG_FALHA_STRIPE = () => tr("nao_foi_possivel_abrir_o_pagamento_agora");
 
 export interface ResultadoCompra {
   inscricao: Inscricao;
@@ -92,9 +93,9 @@ export interface ResultadoCompra {
 export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<ResultadoCompra>> {
   const { resultado: d } = await ler(({ base, usuario }) => {
     const ins = base.inscricoes.find((i) => i.id === inscricaoId);
-    if (!usuario || !ins || ins.usuarioId !== usuario.id) throw new ErroDominio("inscricao", "Reserva não encontrada.");
+    if (!usuario || !ins || ins.usuarioId !== usuario.id) throw new ErroDominio("inscricao", tr("reserva_nao_encontrada"));
     if (ins.status !== "pendente" || ins.pagamento?.status !== "aguardando") {
-      throw new ErroDominio("reserva", "Esta reserva não está mais aguardando pagamento.");
+      throw new ErroDominio("reserva", tr("esta_reserva_nao_esta_mais_aguardando"));
     }
     const evento = base.eventos.find((e) => e.id === ins.eventoId);
     const tipo = evento?.tipos.find((t) => t.id === ins.tipoId);
@@ -108,7 +109,7 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
         ? ins.pagamento.contaDestino : undefined,
     };
   });
-  if (new Date(d.pagamento.expiraEm) <= new Date()) throw new Error("O prazo desta reserva terminou. Faça uma nova inscrição.");
+  if (new Date(d.pagamento.expiraEm) <= new Date()) throw new Error(tr("o_prazo_desta_reserva_terminou_faca"));
 
   let sessao: SessaoCheckout;
   try {
@@ -116,7 +117,7 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
     if (existente && existente.status !== "open") {
       // Pago ou expirado enquanto a pessoa estava fora: aplica o estado e avisa.
       await aplicarSessao(existente, acaoDaSessao(existente));
-      throw new Error("Esta reserva já foi concluída ou expirou. Confira em Meus ingressos.");
+      throw new Error(tr("esta_reserva_ja_foi_concluida_ou"));
     }
     const origem = new URL(getRequestUrl()).origin;
     const criar = () => criarSessaoCheckout({
@@ -145,9 +146,9 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
   } catch (e) {
     if (!(e instanceof ErroStripe || e instanceof TypeError)) throw e;
     console.error("Stripe: falha ao abrir checkout", e);
-    throw new Error(MSG_FALHA_STRIPE);
+    throw new Error(MSG_FALHA_STRIPE());
   }
-  if (!sessao.url) throw new Error(MSG_FALHA_STRIPE);
+  if (!sessao.url) throw new Error(MSG_FALHA_STRIPE());
   const url = sessao.url;
   return mutar(({ base }) => {
     const ins = base.inscricoes.find((i) => i.id === inscricaoId)!;
@@ -200,12 +201,12 @@ export async function sincronizarSessao(sessaoId: string, usuarioId: string): Pr
     sessao = await obterSessaoCheckout(sessaoId);
   } catch (e) {
     console.error("Stripe: falha ao consultar sessão", e);
-    throw new Error("Não foi possível consultar o pagamento agora.");
+    throw new Error(tr("nao_foi_possivel_consultar_o_pagamento"));
   }
   const inscricaoId = inscricaoDaSessao(sessao);
   // Confere o titular antes de aplicar qualquer coisa.
   const { resultado: dono } = await ler(({ base }) => base.inscricoes.find((i) => i.id === inscricaoId)?.usuarioId);
-  if (!inscricaoId || dono !== usuarioId) throw new Error("Pagamento não encontrado.");
+  if (!inscricaoId || dono !== usuarioId) throw new Error(tr("pagamento_nao_encontrado"));
   await aplicarSessao(sessao, acaoDaSessao(sessao));
   return ler(({ base }) => {
     const inscricao = base.inscricoes.find((i) => i.id === inscricaoId);
@@ -239,7 +240,7 @@ export async function processarEstornos(): Promise<RespostaApi<string> | undefin
   for (const ins of alvos) {
     const intencao = ins.pagamento?.intencaoId;
     if (!intencao) {
-      resultados.push({ id: ins.id, r: { erro: "Pagamento sem identificador no Stripe; reembolse pelo painel." } });
+      resultados.push({ id: ins.id, r: { erro: tr("pagamento_sem_identificador_no_stripe_re") } });
       continue;
     }
     try {
@@ -247,7 +248,7 @@ export async function processarEstornos(): Promise<RespostaApi<string> | undefin
       resultados.push({ id: ins.id, r: { reembolsoId: re.id } });
     } catch (e) {
       console.error("Stripe: falha no reembolso", ins.id, e);
-      resultados.push({ id: ins.id, r: { erro: e instanceof Error ? e.message.slice(0, 300) : "Falha no reembolso." } });
+      resultados.push({ id: ins.id, r: { erro: e instanceof Error ? e.message.slice(0, 300) : tr("falha_no_reembolso") } });
     }
   }
   return mutar(({ base: b }) => {
@@ -316,8 +317,8 @@ export async function comprarImpulso(planoId: PlanoImpulsoId): Promise<RespostaA
 export async function abrirCheckoutImpulso(impulsoId: string): Promise<RespostaApi<ResultadoCompraImpulso>> {
   const { resultado: d } = await ler(({ base, usuario }) => {
     const i = base.impulsosComprados.find((x) => x.id === impulsoId);
-    if (!i || !gereImpulsos(usuario, i.organizacaoId)) throw new ErroDominio("impulso", "Impulso não encontrado.");
-    if (statusDoImpulso(i, new Date()) !== "aguardando_pagamento") throw new ErroDominio("impulso", "Este impulso não está mais aguardando pagamento.");
+    if (!i || !gereImpulsos(usuario, i.organizacaoId)) throw new ErroDominio("impulso", tr("impulso_nao_encontrado"));
+    if (statusDoImpulso(i, new Date()) !== "aguardando_pagamento") throw new ErroDominio("impulso", tr("este_impulso_nao_esta_mais_aguardando"));
     return { impulso: i, email: usuario?.email, plano: planosDeImpulso(base).find((p) => p.id === i.planoId) };
   });
   let sessao: SessaoCheckout;
@@ -325,7 +326,7 @@ export async function abrirCheckoutImpulso(impulsoId: string): Promise<RespostaA
     const existente = d.impulso.sessaoId ? await obterSessaoCheckout(d.impulso.sessaoId) : undefined;
     if (existente && existente.status !== "open") {
       await aplicarSessaoImpulso(existente, acaoDaSessao(existente));
-      throw new Error("Este pagamento já foi concluído ou expirou. Confira em Impulsionar.");
+      throw new Error(tr("este_pagamento_ja_foi_concluido_ou"));
     }
     const origem = new URL(getRequestUrl()).origin;
     // Produto do catálogo da plataforma; tipo ainda não sincronizado é sincronizado agora.
@@ -345,9 +346,9 @@ export async function abrirCheckoutImpulso(impulsoId: string): Promise<RespostaA
   } catch (e) {
     if (!(e instanceof ErroStripe || e instanceof TypeError)) throw e;
     console.error("Stripe: falha ao abrir checkout do impulso", e);
-    throw new Error(MSG_FALHA_STRIPE);
+    throw new Error(MSG_FALHA_STRIPE());
   }
-  if (!sessao.url) throw new Error(MSG_FALHA_STRIPE);
+  if (!sessao.url) throw new Error(MSG_FALHA_STRIPE());
   const url = sessao.url;
   return mutar(({ base }) => ({ impulso: registrarSessaoImpulsoNaBase(base, impulsoId, sessao.id), urlPagamento: url }));
 }
@@ -390,10 +391,10 @@ export interface ResultadoSincronizacaoPlanos {
  */
 export async function sincronizarPlanosNoStripe(): Promise<RespostaApi<ResultadoSincronizacaoPlanos>> {
   const { resultado: planos } = await ler(({ base, usuario }) => {
-    if (usuario?.perfil !== "admin" || !usuario.ativo) throw new ErroDominio("permissao", "Somente a administração sincroniza os impulsos com o Stripe.");
+    if (usuario?.perfil !== "admin" || !usuario.ativo) throw new ErroDominio("permissao", tr("somente_a_administracao_sincroniza_os_im"));
     return planosDeImpulso(base);
   });
-  if (!stripeConfigurado()) throw new Error("Os pagamentos online ainda não estão ativados na plataforma.");
+  if (!stripeConfigurado()) throw new Error(tr("os_pagamentos_online_ainda_nao_estao"));
   const origem = new URL(getRequestUrl()).origin;
   const feitos: { id: PlanoImpulsoId; produtoId: string; precoId: string }[] = [];
   const erros: string[] = [];
@@ -402,7 +403,7 @@ export async function sincronizarPlanosNoStripe(): Promise<RespostaApi<Resultado
       feitos.push({ id: p.id, ...(await sincronizarProdutoImpulso(dadosDoProduto(p, origem))) });
     } catch (e) {
       console.error("Stripe: falha ao sincronizar o produto do impulso", p.id, e);
-      erros.push(`${p.rotulo}: ${e instanceof ErroStripe ? mensagemDeFalhaStripe(e.status, e.message) : MSG_FALHA_STRIPE}`);
+      erros.push(`${p.rotulo}: ${e instanceof ErroStripe ? mensagemDeFalhaStripe(e.status, e.message) : MSG_FALHA_STRIPE()}`);
     }
   }
   return mutar(({ base }) => {
@@ -434,11 +435,11 @@ export async function sincronizarSessaoImpulso(sessaoId: string): Promise<Respos
     sessao = await obterSessaoCheckout(sessaoId);
   } catch (e) {
     console.error("Stripe: falha ao consultar sessão do impulso", e);
-    throw new Error("Não foi possível consultar o pagamento agora.");
+    throw new Error(tr("nao_foi_possivel_consultar_o_pagamento"));
   }
   const impulsoId = impulsoDaSessao(sessao);
   const { resultado: org } = await ler(({ base }) => base.impulsosComprados.find((i) => i.id === impulsoId)?.organizacaoId);
-  if (!impulsoId || !org || !gereImpulsos(usuario, org)) throw new Error("Pagamento não encontrado.");
+  if (!impulsoId || !org || !gereImpulsos(usuario, org)) throw new Error(tr("pagamento_nao_encontrado"));
   await aplicarSessaoImpulso(sessao, acaoDaSessao(sessao));
   return ler(({ base }) => base.impulsosComprados.find((i) => i.id === impulsoId));
 }
@@ -449,7 +450,7 @@ export async function sincronizarSessaoImpulso(sessaoId: string): Promise<Respos
 async function organizacaoGerida(organizacaoId: string) {
   const { resultado } = await ler(({ base, usuario }) => {
     const org = base.organizacoes.find((o) => o.id === organizacaoId);
-    if (!org || !gereRecebimento(usuario, organizacaoId)) throw new ErroDominio("permissao", "Você só pode configurar os recebimentos da sua organização.");
+    if (!org || !gereRecebimento(usuario, organizacaoId)) throw new ErroDominio("permissao", tr("voce_so_pode_configurar_os_recebimentos"));
     const responsavel = base.usuarios.find((u) => u.id === org.responsavelId);
     return { nome: org.nome, contaId: org.recebimento?.contaId, ativa: org.recebimento?.status === "ativa", email: responsavel?.email };
   });
@@ -526,18 +527,18 @@ async function comContaDaPlataforma(e: Error): Promise<Error> {
   if (!/must be activated in order to create accounts/i.test(e.message)) return e;
   try {
     const p = await obterContaDaPlataforma();
-    const nome = p.settings?.dashboard?.display_name || p.business_profile?.name || "sem nome";
-    const sim = (v?: boolean) => (v ? "sim" : "não");
+    const nome = p.settings?.dashboard?.display_name || p.business_profile?.name || tr("sem_nome");
+    const sim = (v?: boolean) => (v ? tr("sim") : tr("nao"));
     // Plataforma ativa para pagamentos: o que falta é o cadastro do Connect em produção (perfil da
     // plataforma), que o Stripe exige antes da primeira conta conectada e responde com o mesmo erro.
     if (p.charges_enabled) {
       return new Error(
-        `A conta Stripe da plataforma (${p.id}, ${nome}) já recebe pagamentos, mas o Stripe ainda não liberou a criação de contas conectadas em produção. No painel do Stripe, em modo de produção, conclua o perfil da plataforma do Connect em https://dashboard.stripe.com/connect/registration e confira nome, cor e ícone em Configurações → Connect; depois tente de novo. Se continuar, peça ao suporte do Stripe para liberar o Connect na conta.`,
+        tr("a_conta_stripe_da_plataforma_id", { id: p.id, nome }),
         { cause: e.cause },
       );
     }
     return new Error(
-      `${e.message} Conta do Stripe usada pela chave do site: ${p.id} (${nome}; pagamentos ativos: ${sim(p.charges_enabled)}; repasses ativos: ${sim(p.payouts_enabled)}).`,
+      tr("message_conta_do_stripe_usada_pela", { message: e.message, id: p.id, nome, charges_enabled: sim(p.charges_enabled), payouts_enabled: sim(p.payouts_enabled) }),
       { cause: e.cause },
     );
   } catch {
@@ -566,7 +567,7 @@ const gravarConta = (organizacaoId: string, conta: ContaStripe) =>
  * vez e devolve o link do cadastro hospedado pelo Stripe.
  */
 export async function iniciarCadastroRecebimento(organizacaoId: string): Promise<RespostaApi<{ url: string }>> {
-  if (!stripeConfigurado()) throw new Error("Os pagamentos online ainda não estão ativados na plataforma.");
+  if (!stripeConfigurado()) throw new Error(tr("os_pagamentos_online_ainda_nao_estao"));
   const org = await organizacaoGerida(organizacaoId);
   const origem = new URL(getRequestUrl()).origin;
   const perfil = perfilComercialPadrao(org.nome, origem);
@@ -598,7 +599,7 @@ export async function sincronizarRecebimento(organizacaoId: string) {
 /** Link para o painel Express: saldo, calendário de repasses e conta bancária. */
 export async function abrirPainelRecebimento(organizacaoId: string): Promise<{ url: string }> {
   const org = await organizacaoGerida(organizacaoId);
-  if (!org.contaId) throw new Error("A organização ainda não tem conta de recebimento.");
+  if (!org.contaId) throw new Error(tr("a_organizacao_ainda_nao_tem_conta"));
   return comStripe(() => linkDoPainel(org.contaId!));
 }
 
@@ -648,9 +649,9 @@ export async function consultarSaldoRecebimento(organizacaoId: string, atualizar
 export async function sessaoComponentesStripe(organizacaoId: string): Promise<{ chavePublicavel: string; clientSecret: string }> {
   const org = await organizacaoGerida(organizacaoId);
   const chave = chavePublicavel();
-  if (!chave || !stripeConfigurado()) throw new Error("Os painéis do Stripe ainda não foram ativados na plataforma.");
+  if (!chave || !stripeConfigurado()) throw new Error(tr("os_paineis_do_stripe_ainda_nao"));
   const problema = problemaChavesStripe();
-  if (problema) throw new Error(`Os painéis do Stripe estão mal configurados: ${problema}`);
+  if (problema) throw new Error(tr("os_paineis_do_stripe_estao_mal", { problema }));
   const perfil = perfilComercialPadrao(org.nome, new URL(getRequestUrl()).origin);
   const { conta, nova } = await contaDaOrganizacao(organizacaoId, org, perfil);
   if (!nova && !org.ativa) await completarPerfil(conta, perfil);

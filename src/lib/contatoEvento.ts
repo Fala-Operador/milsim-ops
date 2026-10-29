@@ -5,6 +5,7 @@
 // Só aceita convites de grupo (chat.whatsapp.com): o campo não serve para links arbitrários.
 import type { BaseDados, Evento, Usuario } from "@/lib/domain/types";
 import { linkWhatsapp } from "@/lib/divulgacao";
+import { tr } from "@/i18n/lib/contatoEvento";
 
 const GRUPO = /^(?:https?:\/\/)?chat\.whatsapp\.com\/(?:invite\/)?([A-Za-z0-9]{10,40})\/?(?:[?#].*)?$/i;
 
@@ -35,17 +36,17 @@ export function formatarContatoWhatsapp(digitos: string): string {
 /** Link wa.me do organizador com mensagem inicial que identifica o evento. */
 export function linkContatoEvento(evento: Pick<Evento, "whatsappContato" | "nome">): string | null {
   if (!evento.whatsappContato) return null;
-  return linkWhatsapp(evento.whatsappContato, `Olá! Tenho uma dúvida sobre ${evento.nome} (vi no MilSim Ops).`);
+  return linkWhatsapp(evento.whatsappContato, tr("ola_tenho_uma_duvida_sobre_nome", { nome: evento.nome }));
 }
 
 /** Erros de preenchimento (campo = id do elemento no editor). Campos vazios são opcionais. */
 export function errosContatoEvento(ev: Pick<Evento, "whatsappContato" | "whatsappGrupoUrl">): { campo: string; mensagem: string }[] {
   const erros: { campo: string; mensagem: string }[] = [];
   if (ev.whatsappContato?.trim() && !normalizarContatoWhatsapp(ev.whatsappContato)) {
-    erros.push({ campo: "ev-whats", mensagem: "WhatsApp inválido. Informe DDD e número, ex.: (11) 99999-9999." });
+    erros.push({ campo: "ev-whats", mensagem: tr("whatsapp_invalido_informe_ddd_e_numero") });
   }
   if (ev.whatsappGrupoUrl?.trim() && !normalizarGrupoWhatsapp(ev.whatsappGrupoUrl)) {
-    erros.push({ campo: "ev-grupo", mensagem: "Use o link de convite do grupo, no formato https://chat.whatsapp.com/…" });
+    erros.push({ campo: "ev-grupo", mensagem: tr("use_o_link_de_convite_do") });
   }
   return erros;
 }

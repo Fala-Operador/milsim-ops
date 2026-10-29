@@ -246,8 +246,8 @@ describe("troca do modo do Stripe (teste → produção)", () => {
     expect(mensagemDeFalhaStripe(400, "You can only create new accounts if you've signed up for Connect")).toMatch(/Connect ainda não está ativado/);
     expect(mensagemDeFalhaStripe(400, "Your account must be activated in order to create accounts. You can activate your accounts at https://dashboard.stripe.com/account/onboarding.")).toMatch(/plataforma ainda não está ativada/);
     expect(mensagemDeFalhaStripe(400, "Invalid email")).toBe("Stripe: Invalid email");
-    expect(mensagemDeFalhaStripe(0, "fetch failed")).toBe(MSG_FALHA_STRIPE);
-    expect(mensagemDeFalhaStripe(500, "erro")).toBe(MSG_FALHA_STRIPE);
+    expect(mensagemDeFalhaStripe(0, "fetch failed")).toBe(MSG_FALHA_STRIPE());
+    expect(mensagemDeFalhaStripe(500, "erro")).toBe(MSG_FALHA_STRIPE());
   });
 
   it("checkout com destino de outro modo cai para a venda na plataforma", () => {

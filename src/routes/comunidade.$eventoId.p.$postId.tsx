@@ -5,14 +5,15 @@ import { responder } from "@/api/comunidade.functions";
 import { CartaoPublicacao, CompositorResposta, ItemResposta, PortaComunidade, SemAcesso } from "@/components/comunidade";
 import { Button } from "@/components/ui/button";
 import { SkeletonPagina } from "@/components/ui";
+import { tr } from "@/i18n/routes/comunidade.$eventoId.p.$postId";
 
 export const Route = createFileRoute("/comunidade/$eventoId/p/$postId")({
   head: () => ({
     meta: [
-      { title: "Publicação — Comunidade MilSim Ops" },
-      { name: "description", content: "Publicação e respostas na comunidade privada do evento." },
-      { property: "og:title", content: "Publicação — Comunidade MilSim Ops" },
-      { property: "og:description", content: "Conteúdo privado da comunidade do evento." },
+      { title: tr("publicacao_comunidade_milsim_ops") },
+      { name: "description", content: tr("publicacao_e_respostas_na_comunidade_pri") },
+      { property: "og:title", content: tr("publicacao_comunidade_milsim_ops") },
+      { property: "og:description", content: tr("conteudo_privado_da_comunidade_do_evento") },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -34,11 +35,10 @@ function DetalhePublicacao() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <nav aria-label="Breadcrumb" className="text-xs text-muted-foreground">
-        <Link to="/comunidade/$eventoId" params={{ eventoId }} search={{}} className="hover:underline">Comunidade</Link> /{" "}
-        <Link to="/comunidade/$eventoId" params={{ eventoId }} search={{ forum: forum.id }} className="hover:underline">{forum.nome}</Link> / Publicação
-      </nav>
-      <Button variant="ghost" className="mt-2" onClick={voltar}>← Voltar</Button>
+      <nav aria-label={tr("breadcrumb")} className="text-xs text-muted-foreground">
+        <Link to="/comunidade/$eventoId" params={{ eventoId }} search={{}} className="hover:underline">{tr("comunidade")}</Link> /{" "}
+        <Link to="/comunidade/$eventoId" params={{ eventoId }} search={{ forum: forum.id }} className="hover:underline">{forum.nome}</Link>{" "}{tr("publicacao")}</nav>
+      <Button variant="ghost" className="mt-2" onClick={voltar}>{tr("voltar")}</Button>
       <div className="mt-2">
         <CartaoPublicacao
           base={base}
@@ -54,9 +54,9 @@ function DetalhePublicacao() {
           }}
         />
       </div>
-      <section aria-label="Respostas" className="mt-4 rounded-lg border border-border bg-card px-4 pb-4">
-        <h2 className="py-3 font-display text-sm font-semibold uppercase">Respostas ({respostas.length})</h2>
-        {respostas.length === 0 && <p className="border-t border-border py-3 text-sm text-muted-foreground">Nenhuma resposta ainda.</p>}
+      <section aria-label={tr("respostas")} className="mt-4 rounded-lg border border-border bg-card px-4 pb-4">
+        <h2 className="py-3 font-display text-sm font-semibold uppercase">{tr("respostas_length", { length: respostas.length })}</h2>
+        {respostas.length === 0 && <p className="border-t border-border py-3 text-sm text-muted-foreground">{tr("nenhuma_resposta_ainda")}</p>}
         {respostas.map((r) => (
           <ItemResposta key={r.id} base={base} r={r} usuario={usuario} gestao={gestao} eventoId={eventoId} arquivado={forum.status !== "ativo"} onMudou={atualizar} />
         ))}
@@ -64,7 +64,7 @@ function DetalhePublicacao() {
           <CompositorResposta onEnviar={async (t, img) => { await responder(pub.id, t, img); atualizar(); }} />
         ) : (
           <p className="border-t border-border pt-3 text-sm text-muted-foreground">
-            {forum.status !== "ativo" ? "Fórum arquivado: sem novas respostas." : pub.respostasFechadas ? "As respostas foram fechadas pela organização." : "Você não pode responder a esta publicação."}
+            {forum.status !== "ativo" ? tr("forum_arquivado_sem_novas_respostas") : pub.respostasFechadas ? tr("as_respostas_foram_fechadas_pela_organiz") : tr("voce_nao_pode_responder_a_esta")}
           </p>
         )}
       </section>

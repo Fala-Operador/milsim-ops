@@ -39,6 +39,7 @@ import {
   type VisibilidadeForum,
 } from "@/lib/comunidadeGeral";
 import type { BaseDados, Usuario } from "@/lib/domain/types";
+import { tr } from "@/i18n/server/social.server";
 
 interface LinhaPost {
   id: string;
@@ -150,7 +151,7 @@ async function bloqueioEntre(a: string, b: string): Promise<boolean> {
 async function postVisivel(base: BaseDados, quemVe: string | null, postId: string): Promise<PostDTO> {
   const { posts } = await paginaDe(base, quemVe, { post: postId }, {}, 1);
   const post = posts[0];
-  if (!post) throw new ErroDominio("post_indisponivel", "Publicação indisponível.");
+  if (!post) throw new ErroDominio("post_indisponivel", tr("publicacao_indisponivel"));
   return post;
 }
 
@@ -178,7 +179,7 @@ export const lerRespostas = (postId: string, cursor: Cursor) =>
 export const lerPerfilSocial = (usuarioId: string) =>
   comSessao(async (base, u): Promise<PerfilSocialDTO> => {
     const alvo = base.usuarios.find((x) => x.id === usuarioId && x.ativo);
-    if (!alvo) throw new ErroDominio("perfil", "Perfil indisponível.");
+    if (!alvo) throw new ErroDominio("perfil", tr("perfil_indisponivel"));
     const db = supabaseAdmin();
     const contar = async (coluna: "followed_id" | "follower_id") => {
       const { count, error } = await db.from("social_follows").select("status", { count: "exact", head: true }).eq(coluna, usuarioId).eq("status", "aprovado");
@@ -239,7 +240,7 @@ export const publicarPost = (d: { texto: string; fotos: FotoEnviada[]; responden
     const forumId = pai ? pai.forumId : d.forumId;
     if (forumId) {
       const eu_ = await participacao(forumId, eu.id);
-      if (eu_?.situacao !== "aprovado") throw new ErroDominio("forum", "Entre no fórum para publicar nele.");
+      if (eu_?.situacao !== "aprovado") throw new ErroDominio("forum", tr("entre_no_forum_para_publicar_nele"));
     }
 
     const urls: string[] = [];
@@ -262,7 +263,7 @@ export const excluirPost = (postId: string) =>
     const { data, error } = await supabaseAdmin()
       .from("social_posts").update({ status: "removido" }).eq("id", postId).eq("author_id", eu.id).neq("status", "removido").select("id");
     if (error) falha("Falha ao excluir", error);
-    if (!data?.length) throw new ErroDominio("post_indisponivel", "Publicação indisponível.");
+    if (!data?.length) throw new ErroDominio("post_indisponivel", tr("publicacao_indisponivel"));
     return null;
   });
 
@@ -281,10 +282,10 @@ export const curtirPost = (postId: string, curtir: boolean) =>
 export const seguir = (usuarioId: string) =>
   comSessao(async (base, u): Promise<RelacaoSeguir> => {
     const eu = exigirUsuario(u);
-    if (eu.id === usuarioId) throw new ErroDominio("seguir", "Você não pode seguir a si mesmo.");
+    if (eu.id === usuarioId) throw new ErroDominio("seguir", tr("voce_nao_pode_seguir_a_si"));
     const alvo = base.usuarios.find((x) => x.id === usuarioId && x.ativo);
-    if (!alvo) throw new ErroDominio("perfil", "Perfil indisponível.");
-    if (await bloqueioEntre(eu.id, usuarioId)) throw new ErroDominio("seguir", "Não é possível seguir esta conta.");
+    if (!alvo) throw new ErroDominio("perfil", tr("perfil_indisponivel"));
+    if (await bloqueioEntre(eu.id, usuarioId)) throw new ErroDominio("seguir", tr("nao_e_possivel_seguir_esta_conta"));
     const status = statusAoSeguir(!!alvo.comunidadePrivada);
     const { error } = await supabaseAdmin().from("social_follows").upsert(
       { follower_id: eu.id, followed_id: usuarioId, status, approved_at: status === "aprovado" ? new Date().toISOString() : null },
@@ -318,7 +319,7 @@ export const responderPedido = (seguidorId: string, aprovar: boolean) =>
           .eq("follower_id", seguidorId).eq("followed_id", eu.id).eq("status", "pendente").select("follower_id")
       : await db.from("social_follows").delete().eq("follower_id", seguidorId).eq("followed_id", eu.id).select("follower_id");
     if (error) falha("Falha ao responder pedido", error);
-    if (!data?.length) throw new ErroDominio("pedido", "Pedido não encontrado.");
+    if (!data?.length) throw new ErroDominio("pedido", tr("pedido_nao_encontrado"));
     if (aprovar) await notificar(seguidorId, "Pedido aceito", `${nomeExibicao(eu)} aceitou seu pedido para seguir.`, `/operador/${eu.id}`);
     return null;
   });
@@ -326,7 +327,7 @@ export const responderPedido = (seguidorId: string, aprovar: boolean) =>
 export const bloquear = (usuarioId: string, bloquearConta: boolean) =>
   comSessao(async (_base, u) => {
     const eu = exigirUsuario(u);
-    if (eu.id === usuarioId) throw new ErroDominio("bloquear", "Você não pode bloquear a si mesmo.");
+    if (eu.id === usuarioId) throw new ErroDominio("bloquear", tr("voce_nao_pode_bloquear_a_si"));
     const db = supabaseAdmin();
     if (bloquearConta) {
       const { error } = await db.from("social_blocks").upsert({ blocker_id: eu.id, blocked_id: usuarioId }, { onConflict: "blocker_id,blocked_id", ignoreDuplicates: true });
@@ -345,9 +346,9 @@ export const bloquear = (usuarioId: string, bloquearConta: boolean) =>
 export const denunciarPost = (postId: string, motivo: MotivoDenunciaSocial, detalhes?: string) =>
   comSessao(async (base, u) => {
     const eu = exigirUsuario(u);
-    if (!ehMotivoDenuncia(motivo)) throw new ErroDominio("denuncia", "Escolha o motivo da denúncia.");
+    if (!ehMotivoDenuncia(motivo)) throw new ErroDominio("denuncia", tr("escolha_o_motivo_da_denuncia"));
     const post = await postVisivel(base, eu.id, postId);
-    if (post.proprio) throw new ErroDominio("denuncia", "Você não pode denunciar a própria publicação.");
+    if (post.proprio) throw new ErroDominio("denuncia", tr("voce_nao_pode_denunciar_a_propria"));
     const { error } = await supabaseAdmin().from("social_reports").insert({
       id: gerarId("sdn"), post_id: postId, reporter_id: eu.id, reason: motivo, details: detalhes?.trim() || null,
     });
@@ -404,12 +405,12 @@ export const lerDenunciasPendentes = () =>
 /** Oculta como admin: encerra as denúncias pendentes do post como procedentes e avisa o autor. */
 async function ocultarComoAdmin(adminId: string, postId: string, motivo: string | undefined): Promise<void> {
   const razao = motivo?.trim();
-  if (!razao) throw new ErroDominio("denuncia", "Informe o motivo para ocultar a publicação.");
+  if (!razao) throw new ErroDominio("denuncia", tr("informe_o_motivo_para_ocultar_a"));
   const db = supabaseAdmin();
   const { data: post, error: e1 } = await db.from("social_posts").update({ status: "oculto", hidden_reason: razao.slice(0, 300) })
     .eq("id", postId).eq("status", "publicado").select("author_id").maybeSingle();
   if (e1) falha("Falha ao ocultar", e1);
-  if (!post) throw new ErroDominio("post_indisponivel", "Publicação indisponível.");
+  if (!post) throw new ErroDominio("post_indisponivel", tr("publicacao_indisponivel"));
   const { error: e2 } = await db.from("social_reports").update({ status: "procedente", resolved_by: adminId, resolved_at: new Date().toISOString() })
     .eq("post_id", postId).eq("status", "pendente");
   if (e2) falha("Falha ao resolver denúncias", e2);
@@ -503,7 +504,7 @@ export const moderarPost = (postId: string, acao: "ocultar" | "restaurar", motiv
     const { data, error } = await supabaseAdmin().from("social_posts").update({ status: "publicado", hidden_reason: null })
       .eq("id", postId).eq("status", "oculto").select("id").maybeSingle();
     if (error) falha("Falha ao restaurar", error);
-    if (!data) throw new ErroDominio("post_indisponivel", "Só publicações ocultadas podem ser restauradas.");
+    if (!data) throw new ErroDominio("post_indisponivel", tr("so_publicacoes_ocultadas_podem_ser_resta"));
     return null;
   });
 
@@ -514,7 +515,7 @@ export const resolverDenuncia = (denunciaId: string, acao: "ocultar" | "descarta
     const db = supabaseAdmin();
     const { data: den, error } = await db.from("social_reports").select("post_id, status").eq("id", denunciaId).maybeSingle();
     if (error) falha("Falha ao ler denúncia", error);
-    if (!den || den.status !== "pendente") throw new ErroDominio("denuncia", "Denúncia não encontrada ou já resolvida.");
+    if (!den || den.status !== "pendente") throw new ErroDominio("denuncia", tr("denuncia_nao_encontrada_ou_ja_resolvida"));
     const agora = new Date().toISOString();
     if (acao === "ocultar") {
       await ocultarComoAdmin(admin.id, den.post_id as string, motivo);
@@ -575,7 +576,7 @@ async function forunsDe(
 /** Fórum ativo visível na lista (privado aparece; o conteúdo depende de ser membro). */
 async function forumAtivo(base: BaseDados, quemVe: string | null, forumId: string): Promise<ForumDTO> {
   const [f] = await forunsDe(base, quemVe, { forum: forumId });
-  if (!f) throw new ErroDominio("forum", "Fórum indisponível.");
+  if (!f) throw new ErroDominio("forum", tr("forum_indisponivel"));
   return f;
 }
 
@@ -588,7 +589,7 @@ async function participacao(forumId: string, usuarioId: string): Promise<{ papel
 
 async function exigirModeracao(forumId: string, usuario: Usuario): Promise<PapelForum> {
   const p = await participacao(forumId, usuario.id);
-  if (!p || !moderaForum(p.papel, p.situacao)) throw new ErroDominio("forum_permissao", "Só o dono e os moderadores do fórum podem fazer isso.");
+  if (!p || !moderaForum(p.papel, p.situacao)) throw new ErroDominio("forum_permissao", tr("so_o_dono_e_os_moderadores"));
   return p.papel;
 }
 
@@ -616,7 +617,7 @@ export const lerPostsDoForum = (forumId: string, cursor: Cursor) =>
     const quemVe = u?.id ?? null;
     const forum = await forumAtivo(base, quemVe, forumId);
     if (forum.visibilidade === "privado" && forum.minhaSituacao !== "aprovado") {
-      throw new ErroDominio("forum_privado", "Fórum privado: só membros aprovados veem as publicações.");
+      throw new ErroDominio("forum_privado", tr("forum_privado_so_membros_aprovados_veem"));
     }
     return paginaDe(base, quemVe, { forum: forumId }, cursor);
   });
@@ -628,7 +629,7 @@ export const lerMembrosDoForum = (forumId: string, situacao: SituacaoMembro) =>
     if (situacao === "pendente") {
       await exigirModeracao(forumId, exigirUsuario(u));
     } else if (forum.visibilidade === "privado" && forum.minhaSituacao !== "aprovado") {
-      throw new ErroDominio("forum_privado", "Fórum privado: só membros aprovados veem os membros.");
+      throw new ErroDominio("forum_privado", tr("forum_privado_so_membros_aprovados_veem_2"));
     }
     const { data, error } = await supabaseAdmin()
       .from("social_forum_members").select("user_id, role, status, created_at, approved_at")
@@ -661,14 +662,14 @@ export const criarForum = (d: { nome: string; descricao?: string | undefined; vi
     const { count, error: eCont } = await db.from("social_forums").select("id", { count: "exact", head: true }).eq("owner_id", eu.id).eq("status", "ativo");
     if (eCont) falha("Falha ao contar fóruns", eCont);
     if ((count ?? 0) >= LIMITE_FORUNS_POR_CONTA) {
-      throw new ErroDominio("forum_limite", `Você já tem ${LIMITE_FORUNS_POR_CONTA} fóruns ativos. Arquive um para criar outro.`);
+      throw new ErroDominio("forum_limite", tr("voce_ja_tem_limite_foruns_por", { LIMITE_FORUNS_POR_CONTA }));
     }
     const id = gerarId("frm");
     const foto = d.foto ? await enviarFotoForum(d.foto) : null;
     const { error } = await db.rpc("social_create_forum", {
       p_id: id, p_owner: eu.id, p_name: d.nome.trim(), p_description: (d.descricao ?? "").trim(), p_visibility: d.visibilidade, p_photo: foto,
     });
-    if (error?.code === "23505") throw new ErroDominio("forum_nome", "Já existe um fórum ativo com esse nome.");
+    if (error?.code === "23505") throw new ErroDominio("forum_nome", tr("ja_existe_um_forum_ativo_com"));
     if (error) falha("Falha ao criar fórum", error);
     return forumAtivo(base, eu.id, id);
   });
@@ -681,7 +682,7 @@ export const editarForum = (forumId: string, d: { nome: string; descricao?: stri
   comSessao(async (base, u) => {
     const eu = exigirUsuario(u);
     const p = await participacao(forumId, eu.id);
-    if (p?.papel !== "dono") throw new ErroDominio("forum_permissao", "Só o dono do fórum pode editar.");
+    if (p?.papel !== "dono") throw new ErroDominio("forum_permissao", tr("so_o_dono_do_forum_pode"));
     const erro = erroForum(d.nome, d.descricao, d.visibilidade);
     if (erro) throw new ErroDominio("forum", erro);
     const db = supabaseAdmin();
@@ -689,7 +690,7 @@ export const editarForum = (forumId: string, d: { nome: string; descricao?: stri
     const { error } = await db.from("social_forums").update({
       name: d.nome.trim(), description: (d.descricao ?? "").trim() || null, visibility: d.visibilidade, updated_at: new Date().toISOString(), ...foto,
     }).eq("id", forumId).eq("status", "ativo");
-    if (error?.code === "23505") throw new ErroDominio("forum_nome", "Já existe um fórum ativo com esse nome.");
+    if (error?.code === "23505") throw new ErroDominio("forum_nome", tr("ja_existe_um_forum_ativo_com"));
     if (error) falha("Falha ao editar fórum", error);
     if (d.visibilidade === "publico") {
       const { error: e2 } = await db.from("social_forum_members").update({ status: "aprovado", approved_at: new Date().toISOString() })
@@ -704,12 +705,12 @@ export const arquivarForum = (forumId: string) =>
   comSessao(async (_base, u) => {
     const eu = exigirUsuario(u);
     const p = await participacao(forumId, eu.id);
-    if (p?.papel !== "dono" && eu.perfil !== "admin") throw new ErroDominio("forum_permissao", "Só o dono do fórum ou a administração podem arquivar.");
+    if (p?.papel !== "dono" && eu.perfil !== "admin") throw new ErroDominio("forum_permissao", tr("so_o_dono_do_forum_ou"));
     const { data, error } = await supabaseAdmin().from("social_forums")
       .update({ status: "arquivado", archived_at: new Date().toISOString(), archived_by: eu.id })
       .eq("id", forumId).eq("status", "ativo").select("id");
     if (error) falha("Falha ao arquivar", error);
-    if (!data?.length) throw new ErroDominio("forum", "Fórum indisponível.");
+    if (!data?.length) throw new ErroDominio("forum", tr("forum_indisponivel"));
     return null;
   });
 
@@ -735,7 +736,7 @@ export const sairDoForum = (forumId: string) =>
   comSessao(async (_base, u) => {
     const eu = exigirUsuario(u);
     const p = await participacao(forumId, eu.id);
-    if (p?.papel === "dono") throw new ErroDominio("forum_dono", "O dono não pode sair do fórum. Arquive o fórum se quiser encerrá-lo.");
+    if (p?.papel === "dono") throw new ErroDominio("forum_dono", tr("o_dono_nao_pode_sair_do"));
     const { error } = await supabaseAdmin().from("social_forum_members").delete().eq("forum_id", forumId).eq("user_id", eu.id);
     if (error) falha("Falha ao sair do fórum", error);
     return null;
@@ -751,7 +752,7 @@ export const responderEntrada = (forumId: string, usuarioId: string, aprovar: bo
           .eq("forum_id", forumId).eq("user_id", usuarioId).eq("status", "pendente").select("user_id")
       : await db.from("social_forum_members").delete().eq("forum_id", forumId).eq("user_id", usuarioId).eq("status", "pendente").select("user_id");
     if (error) falha("Falha ao responder pedido", error);
-    if (!data?.length) throw new ErroDominio("pedido", "Pedido não encontrado.");
+    if (!data?.length) throw new ErroDominio("pedido", tr("pedido_nao_encontrado"));
     if (aprovar) {
       const forum = await forumAtivo(base, eu.id, forumId);
       await notificar(usuarioId, "Entrada aprovada", `Você entrou no fórum ${forum.nome}.`, LINK_FORUM(forumId));
@@ -764,8 +765,8 @@ export const removerMembro = (forumId: string, usuarioId: string) =>
     const eu = exigirUsuario(u);
     const meu = await exigirModeracao(forumId, eu);
     const alvo = await participacao(forumId, usuarioId);
-    if (!alvo) throw new ErroDominio("membro", "Membro não encontrado.");
-    if (!podeRemoverMembro(meu, alvo.papel)) throw new ErroDominio("forum_permissao", "Você não pode remover este membro.");
+    if (!alvo) throw new ErroDominio("membro", tr("membro_nao_encontrado"));
+    if (!podeRemoverMembro(meu, alvo.papel)) throw new ErroDominio("forum_permissao", tr("voce_nao_pode_remover_este_membro"));
     const { error } = await supabaseAdmin().from("social_forum_members").delete().eq("forum_id", forumId).eq("user_id", usuarioId);
     if (error) falha("Falha ao remover membro", error);
     return null;
@@ -776,9 +777,9 @@ export const definirModerador = (forumId: string, usuarioId: string, moderador: 
   comSessao(async (_base, u) => {
     const eu = exigirUsuario(u);
     const meu = await participacao(forumId, eu.id);
-    if (meu?.papel !== "dono") throw new ErroDominio("forum_permissao", "Só o dono do fórum nomeia moderadores.");
+    if (meu?.papel !== "dono") throw new ErroDominio("forum_permissao", tr("so_o_dono_do_forum_nomeia"));
     const alvo = await participacao(forumId, usuarioId);
-    if (!alvo || alvo.situacao !== "aprovado" || alvo.papel === "dono") throw new ErroDominio("membro", "Membro não encontrado.");
+    if (!alvo || alvo.situacao !== "aprovado" || alvo.papel === "dono") throw new ErroDominio("membro", tr("membro_nao_encontrado"));
     const { error } = await supabaseAdmin().from("social_forum_members").update({ role: moderador ? "moderador" : "membro" })
       .eq("forum_id", forumId).eq("user_id", usuarioId);
     if (error) falha("Falha ao alterar moderador", error);
@@ -790,11 +791,11 @@ export const ocultarPostDoForum = (postId: string, motivo: string) =>
   comSessao(async (_base, u) => {
     const eu = exigirUsuario(u);
     const razao = motivo.trim();
-    if (!razao) throw new ErroDominio("ocultar", "Informe o motivo para ocultar a publicação.");
+    if (!razao) throw new ErroDominio("ocultar", tr("informe_o_motivo_para_ocultar_a"));
     const db = supabaseAdmin();
     const { data: post, error } = await db.from("social_posts").select("forum_id, author_id, status").eq("id", postId).maybeSingle();
     if (error) falha("Falha ao ler publicação", error);
-    if (!post?.forum_id || post.status !== "publicado") throw new ErroDominio("post_indisponivel", "Publicação indisponível.");
+    if (!post?.forum_id || post.status !== "publicado") throw new ErroDominio("post_indisponivel", tr("publicacao_indisponivel"));
     await exigirModeracao(post.forum_id as string, eu);
     const { error: e2 } = await db.from("social_posts").update({ status: "oculto", hidden_reason: razao.slice(0, 300) }).eq("id", postId);
     if (e2) falha("Falha ao ocultar", e2);

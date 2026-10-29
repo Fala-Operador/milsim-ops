@@ -22,6 +22,7 @@ import {
   situacaoCupom,
   TEXTO_MOTIVO,
 } from "@/lib/vendas";
+import { tr } from "@/i18n/services/inscricoes";
 
 /** Inscrições confirmadas (financeiro, presença). Para vagas, use inscricoesQueOcupamVaga. */
 export function inscricoesAtivasDoEvento(base: ReturnType<typeof carregarBase>, eventoId: string) {
@@ -114,16 +115,16 @@ export function validarCupom(
 ): Cupom {
   const codigoNorm = normalizarCodigoCupom(codigo);
   const cupom = base.cupons.find((c) => c.eventoId === eventoId && c.codigo === codigoNorm);
-  if (!cupom) throw new ErroDominio("cupom_invalido", "Cupom não encontrado para esta operação.");
+  if (!cupom) throw new ErroDominio("cupom_invalido", tr("cupom_nao_encontrado_para_esta_operacao"));
   const situacao = situacaoCupom(cupom);
-  if (situacao === "inativo") throw new ErroDominio("cupom_inativo", "Este cupom está inativo.");
+  if (situacao === "inativo") throw new ErroDominio("cupom_inativo", tr("este_cupom_esta_inativo"));
   if (situacao === "esgotado")
-    throw new ErroDominio("cupom_esgotado", "Este cupom atingiu o limite de utilizações.");
+    throw new ErroDominio("cupom_esgotado", tr("este_cupom_atingiu_o_limite_de"));
   if (situacao === "agendado")
-    throw new ErroDominio("cupom_agendado", "Este cupom ainda não está valendo.");
-  if (situacao === "expirado") throw new ErroDominio("cupom_expirado", "Este cupom expirou.");
+    throw new ErroDominio("cupom_agendado", tr("este_cupom_ainda_nao_esta_valendo"));
+  if (situacao === "expirado") throw new ErroDominio("cupom_expirado", tr("este_cupom_expirou"));
   if (!cupom.tiposElegiveis.includes(tipoId)) {
-    throw new ErroDominio("cupom_tipo", "Este cupom não vale para o tipo de ingresso escolhido.");
+    throw new ErroDominio("cupom_tipo", tr("este_cupom_nao_vale_para_o"));
   }
   return cupom;
 }
@@ -283,40 +284,40 @@ export async function confirmarInscricao(
     const agora = new Date();
     let id = gerarId("ins");
     if (dados.clienteId !== undefined) {
-      if (!CHAVE_CLIENTE.test(dados.clienteId)) throw new ErroDominio("chave", "Chave de operação inválida.");
+      if (!CHAVE_CLIENTE.test(dados.clienteId)) throw new ErroDominio("chave", tr("chave_de_operacao_invalida"));
       id = `ins-${dados.clienteId}`;
       const repetida = base.inscricoes.find((i) => i.id === id);
       if (repetida) {
         // Mesma tentativa reenviada (rede caiu, duplo clique): devolve o resultado original.
         // Se for uma reserva aberta, a API reabre a mesma sessão de checkout.
         if (repetida.usuarioId !== dados.usuarioId || repetida.eventoId !== dados.eventoId) {
-          throw new ErroDominio("chave", "Chave de operação inválida.");
+          throw new ErroDominio("chave", tr("chave_de_operacao_invalida"));
         }
         return repetida;
       }
     }
     const evento = base.eventos.find((e) => e.id === dados.eventoId);
-    if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
+    if (!evento) throw new ErroDominio("evento", tr("evento_nao_encontrado"));
     // Inclusão manual pela gestão vale também com as inscrições encerradas (quem pagou por fora).
     const manual = dados.origem === "organizador" || dados.origem === "admin";
     if (evento.status !== "publicado" && !(manual && evento.status === "inscricoes_encerradas")) {
-      throw new ErroDominio("evento_indisponivel", "Evento não está disponível para inscrição.");
+      throw new ErroDominio("evento_indisponivel", tr("evento_nao_esta_disponivel_para_inscrica"));
     }
     const usuario = base.usuarios.find((u) => u.id === dados.usuarioId);
-    if (!usuario) throw new ErroDominio("usuario", "Usuário não encontrado.");
+    if (!usuario) throw new ErroDominio("usuario", tr("usuario_nao_encontrado"));
 
     // Elegibilidade: 15–17 anos precisam de autorização do responsável aprovada
     const idade = idadeEmAnos(usuario.dataNascimento);
     if (idade < 18 && usuario.autorizacaoResponsavel !== "aprovada") {
       throw new ErroDominio(
         "autorizacao_pendente",
-        "Participantes de 15 a 17 anos precisam da autorização do responsável aprovada antes de se inscrever.",
+        tr("participantes_de_15_a_17_anos"),
       );
     }
 
     // Uma única inscrição ativa por evento (vale para todas as origens)
     if (inscricaoAtivaDoUsuario(base, dados.eventoId, dados.usuarioId)) {
-      throw new ErroDominio("duplicada", "Você já possui uma inscrição ativa neste evento.");
+      throw new ErroDominio("duplicada", tr("voce_ja_possui_uma_inscricao_ativa"));
     }
     // Reservas: as vencidas do evento liberam vaga; uma nova tentativa substitui a anterior
     // da própria pessoa, exceto se um pagamento dela já estiver em processamento.
@@ -327,7 +328,7 @@ export async function confirmarInscricao(
       if (anterior.pagamento?.status === "processando") {
         throw new ErroDominio(
           "pagamento_processando",
-          "Você já tem um pagamento em processamento para este evento. Aguarde a confirmação.",
+          tr("voce_ja_tem_um_pagamento_em"),
         );
       }
       liberarReservaNaBase(
@@ -340,17 +341,17 @@ export async function confirmarInscricao(
     }
 
     const tipo = evento.tipos.find((t) => t.id === dados.tipoId && !t.arquivado);
-    if (!tipo) throw new ErroDominio("tipo", "Tipo de ingresso indisponível.");
+    if (!tipo) throw new ErroDominio("tipo", tr("tipo_de_ingresso_indisponivel"));
     const exercito = evento.exercitos.find((e) => e.id === dados.exercitoId);
-    if (!exercito) throw new ErroDominio("exercito", "Exército inválido.");
+    if (!exercito) throw new ErroDominio("exercito", tr("exercito_invalido"));
 
     // Capacidades: uma inscrição consome uma vaga em cada limite aplicável
-    if (vagasRestantes(base, evento) <= 0) throw new ErroDominio("lotado", "Evento esgotado.");
+    if (vagasRestantes(base, evento) <= 0) throw new ErroDominio("lotado", tr("evento_esgotado"));
     if (ocupacaoExercito(base, evento.id, exercito.id) >= exercito.capacidade) {
-      throw new ErroDominio("exercito_lotado", `O ${exercito.nome} não possui vagas.`);
+      throw new ErroDominio("exercito_lotado", tr("o_nome_nao_possui_vagas", { nome: exercito.nome }));
     }
     if (ocupacaoTipo(base, evento.id, tipo.id) >= tipo.quantidadeMaxima) {
-      throw new ErroDominio("tipo_lotado", "Este tipo de ingresso esgotou.");
+      throw new ErroDominio("tipo_lotado", tr("este_tipo_de_ingresso_esgotou"));
     }
 
     let valorCentavos = tipo.precoBaseCentavos;
@@ -363,23 +364,23 @@ export async function confirmarInscricao(
       // Resgate de cortesia: e-mail deve corresponder; sem lote comercial; sem cupom
       const cortesia = base.cortesias.find((c) => c.id === dados.cortesiaId);
       if (!cortesia || cortesia.eventoId !== evento.id) {
-        throw new ErroDominio("cortesia", "Cortesia inválida.");
+        throw new ErroDominio("cortesia", tr("cortesia_invalida"));
       }
       if (cortesia.status !== "pendente")
-        throw new ErroDominio("cortesia_usada", "Cortesia já utilizada ou indisponível.");
+        throw new ErroDominio("cortesia_usada", tr("cortesia_ja_utilizada_ou_indisponivel"));
       if (agora > new Date(cortesia.validade)) {
         cortesia.status = "expirada";
-        throw new ErroDominio("cortesia_expirada", "Cortesia expirada.");
+        throw new ErroDominio("cortesia_expirada", tr("cortesia_expirada"));
       }
       if (cortesia.emailConvidado !== usuario.email) {
-        throw new ErroDominio("cortesia_email", "Esta cortesia foi emitida para outro e-mail.");
+        throw new ErroDominio("cortesia_email", tr("esta_cortesia_foi_emitida_para_outro"));
       }
       if (dados.codigoCupom)
-        throw new ErroDominio("cupom_cortesia", "Cortesias não aceitam cupom.");
+        throw new ErroDominio("cupom_cortesia", tr("cortesias_nao_aceitam_cupom"));
       if (dados.voucherId)
-        throw new ErroDominio("voucher_cortesia", "Cortesias não aceitam benefício de recompensa.");
+        throw new ErroDominio("voucher_cortesia", tr("cortesias_nao_aceitam_beneficio_de_recom"));
       if (cortesia.tipoId !== tipo.id)
-        throw new ErroDominio("cortesia_tipo", "Tipo de ingresso diferente do convite.");
+        throw new ErroDominio("cortesia_tipo", tr("tipo_de_ingresso_diferente_do_convite"));
       cortesia.status = "resgatada";
       valorCentavos = 0;
     } else {
@@ -387,7 +388,7 @@ export async function confirmarInscricao(
       if (!disp.disponivel) {
         throw new ErroDominio(
           "lote",
-          `As inscrições deste ingresso estão indisponíveis: ${TEXTO_MOTIVO[disp.motivo]}.`,
+          tr("as_inscricoes_deste_ingresso_estao_indis", { valor: TEXTO_MOTIVO[disp.motivo] }),
         );
       }
       const lote = disp.lote;
@@ -397,23 +398,23 @@ export async function confirmarInscricao(
 
       if (dados.voucherId) {
         if (dados.codigoCupom)
-          throw new ErroDominio("voucher_cupom", "O benefício não pode ser combinado com cupom.");
+          throw new ErroDominio("voucher_cupom", tr("o_beneficio_nao_pode_ser_combinado"));
         const v = base.vouchers.find((x) => x.id === dados.voucherId && x.usuarioId === usuario.id);
         if (!v || statusVoucher(v) !== "disponivel")
-          throw new ErroDominio("voucher", "Benefício indisponível ou fora da validade.");
+          throw new ErroDominio("voucher", tr("beneficio_indisponivel_ou_fora_da_valida"));
         const campanha = base.campanhasRecompensa.find((c) => c.id === v.campanhaId);
         if (!campanha?.ativa)
-          throw new ErroDominio("voucher_campanha", "A campanha deste benefício não está ativa.");
+          throw new ErroDominio("voucher_campanha", tr("a_campanha_deste_beneficio_nao_esta"));
         if (
           evento.organizacaoId !== v.beneficio.organizacaoId ||
           !v.beneficio.eventosElegiveis.includes(evento.id)
         ) {
-          throw new ErroDominio("voucher_evento", "Este benefício não vale para este evento.");
+          throw new ErroDominio("voucher_evento", tr("este_beneficio_nao_vale_para_este"));
         }
         if (v.beneficio.tiposElegiveis.length && !v.beneficio.tiposElegiveis.includes(tipo.id)) {
           throw new ErroDominio(
             "voucher_tipo",
-            "Este benefício não vale para este tipo de ingresso.",
+            tr("este_beneficio_nao_vale_para_este_2"),
           );
         }
         descontoCentavos = descontoDoBeneficio(v.beneficio, valorCentavos);
@@ -465,10 +466,9 @@ export async function confirmarInscricao(
 
 /** Mensagens da inscrição reescritas para quem inclui outra pessoa (a original fala com o titular). */
 const MENSAGEM_INCLUSAO: Record<string, string> = {
-  duplicada: "Esta pessoa já possui uma inscrição ativa neste evento.",
-  autorizacao_pendente:
-    "Esta pessoa tem de 15 a 17 anos e ainda não tem a autorização do responsável aprovada.",
-  pagamento_processando: "Esta pessoa tem um pagamento em processamento para este evento. Aguarde a confirmação.",
+  get duplicada() { return tr("esta_pessoa_ja_possui_uma_inscricao"); },
+  get autorizacao_pendente() { return tr("esta_pessoa_tem_de_15_a"); },
+  get pagamento_processando() { return tr("esta_pessoa_tem_um_pagamento_em"); },
 };
 
 export const LIMITE_INCLUSAO_MANUAL = 50;
@@ -487,20 +487,20 @@ export interface DadosInclusaoManual {
 function contasDaInclusao(base: BaseDados, dados: DadosInclusaoManual, autor: Usuario): Usuario[] {
   if (dados.usuarioIds?.length) {
     if (autor.perfil !== "admin") {
-      throw new ErroDominio("permissao", "Só a administração escolhe participantes pela lista.");
+      throw new ErroDominio("permissao", tr("so_a_administracao_escolhe_participantes"));
     }
     const ids = [...new Set(dados.usuarioIds)];
     if (ids.length > LIMITE_INCLUSAO_MANUAL) {
-      throw new ErroDominio("limite", `Inclua no máximo ${LIMITE_INCLUSAO_MANUAL} participantes por vez.`);
+      throw new ErroDominio("limite", tr("inclua_no_maximo_limite_inclusao_manual", { LIMITE_INCLUSAO_MANUAL }));
     }
     return ids.map((id) => {
       const u = base.usuarios.find((x) => x.id === id);
-      if (!u?.ativo) throw new ErroDominio("participante", "Uma das contas selecionadas não existe ou está desativada.");
+      if (!u?.ativo) throw new ErroDominio("participante", tr("uma_das_contas_selecionadas_nao_existe"));
       return u;
     });
   }
   const chave = (dados.identificador ?? "").trim();
-  if (!chave) throw new ErroDominio("participante", "Informe ao menos um participante.");
+  if (!chave) throw new ErroDominio("participante", tr("informe_ao_menos_um_participante"));
   const cpf = somenteDigitos(chave);
   const usuario = chave.includes("@")
     ? base.usuarios.find((u) => u.email === normalizarEmail(chave))
@@ -508,7 +508,7 @@ function contasDaInclusao(base: BaseDados, dados: DadosInclusaoManual, autor: Us
       ? base.usuarios.find((u) => u.cpf === cpf)
       : undefined;
   if (!usuario?.ativo) {
-    throw new ErroDominio("participante", "Nenhuma conta ativa encontrada com este e-mail ou CPF.");
+    throw new ErroDominio("participante", tr("nenhuma_conta_ativa_encontrada_com_este"));
   }
   return [usuario];
 }
@@ -522,9 +522,9 @@ function contasDaInclusao(base: BaseDados, dados: DadosInclusaoManual, autor: Us
 export async function incluirParticipantes(dados: DadosInclusaoManual, autor: Usuario): Promise<Inscricao[]> {
   const base = carregarBase();
   const evento = base.eventos.find((e) => e.id === dados.eventoId);
-  if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
+  if (!evento) throw new ErroDominio("evento", tr("evento_nao_encontrado"));
   const tipo = evento.tipos.find((t) => t.id === dados.tipoId && !t.arquivado);
-  if (!tipo) throw new ErroDominio("tipo", "Tipo de ingresso indisponível.");
+  if (!tipo) throw new ErroDominio("tipo", tr("tipo_de_ingresso_indisponivel"));
   const usuarios = contasDaInclusao(base, dados, autor);
   const origem = autor.perfil === "admin" ? "admin" : "organizador";
   const agora = new Date().toISOString();
@@ -741,7 +741,7 @@ export async function cancelarInscricao(
   autorId: string,
 ): Promise<{ sessaoAExpirar?: string | undefined }> {
   await latencia();
-  if (!motivo.trim()) throw new ErroDominio("motivo", "Informe a justificativa do cancelamento.");
+  if (!motivo.trim()) throw new ErroDominio("motivo", tr("informe_a_justificativa_do_cancelamento"));
   return mutarBase((base) => {
     const inscricao = base.inscricoes.find((i) => i.id === inscricaoId);
     const agora = new Date().toISOString();
@@ -749,7 +749,7 @@ export async function cancelarInscricao(
       if (inscricao.pagamento?.status === "processando") {
         throw new ErroDominio(
           "pagamento_processando",
-          "O pagamento desta reserva já está em processamento. Aguarde a confirmação para cancelar.",
+          tr("o_pagamento_desta_reserva_ja_esta"),
         );
       }
       const sessaoAExpirar = liberarReservaNaBase(base, inscricao, motivo, "cancelado");
@@ -765,7 +765,7 @@ export async function cancelarInscricao(
       return { sessaoAExpirar };
     }
     if (!inscricao || inscricao.status !== "confirmada") {
-      throw new ErroDominio("inscricao", "Inscrição não encontrada ou já cancelada.");
+      throw new ErroDominio("inscricao", tr("inscricao_nao_encontrada_ou_ja_cancelada"));
     }
     estornarNaBase(
       base,
