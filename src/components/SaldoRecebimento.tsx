@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { ROTULO_SAQUE, type SaldoRecebimento as Saldo, type StatusSaque } from "@/lib/repasses";
+import { tr } from "@/i18n/components/SaldoRecebimento";
 
 const TOM_SAQUE: Record<StatusSaque, "success" | "warning" | "destructive" | "secondary"> = {
   paid: "success", pending: "secondary", in_transit: "warning", canceled: "secondary", failed: "destructive",
@@ -23,7 +24,7 @@ export function SaldoRecebimento({ organizacaoId }: { organizacaoId: string }) {
     try {
       setSaldo((await saldoRecebimento(organizacaoId, atualizar)) ?? null);
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Não foi possível consultar o saldo no Stripe.");
+      setErro(err instanceof Error ? err.message : tr("nao_foi_possivel_consultar_o_saldo"));
     } finally {
       setOcupado(false);
     }
@@ -38,31 +39,30 @@ export function SaldoRecebimento({ organizacaoId }: { organizacaoId: string }) {
   return (
     <div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="flex items-center gap-2 font-medium"><Landmark className="h-4 w-4 shrink-0" aria-hidden="true" />Saldo e saques</h3>
+        <h3 className="flex items-center gap-2 font-medium"><Landmark className="h-4 w-4 shrink-0" aria-hidden="true" />{tr("saldo_e_saques")}</h3>
         <Button type="button" variant="ghost" className="w-full sm:w-auto" onClick={() => carregar(true)} disabled={ocupado}>
-          <RefreshCw className={`h-4 w-4 ${ocupado ? "animate-spin" : ""}`} aria-hidden="true" />Atualizar
-        </Button>
+          <RefreshCw className={`h-4 w-4 ${ocupado ? "animate-spin" : ""}`} aria-hidden="true" />{tr("atualizar")}</Button>
       </div>
       {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
-      {saldo === undefined && !erro && <p className="mt-2 text-sm text-muted-foreground">Consultando o Stripe...</p>}
+      {saldo === undefined && !erro && <p className="mt-2 text-sm text-muted-foreground">{tr("consultando_o_stripe")}</p>}
       {saldo && (
         <>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
-            <Valor rotulo="Disponível para saque" valor={formatarBRL(saldo.disponivelCentavos)} />
-            <Valor rotulo="A liberar" valor={formatarBRL(saldo.aLiberarCentavos)} />
+            <Valor rotulo={tr("disponivel_para_saque")} valor={formatarBRL(saldo.disponivelCentavos)} />
+            <Valor rotulo={tr("a_liberar")} valor={formatarBRL(saldo.aLiberarCentavos)} />
             <Valor
-              rotulo="Próximo saque"
+              rotulo={tr("proximo_saque")}
               valor={saldo.proximoSaque ? formatarBRL(saldo.proximoSaque.valorCentavos) : "—"}
-              detalhe={saldo.proximoSaque ? `previsto para ${formatarDataBR(saldo.proximoSaque.chegada)}` : undefined}
+              detalhe={saldo.proximoSaque ? tr("previsto_para_chegada", { chegada: formatarDataBR(saldo.proximoSaque.chegada) }) : undefined}
             />
           </div>
           <dl className="mt-3 grid gap-1 text-sm sm:grid-cols-2">
-            <div className="min-w-0"><dt className="text-xs text-muted-foreground">Cronograma de saque</dt><dd className="break-words">{saldo.cronograma}</dd></div>
-            <div className="min-w-0"><dt className="text-xs text-muted-foreground">Conta bancária</dt><dd className="break-words">{saldo.banco ?? "Não informada"}</dd></div>
+            <div className="min-w-0"><dt className="text-xs text-muted-foreground">{tr("cronograma_de_saque")}</dt><dd className="break-words">{saldo.cronograma}</dd></div>
+            <div className="min-w-0"><dt className="text-xs text-muted-foreground">{tr("conta_bancaria")}</dt><dd className="break-words">{saldo.banco ?? tr("nao_informada")}</dd></div>
           </dl>
-          <h4 className="mt-4 text-sm font-medium">Últimos saques</h4>
+          <h4 className="mt-4 text-sm font-medium">{tr("ultimos_saques")}</h4>
           {saldo.saques.length === 0 ? (
-            <p className="mt-1 text-sm text-muted-foreground">Nenhum saque ainda.</p>
+            <p className="mt-1 text-sm text-muted-foreground">{tr("nenhum_saque_ainda")}</p>
           ) : (
             <ul className="mt-1 space-y-1 text-sm">
               {saldo.saques.map((s) => (

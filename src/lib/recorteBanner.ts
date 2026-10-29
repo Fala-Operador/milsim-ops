@@ -1,10 +1,11 @@
 // Recortes da imagem principal do evento (banner 21:9 e card 16:9) sem distorção:
 // a imagem sempre cobre o quadro, com zoom e posição ajustáveis.
 import type { Recorte } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/recorteBanner";
 
 export const FORMATOS = {
-  banner: { largura: 1680, altura: 720, rotulo: "Banner da página (21:9)" },
-  card: { largura: 1280, altura: 720, rotulo: "Imagem dos cards (16:9)" },
+  banner: { largura: 1680, altura: 720, get rotulo() { return tr("banner_da_pagina_21_9"); } },
+  card: { largura: 1280, altura: 720, get rotulo() { return tr("imagem_dos_cards_16_9"); } },
 } as const;
 export type FormatoRecorte = keyof typeof FORMATOS;
 
@@ -14,8 +15,8 @@ export const TIPOS_IMAGEM = ["image/jpeg", "image/png", "image/webp"];
 export const TAMANHO_MAX_IMAGEM = 10 * 1024 * 1024;
 
 export function erroArquivoImagem(a: { type: string; size: number }): string | null {
-  if (!TIPOS_IMAGEM.includes(a.type)) return "Formato inválido. Use JPEG, PNG ou WebP.";
-  if (a.size > TAMANHO_MAX_IMAGEM) return "A imagem deve ter no máximo 10 MB.";
+  if (!TIPOS_IMAGEM.includes(a.type)) return tr("formato_invalido_use_jpeg_png_ou");
+  if (a.size > TAMANHO_MAX_IMAGEM) return tr("a_imagem_deve_ter_no_maximo");
   return null;
 }
 
@@ -54,7 +55,7 @@ export function carregarImagem(url: string): Promise<HTMLImageElement> {
     const i = new Image();
     if (!url.startsWith("data:")) i.crossOrigin = "anonymous";
     i.onload = () => ok(i);
-    i.onerror = () => falha(new Error("Não foi possível carregar a imagem."));
+    i.onerror = () => falha(new Error(tr("nao_foi_possivel_carregar_a_imagem")));
     i.src = url;
   });
 }

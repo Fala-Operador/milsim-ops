@@ -15,6 +15,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Campo, Modal } from "@/components/ui";
 import type { Evento, Usuario } from "@/lib/domain/types";
+import { tr } from "@/i18n/components/IncluirParticipante";
 
 const VAZIO = { identificador: "", tipoId: "", exercitoId: "", observacao: "" };
 
@@ -66,7 +67,7 @@ export function IncluirParticipante({ evento, className }: { evento: Evento; cla
   const enviar = async () => {
     const semPessoa = admin ? selecionados.length === 0 : !f.identificador.trim();
     if (semPessoa || !f.tipoId || !f.exercitoId) {
-      setErro(admin ? "Selecione ao menos um participante, o tipo de ingresso e o exército." : "Informe o e-mail ou CPF, o tipo de ingresso e o exército.");
+      setErro(admin ? tr("selecione_ao_menos_um_participante_o") : tr("informe_o_e_mail_ou_cpf"));
       return;
     }
     setEnviando(true);
@@ -79,10 +80,10 @@ export function IncluirParticipante({ evento, className }: { evento: Evento; cla
         observacao: f.observacao.trim() || undefined,
         ...(admin ? { usuarioIds: selecionados.map((u) => u.id) } : { identificador: f.identificador }),
       });
-      setAviso(lista.length === 1 ? `Participante incluído (${lista[0]!.codigo}).` : `${lista.length} participantes incluídos.`);
+      setAviso(lista.length === 1 ? tr("participante_incluido_codigo", { codigo: lista[0]!.codigo }) : tr("length_participantes_incluidos", { length: lista.length }));
       setAberto(false);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível incluir. Tente novamente.");
+      setErro(e instanceof Error ? e.message : tr("nao_foi_possivel_incluir_tente_novamente"));
     } finally {
       setEnviando(false);
     }
@@ -90,28 +91,24 @@ export function IncluirParticipante({ evento, className }: { evento: Evento; cla
 
   return (
     <>
-      <Button variant="outline" className={className} onClick={abrir} disabled={encerrado} title={encerrado ? "Evento sem inscrições possíveis." : undefined}>
-        <UserPlus className="h-4 w-4 shrink-0" aria-hidden="true" /> Incluir participante{admin ? "s" : ""}
+      <Button variant="outline" className={className} onClick={abrir} disabled={encerrado} title={encerrado ? tr("evento_sem_inscricoes_possiveis") : undefined}>
+        <UserPlus className="h-4 w-4 shrink-0" aria-hidden="true" />{" "}{tr("incluir_participante")}{admin ? "s" : ""}
       </Button>
       {aviso && <span role="status" className="text-sm text-success">{aviso}</span>}
-      <Modal aberto={aberto} titulo={admin ? "Incluir participantes" : "Incluir participante"} onFechar={() => setAberto(false)}>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Para quem combinou o pagamento por fora. A inscrição entra como cortesia (sem valor no Financeiro), respeita as
-          vagas e não depende de lote aberto. Cada pessoa é notificada.
-        </p>
+      <Modal aberto={aberto} titulo={admin ? tr("incluir_participantes") : tr("incluir_participante")} onFechar={() => setAberto(false)}>
+        <p className="mb-4 text-sm text-muted-foreground">{tr("para_quem_combinou_o_pagamento_por")}</p>
         <div className="space-y-3">
           {admin ? (
             <div className="space-y-1.5">
-              <p className="text-sm font-medium">
-                Participantes {selecionados.length > 0 && <span className="text-muted-foreground">({selecionados.length} selecionado{selecionados.length > 1 ? "s" : ""})</span>}
+              <p className="text-sm font-medium">{tr("participantes")}{" "}{selecionados.length > 0 && <span className="text-muted-foreground">{tr("length_selecionado", { length: selecionados.length })}{selecionados.length > 1 ? "s" : ""})</span>}
               </p>
               {selecionados.length > 0 && (
-                <ul className="flex flex-wrap gap-1.5" aria-label="Participantes selecionados">
+                <ul className="flex flex-wrap gap-1.5" aria-label={tr("participantes_selecionados")}>
                   {selecionados.map((u) => (
                     <li key={u.id}>
                       <Badge variant="secondary" className="gap-1 pr-1">
                         {u.nomeCompleto}
-                        <Button variant="plain" size="none" type="button" onClick={() => alternar(u)} aria-label={`Remover ${u.nomeCompleto}`} className="rounded-sm p-0.5 hover:text-foreground">
+                        <Button variant="plain" size="none" type="button" onClick={() => alternar(u)} aria-label={tr("remover_nomecompleto", { nomeCompleto: u.nomeCompleto })} className="rounded-sm p-0.5 hover:text-foreground">
                           <X className="size-3" aria-hidden="true" />
                         </Button>
                       </Badge>
@@ -120,16 +117,16 @@ export function IncluirParticipante({ evento, className }: { evento: Evento; cla
                 </ul>
               )}
               <Command className="rounded-md border border-input bg-background">
-                <CommandInput placeholder="Buscar por nome ou e-mail" autoFocus />
+                <CommandInput placeholder={tr("buscar_por_nome_ou_e_mail")} autoFocus />
                 <CommandList className="max-h-56">
-                  <CommandEmpty>Nenhuma conta encontrada (quem já está inscrito não aparece).</CommandEmpty>
+                  <CommandEmpty>{tr("nenhuma_conta_encontrada_quem_ja_esta")}</CommandEmpty>
                   {candidatos.map((u) => {
                     const marcado = selecionados.some((x) => x.id === u.id);
                     return (
                       <CommandItem key={u.id} value={`${u.nomeCompleto} ${u.email} ${u.id}`} onSelect={() => alternar(u)}>
                         <Check className={marcado ? "opacity-100" : "opacity-0"} aria-hidden="true" />
                         <span className="min-w-0">
-                          <span className="block truncate">{u.nomeCompleto}{marcado && <span className="sr-only"> (selecionado)</span>}</span>
+                          <span className="block truncate">{u.nomeCompleto}{marcado && <span className="sr-only">{" "}{tr("selecionado")}</span>}</span>
                           <span className="block truncate text-xs text-muted-foreground">{u.email}</span>
                         </span>
                       </CommandItem>
@@ -139,32 +136,32 @@ export function IncluirParticipante({ evento, className }: { evento: Evento; cla
               </Command>
             </div>
           ) : (
-            <Campo rotulo="E-mail ou CPF da conta" htmlFor="inc-id">
+            <Campo rotulo={tr("e_mail_ou_cpf_da_conta")} htmlFor="inc-id">
               <Input id="inc-id" autoComplete="off" value={f.identificador} onChange={(e) => setF((p) => ({ ...p, identificador: e.target.value }))} autoFocus />
             </Campo>
           )}
           <div className="grid gap-3 sm:grid-cols-2">
-            <Campo rotulo="Tipo de ingresso" htmlFor="inc-tipo">
+            <Campo rotulo={tr("tipo_de_ingresso")} htmlFor="inc-tipo">
               <NativeSelect id="inc-tipo" value={f.tipoId} onChange={(e) => setF((p) => ({ ...p, tipoId: e.target.value }))}>
-                <option value="">Selecione</option>
+                <option value="">{tr("selecione")}</option>
                 {tipos.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
               </NativeSelect>
             </Campo>
-            <Campo rotulo="Exército" htmlFor="inc-ex">
+            <Campo rotulo={tr("exercito")} htmlFor="inc-ex">
               <NativeSelect id="inc-ex" value={f.exercitoId} onChange={(e) => setF((p) => ({ ...p, exercitoId: e.target.value }))}>
-                <option value="">Selecione</option>
+                <option value="">{tr("selecione")}</option>
                 {evento.exercitos.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
               </NativeSelect>
             </Campo>
           </div>
-          <Campo rotulo="Observação (opcional, fica na auditoria)" htmlFor="inc-obs" erro={erro}>
-            <Textarea id="inc-obs" rows={3} maxLength={500} placeholder="Ex.: pagou via PIX direto ao organizador em 20/10" value={f.observacao} onChange={(e) => setF((p) => ({ ...p, observacao: e.target.value }))} />
+          <Campo rotulo={tr("observacao_opcional_fica_na_auditoria")} htmlFor="inc-obs" erro={erro}>
+            <Textarea id="inc-obs" rows={3} maxLength={500} placeholder={tr("ex_pagou_via_pix_direto_ao")} value={f.observacao} onChange={(e) => setF((p) => ({ ...p, observacao: e.target.value }))} />
           </Campo>
         </div>
         <div className="mt-4 flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setAberto(false)} disabled={enviando}>Cancelar</Button>
+          <Button variant="ghost" onClick={() => setAberto(false)} disabled={enviando}>{tr("cancelar")}</Button>
           <Button onClick={enviar} disabled={enviando}>
-            {enviando ? "Incluindo..." : admin && selecionados.length > 1 ? `Incluir ${selecionados.length}` : "Incluir"}
+            {enviando ? tr("incluindo") : admin && selecionados.length > 1 ? tr("incluir_length", { length: selecionados.length }) : tr("incluir")}
           </Button>
         </div>
       </Modal>

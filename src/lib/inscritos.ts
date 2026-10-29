@@ -1,18 +1,19 @@
 // Regras puras da página de inscritos: indicadores, filtros e ordenação de eventos.
 import type { Evento, Inscricao } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/inscritos";
 
 export const ROTULO_ORIGEM: Record<Inscricao["origem"], string> = {
-  plataforma: "Plataforma",
-  cortesia: "Cortesia",
-  organizador: "Inclusão manual",
-  admin: "Inclusão pela administração",
+  get plataforma() { return tr("plataforma"); },
+  get cortesia() { return tr("cortesia"); },
+  get organizador() { return tr("inclusao_manual"); },
+  get admin() { return tr("inclusao_pela_administracao"); },
 };
 
 export const ROTULO_STATUS_INSCRICAO: Record<Inscricao["status"], string> = {
-  pendente: "Aguardando pagamento",
-  confirmada: "Confirmada",
-  cancelada: "Cancelada",
-  estornada: "Estornada",
+  get pendente() { return tr("aguardando_pagamento"); },
+  get confirmada() { return tr("confirmada"); },
+  get cancelada() { return tr("cancelada"); },
+  get estornada() { return tr("estornada"); },
 };
 
 export function indicadoresInscritos(evento: Evento, inscricoes: Inscricao[]) {

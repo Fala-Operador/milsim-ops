@@ -7,6 +7,7 @@ import { ehModalidade } from "@/lib/modalidades";
 import type {
   BaseDados, Equipamento, OperacaoExterna, PerfilOperador, PrivacidadePerfil, TipoEquipamento, Usuario,
 } from "@/lib/domain/types";
+import { tr } from "@/i18n/services/perfilOperador";
 
 export const TIPOS_EQUIPAMENTO: Record<TipoEquipamento, string> = { spring: "Spring", hpa: "HPA", aeg: "AEG", gbbr: "GBBR" };
 export const MAX_FOTOS_EQUIPAMENTO = 4;
@@ -16,13 +17,13 @@ const IMAGEM_DATA_URL = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
 
 const limpar = (s: string | undefined, max: number) => {
   const t = (s ?? "").trim();
-  if (t.length > max) throw new ErroDominio("tamanho", `Texto acima de ${max} caracteres.`);
+  if (t.length > max) throw new ErroDominio("tamanho", tr("texto_acima_de_max_caracteres", { max }));
   return t || undefined;
 };
 
 function exigirImagem(dataUrl: string) {
-  if (dataUrl.length > TAMANHO_MAX_IMAGEM) throw new ErroDominio("imagem", "Imagem grande demais. Use uma menor.");
-  if (!IMAGEM_DATA_URL.test(dataUrl)) throw new ErroDominio("imagem", "Formato inválido. Use JPG, PNG ou WebP.");
+  if (dataUrl.length > TAMANHO_MAX_IMAGEM) throw new ErroDominio("imagem", tr("imagem_grande_demais_use_uma_menor"));
+  if (!IMAGEM_DATA_URL.test(dataUrl)) throw new ErroDominio("imagem", tr("formato_invalido_use_jpg_png_ou"));
 }
 
 export function obterPerfilProprio(base: BaseDados, usuarioId: string): PerfilOperador {
@@ -47,14 +48,14 @@ export function salvarPerfil(base: BaseDados, u: Usuario, d: DadosPerfil): void 
   p.bio = limpar(d.bio, 280);
   p.squad = limpar(d.squad, 60);
   const insta = limpar(d.instagram, 40)?.replace(/^@/, "");
-  if (insta && !/^[A-Za-z0-9._]{1,30}$/.test(insta)) throw new ErroDominio("instagram", "Instagram inválido: use apenas letras, números, ponto e sublinhado.");
+  if (insta && !/^[A-Za-z0-9._]{1,30}$/.test(insta)) throw new ErroDominio("instagram", tr("instagram_invalido_use_apenas_letras_num"));
   p.instagram = insta;
   if (d.capa === null) p.capaUrl = undefined;
   else if (d.capa) { exigirImagem(d.capa); p.capaUrl = d.capa; }
   if (d.insigniaDestaque === null) p.insigniaDestaque = undefined;
   else if (d.insigniaDestaque) {
     const ok = base.concessoesInsignia.some((c) => c.usuarioId === u.id && c.insigniaId === d.insigniaDestaque && concessaoAtiva(c));
-    if (!ok) throw new ErroDominio("insignia", "Só é possível destacar uma insígnia conquistada.");
+    if (!ok) throw new ErroDominio("insignia", tr("so_e_possivel_destacar_uma_insignia"));
     p.insigniaDestaque = d.insigniaDestaque;
   }
   p.atualizadoEm = new Date().toISOString();
@@ -95,14 +96,14 @@ export interface DadosEquipamento {
 export function salvarEquipamento(base: BaseDados, u: Usuario, d: DadosEquipamento): Equipamento {
   const marca = limpar(d.marca, 60);
   const modelo = limpar(d.modelo, 80);
-  if (!marca || !modelo) throw new ErroDominio("obrigatorio", "Informe marca, tipo e modelo.");
-  if (!(d.tipo in TIPOS_EQUIPAMENTO)) throw new ErroDominio("tipo", "Tipo inválido.");
-  if (d.fotos.length > MAX_FOTOS_EQUIPAMENTO) throw new ErroDominio("fotos", `Até ${MAX_FOTOS_EQUIPAMENTO} fotos por equipamento.`);
+  if (!marca || !modelo) throw new ErroDominio("obrigatorio", tr("informe_marca_tipo_e_modelo"));
+  if (!(d.tipo in TIPOS_EQUIPAMENTO)) throw new ErroDominio("tipo", tr("tipo_invalido"));
+  if (d.fotos.length > MAX_FOTOS_EQUIPAMENTO) throw new ErroDominio("fotos", tr("ate_max_fotos_equipamento_fotos_por", { MAX_FOTOS_EQUIPAMENTO }));
   const existente = d.id ? base.equipamentos.find((e) => e.id === d.id && e.usuarioId === u.id) : undefined;
-  if (d.id && !existente) throw new ErroDominio("equipamento", "Equipamento não encontrado.");
+  if (d.id && !existente) throw new ErroDominio("equipamento", tr("equipamento_nao_encontrado"));
   for (const f of d.fotos) {
     if (f.startsWith("data:")) exigirImagem(f);
-    else if (!existente?.fotos.includes(f)) throw new ErroDominio("fotos", "Foto inválida.");
+    else if (!existente?.fotos.includes(f)) throw new ErroDominio("fotos", tr("foto_invalida"));
   }
   const agora = new Date().toISOString();
   const dados = { marca, modelo, tipo: d.tipo, apelido: limpar(d.apelido, 60), observacoes: limpar(d.observacoes, 500), fotos: [...d.fotos], visivel: d.visivel, atualizadoEm: agora };
@@ -114,14 +115,14 @@ export function salvarEquipamento(base: BaseDados, u: Usuario, d: DadosEquipamen
 
 export function excluirEquipamento(base: BaseDados, u: Usuario, id: string): void {
   const i = base.equipamentos.findIndex((e) => e.id === id && e.usuarioId === u.id);
-  if (i < 0) throw new ErroDominio("equipamento", "Equipamento não encontrado.");
+  if (i < 0) throw new ErroDominio("equipamento", tr("equipamento_nao_encontrado"));
   base.equipamentos.splice(i, 1);
 }
 
 // ---------- Galeria ----------
 export function adicionarFoto(base: BaseDados, u: Usuario, d: { dataUrl: string; legenda?: string | undefined; alt?: string | undefined }): void {
   if (base.fotosPerfil.filter((f) => f.usuarioId === u.id).length >= MAX_FOTOS_GALERIA) {
-    throw new ErroDominio("galeria", `Limite de ${MAX_FOTOS_GALERIA} fotos na galeria.`);
+    throw new ErroDominio("galeria", tr("limite_de_max_fotos_galeria_fotos", { MAX_FOTOS_GALERIA }));
   }
   exigirImagem(d.dataUrl);
   // Fotos novas começam privadas até a pessoa decidir compartilhar.
@@ -133,7 +134,7 @@ export function adicionarFoto(base: BaseDados, u: Usuario, d: { dataUrl: string;
 
 export function editarFoto(base: BaseDados, u: Usuario, id: string, d: { legenda?: string | undefined; alt?: string | undefined; visivel: boolean }): void {
   const f = base.fotosPerfil.find((x) => x.id === id && x.usuarioId === u.id);
-  if (!f) throw new ErroDominio("foto", "Foto não encontrada.");
+  if (!f) throw new ErroDominio("foto", tr("foto_nao_encontrada"));
   f.legenda = limpar(d.legenda, 200);
   f.alt = limpar(d.alt, 200);
   f.visivel = d.visivel;
@@ -141,7 +142,7 @@ export function editarFoto(base: BaseDados, u: Usuario, id: string, d: { legenda
 
 export function excluirFoto(base: BaseDados, u: Usuario, id: string): void {
   const i = base.fotosPerfil.findIndex((x) => x.id === id && x.usuarioId === u.id);
-  if (i < 0) throw new ErroDominio("foto", "Foto não encontrada.");
+  if (i < 0) throw new ErroDominio("foto", tr("foto_nao_encontrada"));
   base.fotosPerfil.splice(i, 1);
 }
 
@@ -168,23 +169,23 @@ export interface DadosOperacaoExterna {
 /** Valida e normaliza (sem gravar). `fotoAtual` é a URL já salva, que pode ser mantida. */
 export function validarOperacaoExterna(d: DadosOperacaoExterna, fotoAtual?: string, hoje = new Date()): Omit<OperacaoExterna, "id" | "usuarioId" | "criadoEm" | "atualizadoEm"> {
   const nome = (d.nome ?? "").trim();
-  if (nome.length < 2) throw new ErroDominio("nome", "Informe o nome da operação.");
-  if (nome.length > 120) throw new ErroDominio("nome", "Nome da operação: no máximo 120 caracteres.");
+  if (nome.length < 2) throw new ErroDominio("nome", tr("informe_o_nome_da_operacao"));
+  if (nome.length > 120) throw new ErroDominio("nome", tr("nome_da_operacao_no_maximo_120"));
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d.data) || Number.isNaN(Date.parse(`${d.data}T12:00:00Z`))) {
-    throw new ErroDominio("data", "Informe a data da operação.");
+    throw new ErroDominio("data", tr("informe_a_data_da_operacao"));
   }
   const ano = Number(d.data.slice(0, 4));
   const amanha = new Date(hoje.getTime() + 86_400_000).toISOString().slice(0, 10);
-  if (ano < 1990) throw new ErroDominio("data", "Data muito antiga.");
-  if (d.data > amanha) throw new ErroDominio("data", "Registre só operações que já aconteceram.");
+  if (ano < 1990) throw new ErroDominio("data", tr("data_muito_antiga"));
+  if (d.data > amanha) throw new ErroDominio("data", tr("registre_so_operacoes_que_ja_aconteceram"));
   const cidade = (d.cidade ?? "").trim();
-  if (!cidade) throw new ErroDominio("cidade", "Informe a cidade.");
-  if (cidade.length > 80) throw new ErroDominio("cidade", "Cidade: no máximo 80 caracteres.");
+  if (!cidade) throw new ErroDominio("cidade", tr("informe_a_cidade"));
+  if (cidade.length > 80) throw new ErroDominio("cidade", tr("cidade_no_maximo_80_caracteres"));
   const uf = (d.uf ?? "").trim().toUpperCase();
-  if (!UFS_VALIDAS.has(uf)) throw new ErroDominio("uf", "Escolha o estado (UF).");
-  if (d.modalidade && !ehModalidade(d.modalidade)) throw new ErroDominio("modalidade", "Modalidade inválida.");
+  if (!UFS_VALIDAS.has(uf)) throw new ErroDominio("uf", tr("escolha_o_estado_uf"));
+  if (d.modalidade && !ehModalidade(d.modalidade)) throw new ErroDominio("modalidade", tr("modalidade_invalida"));
   // Foto obrigatória: ou a já salva desta operação, ou uma nova (data URL válida).
-  if (!d.foto) throw new ErroDominio("foto", "Adicione uma foto da operação.");
+  if (!d.foto) throw new ErroDominio("foto", tr("adicione_uma_foto_da_operacao"));
   if (d.foto !== fotoAtual) exigirImagem(d.foto);
   return {
     nome, data: d.data, cidade, uf,
@@ -201,12 +202,12 @@ export function salvarOperacaoExterna(base: BaseDados, u: Usuario, d: DadosOpera
   const agora = new Date().toISOString();
   if (d.id) {
     const op = base.operacoesExternas.find((x) => x.id === d.id && x.usuarioId === u.id);
-    if (!op) throw new ErroDominio("operacao", "Operação não encontrada.");
+    if (!op) throw new ErroDominio("operacao", tr("operacao_nao_encontrada"));
     Object.assign(op, validarOperacaoExterna(d, op.fotoUrl), { atualizadoEm: agora });
     return op;
   }
   if (base.operacoesExternas.filter((x) => x.usuarioId === u.id).length >= MAX_OPERACOES_EXTERNAS) {
-    throw new ErroDominio("limite", `Limite de ${MAX_OPERACOES_EXTERNAS} operações registradas.`);
+    throw new ErroDominio("limite", tr("limite_de_max_operacoes_externas_operaco", { MAX_OPERACOES_EXTERNAS }));
   }
   const op: OperacaoExterna = { id: gerarId("opx"), usuarioId: u.id, ...validarOperacaoExterna(d), criadoEm: agora, atualizadoEm: agora };
   base.operacoesExternas.push(op);
@@ -215,6 +216,6 @@ export function salvarOperacaoExterna(base: BaseDados, u: Usuario, d: DadosOpera
 
 export function excluirOperacaoExterna(base: BaseDados, u: Usuario, id: string): void {
   const i = base.operacoesExternas.findIndex((x) => x.id === id && x.usuarioId === u.id);
-  if (i < 0) throw new ErroDominio("operacao", "Operação não encontrada.");
+  if (i < 0) throw new ErroDominio("operacao", tr("operacao_nao_encontrada"));
   base.operacoesExternas.splice(i, 1);
 }

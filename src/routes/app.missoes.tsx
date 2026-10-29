@@ -18,20 +18,21 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EstadoVazio } from "@/components/ui";
 import type { CampanhaMissoes, EntregaMissao, Evento, Missao } from "@/lib/domain/types";
+import { tr } from "@/i18n/routes/app.missoes";
 
 export const Route = createFileRoute("/app/missoes")({
   head: () => ({
     meta: [
-      { title: "Missões — MilSim Ops" },
-      { name: "description", content: "Missões pré-evento, placar dos exércitos e prêmios." },
-      { property: "og:title", content: "Missões — MilSim Ops" },
-      { property: "og:description", content: "Missões pré-evento e placar." },
+      { title: tr("missoes_milsim_ops") },
+      { name: "description", content: tr("missoes_pre_evento_placar_dos_exercitos") },
+      { property: "og:title", content: tr("missoes_milsim_ops") },
+      { property: "og:description", content: tr("missoes_pre_evento_e_placar") },
     ],
   }),
   component: PaginaMissoes,
 });
 
-const msg = (e: unknown) => (e instanceof Error ? e.message : "Não foi possível enviar.");
+const msg = (e: unknown) => (e instanceof Error ? e.message : tr("nao_foi_possivel_enviar"));
 
 function PaginaMissoes() {
   const { usuario } = useAuth();
@@ -50,11 +51,11 @@ function PaginaMissoes() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="titulo-pagina">Missões pré-evento</h1>
-        <p className="subtitulo-pagina">Cumpra as missões da organização para somar pontos ao seu exército. O exército vencedor leva os prêmios no dia do evento.</p>
+        <h1 className="titulo-pagina">{tr("missoes_pre_evento")}</h1>
+        <p className="subtitulo-pagina">{tr("cumpra_as_missoes_da_organizacao_para")}</p>
       </div>
       {eventos.length === 0 ? (
-        <EstadoVazio titulo="Nenhuma missão por enquanto" descricao="Quando a organização de um evento em que você está inscrito publicar missões, elas aparecem aqui." />
+        <EstadoVazio titulo={tr("nenhuma_missao_por_enquanto")} descricao={tr("quando_a_organizacao_de_um_evento")} />
       ) : (
         eventos.map((ev) => (
           <EventoMissoes
@@ -86,10 +87,10 @@ function EventoMissoes({ evento, missoes, entregas, campanha, exercito, versao }
         {evento.imagemUrl && <img src={evento.imagemUrl} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-60" />}
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/90 to-black/30" aria-hidden />
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/70">Exército {exercito ?? "—"}</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/70">{tr("exercito_valor", { valor: exercito ?? "—" })}</p>
           <h2 className="mt-1 font-display text-3xl font-bold uppercase leading-none">{evento.nome}</h2>
         </div>
-        {campanha?.encerradaEm && <Badge variant="secondary">Campanha encerrada</Badge>}
+        {campanha?.encerradaEm && <Badge variant="secondary">{tr("campanha_encerrada")}</Badge>}
       </div>
       {(() => {
         const minhas = missoes.map((m) => entregas.find((e) => e.missaoId === m.id));
@@ -99,10 +100,10 @@ function EventoMissoes({ evento, missoes, entregas, campanha, exercito, versao }
         const proxima = ordenadas.find((m) => situacaoMissao(m) === "aberta" && entregas.find((e) => e.missaoId === m.id)?.status !== "concluida");
         return (
           <FaixaIndicadores className="lg:grid-cols-4" itens={[
-            { rotulo: "Missões concluídas", valor: `${feitas} de ${missoes.length}` },
-            { rotulo: "Seus pontos", valor: String(ganhos), detalhe: `de ${possiveis} possíveis` },
-            { rotulo: "Abertas agora", valor: String(ordenadas.filter((m) => situacaoMissao(m) === "aberta").length) },
-            { rotulo: "Próximo prazo", valor: proxima ? formatarDataHoraBR(proxima.prazo).slice(0, 5) : "—", detalhe: proxima?.titulo },
+            { rotulo: tr("missoes_concluidas"), valor: tr("feitas_de_total", { feitas, total: missoes.length }) },
+            { rotulo: tr("seus_pontos"), valor: String(ganhos), detalhe: tr("de_possiveis_possiveis", { possiveis }) },
+            { rotulo: tr("abertas_agora"), valor: String(ordenadas.filter((m) => situacaoMissao(m) === "aberta").length) },
+            { rotulo: tr("proximo_prazo"), valor: proxima ? formatarDataHoraBR(proxima.prazo).slice(0, 5) : "—", detalhe: proxima?.titulo },
           ]} />
         );
       })()}
@@ -115,7 +116,7 @@ function EventoMissoes({ evento, missoes, entregas, campanha, exercito, versao }
         <aside className="space-y-6 lg:sticky lg:top-24">
           {campanha && campanha.premios.length > 0 && (
             <section>
-              <h3 className="rotulo-tecnico flex items-center gap-1.5"><Trophy className="size-3.5 text-accent" aria-hidden="true" />Prêmios no dia do evento</h3>
+              <h3 className="rotulo-tecnico flex items-center gap-1.5"><Trophy className="size-3.5 text-accent" aria-hidden="true" />{tr("premios_no_dia_do_evento")}</h3>
               <ol className="mt-2 divide-y divide-border border-y border-border text-sm">
                 {campanha.premios.map((p) => (
                   <li key={p.colocacao} className="flex gap-3 py-2"><span className="font-display text-xl font-bold leading-none text-accent">{p.colocacao}º</span><span>{p.descricao}</span></li>
@@ -162,57 +163,57 @@ function CartaoMissao({ missao: m, entrega, campanha }: { missao: Missao; entreg
     <li className="grid gap-4 py-5 sm:grid-cols-[88px_minmax(0,1fr)]">
       <div className="hidden sm:block">
         <span className="grid h-14 w-14 place-items-center rounded-md border border-border text-accent"><Icone className="size-6" aria-hidden="true" /></span>
-        {!!m.pontos && <p className="mt-2 font-display text-2xl font-bold leading-none">{m.pontos}<span className="ml-0.5 font-mono text-[10px] text-muted-foreground">PTS</span></p>}
+        {!!m.pontos && <p className="mt-2 font-display text-2xl font-bold leading-none">{m.pontos}<span className="ml-0.5 font-mono text-[10px] text-muted-foreground">{tr("pts")}</span></p>}
       </div>
       <div className="min-w-0 space-y-2">
         {m.imagemUrl && <img src={m.imagemUrl} alt="" className="max-h-48 w-full rounded-md object-cover" loading="lazy" />}
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h3 className="text-lg font-semibold">{m.titulo}</h3>
           <div className="flex flex-wrap gap-1">
-            {!!m.pontos && <Badge variant="outline">{m.pontos} pts</Badge>}
+            {!!m.pontos && <Badge variant="outline">{tr("pontos_pts", { pontos: m.pontos })}</Badge>}
             <Badge variant={tomStatus}>{ROTULO_STATUS_ENTREGA[status]}</Badge>
           </div>
         </div>
         <p className="whitespace-pre-line text-sm">{m.descricao}</p>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
           <span>{ROTULO_TIPO_ENTREGA[m.tipoEntrega]}</span>
-          {situacao === "agendada" && m.abreEm && <span className="flex items-center gap-1"><Lock className="size-3" aria-hidden="true" />Abre {formatarDataHoraBR(m.abreEm)}</span>}
-          <span className="flex items-center gap-1"><Clock className="size-3" aria-hidden="true" />Prazo {formatarDataHoraBR(m.prazo)}</span>
-          {m.metaPercentual && m.metaBonus && <span>Meta coletiva: {m.metaPercentual}% do exército → +{m.metaBonus} pts</span>}
+          {situacao === "agendada" && m.abreEm && <span className="flex items-center gap-1"><Lock className="size-3" aria-hidden="true" />{tr("abre_abreem", { abreEm: formatarDataHoraBR(m.abreEm) })}</span>}
+          <span className="flex items-center gap-1"><Clock className="size-3" aria-hidden="true" />{tr("prazo_prazo", { prazo: formatarDataHoraBR(m.prazo) })}</span>
+          {m.metaPercentual && m.metaBonus && <span>{tr("meta_coletiva_metapercentual_do_exercito", { metaPercentual: m.metaPercentual, metaBonus: m.metaBonus })}</span>}
         </p>
-        {entrega?.avaliacao && <p className="rounded-md bg-secondary/50 p-2 text-sm"><strong>Organização:</strong> {entrega.avaliacao}</p>}
-        {entrega?.destacadaEm && <p className="text-sm text-accent">Sua entrega foi destacada na comunidade do evento.</p>}
+        {entrega?.avaliacao && <p className="rounded-md bg-secondary/50 p-2 text-sm"><strong>{tr("organizacao")}</strong> {entrega.avaliacao}</p>}
+        {entrega?.destacadaEm && <p className="text-sm text-accent">{tr("sua_entrega_foi_destacada_na_comunidade")}</p>}
 
         {!bloqueio && (
           <div className="space-y-2 pt-1">
             {m.tipoEntrega === "texto" && (
-              <Textarea aria-label="Sua entrega" placeholder="Escreva a sua entrega ou cole o link (vídeo, post…)" maxLength={2000} value={texto} onChange={(e) => setTexto(e.target.value)} />
+              <Textarea aria-label={tr("sua_entrega")} placeholder={tr("escreva_a_sua_entrega_ou_cole")} maxLength={2000} value={texto} onChange={(e) => setTexto(e.target.value)} />
             )}
             {m.tipoEntrega === "codigo" && (
-              <Input aria-label="Código secreto" placeholder="Digite o código" maxLength={80} value={codigo} onChange={(e) => setCodigo(e.target.value)} />
+              <Input aria-label={tr("codigo_secreto")} placeholder={tr("digite_o_codigo")} maxLength={80} value={codigo} onChange={(e) => setCodigo(e.target.value)} />
             )}
             {m.tipoEntrega === "imagem" && (
               <div className="space-y-2">
-                {foto && <img src={foto} alt="Prévia da sua foto" className="max-h-56 rounded-md object-cover" />}
+                {foto && <img src={foto} alt={tr("previa_da_sua_foto")} className="max-h-56 rounded-md object-cover" />}
                 <Label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-secondary">
-                  <Camera className="size-4" aria-hidden="true" />{foto ? "Trocar foto" : "Escolher foto"}
+                  <Camera className="size-4" aria-hidden="true" />{foto ? tr("trocar_foto") : tr("escolher_foto")}
                   <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={async (e) => {
                     const a = e.target.files?.[0]; e.target.value = "";
                     if (a) { try { setFoto(await arquivoParaDataUrl(a, 1600)); } catch (er) { setErro(msg(er)); } }
                   }} />
                 </Label>
-                <Input aria-label="Legenda (opcional)" placeholder="Legenda (opcional)" maxLength={500} value={texto} onChange={(e) => setTexto(e.target.value)} />
+                <Input aria-label={tr("legenda_opcional")} placeholder={tr("legenda_opcional")} maxLength={500} value={texto} onChange={(e) => setTexto(e.target.value)} />
               </div>
             )}
             {(m.tipoEntrega === "imagem" || m.tipoEntrega === "texto") && (
               <div className="flex items-start gap-2">
                 <Checkbox id={`destaque-${m.id}`} checked={destaque} onCheckedChange={(v) => setDestaque(v === true)} />
-                <Label htmlFor={`destaque-${m.id}`} className="text-sm font-normal">Autorizo a organização a destacar minha entrega na comunidade do evento (com meu nome de exibição).</Label>
+                <Label htmlFor={`destaque-${m.id}`} className="text-sm font-normal">{tr("autorizo_a_organizacao_a_destacar_minha")}</Label>
               </div>
             )}
             {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
             <Button onClick={enviar} disabled={enviando}>
-              {enviando ? "Enviando..." : m.tipoEntrega === "codigo" ? "Conferir código" : m.tipoEntrega === "confirmacao" ? "Confirmar missão cumprida" : entrega?.status === "ajustes_solicitados" ? "Reenviar entrega" : "Enviar entrega"}
+              {enviando ? tr("enviando") : m.tipoEntrega === "codigo" ? tr("conferir_codigo") : m.tipoEntrega === "confirmacao" ? tr("confirmar_missao_cumprida") : entrega?.status === "ajustes_solicitados" ? tr("reenviar_entrega") : tr("enviar_entrega")}
             </Button>
           </div>
         )}

@@ -9,10 +9,11 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { formatarDataBR } from "@/lib/domain/money";
 import type { Evento } from "@/lib/domain/types";
 import { Input } from "@/components/ui/input";
+import { tr } from "@/i18n/components/OperacaoSelecionada";
 
 export const ROTULO_STATUS_EVENTO: Record<string, string> = {
-  rascunho: "Rascunho", publicado: "Publicado", inscricoes_encerradas: "Inscrições encerradas",
-  cancelado: "Cancelado", concluido: "Concluído",
+  get rascunho() { return tr("rascunho"); }, get publicado() { return tr("publicado"); }, get inscricoes_encerradas() { return tr("inscricoes_encerradas"); },
+  get cancelado() { return tr("cancelado"); }, get concluido() { return tr("concluido"); }, get arquivado() { return tr("arquivado"); },
 };
 const tomStatusEvento = (s: string) =>
   s === "publicado" ? "success" : s === "cancelado" ? "destructive" : s === "rascunho" ? "secondary" : "warning";
@@ -40,13 +41,13 @@ export function OperacaoSelecionada({ eventos, evento, invalido, onSelecionar }:
   return (
     <>
       {evento ? (
-        <section aria-label="Operação selecionada" className="relative isolate overflow-hidden rounded-lg border border-border bg-black text-white">
+        <section aria-label={tr("operacao_selecionada")} className="relative isolate overflow-hidden rounded-lg border border-border bg-black text-white">
           {evento.imagemUrl && <img src={evento.imagemUrl} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-70" />}
           <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/90 via-black/60 to-black/20" aria-hidden="true" />
           <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6">
             <div className="min-w-0">
-              <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/70">Operação selecionada</p>
-              <p className="mt-1 truncate font-display text-3xl font-bold uppercase leading-none sm:text-4xl" title={evento.nome}>{evento.nome || "Sem nome"}</p>
+              <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/70">{tr("operacao_selecionada")}</p>
+              <p className="mt-1 truncate font-display text-3xl font-bold uppercase leading-none sm:text-4xl" title={evento.nome}>{evento.nome || tr("sem_nome")}</p>
               <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-wider text-white/80">
                 <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 shrink-0" />{formatarDataBR(evento.inicioEm)}</span>
                 <span className="inline-flex min-w-0 items-center gap-1.5"><MapPin className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{evento.cidade}/{evento.uf}</span></span>
@@ -61,18 +62,17 @@ export function OperacaoSelecionada({ eventos, evento, invalido, onSelecionar }:
               aria-expanded={aberto}
               onClick={() => setAberto(true)}
             >
-              <ArrowLeftRight className="h-4 w-4" /> Trocar evento
-            </Button>
+              <ArrowLeftRight className="h-4 w-4" />{" "}{tr("trocar_evento")}</Button>
           </div>
         </section>
       ) : (
         <section role="alert" className="flex flex-col gap-3 rounded-lg border border-warning/60 bg-warning/10 p-4 sm:flex-row sm:items-center">
           <AlertTriangle className="h-5 w-5 shrink-0 text-warning" />
           <div className="min-w-0 flex-1">
-            <p className="font-medium">{invalido ? "O evento selecionado não está mais disponível" : "Nenhum evento selecionado"}</p>
-            <p className="text-sm text-muted-foreground">Escolha uma operação para continuar.</p>
+            <p className="font-medium">{invalido ? tr("o_evento_selecionado_nao_esta_mais") : tr("nenhum_evento_selecionado")}</p>
+            <p className="text-sm text-muted-foreground">{tr("escolha_uma_operacao_para_continuar")}</p>
           </div>
-          <Button ref={botao} onClick={() => setAberto(true)}>Selecionar evento</Button>
+          <Button ref={botao} onClick={() => setAberto(true)}>{tr("selecionar_evento")}</Button>
         </section>
       )}
       {aberto && <SeletorEventos eventos={eventos} atual={evento?.id ?? ""} onFechar={fechar} onSelecionar={escolher} />}
@@ -97,27 +97,27 @@ function SeletorEventos({ eventos, atual, onFechar, onSelecionar }: {
       >
         <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-border sm:hidden" aria-hidden="true" />
         <div className="flex items-center justify-between gap-2 px-4 pt-3 sm:px-6 sm:pt-5">
-          <DialogTitle className="uppercase">Trocar evento</DialogTitle>
-          <Button variant="ghost" onClick={onFechar} aria-label="Fechar"><X className="h-5 w-5" /></Button>
+          <DialogTitle className="uppercase">{tr("trocar_evento")}</DialogTitle>
+          <Button variant="ghost" onClick={onFechar} aria-label={tr("fechar")}><X className="h-5 w-5" /></Button>
         </div>
         <div className="grid gap-2 border-b border-border px-4 py-3 sm:grid-cols-[1fr_12rem] sm:px-6">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               autoFocus
-              aria-label="Buscar evento por nome"
-              placeholder="Buscar por nome"
+              aria-label={tr("buscar_evento_por_nome")}
+              placeholder={tr("buscar_por_nome")}
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-base focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40 sm:text-sm"
             />
           </div>
-          <NativeSelect aria-label="Filtrar por status" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">Todos os status</option>
+          <NativeSelect aria-label={tr("filtrar_por_status")} value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="">{tr("todos_os_status")}</option>
             {Object.entries(ROTULO_STATUS_EVENTO).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
           </NativeSelect>
         </div>
-        <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-3 sm:px-6" role="listbox" aria-label="Eventos autorizados">
+        <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-3 sm:px-6" role="listbox" aria-label={tr("eventos_autorizados")}>
           {lista.map((e) => {
             const sel = e.id === atual;
             return (
@@ -130,15 +130,15 @@ function SeletorEventos({ eventos, atual, onFechar, onSelecionar }: {
                 >
                   <Miniatura evento={e} tamanho="h-12 w-12" />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">{e.nome || "Sem nome"}</span>
+                    <span className="block truncate font-medium">{e.nome || tr("sem_nome")}</span>
                     <span className="block truncate text-xs text-muted-foreground">{formatarDataBR(e.inicioEm)} · {e.cidade}/{e.uf} · {ROTULO_STATUS_EVENTO[e.status] ?? e.status}</span>
                   </span>
-                  {sel && <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-primary"><Check className="h-4 w-4" />Atual</span>}
+                  {sel && <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-primary"><Check className="h-4 w-4" />{tr("atual")}</span>}
                 </Button>
               </li>
             );
           })}
-          {lista.length === 0 && <li className="py-6 text-center text-sm text-muted-foreground">Nenhum evento encontrado. Tente outro nome ou status.</li>}
+          {lista.length === 0 && <li className="py-6 text-center text-sm text-muted-foreground">{tr("nenhum_evento_encontrado_tente_outro_nom")}</li>}
         </ul>
       </DialogContent>
     </Dialog>

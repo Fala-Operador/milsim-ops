@@ -8,6 +8,7 @@ import {
   planosDeImpulso, posicoesDoImpulso, rotuloDuracao,
 } from "@/lib/impulsos";
 import { formatarBRL } from "@/lib/domain/money";
+import { tr } from "@/i18n/services/impulsos";
 
 function auditar(b: BaseDados, autorId: string, acao: string, id: string, detalhe?: string) {
   b.auditoria.push({ id: gerarId("aud"), autorId, acao, entidade: "impulso", entidadeId: id, justificativa: detalhe, criadoEm: new Date().toISOString() });
@@ -27,12 +28,12 @@ export function criarCompraImpulsoNaBase(
 ): ImpulsoComprado {
   const organizacaoId = usuario?.organizacaoId;
   if (!usuario || !organizacaoId || !gereImpulsos(usuario, organizacaoId)) {
-    throw new ErroDominio("permissao", "Somente a organização compra impulsos para os próprios eventos.");
+    throw new ErroDominio("permissao", tr("somente_a_organizacao_compra_impulsos_pa"));
   }
   const plano = planosDeImpulso(base).find((p) => p.id === planoId);
-  if (!plano?.ativo) throw new ErroDominio("plano", "Este tipo de impulso não está à venda no momento.");
+  if (!plano?.ativo) throw new ErroDominio("plano", tr("este_tipo_de_impulso_nao_esta"));
   const gratis = plano.precoCentavos === 0;
-  if (!gratis && !opcoes.pagamentoOnline) throw new ErroDominio("pagamento", "Os pagamentos online ainda não estão ativados na plataforma.");
+  if (!gratis && !opcoes.pagamentoOnline) throw new ErroDominio("pagamento", tr("os_pagamentos_online_ainda_nao_estao"));
   const iso = agora.toISOString();
   const impulso: ImpulsoComprado = {
     id: gerarId("ipc"), organizacaoId, planoId, compradoPor: usuario.id,
@@ -41,13 +42,13 @@ export function criarCompraImpulsoNaBase(
     ...(gratis ? { pagoEm: iso, expiraEm: expiracaoDoImpulso(agora, plano.validadeDias).toISOString() } : {}),
   };
   base.impulsosComprados.push(impulso);
-  auditar(base, usuario.id, gratis ? "impulso_confirmado" : "impulso_reservado", impulso.id, `${plano.rotulo} — ${formatarBRL(plano.precoCentavos)}`);
+  auditar(base, usuario.id, gratis ? "impulso_confirmado" : "impulso_reservado", impulso.id, `${plano.rotulo} — ${formatarBRL(plano.precoCentavos, "pt-BR")}`);
   return impulso;
 }
 
 export function registrarSessaoImpulsoNaBase(base: BaseDados, impulsoId: string, sessaoId: string): ImpulsoComprado {
   const i = base.impulsosComprados.find((x) => x.id === impulsoId);
-  if (!i) throw new ErroDominio("impulso", "Impulso não encontrado.");
+  if (!i) throw new ErroDominio("impulso", tr("impulso_nao_encontrado"));
   if (!i.sessaoId) i.sessaoId = sessaoId;
   return i;
 }
@@ -64,7 +65,7 @@ export function confirmarImpulsoNaBase(base: BaseDados, impulsoId: string, strip
   i.expiraEm = expiracaoDoImpulso(agora, i.validadeDias).toISOString();
   i.sessaoId ??= stripe.sessaoId;
   i.intencaoId ??= stripe.intencaoId;
-  auditar(base, i.compradoPor, "impulso_confirmado", i.id, `Pago ${formatarBRL(i.precoCentavos)}`);
+  auditar(base, i.compradoPor, "impulso_confirmado", i.id, `Pago ${formatarBRL(i.precoCentavos, "pt-BR")}`);
   notificar(base, i.compradoPor, "Impulso disponível",
     `Seu impulso de ${rotuloDuracao(i.duracaoHoras)} está pronto. Use em uma operação até ${new Date(i.expiraEm).toLocaleDateString("pt-BR")}.`, agora);
 }
@@ -97,7 +98,7 @@ export function registrarReembolsoImpulsoNaBase(base: BaseDados, impulsoId: stri
     c.status = "encerrado";
     c.atualizadoEm = agora.toISOString();
   }
-  auditar(base, "sistema", "impulso_reembolsado", i.id, formatarBRL(i.precoCentavos));
+  auditar(base, "sistema", "impulso_reembolsado", i.id, formatarBRL(i.precoCentavos, "pt-BR"));
 }
 
 export const impulsoPorIntencao = (base: BaseDados, intencaoId: string) => base.impulsosComprados.find((i) => i.intencaoId === intencaoId);
@@ -108,7 +109,7 @@ export const impulsoPorIntencao = (base: BaseDados, intencaoId: string) => base.
  */
 export function usarImpulsoNaBase(base: BaseDados, usuario: Usuario | null, impulsoId: string, eventoId: string, agora = new Date()): Impulsionamento {
   const i = base.impulsosComprados.find((x) => x.id === impulsoId);
-  if (!usuario || !i || !gereImpulsos(usuario, i.organizacaoId)) throw new ErroDominio("impulso", "Impulso não encontrado.");
+  if (!usuario || !i || !gereImpulsos(usuario, i.organizacaoId)) throw new ErroDominio("impulso", tr("impulso_nao_encontrado"));
   const evento = base.eventos.find((e) => e.id === eventoId);
   const erros = pendenciasUso(base, i, evento, agora);
   if (erros.length) throw new ErroDominio("elegibilidade", erros.join(" "));
@@ -141,18 +142,18 @@ export function salvarPlanosImpulsoNaBase(base: BaseDados, admin: Usuario, plano
   const iso = agora.toISOString();
   for (const d of planos) {
     const antes = atuais.find((p) => p.id === d.id);
-    if (!antes) throw new ErroDominio("plano", "Tipo de impulso desconhecido.");
+    if (!antes) throw new ErroDominio("plano", tr("tipo_de_impulso_desconhecido"));
     const erro = erroPlano(d);
     if (erro) throw new ErroDominio("plano", `${antes.rotulo}: ${erro}`);
     const imagemUrl = d.imagemUrl ?? antes.imagemUrl;
-    if (imagemUrl && !imagemPlanoValida(imagemUrl)) throw new ErroDominio("plano", `${antes.rotulo}: imagem inválida.`);
+    if (imagemUrl && !imagemPlanoValida(imagemUrl)) throw new ErroDominio("plano", tr("rotulo_imagem_invalida", { rotulo: antes.rotulo }));
     if (antes.precoCentavos === d.precoCentavos && antes.validadeDias === d.validadeDias && antes.ativo === d.ativo && antes.imagemUrl === imagemUrl && antes.atualizadoEm) continue;
     const salvo = base.planosImpulso.find((p) => p.id === d.id);
     const novo = { id: d.id, precoCentavos: d.precoCentavos, validadeDias: d.validadeDias, ativo: d.ativo, imagemUrl, atualizadoEm: iso, atualizadoPor: admin.id };
     if (salvo) Object.assign(salvo, novo);
     else base.planosImpulso.push(novo);
     auditar(base, admin.id, "plano_impulso", d.id,
-      `${antes.rotulo}: ${formatarBRL(d.precoCentavos)}, validade ${d.validadeDias} dias, ${d.ativo ? "à venda" : "fora de venda"}${antes.imagemUrl !== imagemUrl ? ", imagem trocada" : ""}.`);
+      `${antes.rotulo}: ${formatarBRL(d.precoCentavos, "pt-BR")}, validade ${d.validadeDias} dias, ${d.ativo ? "à venda" : "fora de venda"}${antes.imagemUrl !== imagemUrl ? ", imagem trocada" : ""}.`);
   }
 }
 

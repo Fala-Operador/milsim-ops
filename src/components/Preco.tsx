@@ -1,10 +1,18 @@
 // Valor de ingresso em reais com a parte inteira 3px maior que os centavos (linha numérica
 // mental: o olho lê primeiro a grandeza). O texto continua sendo o mesmo de formatarBRL, então
 // leitores de tela e copiar/colar não mudam.
-const FORMATO = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+import { localeAtual } from "@/i18n/dicionario";
+
+const formatos = new Map<string, Intl.NumberFormat>();
+function formato(): Intl.NumberFormat {
+  const locale = localeAtual();
+  let f = formatos.get(locale);
+  if (!f) formatos.set(locale, (f = new Intl.NumberFormat(locale, { style: "currency", currency: "BRL" })));
+  return f;
+}
 
 export function Preco({ centavos, className }: { centavos: number; className?: string }) {
-  const partes = FORMATO.formatToParts(centavos / 100);
+  const partes = formato().formatToParts(centavos / 100);
   const inicioDecimal = partes.findIndex((p) => p.type === "decimal");
   const fimInteiro = inicioDecimal === -1 ? partes.length : inicioDecimal;
   const primeiroDigito = partes.findIndex((p) => p.type === "integer");

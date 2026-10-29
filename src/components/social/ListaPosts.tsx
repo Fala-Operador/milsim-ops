@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { EstadoVazio, ErroSecao, SkeletonCartao } from "@/components/ui";
 import type { PaginaPosts } from "@/lib/comunidadeGeral";
 import { CartaoPost } from "./CartaoPost";
+import { tr } from "@/i18n/components/social/ListaPosts";
 
 export type CarregarPagina = (cursor: { antes?: string | undefined; antesId?: string | undefined }) => Promise<PaginaPosts>;
 
@@ -23,7 +24,7 @@ export function ListaPosts({ chave, carregar, vazio, moderar = false }: {
   });
 
   if (q.isPending) return <div className="space-y-3"><SkeletonCartao /><SkeletonCartao /></div>;
-  if (q.isError) return <ErroSecao titulo="Não foi possível carregar as publicações" descricao={q.error.message} onTentar={() => void q.refetch()} />;
+  if (q.isError) return <ErroSecao titulo={tr("nao_foi_possivel_carregar_as_publicacoes")} descricao={q.error.message} onTentar={() => void q.refetch()} />;
   const posts = q.data.pages.flatMap((p) => p.posts);
   if (!posts.length) return <EstadoVazio titulo={vazio.titulo} descricao={vazio.descricao ?? ""} />;
 
@@ -37,7 +38,7 @@ export function ListaPosts({ chave, carregar, vazio, moderar = false }: {
       {q.isFetchingNextPage && <div className="space-y-3"><SkeletonCartao /><SkeletonCartao /></div>}
       {q.hasNextPage && !q.isFetchingNextPage && (
         <div className="flex justify-center">
-          <Button variant="outline" onClick={() => void q.fetchNextPage()}>Carregar mais</Button>
+          <Button variant="outline" onClick={() => void q.fetchNextPage()}>{tr("carregar_mais")}</Button>
         </div>
       )}
     </div>

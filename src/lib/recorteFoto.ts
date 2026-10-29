@@ -1,3 +1,4 @@
+import { tr } from "@/i18n/lib/recorteFoto";
 // Geometria do recorte da foto de perfil (regras puras, sem DOM).
 // A foto é desenhada centralizada numa área quadrada de lado `lado`, girada, espelhada,
 // ampliada pelo zoom e deslocada pelo arraste. A escala base garante que a imagem
@@ -95,7 +96,7 @@ const TAMANHO_MAXIMO_ARQUIVO = 15 * 1024 * 1024;
 
 /** Valida o arquivo escolhido antes de abrir o editor; devolve a mensagem de erro, se houver. */
 export function erroArquivoFoto(arquivo: { type: string; size: number }): string | null {
-  if (!TIPOS_FOTO.includes(arquivo.type)) return "Formato de foto inválido. Use JPG, PNG ou WebP.";
-  if (arquivo.size > TAMANHO_MAXIMO_ARQUIVO) return "A foto deve ter no máximo 15 MB.";
+  if (!TIPOS_FOTO.includes(arquivo.type)) return tr("formato_de_foto_invalido_use_jpg");
+  if (arquivo.size > TAMANHO_MAXIMO_ARQUIVO) return tr("a_foto_deve_ter_no_maximo");
   return null;
 }

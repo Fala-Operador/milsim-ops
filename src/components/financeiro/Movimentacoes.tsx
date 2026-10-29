@@ -22,6 +22,7 @@ import type { TipoMovimentacao } from "@/lib/domain/types";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { tr } from "@/i18n/components/financeiro/Movimentacoes";
 
 const POR_PAGINA = 25;
 
@@ -42,8 +43,8 @@ function Valor({ l }: { l: LinhaMovimentacao }) {
     if (!l.descontoCentavos) return <span className="font-mono text-muted-foreground">—</span>;
     // Desconto não move dinheiro: é o valor abatido do ingresso (já descontado da entrada).
     return (
-      <span className="font-mono whitespace-nowrap text-muted-foreground" title="Abatido do valor do ingresso; não é saída de caixa">
-        −{formatarBRL(l.descontoCentavos)}<span className="sr-only"> abatidos do ingresso</span>
+      <span className="font-mono whitespace-nowrap text-muted-foreground" title={tr("abatido_do_valor_do_ingresso_nao")}>
+        −{formatarBRL(l.descontoCentavos)}<span className="sr-only">{" "}{tr("abatidos_do_ingresso")}</span>
       </span>
     );
   }
@@ -69,8 +70,8 @@ export function Movimentacoes({ linhas }: { linhas: LinhaMovimentacao[] }) {
   if (linhas.length === 0) {
     return (
       <section aria-labelledby="titulo-movimentacoes" className="mt-6">
-        <h3 id="titulo-movimentacoes" className="font-display text-base font-semibold uppercase">Movimentações</h3>
-        <p className="mt-2 rounded-md border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">Nenhuma movimentação registrada.</p>
+        <h3 id="titulo-movimentacoes" className="font-display text-base font-semibold uppercase">{tr("movimentacoes")}</h3>
+        <p className="mt-2 rounded-md border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">{tr("nenhuma_movimentacao_registrada")}</p>
       </section>
     );
   }
@@ -78,10 +79,10 @@ export function Movimentacoes({ linhas }: { linhas: LinhaMovimentacao[] }) {
   const totalAba = resumo[f.aba];
   return (
     <section aria-labelledby="titulo-movimentacoes" className="mt-6">
-      <h3 id="titulo-movimentacoes" className="font-display text-base font-semibold uppercase">Movimentações</h3>
+      <h3 id="titulo-movimentacoes" className="font-display text-base font-semibold uppercase">{tr("movimentacoes")}</h3>
 
       <Tabs value={f.aba} onValueChange={(v) => mudar({ aba: v as typeof f.aba })}>
-      <TabsList aria-label="Tipo de movimentação" className="abas-rolaveis mt-3 border-b border-border">
+      <TabsList aria-label={tr("tipo_de_movimentacao")} className="abas-rolaveis mt-3 border-b border-border">
         {ABAS_MOVIMENTACAO.map((a) => {
           const ativa = f.aba === a.id;
           return (
@@ -105,77 +106,73 @@ export function Movimentacoes({ linhas }: { linhas: LinhaMovimentacao[] }) {
       <div id="painel-movimentacoes" role="tabpanel" aria-labelledby={`aba-mov-${f.aba}`}>
         <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))]">
           <Label className="sm:col-span-2 lg:col-span-1 lg:self-end text-[length:inherit] font-normal text-inherit">
-            <span className="sr-only">Buscar por descrição ou código da inscrição</span>
-            <Input type="search" placeholder="Buscar descrição ou código (OP-…)" value={f.busca} onChange={(e) => mudar({ busca: e.target.value })} />
+            <span className="sr-only">{tr("buscar_por_descricao_ou_codigo_da")}</span>
+            <Input type="search" placeholder={tr("buscar_descricao_ou_codigo_op")} value={f.busca} onChange={(e) => mudar({ busca: e.target.value })} />
           </Label>
           <Label className="text-[length:inherit] font-normal text-inherit">
-            <span className="mb-1 block text-xs text-muted-foreground">De</span>
+            <span className="mb-1 block text-xs text-muted-foreground">{tr("de")}</span>
             <Input type="date" value={f.de} max={f.ate || undefined} onChange={(e) => mudar({ de: e.target.value })} />
           </Label>
           <Label className="text-[length:inherit] font-normal text-inherit">
-            <span className="mb-1 block text-xs text-muted-foreground">Até</span>
+            <span className="mb-1 block text-xs text-muted-foreground">{tr("ate")}</span>
             <Input type="date" value={f.ate} min={f.de || undefined} onChange={(e) => mudar({ ate: e.target.value })} />
           </Label>
           {temOnline ? (
             <Label className="text-[length:inherit] font-normal text-inherit">
-              <span className="mb-1 block text-xs text-muted-foreground">Pagamento</span>
+              <span className="mb-1 block text-xs text-muted-foreground">{tr("pagamento")}</span>
               <NativeSelect value={f.meio} onChange={(e) => mudar({ meio: e.target.value as FiltrosMovimentacao["meio"] })}>
-                <option value="todos">Todos</option>
-                <option value="online">Online (Stripe)</option>
-                <option value="manual">Sem pagamento online</option>
+                <option value="todos">{tr("todos")}</option>
+                <option value="online">{tr("online_stripe")}</option>
+                <option value="manual">{tr("sem_pagamento_online")}</option>
               </NativeSelect>
             </Label>
           ) : <span className="hidden lg:block" />}
           <Label className="text-[length:inherit] font-normal text-inherit">
-            <span className="mb-1 block text-xs text-muted-foreground">Ordenar</span>
+            <span className="mb-1 block text-xs text-muted-foreground">{tr("ordenar")}</span>
             <NativeSelect value={f.ordem} onChange={(e) => mudar({ ordem: e.target.value as FiltrosMovimentacao["ordem"] })}>
-              <option value="recentes">Mais recentes</option>
-              <option value="antigas">Mais antigas</option>
-              <option value="maior_valor">Maior valor</option>
+              <option value="recentes">{tr("mais_recentes")}</option>
+              <option value="antigas">{tr("mais_antigas")}</option>
+              <option value="maior_valor">{tr("maior_valor")}</option>
             </NativeSelect>
           </Label>
         </div>
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
           <p role="status" className="text-muted-foreground">
-            {totalAba.quantidade} {totalAba.quantidade === 1 ? "movimentação" : "movimentações"}
+            {totalAba.quantidade} {totalAba.quantidade === 1 ? tr("movimentacao") : tr("movimentacoes_2")}
             {f.aba === "desconto_cupom"
-              ? <> · <span className="font-mono text-foreground">{formatarBRL(totalAba.totalCentavos)}</span> concedidos</>
-              : <> · saldo <span className={`font-mono ${totalAba.totalCentavos < 0 ? "text-destructive" : "text-foreground"}`}>{formatarBRL(totalAba.totalCentavos)}</span></>}
+              ? <> · <span className="font-mono text-foreground">{formatarBRL(totalAba.totalCentavos)}</span>{" "}{tr("concedidos")}</>
+              : <>{" "}{tr("saldo")}{" "}<span className={`font-mono ${totalAba.totalCentavos < 0 ? "text-destructive" : "text-foreground"}`}>{formatarBRL(totalAba.totalCentavos)}</span></>}
           </p>
           {ativos > 0 && (
-            <Button variant="plain" size="none" type="button" className="text-sm text-accent hover:underline" onClick={() => mudar({ busca: "", de: "", ate: "", meio: "todos" })}>
-              Limpar filtros ({ativos})
-            </Button>
+            <Button variant="plain" size="none" type="button" className="text-sm text-accent hover:underline" onClick={() => mudar({ busca: "", de: "", ate: "", meio: "todos" })}>{tr("limpar_filtros_ativos", { ativos })}</Button>
           )}
         </div>
 
         {visiveis.length === 0 ? (
-          <p className="mt-3 rounded-md border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
-            Nenhuma movimentação com esses filtros.
-          </p>
+          <p className="mt-3 rounded-md border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">{tr("nenhuma_movimentacao_com_esses_filtros")}</p>
         ) : (
           <Table className="tabela-cards mt-3 w-full text-sm">
             <TableHeader>
               <TableRow className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-                <TableHead scope="col" className="py-2 pr-3 font-medium">Data</TableHead>
-                <TableHead scope="col" className="py-2 pr-3 font-medium">Tipo</TableHead>
-                <TableHead scope="col" className="py-2 pr-3 font-medium">Descrição</TableHead>
-                <TableHead scope="col" className="py-2 pr-3 font-medium">Inscrição</TableHead>
-                <TableHead scope="col" className="py-2 text-right font-medium">Valor</TableHead>
+                <TableHead scope="col" className="py-2 pr-3 font-medium">{tr("data")}</TableHead>
+                <TableHead scope="col" className="py-2 pr-3 font-medium">{tr("tipo")}</TableHead>
+                <TableHead scope="col" className="py-2 pr-3 font-medium">{tr("descricao")}</TableHead>
+                <TableHead scope="col" className="py-2 pr-3 font-medium">{tr("inscricao")}</TableHead>
+                <TableHead scope="col" className="py-2 text-right font-medium">{tr("valor")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {visiveis.slice(0, limite).map((l) => (
                 <TableRow key={l.id} className="lg:border-b lg:border-border/50">
-                  <TableCell data-rotulo="Data" className="py-2 pr-3 whitespace-nowrap text-muted-foreground lg:align-top">{formatarDataHoraBR(l.criadoEm)}</TableCell>
-                  <TableCell data-rotulo="Tipo" className="py-2 pr-3 lg:align-top"><TipoBadge tipo={l.tipo} /></TableCell>
+                  <TableCell data-rotulo={tr("data")} className="py-2 pr-3 whitespace-nowrap text-muted-foreground lg:align-top">{formatarDataHoraBR(l.criadoEm)}</TableCell>
+                  <TableCell data-rotulo={tr("tipo")} className="py-2 pr-3 lg:align-top"><TipoBadge tipo={l.tipo} /></TableCell>
                   <TableCell className="py-2 pr-3 break-words lg:align-top">
                     {l.descricao}
-                    {l.online && !/stripe/i.test(l.descricao) && <span className="ml-2 text-xs text-muted-foreground">· Stripe</span>}
+                    {l.online && !/stripe/i.test(l.descricao) && <span className="ml-2 text-xs text-muted-foreground">{tr("stripe")}</span>}
                   </TableCell>
-                  <TableCell data-rotulo="Inscrição" className="py-2 pr-3 font-mono text-xs lg:align-top">{l.codigoInscricao ?? "—"}</TableCell>
-                  <TableCell data-rotulo="Valor" className="py-2 lg:text-right lg:align-top"><Valor l={l} /></TableCell>
+                  <TableCell data-rotulo={tr("inscricao")} className="py-2 pr-3 font-mono text-xs lg:align-top">{l.codigoInscricao ?? "—"}</TableCell>
+                  <TableCell data-rotulo={tr("valor")} className="py-2 lg:text-right lg:align-top"><Valor l={l} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -183,9 +180,7 @@ export function Movimentacoes({ linhas }: { linhas: LinhaMovimentacao[] }) {
         )}
         {visiveis.length > limite && (
           <div className="mt-3 text-center">
-            <Button variant="outline" onClick={() => setLimite((n) => n + POR_PAGINA)}>
-              Mostrar mais ({visiveis.length - limite} restantes)
-            </Button>
+            <Button variant="outline" onClick={() => setLimite((n) => n + POR_PAGINA)}>{tr("mostrar_mais_valor_restantes", { valor: visiveis.length - limite })}</Button>
           </div>
         )}
       </div>

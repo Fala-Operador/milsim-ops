@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Campo } from "@/components/ui";
+import { tr } from "@/i18n/components/CardTaxa";
 
 /** Campo de uma taxa percentual (0% a 50%): taxa da plataforma no admin e do comprador na organização. */
 export function CardTaxa({ id, titulo, descricao, atual, salvar, exemplo }: {
@@ -22,7 +23,7 @@ export function CardTaxa({ id, titulo, descricao, atual, salvar, exemplo }: {
   useEffect(() => setValor(String(atual).replace(".", ",")), [atual]);
 
   const percentual = Number(valor.trim().replace(",", "."));
-  const erroCampo = valor.trim() === "" ? "Informe a taxa em porcentagem." : erroTaxa(percentual);
+  const erroCampo = valor.trim() === "" ? tr("informe_a_taxa_em_porcentagem") : erroTaxa(percentual);
 
   const aoSalvar = async () => {
     setErro("");
@@ -31,9 +32,9 @@ export function CardTaxa({ id, titulo, descricao, atual, salvar, exemplo }: {
     setSalvando(true);
     try {
       await salvar(percentual);
-      setAviso("Taxa atualizada. Ela vale para as próximas vendas; as reservas já feitas mantêm a taxa anterior.");
+      setAviso(tr("taxa_atualizada_ela_vale_para_as"));
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Não foi possível salvar a taxa.");
+      setErro(err instanceof Error ? err.message : tr("nao_foi_possivel_salvar_a_taxa"));
     } finally {
       setSalvando(false);
     }
@@ -44,15 +45,15 @@ export function CardTaxa({ id, titulo, descricao, atual, salvar, exemplo }: {
       <h3 className="font-medium">{titulo}</h3>
       <p className="mt-1 text-sm text-muted-foreground">{descricao}</p>
       <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
-        <Campo rotulo="Taxa (%)" htmlFor={id}>
+        <Campo rotulo={tr("taxa")} htmlFor={id}>
           <Input id={id} inputMode="decimal" value={valor} onChange={(e) => { setValor(e.target.value); setErro(""); setAviso(""); }} className="sm:max-w-40" aria-describedby={`${id}-ajuda`} />
         </Campo>
         <Button type="button" onClick={aoSalvar} disabled={salvando || percentual === atual} className="w-full sm:w-auto">
-          {salvando ? "Salvando..." : "Salvar taxa"}
+          {salvando ? tr("salvando") : tr("salvar_taxa")}
         </Button>
       </div>
       <p id={`${id}-ajuda`} className="mt-2 text-xs text-muted-foreground">
-        {erroCampo ? "Entre 0% e 50%, com até duas casas decimais." : exemplo(percentual)}
+        {erroCampo ? tr("entre_0_e_50_com_ate") : exemplo(percentual)}
       </p>
       {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
       {aviso && <p role="status" className="mt-2 text-sm text-success">{aviso}</p>}

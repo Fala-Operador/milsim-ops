@@ -1,6 +1,7 @@
 // Regras puras de tema e de localização da página inicial (sem acesso ao navegador).
 import type { Abrangencia, Evento } from "@/lib/domain/types";
 import { abrangenciaDoEvento, areasSobrepostas, NACIONAL } from "@/lib/divulgacao";
+import { tr } from "@/i18n/lib/localizacao";
 
 export type Tema = "dark" | "light";
 
@@ -80,9 +81,9 @@ export function filtrarEventos(
 /** Rótulo curto do local para botões: "São Paulo (SP)", "Campinas, SP" ou "Todo o Brasil". */
 export function rotuloCurto(a: Abrangencia): string {
   if (a.escopo === "cidade" && a.cidade) return `${a.cidade}, ${a.uf}`;
-  if (a.escopo === "estado" && a.uf) return NOMES_UF[a.uf] ? `${NOMES_UF[a.uf]} (${a.uf})` : `Estado de ${a.uf}`;
-  if (a.escopo === "regiao" && a.regiao) return `Região ${a.regiao}`;
-  return "Todo o Brasil";
+  if (a.escopo === "estado" && a.uf) return NOMES_UF[a.uf] ? `${NOMES_UF[a.uf]} (${a.uf})` : tr("estado_de_uf", { uf: a.uf });
+  if (a.escopo === "regiao" && a.regiao) return tr("regiao_regiao", { regiao: a.regiao });
+  return tr("todo_o_brasil");
 }
 
 export const NOMES_UF: Record<string, string> = {

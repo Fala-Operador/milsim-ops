@@ -1,6 +1,7 @@
 import { gerarId } from "@/services/db";
 import type { Evento } from "@/lib/domain/types";
 import { normalizarContatoWhatsapp } from "@/lib/contatoEvento";
+import { tr } from "@/i18n/components/editorEvento/eventoVazio";
 
 /** Evento novo com valores sugeridos (sempre em rascunho). O WhatsApp parte do telefone da organização. */
 export function eventoVazio(organizacaoId: string, telefoneOrganizacao?: string): Evento {
@@ -22,10 +23,10 @@ export function eventoVazio(organizacaoId: string, telefoneOrganizacao?: string)
     uf: "SP",
     capacidadeTotal: 50,
     exercitos: [
-      { id: gerarId("ex"), nome: "Exército A", capacidade: 25 },
-      { id: gerarId("ex"), nome: "Exército B", capacidade: 25 },
+      { id: gerarId("ex"), nome: tr("exercito_a"), capacidade: 25 },
+      { id: gerarId("ex"), nome: tr("exercito_b"), capacidade: 25 },
     ],
-    tipos: [{ id: gerarId("tp"), nome: "Ingresso Padrão", precoBaseCentavos: 10000, quantidadeMaxima: 50 }],
+    tipos: [{ id: gerarId("tp"), nome: tr("ingresso_padrao"), precoBaseCentavos: 10000, quantidadeMaxima: 50 }],
     lotes: [],
     cronograma: [],
     whatsappContato: normalizarContatoWhatsapp(telefoneOrganizacao) ?? undefined,

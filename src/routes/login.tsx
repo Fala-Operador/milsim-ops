@@ -12,6 +12,7 @@ import { ReenviarConfirmacao } from "@/components/ReenviarConfirmacao";
 import { MSG_EMAIL_NAO_CONFIRMADO } from "@/lib/confirmacaoEmail";
 import { EntrarComGoogle, SeparadorOu } from "@/components/EntrarComGoogle";
 import { AVISOS_LOGIN_GOOGLE, type AvisoLoginGoogle } from "@/lib/loginGoogle";
+import { tr } from "@/i18n/routes/login";
 
 export const Route = createFileRoute("/login")({
   // ?google=…: aviso da volta do Google que não abriu a sessão (src/routes/entrar-google.tsx).
@@ -21,10 +22,10 @@ export const Route = createFileRoute("/login")({
   }),
   head: () => ({
     meta: [
-      { title: "Entrar — MilSim Ops" },
-      { name: "description", content: "Acesse sua conta na plataforma de eventos de simulação militar." },
-      { property: "og:title", content: "Entrar — MilSim Ops" },
-      { property: "og:description", content: "Acesse sua conta." },
+      { title: tr("entrar_milsim_ops") },
+      { name: "description", content: tr("acesse_sua_conta_na_plataforma_de") },
+      { property: "og:title", content: tr("entrar_milsim_ops") },
+      { property: "og:description", content: tr("acesse_sua_conta") },
     ],
   }),
   component: PaginaLogin,
@@ -48,7 +49,7 @@ function PaginaLogin() {
       await login(email, senha, turnstile.token);
       navigate({ ...destinoDoLink(redirectSeguro(redirect)) } as { to: string });
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Falha ao entrar.");
+      setErro(err instanceof Error ? err.message : tr("falha_ao_entrar"));
       turnstile.resetar();
     } finally {
       setCarregando(false);
@@ -56,7 +57,7 @@ function PaginaLogin() {
   };
 
   return (
-    <LayoutAcesso titulo="Entrar" subtitulo="Use a sua conta Google ou o e-mail da sua conta MilsimOps." rotulo="Ingresso · QR Code · Check-in" frase="Seu ingresso e o briefing da operação no mesmo lugar.">
+    <LayoutAcesso titulo={tr("entrar")} subtitulo={tr("use_a_sua_conta_google_ou")} rotulo={tr("ingresso_qr_code_check_in")} frase={tr("seu_ingresso_e_o_briefing_da")}>
         <div className="mt-6 space-y-4">
           {google && (
             <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -67,7 +68,7 @@ function PaginaLogin() {
           <SeparadorOu />
         </div>
         <form onSubmit={aoEnviar} className="mt-4 space-y-4">
-          <Campo rotulo="E-mail" htmlFor="email" erro={erro && undefined}>
+          <Campo rotulo={tr("e_mail")} htmlFor="email" erro={erro && undefined}>
             <Input
               id="email"
               type="text"
@@ -77,7 +78,7 @@ function PaginaLogin() {
               required
             />
           </Campo>
-          <Campo rotulo="Senha" htmlFor="senha">
+          <Campo rotulo={tr("senha")} htmlFor="senha">
             <InputSenha
               id="senha"
               autoComplete="current-password"
@@ -91,23 +92,21 @@ function PaginaLogin() {
               {erro}
             </p>
           )}
-          {erro === MSG_EMAIL_NAO_CONFIRMADO && <ReenviarConfirmacao email={email} />}
+          {erro === MSG_EMAIL_NAO_CONFIRMADO() && <ReenviarConfirmacao email={email} />}
           {turnstile.elemento}
           <Button type="submit" disabled={carregando || !turnstile.pronto} size="lg" className="w-full">
-            {carregando ? "Entrando..." : "Entrar"}
+            {carregando ? tr("entrando") : tr("entrar")}
           </Button>
         </form>
         <div className="mt-4 flex justify-between text-sm">
           <Link to="/recuperar-senha" className="text-accent hover:underline">
-            Esqueci a senha
-          </Link>
+            {tr("esqueci_a_senha")}</Link>
           <Link
             to="/cadastro"
             search={{ redirect }}
             className="text-accent hover:underline"
           >
-            Criar cadastro
-          </Link>
+            {tr("criar_cadastro")}</Link>
         </div>
     </LayoutAcesso>
   );

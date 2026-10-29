@@ -2,6 +2,7 @@
 // Uma inscrição paga nasce "pendente" com a vaga reservada; vira "confirmada" quando o
 // Stripe confirma o pagamento, ou "cancelada" quando a reserva expira ou o pagamento falha.
 import type { Inscricao, PagamentoInscricao } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/pagamentos";
 
 /**
  * Duração da reserva de vaga; a sessão de checkout expira no mesmo instante. O Stripe
@@ -38,14 +39,14 @@ export function exigeEstornoOnline(i: Pick<Inscricao, "pagamento">): boolean {
 export const estornoPendente = (i: Pick<Inscricao, "pagamento">) => i.pagamento?.status === "estorno_pendente";
 
 export const ROTULO_PAGAMENTO: Record<PagamentoInscricao["status"], string> = {
-  aguardando: "Aguardando pagamento",
-  processando: "Pagamento em processamento",
-  pago: "Pago",
-  expirado: "Reserva expirada",
-  falhou: "Pagamento não aprovado",
-  cancelado: "Reserva cancelada",
-  estorno_pendente: "Reembolso em andamento",
-  estornado: "Reembolsado",
+  get aguardando() { return tr("aguardando_pagamento"); },
+  get processando() { return tr("pagamento_em_processamento"); },
+  get pago() { return tr("pago"); },
+  get expirado() { return tr("reserva_expirada"); },
+  get falhou() { return tr("pagamento_nao_aprovado"); },
+  get cancelado() { return tr("reserva_cancelada"); },
+  get estorno_pendente() { return tr("reembolso_em_andamento"); },
+  get estornado() { return tr("reembolsado"); },
 };
 
 /** O que outras pessoas podem saber do pagamento: só o necessário para contar vagas. */

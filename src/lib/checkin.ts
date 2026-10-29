@@ -1,5 +1,7 @@
 // Regras puras do check-in/credenciamento (sem armazenamento, sem React).
 import type { FichaEmergencia, StatusInscricao } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/checkin";
+import { localeAtual } from "@/i18n/dicionario";
 
 export type OrigemEntrada = "qr" | "codigo" | "manual";
 export type StatusSync = "pendente" | "sincronizado" | "conflito" | "falhou";
@@ -43,15 +45,15 @@ export type ResultadoValidacao =
 
 export const PREFIXO_QR = "MSO-CHECKIN:";
 export const ROTULO_ORIGEM_ENTRADA: Record<OrigemEntrada, string> = {
-  qr: "QR Code",
+  get qr() { return tr("qr_code"); },
   codigo: "Código digitado",
-  manual: "Busca manual",
+  get manual() { return tr("busca_manual"); },
 };
 export const ROTULO_SYNC: Record<StatusSync, string> = {
-  pendente: "Sincronização pendente",
-  sincronizado: "Sincronizado",
-  conflito: "Conflito",
-  falhou: "Falha — tentará de novo",
+  get pendente() { return tr("sincronizacao_pendente"); },
+  get sincronizado() { return tr("sincronizado"); },
+  get conflito() { return tr("conflito"); },
+  get falhou() { return tr("falha_tentara_de_novo"); },
 };
 
 export function conteudoQr(token: string): string {
@@ -118,9 +120,9 @@ export function resolverSincronizacao(
   if (referencia.some((r) => r.id === op.id)) return { status: "sincronizado" }; // já aplicada (idempotente)
   if (op.tipo === "reversao") return { status: "sincronizado" };
   if (statusInscricaoAtual !== "confirmada")
-    return { status: "conflito", conflito: "A inscrição foi cancelada ou estornada antes da sincronização." };
+    return { status: "conflito", conflito: tr("a_inscricao_foi_cancelada_ou_estornada") };
   const ativa = entradaAtiva(referencia, op.inscricaoId);
   if (ativa)
-    return { status: "conflito", conflito: `Já havia entrada registrada às ${new Date(ativa.em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} por ${ativa.operadorNome}.` };
+    return { status: "conflito", conflito: tr("ja_havia_entrada_registrada", { hora: new Date(ativa.em).toLocaleTimeString(localeAtual(), { hour: "2-digit", minute: "2-digit" }), nome: ativa.operadorNome }) };
   return { status: "sincronizado" };
 }

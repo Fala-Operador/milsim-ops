@@ -68,10 +68,10 @@ describe("taxa e destino da cobrança", () => {
   });
 
   it("sem conta ativa não há venda paga; com conta ativa vai para a organização", async () => {
-    await expect(reservar()).rejects.toThrow(MSG_SEM_RECEBIMENTO);
+    await expect(reservar()).rejects.toThrow(MSG_SEM_RECEBIMENTO());
     expect(base.inscricoes.filter((i) => i.eventoId === EVT)).toHaveLength(0);
     registrarRecebimentoNaBase(base, org().id, { id: "acct_1", details_submitted: true });
-    await expect(reservar()).rejects.toThrow(MSG_SEM_RECEBIMENTO);
+    await expect(reservar()).rejects.toThrow(MSG_SEM_RECEBIMENTO());
     registrarRecebimentoNaBase(base, org().id, contaAtiva);
     const comConta = await reservar();
     expect(comConta.pagamento).toMatchObject({ contaDestino: "acct_1", taxaCentavos: 2000, valorCentavos: 20000 });
@@ -246,8 +246,8 @@ describe("troca do modo do Stripe (teste → produção)", () => {
     expect(mensagemDeFalhaStripe(400, "You can only create new accounts if you've signed up for Connect")).toMatch(/Connect ainda não está ativado/);
     expect(mensagemDeFalhaStripe(400, "Your account must be activated in order to create accounts. You can activate your accounts at https://dashboard.stripe.com/account/onboarding.")).toMatch(/plataforma ainda não está ativada/);
     expect(mensagemDeFalhaStripe(400, "Invalid email")).toBe("Stripe: Invalid email");
-    expect(mensagemDeFalhaStripe(0, "fetch failed")).toBe(MSG_FALHA_STRIPE);
-    expect(mensagemDeFalhaStripe(500, "erro")).toBe(MSG_FALHA_STRIPE);
+    expect(mensagemDeFalhaStripe(0, "fetch failed")).toBe(MSG_FALHA_STRIPE());
+    expect(mensagemDeFalhaStripe(500, "erro")).toBe(MSG_FALHA_STRIPE());
   });
 
   it("checkout com destino de outro modo cai para a venda na plataforma", () => {

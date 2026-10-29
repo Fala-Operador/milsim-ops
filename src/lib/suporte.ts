@@ -2,23 +2,33 @@
 // Responsável, solução e vínculo são derivados dos eventos de histórico (mensagens do
 // tipo "sistema"), que nunca são editados nem apagados.
 import type { AnexoCompartilhado, BaseDados, Chamado, MensagemChamado, StatusChamado, Usuario } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/suporte";
 
 export const ROTULO_STATUS: Record<StatusChamado, string> = {
-  aberto: "Aberto",
-  em_atendimento: "Em análise",
-  aguardando_participante: "Aguardando participante",
-  resolvido: "Resolvido",
-  fechado: "Fechado",
+  get aberto() { return tr("aberto"); },
+  get em_atendimento() { return tr("em_analise"); },
+  get aguardando_participante() { return tr("aguardando_participante"); },
+  get resolvido() { return tr("resolvido"); },
+  get fechado() { return tr("fechado"); },
 };
 
 export const CATEGORIAS_SUPORTE = ["Inscrição", "Pagamento", "Logística", "Regras", "Conta", "Funcionamento", "Outro"] as const;
+
+/** Rótulo de tela da categoria (o valor gravado continua em português). */
+export function rotuloCategoria(c: string): string {
+  const chaves: Record<string, Parameters<typeof tr>[0]> = {
+    Inscrição: "categoria_inscricao", Pagamento: "categoria_pagamento", Logística: "categoria_logistica", Regras: "categoria_regras",
+    Conta: "categoria_conta", Funcionamento: "categoria_funcionamento", Outro: "categoria_outro",
+  };
+  return chaves[c] ? tr(chaves[c]) : c;
+}
 
 export const TIPOS_ANEXO = ["image/jpeg", "image/png", "image/webp", "application/pdf"] as const;
 export const TAMANHO_MAX_ANEXO = 5 * 1024 * 1024;
 export const LIMITE_MENSAGEM = 4000;
 
 export type PapelSuporte = "participante" | "organizador" | "admin";
-export const ROTULO_PAPEL: Record<PapelSuporte, string> = { participante: "Participante", organizador: "Organização", admin: "Administração" };
+export const ROTULO_PAPEL: Record<PapelSuporte, string> = { get participante() { return tr("participante"); }, get organizador() { return tr("organizacao"); }, get admin() { return tr("administracao"); } };
 
 /** Protocolo legível e estável, derivado da data de criação e do id. */
 export function protocolo(c: Pick<Chamado, "id" | "criadoEm">): string {
@@ -78,7 +88,14 @@ export function retornoRecebido(base: Pick<BaseDados, "usuarios">, c: Chamado): 
 }
 
 export type StatusExibido = StatusChamado | "aguardando_organizador";
-export const ROTULO_STATUS_EXIBIDO: Record<StatusExibido, string> = { ...ROTULO_STATUS, aguardando_organizador: "Aguardando organizador" };
+export const ROTULO_STATUS_EXIBIDO: Record<StatusExibido, string> = {
+  get aberto() { return ROTULO_STATUS.aberto; },
+  get em_atendimento() { return ROTULO_STATUS.em_atendimento; },
+  get aguardando_participante() { return ROTULO_STATUS.aguardando_participante; },
+  get aguardando_organizador() { return tr("aguardando_organizador"); },
+  get resolvido() { return ROTULO_STATUS.resolvido; },
+  get fechado() { return ROTULO_STATUS.fechado; },
+};
 
 /** Status mostrado: "aguardando organizador" é derivado do encaminhamento em aberto (sem nova coluna). */
 export function statusExibido(base: Pick<BaseDados, "usuarios">, c: Chamado): StatusExibido {
@@ -224,32 +241,32 @@ export type AcaoStatus = "aguardar" | "resolver" | "reabrir" | "fechar";
 
 /** Valida uma transição e devolve o novo status (lança string com a mensagem de erro). */
 export function transicao(c: Chamado, acao: AcaoStatus, atende: boolean, solicitante: boolean): StatusChamado {
-  if (c.status === "fechado") throw new Error("Chamado fechado: somente leitura.");
+  if (c.status === "fechado") throw new Error(tr("chamado_fechado_somente_leitura"));
   switch (acao) {
     case "aguardar":
-      if (!atende) throw new Error("Somente quem atende pode aguardar o participante.");
-      if (c.status === "resolvido") throw new Error("Reabra o chamado antes.");
+      if (!atende) throw new Error(tr("somente_quem_atende_pode_aguardar_o"));
+      if (c.status === "resolvido") throw new Error(tr("reabra_o_chamado_antes"));
       return "aguardando_participante";
     case "resolver":
-      if (!atende) throw new Error("Somente quem atende pode resolver.");
-      if (c.status === "resolvido") throw new Error("O chamado já está resolvido.");
+      if (!atende) throw new Error(tr("somente_quem_atende_pode_resolver"));
+      if (c.status === "resolvido") throw new Error(tr("o_chamado_ja_esta_resolvido"));
       return "resolvido";
     case "reabrir":
-      if (!solicitante && !atende) throw new Error("Sem permissão.");
-      if (c.status !== "resolvido") throw new Error("Só chamados resolvidos podem ser reabertos.");
+      if (!solicitante && !atende) throw new Error(tr("sem_permissao"));
+      if (c.status !== "resolvido") throw new Error(tr("so_chamados_resolvidos_podem_ser_reabert"));
       return responsavelId(c) ? "em_atendimento" : "aberto";
     case "fechar":
-      if (!atende && !solicitante) throw new Error("Sem permissão.");
+      if (!atende && !solicitante) throw new Error(tr("sem_permissao"));
       return "fechado";
   }
 }
 
 /** Novo status após uma mensagem de texto. */
 export function statusAposMensagem(c: Chamado, doSolicitante: boolean): StatusChamado {
-  if (c.status === "fechado") throw new Error("Chamado fechado: somente leitura.");
+  if (c.status === "fechado") throw new Error(tr("chamado_fechado_somente_leitura"));
   if (doSolicitante) {
     // Resolvido: o participante reabre o chamado antes de escrever de novo.
-    if (c.status === "resolvido") throw new Error("Este chamado foi resolvido. Reabra o chamado para enviar uma nova mensagem.");
+    if (c.status === "resolvido") throw new Error(tr("este_chamado_foi_resolvido_reabra_o"));
     if (c.status === "aguardando_participante") return "em_atendimento";
     return c.status;
   }

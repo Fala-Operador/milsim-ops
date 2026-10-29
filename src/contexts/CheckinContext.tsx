@@ -11,6 +11,7 @@ import { guardarArquivosApp, registrarSW, type EstadoSW } from "@/lib/sw";
 import { idbDisponivel } from "@/services/checkinStore";
 import { enviarFilaCheckin } from "@/api/checkin.functions";
 import type { OrigemEntrada, RegistroCheckin, ResultadoValidacao } from "@/lib/checkin";
+import { tr } from "@/i18n/contexts/CheckinContext";
 
 interface Valor {
   eventoId: string;
@@ -65,11 +66,11 @@ export function CheckinProvider({ eventoId, children }: { eventoId: string; chil
   }, [eventoId, online]);
 
   const sincronizarAgora = useCallback(async () => {
-    if (!online) { setAviso("Sem conexão: os registros continuam guardados neste aparelho."); return; }
+    if (!online) { setAviso(tr("sem_conexao_os_registros_continuam_guard")); return; }
     const r = await sincronizar(simularFalha, enviarFilaCheckin);
-    setAviso(r.falhas ? `Falha simulada: ${r.falhas} registro(s) continuam na fila.`
-      : r.conflitos ? `${r.enviados} sincronizado(s) e ${r.conflitos} conflito(s) preservado(s) para revisão.`
-      : r.enviados ? `${r.enviados} registro(s) sincronizado(s).` : "");
+    setAviso(r.falhas ? tr("falha_simulada_falhas_registro_s_continu", { falhas: r.falhas })
+      : r.conflitos ? tr("enviados_sincronizado_s_e_conflitos_conf", { enviados: r.enviados, conflitos: r.conflitos })
+      : r.enviados ? tr("enviados_registro_s_sincronizado_s", { enviados: r.enviados }) : "");
     await recarregar();
   }, [online, simularFalha, recarregar]);
 
@@ -99,14 +100,14 @@ export function CheckinProvider({ eventoId, children }: { eventoId: string; chil
   const preparar = async () => {
     setOcupado(true);
     try {
-      if (!online) throw new Error("Conecte-se à internet para preparar o aparelho.");
+      if (!online) throw new Error(tr("conecte_se_a_internet_para_preparar"));
       await prepararOffline(usuario, eventoId);
       const sw = await guardarArquivosApp(["/organizacao/checkin"]);
-      setAviso(sw.ok ? `Aparelho preparado: ingressos baixados e ${sw.arquivos} arquivos da aplicação guardados.`
-        : "Ingressos baixados, mas este navegador/prévia não permitiu guardar os arquivos da aplicação (Service Worker). Reabrir sem internet pode não funcionar aqui.");
+      setAviso(sw.ok ? tr("aparelho_preparado_ingressos_baixados_e", { arquivos: sw.arquivos })
+        : tr("ingressos_baixados_mas_este_navegador_pr"));
       await recarregar();
     } catch (e) {
-      setAviso(e instanceof Error ? e.message : "Falha ao preparar.");
+      setAviso(e instanceof Error ? e.message : tr("falha_ao_preparar"));
     } finally { setOcupado(false); }
   };
 

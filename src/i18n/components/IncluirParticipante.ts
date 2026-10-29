@@ -1,0 +1,31 @@
+// Textos de src/components/IncluirParticipante.tsx.
+import { dicionario } from "@/i18n/dicionario";
+
+export const tr = dicionario("components/IncluirParticipante", {
+  "selecione_ao_menos_um_participante_o": { pt: "Selecione ao menos um participante, o tipo de ingresso e o exército.", en: "Select at least one participant, the ticket type and the army." },
+  "informe_o_e_mail_ou_cpf": { pt: "Informe o e-mail ou CPF, o tipo de ingresso e o exército.", en: "Enter the e-mail or CPF, the ticket type and the army." },
+  "participante_incluido_codigo": { pt: "Participante incluído ({codigo}).", en: "Participant added ({codigo})." },
+  "length_participantes_incluidos": { pt: "{length} participantes incluídos.", en: "{length} participants added." },
+  "nao_foi_possivel_incluir_tente_novamente": { pt: "Não foi possível incluir. Tente novamente.", en: "Could not add. Try again." },
+  "evento_sem_inscricoes_possiveis": { pt: "Evento sem inscrições possíveis.", en: "Event has no possible registrations." },
+  "incluir_participante": { pt: "Incluir participante", en: "Add participant" },
+  "incluir_participantes": { pt: "Incluir participantes", en: "Add participants" },
+  "para_quem_combinou_o_pagamento_por": { pt: "Para quem combinou o pagamento por fora. A inscrição entra como cortesia (sem valor no Financeiro), respeita as vagas e não depende de lote aberto. Cada pessoa é notificada.", en: "For those who arranged payment outside the platform. The registration counts as complimentary (no amount in Finance), respects available spots and does not need an open batch. Each person is notified." },
+  "participantes": { pt: "Participantes", en: "Participants" },
+  "length_selecionado": { pt: "({length} selecionado", en: "({length} selected" },
+  "participantes_selecionados": { pt: "Participantes selecionados", en: "Selected participants" },
+  "remover_nomecompleto": { pt: "Remover {nomeCompleto}", en: "Remove {nomeCompleto}" },
+  "buscar_por_nome_ou_e_mail": { pt: "Buscar por nome ou e-mail", en: "Search by name or e-mail" },
+  "nenhuma_conta_encontrada_quem_ja_esta": { pt: "Nenhuma conta encontrada (quem já está inscrito não aparece).", en: "No account found (people already registered do not appear)." },
+  "selecionado": { pt: "(selecionado)", en: "(selected)" },
+  "e_mail_ou_cpf_da_conta": { pt: "E-mail ou CPF da conta", en: "Account e-mail or CPF" },
+  "tipo_de_ingresso": { pt: "Tipo de ingresso", en: "Ticket type" },
+  "selecione": { pt: "Selecione", en: "Select" },
+  "exercito": { pt: "Exército", en: "Army" },
+  "observacao_opcional_fica_na_auditoria": { pt: "Observação (opcional, fica na auditoria)", en: "Note (optional, kept in the audit log)" },
+  "ex_pagou_via_pix_direto_ao": { pt: "Ex.: pagou via PIX direto ao organizador em 20/10", en: "E.g.: paid via PIX directly to the organizer on 20/10" },
+  "cancelar": { pt: "Cancelar", en: "Cancel" },
+  "incluindo": { pt: "Incluindo...", en: "Adding..." },
+  "incluir_length": { pt: "Incluir {length}", en: "Add {length}" },
+  "incluir": { pt: "Incluir", en: "Add" },
+});

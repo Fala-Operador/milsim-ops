@@ -1,24 +1,25 @@
 // Regras puras da lista de movimentações do financeiro: abas por tipo, filtros
 // (busca, período, meio de pagamento), ordenação e totais. Sem React e sem rede.
 import type { Inscricao, Movimentacao, TipoMovimentacao } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/movimentacoes";
 
 export type AbaMovimentacao = "todas" | TipoMovimentacao;
 export type OrdemMovimentacao = "recentes" | "antigas" | "maior_valor";
 export type MeioPagamento = "todos" | "online" | "manual";
 
 export const ABAS_MOVIMENTACAO: { id: AbaMovimentacao; rotulo: string }[] = [
-  { id: "todas", rotulo: "Todas" },
-  { id: "inscricao", rotulo: "Entradas" },
-  { id: "desconto_cupom", rotulo: "Descontos" },
-  { id: "estorno", rotulo: "Estornos" },
-  { id: "ajuste", rotulo: "Ajustes" },
+  { id: "todas", get rotulo() { return tr("todas"); } },
+  { id: "inscricao", get rotulo() { return tr("entradas"); } },
+  { id: "desconto_cupom", get rotulo() { return tr("descontos"); } },
+  { id: "estorno", get rotulo() { return tr("estornos"); } },
+  { id: "ajuste", get rotulo() { return tr("ajustes"); } },
 ];
 
 export const ROTULO_TIPO_MOVIMENTACAO: Record<TipoMovimentacao, string> = {
-  inscricao: "Entrada",
-  desconto_cupom: "Desconto",
-  estorno: "Estorno",
-  ajuste: "Ajuste",
+  get inscricao() { return tr("entrada"); },
+  get desconto_cupom() { return tr("desconto"); },
+  get estorno() { return tr("estorno"); },
+  get ajuste() { return tr("ajuste"); },
 };
 
 export interface FiltrosMovimentacao {

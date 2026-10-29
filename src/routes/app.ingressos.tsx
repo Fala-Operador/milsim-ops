@@ -18,6 +18,8 @@ import { StatusInscricao } from "@/components/StatusInscricao";
 import type { Inscricao } from "@/lib/domain/types";
 import { IngressoQr } from "@/components/IngressoQr";
 import { CreditCard, QrCode, Users } from "lucide-react";
+import { tr } from "@/i18n/routes/app.ingressos";
+import { localeAtual } from "@/i18n/dicionario";
 
 export const Route = createFileRoute("/app/ingressos")({
   // Retorno do checkout do Stripe: ?pagamento=sucesso&sessao=cs_...
@@ -29,48 +31,46 @@ export const Route = createFileRoute("/app/ingressos")({
   }),
   head: () => ({
     meta: [
-      { title: "Meus ingressos — MilSim Ops" },
-      { name: "description", content: "Ingressos, status e histórico de participação." },
-      { property: "og:title", content: "Meus ingressos — MilSim Ops" },
-      { property: "og:description", content: "Ingressos e histórico." },
+      { title: tr("meus_ingressos_milsim_ops") },
+      { name: "description", content: tr("ingressos_status_e_historico_de_particip") },
+      { property: "og:title", content: tr("meus_ingressos_milsim_ops") },
+      { property: "og:description", content: tr("ingressos_e_historico") },
     ],
   }),
   component: MeusIngressos,
 });
 
 const hora = (iso: string) =>
-  new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  new Date(iso).toLocaleTimeString(localeAtual(), { hour: "2-digit", minute: "2-digit" });
 
 type Retorno = { tom: "sucesso" | "aviso" | "perigo"; texto: string };
 const AVISO_RETORNO: Record<string, Retorno> = {
-  pago: { tom: "sucesso", texto: "Pagamento aprovado. Seu ingresso está confirmado." },
+  pago: { tom: "sucesso", get texto() { return tr("pagamento_aprovado_seu_ingresso_esta_con"); } },
   processando: {
     tom: "aviso",
-    texto:
-      "Pagamento enviado e em processamento. Avisaremos quando for compensado; a vaga continua reservada.",
+    get texto() { return tr("pagamento_enviado_e_em_processamento_avi"); },
   },
   aguardando: {
     tom: "aviso",
-    texto: "Ainda não recebemos a confirmação do pagamento. Esta página atualiza sozinha.",
+    get texto() { return tr("ainda_nao_recebemos_a_confirmacao_do"); },
   },
   estorno_pendente: {
     tom: "perigo",
-    texto:
-      "O pagamento chegou depois que a reserva expirou. O valor será reembolsado integralmente.",
+    get texto() { return tr("o_pagamento_chegou_depois_que_a"); },
   },
   estornado: {
     tom: "perigo",
-    texto: "O pagamento chegou depois que a reserva expirou e foi reembolsado.",
+    get texto() { return tr("o_pagamento_chegou_depois_que_a_2"); },
   },
   expirado: {
     tom: "perigo",
-    texto: "O prazo da reserva terminou antes do pagamento. Faça uma nova inscrição.",
+    get texto() { return tr("o_prazo_da_reserva_terminou_antes"); },
   },
   falhou: {
     tom: "perigo",
-    texto: "O pagamento não foi aprovado. Faça uma nova inscrição para tentar de novo.",
+    get texto() { return tr("o_pagamento_nao_foi_aprovado_faca"); },
   },
-  cancelado: { tom: "perigo", texto: "Esta reserva foi cancelada antes do pagamento." },
+  cancelado: { tom: "perigo", get texto() { return tr("esta_reserva_foi_cancelada_antes_do"); } },
 };
 const COR_AVISO = {
   sucesso: "border-success/40 bg-success/10 text-success",
@@ -105,7 +105,7 @@ function useRetornoDoCheckout(sessao: string | undefined, usuarioId: string | un
         if (montada.current)
           setAviso({
             tom: "perigo",
-            texto: err instanceof Error ? err.message : "Não foi possível conferir o pagamento.",
+            texto: err instanceof Error ? err.message : tr("nao_foi_possivel_conferir_o_pagamento"),
           });
       }
     };
@@ -145,7 +145,7 @@ function MeusIngressos() {
       const r = await retomarPagamento(ins.id);
       if (r.urlPagamento) window.location.assign(r.urlPagamento);
     } catch (err) {
-      setErroPagamento(err instanceof Error ? err.message : "Não foi possível abrir o pagamento.");
+      setErroPagamento(err instanceof Error ? err.message : tr("nao_foi_possivel_abrir_o_pagamento"));
       setAbrindoPagamento(null);
     }
   };
@@ -155,7 +155,7 @@ function MeusIngressos() {
     try {
       await cancelarInscricao(ins.id, "Reserva cancelada antes do pagamento");
     } catch (err) {
-      setErroPagamento(err instanceof Error ? err.message : "Falha ao cancelar a reserva.");
+      setErroPagamento(err instanceof Error ? err.message : tr("falha_ao_cancelar_a_reserva"));
     }
   };
 
@@ -168,13 +168,13 @@ function MeusIngressos() {
       setMotivo("");
       setVersao((v) => v + 1);
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Falha ao cancelar.");
+      setErro(err instanceof Error ? err.message : tr("falha_ao_cancelar"));
     }
   };
 
   return (
     <div>
-      <h1 className="titulo-pagina">Meus ingressos</h1>
+      <h1 className="titulo-pagina">{tr("meus_ingressos")}</h1>
       {aviso && (
         <p
           role="status"
@@ -194,8 +194,8 @@ function MeusIngressos() {
       {minhas.length === 0 ? (
         <div className="mt-4">
           <EstadoVazio
-            titulo="Você ainda não possui ingressos"
-            descricao="Inscreva-se em uma operação na página inicial."
+            titulo={tr("voce_ainda_nao_possui_ingressos")}
+            descricao={tr("inscreva_se_em_uma_operacao_na")}
           />
         </div>
       ) : (
@@ -219,36 +219,33 @@ function MeusIngressos() {
                 <div className="min-w-0 flex-1 p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <h2 className="font-display text-2xl font-bold uppercase leading-tight">{evento?.nome ?? "Evento"}</h2>
+                    <h2 className="font-display text-2xl font-bold uppercase leading-tight">{evento?.nome ?? tr("evento")}</h2>
                     <p className="text-sm text-muted-foreground">
                       {evento &&
                         `${formatarDataBR(evento.inicioEm)} · ${evento.cidade}/${evento.uf}`}
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {tipo?.nome}
-                      {lote ? ` · ${lote.nome}` : ""} · Exército: {exercito?.nome}
+                      {lote ? ` · ${lote.nome}` : ""}{" "}{tr("exercito_nome", { nome: exercito?.nome })}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {ins.origem === "cortesia"
-                        ? "Cortesia por convite"
+                        ? tr("cortesia_por_convite")
                         : ins.descontoCentavos >= ins.valorCentavos && ins.valorCentavos > 0
-                          ? "Inscrição integralmente descontada"
-                          : <>Valor: <Preco centavos={ins.valorCentavos - ins.descontoCentavos} /></>}
+                          ? tr("inscricao_integralmente_descontada")
+                          : <>{tr("valor")}{" "}<Preco centavos={ins.valorCentavos - ins.descontoCentavos} /></>}
                     </p>
                     {ins.pagamento && (
-                      <p className="text-sm text-muted-foreground">
-                        Pagamento online: {ROTULO_PAGAMENTO[ins.pagamento.status]}
+                      <p className="text-sm text-muted-foreground">{tr("pagamento_online_valor", { valor: ROTULO_PAGAMENTO[ins.pagamento.status] })}
                         {aguardandoPagamento &&
-                          ` · vaga reservada até ${hora(ins.pagamento.expiraEm)}`}
+                          ` ${tr("vaga_reservada_ate_expiraem", { expiraEm: hora(ins.pagamento.expiraEm) })}`}
                       </p>
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:block sm:shrink-0 sm:border-l sm:border-dashed sm:border-border sm:pl-5 sm:text-right">
                     <StatusInscricao status={ins.status} />
                     <p className="font-mono text-lg font-semibold tracking-wider text-accent sm:mt-2">{ins.codigo}</p>
-                    <p className="w-full text-[11px] text-muted-foreground">
-                      Código do ingresso — sem dados pessoais
-                    </p>
+                    <p className="w-full text-[11px] text-muted-foreground">{tr("codigo_do_ingresso_sem_dados_pessoais")}</p>
                   </div>
                 </div>
                 {aguardandoPagamento && (
@@ -259,23 +256,19 @@ function MeusIngressos() {
                       disabled={abrindoPagamento === ins.id}
                     >
                       <CreditCard className="h-4 w-4" />
-                      {abrindoPagamento === ins.id ? "Abrindo pagamento..." : "Concluir pagamento"}
+                      {abrindoPagamento === ins.id ? tr("abrindo_pagamento") : tr("concluir_pagamento")}
                     </Button>
                     <Button
                       className="w-full sm:w-auto"
                       variant="outline"
                       onClick={() => cancelarReserva(ins)}
-                    >
-                      Cancelar reserva
-                    </Button>
+                    >{tr("cancelar_reserva")}</Button>
                   </div>
                 )}
                 {ins.status === "confirmada" && (
                   <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     <Button className="w-full sm:w-auto" onClick={() => setQrDe(ins)}>
-                      <QrCode className="h-4 w-4" />
-                      Abrir QR Code de entrada
-                    </Button>
+                      <QrCode className="h-4 w-4" />{tr("abrir_qr_code_de_entrada")}</Button>
                     {evento?.whatsappGrupoUrl && (
                       <a
                         href={evento.whatsappGrupoUrl}
@@ -283,17 +276,13 @@ function MeusIngressos() {
                         rel="noopener noreferrer"
                         className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring sm:w-auto"
                       >
-                        <Users className="h-4 w-4" aria-hidden="true" />
-                        Entrar no grupo do WhatsApp
-                      </a>
+                        <Users className="h-4 w-4" aria-hidden="true" />{tr("entrar_no_grupo_do_whatsapp")}</a>
                     )}
                     <Button
                       className="w-full text-muted-foreground sm:ml-auto sm:w-auto"
                       variant="ghost"
                       onClick={() => setCancelando(ins)}
-                    >
-                      Cancelar inscrição
-                    </Button>
+                    >{tr("cancelar_inscricao")}</Button>
                   </div>
                 )}
                 </div>
@@ -313,18 +302,14 @@ function MeusIngressos() {
       )}
       <Modal
         aberto={!!cancelando}
-        titulo={cancelando?.status === "pendente" ? "Cancelar reserva" : "Cancelar inscrição"}
+        titulo={cancelando?.status === "pendente" ? tr("cancelar_reserva") : tr("cancelar_inscricao")}
         onFechar={() => setCancelando(null)}
       >
-        <p className="text-sm text-muted-foreground">
-          O cancelamento invalida o ingresso, libera a vaga e registra o estorno integral.
-          {cancelando?.pagamento &&
-            " Como o pagamento foi online, o reembolso integral é feito no mesmo meio de pagamento."}{" "}
-          O histórico é preservado.
-        </p>
+        <p className="text-sm text-muted-foreground">{tr("o_cancelamento_invalida_o_ingresso_liber")}{cancelando?.pagamento &&
+            ` ${tr("como_o_pagamento_foi_online_o")}`}{" "}{tr("o_historico_e_preservado")}</p>
         <div className="mt-3">
           <Textarea
-            placeholder="Justificativa do cancelamento (obrigatória)"
+            placeholder={tr("justificativa_do_cancelamento_obrigatori")}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
           />
@@ -335,12 +320,8 @@ function MeusIngressos() {
           </p>
         )}
         <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button variant="ghost" onClick={() => setCancelando(null)}>
-            Voltar
-          </Button>
-          <Button variant="destructive" onClick={aoCancelar}>
-            Confirmar cancelamento
-          </Button>
+          <Button variant="ghost" onClick={() => setCancelando(null)}>{tr("voltar")}</Button>
+          <Button variant="destructive" onClick={aoCancelar}>{tr("confirmar_cancelamento")}</Button>
         </div>
       </Modal>
     </div>

@@ -2,6 +2,7 @@
 // montado na raiz, aberto por promessa para a tela continuar o fluxo como antes.
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { DialogoConfirmacao } from "@/components/ui";
+import { tr } from "@/i18n/contexts/ConfirmacaoContext";
 
 export interface OpcoesConfirmacao {
   titulo: string;
@@ -51,8 +52,8 @@ export function ConfirmacaoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const valor = useMemo<Confirmacao>(() => ({
-    confirmar: (o) => abrir({ titulo: o.titulo, descricao: o.descricao, confirmar: o.confirmar ?? "Confirmar", cancelar: o.cancelar ?? "Cancelar", destrutivo: !!o.destrutivo }),
-    avisar: async (o) => { await abrir({ titulo: o.titulo, descricao: o.descricao, confirmar: o.ok ?? "Entendi", destrutivo: false }); },
+    confirmar: (o) => abrir({ titulo: o.titulo, descricao: o.descricao, confirmar: o.confirmar ?? tr("confirmar"), cancelar: o.cancelar ?? tr("cancelar"), destrutivo: !!o.destrutivo }),
+    avisar: async (o) => { await abrir({ titulo: o.titulo, descricao: o.descricao, confirmar: o.ok ?? tr("entendi"), destrutivo: false }); },
   }), [abrir]);
 
   const responder = (sim: boolean) => {

@@ -20,6 +20,8 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Campo, SkeletonPagina } from "@/components/ui";
+import { tr } from "@/i18n/routes/inscricao.$eventoId";
+import { localeAtual } from "@/i18n/dicionario";
 
 const novoId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
 
@@ -40,19 +42,19 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
   head: ({ loaderData }) => ({
     meta: loaderData
       ? [
-          { title: `Inscrição — ${loaderData.evento.nome}` },
-          { name: "description", content: "Confirme sua inscrição no evento." },
-          { property: "og:title", content: `Inscrição — ${loaderData.evento.nome}` },
-          { property: "og:description", content: "Confirme sua inscrição no evento." },
+          { title: tr("inscricao_nome", { nome: loaderData.evento.nome }) },
+          { name: "description", content: tr("confirme_sua_inscricao_no_evento") },
+          { property: "og:title", content: tr("inscricao_nome", { nome: loaderData.evento.nome }) },
+          { property: "og:description", content: tr("confirme_sua_inscricao_no_evento") },
         ]
-      : [{ title: "Inscrição — MilSim Ops" }],
+      : [{ title: tr("inscricao_milsim_ops") }],
   }),
   pendingComponent: SkeletonPagina,
   component: PaginaInscricao,
   notFoundComponent: () => (
     <div className="mx-auto max-w-xl px-4 py-16 text-center">
-      <h1 className="font-display text-2xl font-semibold">Inscrições indisponíveis</h1>
-      <p className="mt-2 text-muted-foreground">Este evento não está aberto para inscrições.</p>
+      <h1 className="font-display text-2xl font-semibold">{tr("inscricoes_indisponiveis")}</h1>
+      <p className="mt-2 text-muted-foreground">{tr("este_evento_nao_esta_aberto_para")}</p>
     </div>
   ),
 });
@@ -132,17 +134,14 @@ function PaginaInscricao() {
     return (
       <div className="mx-auto max-w-md px-4 py-16">
         <Card>
-          <h1 className="font-display text-xl font-semibold uppercase">Entre para se inscrever</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Para se inscrever em <strong>{evento.nome}</strong>, entre na sua conta ou conclua o
-            cadastro. Você voltará automaticamente para esta inscrição.
-          </p>
+          <h1 className="font-display text-xl font-semibold uppercase">{tr("entre_para_se_inscrever")}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{tr("para_se_inscrever_em")}{" "}<strong>{evento.nome}</strong>{tr("entre_na_sua_conta_ou_conclua")}</p>
           <div className="mt-4 flex gap-2">
             <Link to="/login" search={{ redirect: destino }}>
-              <Button>Entrar</Button>
+              <Button>{tr("entrar")}</Button>
             </Link>
             <Link to="/cadastro" search={{ redirect: destino }}>
-              <Button variant="outline">Cadastrar</Button>
+              <Button variant="outline">{tr("cadastrar")}</Button>
             </Link>
           </div>
         </Card>
@@ -155,7 +154,7 @@ function PaginaInscricao() {
     setAvisoCupom("");
     setCupomAplicado(null);
     if (!tipo) {
-      setErroCupom("Selecione o tipo de ingresso antes do cupom.");
+      setErroCupom(tr("selecione_o_tipo_de_ingresso_antes"));
       return;
     }
     try {
@@ -163,7 +162,7 @@ function PaginaInscricao() {
       const c = await previsualizarCupom(evento.id, cupom, tipo.id);
       setCupomAplicado({ codigo: c.codigo, percentual: c.descontoPercentual });
     } catch (err) {
-      setErroCupom(err instanceof Error ? err.message : "Não foi possível validar o cupom.");
+      setErroCupom(err instanceof Error ? err.message : tr("nao_foi_possivel_validar_o_cupom"));
     }
   };
 
@@ -180,25 +179,25 @@ function PaginaInscricao() {
       setAvisoCupom("");
     } catch (err) {
       setCupomAplicado(null);
-      setAvisoCupom(`Cupom removido do cálculo: ${err instanceof Error ? err.message : "não vale para este ingresso."}`);
+      setAvisoCupom(tr("cupom_removido_do_calculo", { motivo: err instanceof Error ? err.message : tr("nao_vale_para_este_ingresso") }));
     }
   };
 
   const impedimento = cortesia
     ? ""
     : !algumDisponivel
-      ? "Inscrições indisponíveis no momento: não há lote de venda vigente para nenhum ingresso."
+      ? tr("inscricoes_indisponiveis_no_momento_nao")
       : disp && !disp.disponivel
-        ? `As inscrições deste ingresso estão indisponíveis porque ${TEXTO_MOTIVO[disp.motivo]}.`
+        ? tr("as_inscricoes_deste_ingresso_estao_indis", { valor: TEXTO_MOTIVO[disp.motivo] })
         : vaiPagar && !vendasAbertas
-          ? MSG_SEM_RECEBIMENTO
+          ? MSG_SEM_RECEBIMENTO()
           : "";
 
   const aoConfirmar = async () => {
     if (emAndamento.current || impedimento) return;
     setErro("");
     if (!tipoId || !exercitoId) {
-      setErro("Selecione o tipo de ingresso e o exército.");
+      setErro(tr("selecione_o_tipo_de_ingresso_e"));
       return;
     }
     emAndamento.current = true;
@@ -217,7 +216,7 @@ function PaginaInscricao() {
       if (r.urlPagamento) window.location.assign(r.urlPagamento);
       else navigate({ to: "/app/ingressos" });
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Falha ao confirmar inscrição.");
+      setErro(err instanceof Error ? err.message : tr("falha_ao_confirmar_inscricao"));
       emAndamento.current = false;
       setConfirmando(false);
     }
@@ -227,44 +226,36 @@ function PaginaInscricao() {
   const inicio = new Date(evento.inicioEm);
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 lg:py-10">
-      <nav aria-label="Breadcrumb" className="rotulo-tecnico">
-        <Link to="/" className="hover:text-foreground">Operações</Link> /{" "}
-        <Link to="/eventos/$eventoId" params={{ eventoId: evento.id }} className="hover:text-foreground">{evento.nome}</Link> / Inscrição
-      </nav>
-      <h1 className="titulo-pagina mt-2">Garantir vaga</h1>
+      <nav aria-label={tr("breadcrumb")} className="rotulo-tecnico">
+        <Link to="/" className="hover:text-foreground">{tr("operacoes")}</Link> /{" "}
+        <Link to="/eventos/$eventoId" params={{ eventoId: evento.id }} className="hover:text-foreground">{evento.nome}</Link>{" "}{tr("inscricao")}</nav>
+      <h1 className="titulo-pagina mt-2">{tr("garantir_vaga")}</h1>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
         <div className="min-w-0 space-y-8">
           {vemDaComunidade && (
-            <p role="status" className="border-l-2 border-accent bg-accent/5 px-4 py-3 text-sm">
-              A comunidade desta operação é exclusiva para inscritos. Conclua a inscrição para entrar nos fóruns e acompanhar os avisos da organização.
-            </p>
+            <p role="status" className="border-l-2 border-accent bg-accent/5 px-4 py-3 text-sm">{tr("a_comunidade_desta_operacao_e_exclusiva")}</p>
           )}
           {cortesia && (
-            <p className="border-l-2 border-accent bg-accent/5 px-4 py-3 text-sm">
-              Cortesia para {cortesia.nomeConvidado}. O resgate depende de disponibilidade e não aceita cupom adicional.
-            </p>
+            <p className="border-l-2 border-accent bg-accent/5 px-4 py-3 text-sm">{tr("cortesia_para_nomeconvidado_o_resgate_de", { nomeConvidado: cortesia.nomeConvidado })}</p>
           )}
           {reservaAberta && (
             <div role="status" className="border-l-2 border-warning bg-warning/10 px-4 py-3 text-sm">
-              <p className="font-medium text-warning">{retornoPagamento === "cancelado" ? "Pagamento não concluído" : "Você tem uma reserva aguardando pagamento"}</p>
-              <p className="mt-0.5 text-muted-foreground">
-                Sua vaga fica reservada até {new Date(reservaAberta.pagamento!.expiraEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}.
-                Conclua o pagamento em <Link to="/app/ingressos" className="underline">Meus ingressos</Link> ou faça uma nova inscrição abaixo (a reserva anterior é substituída).
-              </p>
+              <p className="font-medium text-warning">{retornoPagamento === "cancelado" ? tr("pagamento_nao_concluido") : tr("voce_tem_uma_reserva_aguardando_pagament")}</p>
+              <p className="mt-0.5 text-muted-foreground">{tr("sua_vaga_fica_reservada_ate")}{" "}{new Date(reservaAberta.pagamento!.expiraEm).toLocaleTimeString(localeAtual(), { hour: "2-digit", minute: "2-digit" })}{tr("conclua_o_pagamento_em")}{" "}<Link to="/app/ingressos" className="underline">{tr("meus_ingressos")}</Link>{" "}{tr("ou_faca_uma_nova_inscricao_abaixo")}</p>
             </div>
           )}
           {!cortesia && !algumDisponivel && (
             <div role="status" className="border-l-2 border-warning bg-warning/10 px-4 py-3 text-sm">
-              <p className="font-medium text-warning">Inscrições indisponíveis no momento</p>
+              <p className="font-medium text-warning">{tr("inscricoes_indisponiveis_no_momento")}</p>
               <p className="mt-0.5 text-muted-foreground">
-                {proximaAbertura ? `As vendas abrem em ${formatarDataBR(proximaAbertura)}.` : "A organização ainda não abriu um lote de venda para esta operação."}
+                {proximaAbertura ? tr("as_vendas_abrem_em_proximaabertura", { proximaAbertura: formatarDataBR(proximaAbertura) }) : tr("a_organizacao_ainda_nao_abriu_um")}
               </p>
             </div>
           )}
 
-          <Etapa n={1} titulo="Ingresso" detalhe={tipo && !cortesia ? `Lote vigente: ${lote ? lote.nome : "nenhum lote vigente"}` : undefined}>
-            <RadioGroup value={tipoId} onValueChange={(v) => void aoTrocarTipo(v)} disabled={!!cortesia} aria-label="Tipo de ingresso" className="grid gap-2 sm:grid-cols-2">
+          <Etapa n={1} titulo={tr("ingresso")} detalhe={tipo && !cortesia ? tr("lote_vigente", { lote: lote ? lote.nome : tr("nenhum_lote_vigente") }) : undefined}>
+            <RadioGroup value={tipoId} onValueChange={(v) => void aoTrocarTipo(v)} disabled={!!cortesia} aria-label={tr("tipo_de_ingresso")} className="grid gap-2 sm:grid-cols-2">
               {tiposAtivos.map((t) => {
                 const d = disponibilidades.get(t.id)!;
                 const off = !cortesia && !d.disponivel;
@@ -275,7 +266,7 @@ function PaginaInscricao() {
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold">{t.nome}</span>
                       <span className="mt-0.5 block text-xs text-muted-foreground">
-                        {cortesia ? "Cortesia" : d.disponivel ? "Disponível" : `Indisponível: ${TEXTO_MOTIVO[d.motivo]}${d.motivo === "agendado" && d.inicioVendas ? `, abre em ${formatarDataBR(d.inicioVendas)}` : ""}`}
+                        {cortesia ? tr("cortesia") : d.disponivel ? tr("disponivel") : tr("indisponivel_valorvalor2", { valor: TEXTO_MOTIVO[d.motivo], valor2: d.motivo === "agendado" && d.inicioVendas ? tr("abre_em", { data: formatarDataBR(d.inicioVendas) }) : "" })}
                       </span>
                     </span>
                     <span className="font-display text-2xl font-bold tabular-nums leading-none">{cortesia ? "—" : d.disponivel ? formatarBRL(d.precoCentavos) : "—"}</span>
@@ -285,8 +276,8 @@ function PaginaInscricao() {
             </RadioGroup>
           </Etapa>
 
-          <Etapa n={2} titulo="Exército">
-            <RadioGroup value={exercitoId} onValueChange={setExercitoId} aria-label="Exército" className="grid gap-2 sm:grid-cols-2">
+          <Etapa n={2} titulo={tr("exercito")}>
+            <RadioGroup value={exercitoId} onValueChange={setExercitoId} aria-label={tr("exercito")} className="grid gap-2 sm:grid-cols-2">
               {evento.exercitos.map((ex) => {
                 const ocupadas = ocupacaoExercito(base, evento.id, ex.id);
                 const livres = ex.capacidade - ocupadas;
@@ -297,7 +288,7 @@ function PaginaInscricao() {
                     <span className="flex items-center gap-3">
                       <RadioGroupItem id={`ex-${ex.id}`} value={ex.id} disabled={livres <= 0} />
                       <span className="flex-1 font-display text-xl font-bold uppercase leading-none">{ex.nome}</span>
-                      <span className="font-mono text-xs text-muted-foreground">{livres > 0 ? `${livres} vagas` : "sem vagas"}</span>
+                      <span className="font-mono text-xs text-muted-foreground">{livres > 0 ? tr("livres_vagas", { livres }) : tr("sem_vagas")}</span>
                     </span>
                     <span className="h-1 overflow-hidden rounded-full bg-secondary" aria-hidden><span className="block h-full bg-accent" style={{ width: `${pct}%` }} /></span>
                   </Label>
@@ -307,31 +298,31 @@ function PaginaInscricao() {
           </Etapa>
 
           {!cortesia && (vouchers.length > 0 || !voucherId) && (
-            <Etapa n={3} titulo="Desconto" detalhe="Opcional">
+            <Etapa n={3} titulo={tr("desconto")} detalhe={tr("opcional")}>
               <div className="space-y-4">
                 {vouchers.length > 0 && (
-                  <Campo rotulo="Benefício de recompensa" htmlFor="voucher">
+                  <Campo rotulo={tr("beneficio_de_recompensa")} htmlFor="voucher">
                     <NativeSelect id="voucher" value={voucherId} onChange={(e) => { setVoucherId(e.target.value); setCupomAplicado(null); }}>
-                      <option value="">Não usar benefício</option>
+                      <option value="">{tr("nao_usar_beneficio")}</option>
                       {vouchers.map((v) => (
-                        <option key={v.id} value={v.id}>{v.beneficio.nome} — {descreverBeneficio(v.beneficio)} (até {formatarDataBR(v.beneficio.resgatarAte)})</option>
+                        <option key={v.id} value={v.id}>{tr("nome_beneficio_ate_resgatarate", { nome: v.beneficio.nome, beneficio: descreverBeneficio(v.beneficio), resgatarAte: formatarDataBR(v.beneficio.resgatarAte) })}</option>
                       ))}
                     </NativeSelect>
-                    <p className="text-xs text-muted-foreground">O benefício não reserva vaga e não acumula com cupom. Ele só é consumido quando a inscrição for confirmada.</p>
-                    {voucher && tipo && !voucherServe && <p role="alert" className="text-sm text-destructive">Este benefício não vale para o ingresso escolhido.</p>}
+                    <p className="text-xs text-muted-foreground">{tr("o_beneficio_nao_reserva_vaga_e")}</p>
+                    {voucher && tipo && !voucherServe && <p role="alert" className="text-sm text-destructive">{tr("este_beneficio_nao_vale_para_o")}</p>}
                   </Campo>
                 )}
                 {!voucherId && (
-                  <Campo rotulo="Cupom" htmlFor="cupom">
+                  <Campo rotulo={tr("cupom")} htmlFor="cupom">
                     {cupomAplicado ? (
                       <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm text-success" role="status">
-                        <span><span className="font-mono font-semibold">{cupomAplicado.codigo}</span> aplicado: {cupomAplicado.percentual}% de desconto.</span>
-                        <Button type="button" variant="link" size="none" className="text-success" onClick={removerCupom}>Remover</Button>
+                        <span><span className="font-mono font-semibold">{cupomAplicado.codigo}</span>{" "}{tr("aplicado_percentual_de_desconto", { percentual: cupomAplicado.percentual })}</span>
+                        <Button type="button" variant="link" size="none" className="text-success" onClick={removerCupom}>{tr("remover")}</Button>
                       </div>
                     ) : (
                       <div className="flex max-w-md gap-2">
-                        <Input id="cupom" value={cupom} onChange={(e) => { setCupom(e.target.value); setErroCupom(""); }} placeholder="CÓDIGO" aria-describedby="cupom-msg" className="font-mono uppercase" />
-                        <Button type="button" variant="outline" onClick={aoAplicarCupom} disabled={!cupom.trim()}>Aplicar</Button>
+                        <Input id="cupom" value={cupom} onChange={(e) => { setCupom(e.target.value); setErroCupom(""); }} placeholder={tr("codigo")} aria-describedby="cupom-msg" className="font-mono uppercase" />
+                        <Button type="button" variant="outline" onClick={aoAplicarCupom} disabled={!cupom.trim()}>{tr("aplicar")}</Button>
                       </div>
                     )}
                     <div id="cupom-msg">
@@ -345,38 +336,38 @@ function PaginaInscricao() {
           )}
         </div>
 
-        <aside aria-label="Resumo do pedido" className="overflow-hidden rounded-lg border border-border lg:sticky lg:top-24">
+        <aside aria-label={tr("resumo_do_pedido")} className="overflow-hidden rounded-lg border border-border lg:sticky lg:top-24">
           <div className="relative aspect-[16/9] bg-black text-white">
             {evento.imagemUrl && <img src={evento.imagemUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />}
             <span className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" aria-hidden />
             <span className="absolute inset-x-0 bottom-0 p-4">
-              <span className="block font-mono text-[11px] uppercase tracking-wider text-white/75">{formatarDataBR(evento.inicioEm)} · {String(inicio.getHours()).padStart(2, "0")}h · {evento.cidade}/{evento.uf}</span>
+              <span className="block font-mono text-[11px] uppercase tracking-wider text-white/75">{tr("inicioem_valorh_cidade_uf", { inicioEm: formatarDataBR(evento.inicioEm), valor: String(inicio.getHours()).padStart(2, "0"), cidade: evento.cidade, uf: evento.uf })}</span>
               <span className="mt-1 block font-display text-2xl font-bold uppercase leading-none">{evento.nome}</span>
             </span>
           </div>
           <div className="p-4">
-            <p className="rotulo-tecnico">Resumo</p>
+            <p className="rotulo-tecnico">{tr("resumo")}</p>
             <dl className="mt-2 divide-y divide-border text-sm">
-              <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">Ingresso</dt><dd className="text-right">{tipo?.nome ?? "—"}</dd></div>
-              {!cortesia && <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">Lote</dt><dd className="text-right">{tipo ? lote?.nome ?? "—" : "—"}</dd></div>}
-              <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">Exército</dt><dd className="text-right">{exercitoSel?.nome ?? "—"}</dd></div>
-              <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">Valor</dt><dd className="font-mono tabular-nums">{!tipo || impedimento ? "—" : <Preco centavos={preco} />}</dd></div>
+              <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tr("ingresso")}</dt><dd className="text-right">{tipo?.nome ?? "—"}</dd></div>
+              {!cortesia && <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tr("lote")}</dt><dd className="text-right">{tipo ? lote?.nome ?? "—" : "—"}</dd></div>}
+              <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tr("exercito")}</dt><dd className="text-right">{exercitoSel?.nome ?? "—"}</dd></div>
+              <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tr("valor")}</dt><dd className="font-mono tabular-nums">{!tipo || impedimento ? "—" : <Preco centavos={preco} />}</dd></div>
               {tipo && !voucherId && cupomAplicado && !impedimento && (
-                <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">Cupom {cupomAplicado.codigo} ({cupomAplicado.percentual}%)</dt><dd className="font-mono tabular-nums text-success">−<Preco centavos={desconto} /></dd></div>
+                <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tr("cupom_codigo_percentual", { codigo: cupomAplicado.codigo, percentual: cupomAplicado.percentual })}</dt><dd className="font-mono tabular-nums text-success">−<Preco centavos={desconto} /></dd></div>
               )}
-              {tipo && descontoVoucher > 0 && <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">Benefício</dt><dd className="font-mono tabular-nums text-success">−<Preco centavos={descontoVoucher} /></dd></div>}
+              {tipo && descontoVoucher > 0 && <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tr("beneficio")}</dt><dd className="font-mono tabular-nums text-success">−<Preco centavos={descontoVoucher} /></dd></div>}
               {tipo && !impedimento && taxaServico > 0 && (
-                <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">Taxa de serviço ({String(taxaCompradorPercentual).replace(".", ",")}%)</dt><dd className="font-mono tabular-nums">+<Preco centavos={taxaServico} /></dd></div>
+                <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tr("taxa_de_servico_valor", { valor: String(taxaCompradorPercentual).replace(".", ",") })}</dt><dd className="font-mono tabular-nums">+<Preco centavos={taxaServico} /></dd></div>
               )}
             </dl>
             <div className="mt-2 flex items-end justify-between border-t border-border pt-3">
-              <span className="text-sm font-medium">{taxaServico > 0 ? "Total a pagar" : "Valor final"}</span>
+              <span className="text-sm font-medium">{taxaServico > 0 ? tr("total_a_pagar") : tr("valor_final")}</span>
               <span className="font-display text-4xl font-bold leading-none tabular-nums">
                 {!tipo || impedimento ? "—" : <Preco centavos={valorFinal + (taxaServico > 0 ? taxaServico : 0)} />}
               </span>
             </div>
-            {cortesia && <p className="mt-1 text-right text-xs text-muted-foreground">Cortesia</p>}
-            {tipo && !impedimento && !cortesia && preco > 0 && desconto >= preco && <p className="mt-1 text-right text-xs text-muted-foreground">Inscrição integralmente descontada.</p>}
+            {cortesia && <p className="mt-1 text-right text-xs text-muted-foreground">{tr("cortesia")}</p>}
+            {tipo && !impedimento && !cortesia && preco > 0 && desconto >= preco && <p className="mt-1 text-right text-xs text-muted-foreground">{tr("inscricao_integralmente_descontada")}</p>}
 
             {impedimento && algumDisponivel && (
               <p role="alert" className="mt-3 border-l-2 border-warning bg-warning/10 px-3 py-2 text-sm text-warning">{impedimento}</p>
@@ -384,12 +375,12 @@ function PaginaInscricao() {
             {erro && <p role="alert" className="mt-3 border-l-2 border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
 
             <Button onClick={aoConfirmar} disabled={confirmando || !!impedimento} size="lg" className="mt-4 w-full">
-              {confirmando ? (vaiPagar ? "Abrindo pagamento..." : "Confirmando...") : vaiPagar ? "Ir para o pagamento" : "Confirmar inscrição"}
+              {confirmando ? (vaiPagar ? tr("abrindo_pagamento") : tr("confirmando")) : vaiPagar ? tr("ir_para_o_pagamento") : tr("confirmar_inscricao")}
             </Button>
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
               {pagamentoOnline
-                ? "O pagamento é feito no ambiente seguro do Stripe; a plataforma não recebe nem guarda dados do seu cartão. A vaga fica reservada por cerca de 30 minutos enquanto você paga."
-                : "A plataforma não processa pagamentos: não pedimos cartão, PIX ou dados de pagamento."}
+                ? tr("o_pagamento_e_feito_no_ambiente")
+                : tr("a_plataforma_nao_processa_pagamentos_nao")}
             </p>
           </div>
         </aside>

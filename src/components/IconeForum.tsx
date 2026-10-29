@@ -1,6 +1,7 @@
 // Ícones próprios dos fóruns da comunidade (traço reto, cantos vivos, no estilo da marca).
 // O fórum guarda um emoji legado em `icone`; aqui ele vira o desenho correspondente.
 import type { ReactNode } from "react";
+import { tr } from "@/i18n/components/IconeForum";
 
 type Tipo = "todos" | "avisos" | "geral" | "duvidas" | "logistica" | "fotos" | "preparacao" | "equipamento" | "outro";
 
@@ -64,12 +65,12 @@ export function IconeForum({ forum, ativo = false, tamanho = "md" }: {
 
 /** Opções do editor de fórum. O valor salvo continua sendo o emoji (campo `icone`), sem mudar o banco. */
 export const OPCOES_ICONE_FORUM: { valor: string; rotulo: string }[] = [
-  { valor: "", rotulo: "Automático (pelo nome)" },
-  { valor: "📢", rotulo: "Rádio · avisos" },
-  { valor: "💬", rotulo: "Balões · conversa" },
-  { valor: "❓", rotulo: "Prancheta · dúvidas" },
-  { valor: "🚗", rotulo: "Viatura · logística" },
-  { valor: "📷", rotulo: "Câmera · fotos" },
-  { valor: "🎯", rotulo: "Retícula · preparação" },
-  { valor: "🪖", rotulo: "Colete · equipamento" },
+  { valor: "", get rotulo() { return tr("automatico_pelo_nome"); } },
+  { valor: "📢", get rotulo() { return tr("radio_avisos"); } },
+  { valor: "💬", get rotulo() { return tr("baloes_conversa"); } },
+  { valor: "❓", get rotulo() { return tr("prancheta_duvidas"); } },
+  { valor: "🚗", get rotulo() { return tr("viatura_logistica"); } },
+  { valor: "📷", get rotulo() { return tr("camera_fotos"); } },
+  { valor: "🎯", get rotulo() { return tr("reticula_preparacao"); } },
+  { valor: "🪖", get rotulo() { return tr("colete_equipamento"); } },
 ];

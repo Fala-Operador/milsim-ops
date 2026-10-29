@@ -7,6 +7,7 @@ import {
   type AcaoStatus,
 } from "@/lib/suporte";
 import type { AnexoChamado, AnexoCompartilhado, BaseDados, Chamado, MensagemChamado, StatusChamado, Usuario } from "@/lib/domain/types";
+import { tr } from "@/i18n/services/suporte";
 
 const agora = () => new Date().toISOString();
 const ID_CLIENTE = /^[a-z0-9-]{8,64}$/i;
@@ -14,13 +15,13 @@ const ID_CLIENTE = /^[a-z0-9-]{8,64}$/i;
 export const idDoChamado = (clienteId: string) => `cha-${clienteId.replace(/[^a-z0-9]/gi, "").slice(0, 24)}`;
 
 function exigirIdCliente(id: string) {
-  if (!ID_CLIENTE.test(id)) throw new ErroDominio("cliente", "Identificador inválido.");
+  if (!ID_CLIENTE.test(id)) throw new ErroDominio("cliente", tr("identificador_invalido"));
 }
 
 export function obterChamado(b: BaseDados, u: Usuario, id: string): Chamado {
   const c = b.chamados.find((x) => x.id === id);
   // Mesmo erro para inexistente e sem acesso: não revela que o chamado existe.
-  if (!c || !podeVer(b, u, c)) throw new ErroDominio("chamado", "Chamado não encontrado.");
+  if (!c || !podeVer(b, u, c)) throw new ErroDominio("chamado", tr("chamado_nao_encontrado"));
   return c;
 }
 
@@ -70,11 +71,11 @@ export interface DadosAbertura {
 
 export function validarAbertura(d: DadosAbertura) {
   exigirIdCliente(d.clienteId);
-  if (!d.assunto.trim()) throw new ErroDominio("assunto", "Informe o assunto.");
-  if (!d.descricao.trim()) throw new ErroDominio("descricao", "Descreva a solicitação.");
-  if (d.descricao.length > LIMITE_MENSAGEM) throw new ErroDominio("descricao", "Descrição muito longa.");
-  if (!(CATEGORIAS_SUPORTE as readonly string[]).includes(d.categoria)) throw new ErroDominio("categoria", "Categoria inválida.");
-  if (d.tipo === "evento" && !d.eventoId) throw new ErroDominio("evento", "Escolha o evento.");
+  if (!d.assunto.trim()) throw new ErroDominio("assunto", tr("informe_o_assunto"));
+  if (!d.descricao.trim()) throw new ErroDominio("descricao", tr("descreva_a_solicitacao"));
+  if (d.descricao.length > LIMITE_MENSAGEM) throw new ErroDominio("descricao", tr("descricao_muito_longa"));
+  if (!(CATEGORIAS_SUPORTE as readonly string[]).includes(d.categoria)) throw new ErroDominio("categoria", tr("categoria_invalida"));
+  if (d.tipo === "evento" && !d.eventoId) throw new ErroDominio("evento", tr("escolha_o_evento"));
 }
 
 export function abrirChamado(u: Usuario, d: DadosAbertura): Chamado {
@@ -83,11 +84,11 @@ export function abrirChamado(u: Usuario, d: DadosAbertura): Chamado {
     const id = idDoChamado(d.clienteId);
     const existente = b.chamados.find((x) => x.id === id);
     if (existente) {
-      if (existente.solicitanteId !== u.id) throw new ErroDominio("cliente", "Identificador inválido.");
+      if (existente.solicitanteId !== u.id) throw new ErroDominio("cliente", tr("identificador_invalido"));
       return existente; // clique repetido / reenvio: devolve o mesmo chamado
     }
     const eventoId = d.tipo === "evento" ? d.eventoId : undefined;
-    if (eventoId && !b.eventos.some((e) => e.id === eventoId)) throw new ErroDominio("evento", "Evento não encontrado.");
+    if (eventoId && !b.eventos.some((e) => e.id === eventoId)) throw new ErroDominio("evento", tr("evento_nao_encontrado"));
     const t = agora();
     const c: Chamado = {
       id, eventoId, solicitanteId: u.id, assunto: d.assunto.trim().slice(0, 140), categoria: d.categoria,
@@ -96,7 +97,7 @@ export function abrirChamado(u: Usuario, d: DadosAbertura): Chamado {
     };
     if (d.vinculadoA) {
       const anterior = b.chamados.find((x) => x.id === d.vinculadoA);
-      if (!anterior || anterior.solicitanteId !== u.id) throw new ErroDominio("vinculo", "Chamado anterior não encontrado.");
+      if (!anterior || anterior.solicitanteId !== u.id) throw new ErroDominio("vinculo", tr("chamado_anterior_nao_encontrado"));
       c.mensagens.unshift({ id: gerarId("his"), autorId: u.id, corpo: `Continuação do protocolo ${protocolo(anterior)}`, criadoEm: t, tipo: "sistema", acao: { tipo: "vinculo", valor: anterior.id } });
     }
     b.chamados.push(c);
@@ -108,19 +109,19 @@ export function abrirChamado(u: Usuario, d: DadosAbertura): Chamado {
 export function enviarMensagem(u: Usuario, chamadoId: string, clienteId: string, corpo: string, anexo?: AnexoChamado, encaminhamentoId?: string): MensagemChamado {
   exigirIdCliente(clienteId);
   const texto = corpo.trim();
-  if (!texto && !anexo) throw new ErroDominio("corpo", "Escreva a mensagem.");
-  if (texto.length > LIMITE_MENSAGEM) throw new ErroDominio("corpo", "Mensagem muito longa.");
+  if (!texto && !anexo) throw new ErroDominio("corpo", tr("escreva_a_mensagem"));
+  if (texto.length > LIMITE_MENSAGEM) throw new ErroDominio("corpo", tr("mensagem_muito_longa"));
   return mutarBase((b) => {
     const c = obterChamado(b, u, chamadoId);
     const repetida = c.mensagens.find((m) => m.clienteId === clienteId);
     if (repetida) return repetida; // reenvio após falha de rede: não duplica
-    if (c.status === "fechado") throw new ErroDominio("status", "Chamado fechado: somente leitura.");
+    if (c.status === "fechado") throw new ErroDominio("status", tr("chamado_fechado_somente_leitura"));
     const admin = podeAtender(b, u, c);
 
     if (encaminhamentoId) {
       // Comunicação interna: só administração e a organização destinatária; nunca chega ao participante.
       const enc = encaminhamentos(b, c).find((e) => e.id === encaminhamentoId);
-      if (!enc || (!admin && !(u.perfil === "organizador" && u.organizacaoId === enc.organizacaoId))) throw new ErroDominio("chamado", "Chamado não encontrado.");
+      if (!enc || (!admin && !(u.perfil === "organizador" && u.organizacaoId === enc.organizacaoId))) throw new ErroDominio("chamado", tr("chamado_nao_encontrado"));
       const m: MensagemChamado = { id: gerarId("msg"), autorId: u.id, corpo: texto, criadoEm: agora(), tipo: "mensagem", clienteId, anexo, canal: "interno", encaminhamentoId };
       c.mensagens.push(m);
       c.atualizadoEm = m.criadoEm;
@@ -130,7 +131,7 @@ export function enviarMensagem(u: Usuario, chamadoId: string, clienteId: string,
     }
 
     const doSolicitante = c.solicitanteId === u.id;
-    if (!doSolicitante && !admin) throw new ErroDominio("sem_permissao", "A organização responde apenas à administração.");
+    if (!doSolicitante && !admin) throw new ErroDominio("sem_permissao", tr("a_organizacao_responde_apenas_a_administ"));
     let novo: StatusChamado;
     try { novo = statusAposMensagem(c, doSolicitante); } catch (e) { throw new ErroDominio("status", (e as Error).message); }
     const m: MensagemChamado = { id: gerarId("msg"), autorId: u.id, corpo: texto, criadoEm: agora(), tipo: "mensagem", clienteId, anexo, canal: "participante" };
@@ -147,20 +148,20 @@ export function enviarMensagem(u: Usuario, chamadoId: string, clienteId: string,
 export function encaminhar(u: Usuario, chamadoId: string, clienteId: string, orientacao: string, anexosIds: string[]): string {
   exigirIdCliente(clienteId);
   const texto = orientacao.trim();
-  if (!texto) throw new ErroDominio("orientacao", "Descreva a demanda para o organizador.");
-  if (texto.length > LIMITE_MENSAGEM) throw new ErroDominio("orientacao", "Orientação muito longa.");
+  if (!texto) throw new ErroDominio("orientacao", tr("descreva_a_demanda_para_o_organizador"));
+  if (texto.length > LIMITE_MENSAGEM) throw new ErroDominio("orientacao", tr("orientacao_muito_longa"));
   return mutarBase((b) => {
     const c = obterChamado(b, u, chamadoId);
-    if (!podeAtender(b, u, c)) throw new ErroDominio("sem_permissao", "Somente a administração encaminha chamados.");
+    if (!podeAtender(b, u, c)) throw new ErroDominio("sem_permissao", tr("somente_a_administracao_encaminha_chamad"));
     const repetido = c.mensagens.find((m) => m.clienteId === clienteId);
     if (repetido?.acao?.tipo === "encaminhamento") return repetido.acao.valor;
-    if (c.status === "fechado") throw new ErroDominio("status", "Chamado fechado: somente leitura.");
+    if (c.status === "fechado") throw new ErroDominio("status", tr("chamado_fechado_somente_leitura"));
     const ev = c.eventoId ? b.eventos.find((e) => e.id === c.eventoId) : undefined;
-    if (!ev) throw new ErroDominio("evento", "Somente chamados de evento podem ser encaminhados à organização.");
+    if (!ev) throw new ErroDominio("evento", tr("somente_chamados_de_evento_podem_ser"));
     const anexos: AnexoCompartilhado[] = [];
     for (const id of new Set(anexosIds)) {
       const m = c.mensagens.find((x) => x.id === id && canalDe(x) === "participante" && x.anexo);
-      if (!m?.anexo) throw new ErroDominio("anexo", "Anexo não encontrado.");
+      if (!m?.anexo) throw new ErroDominio("anexo", tr("anexo_nao_encontrado"));
       anexos.push({ mensagemId: m.id, nome: m.anexo.nome, tipo: m.anexo.tipo, tamanho: m.anexo.tamanho });
     }
     const encId = gerarId("enc");
@@ -178,8 +179,8 @@ export function marcarRetorno(u: Usuario, chamadoId: string, encaminhamentoId: s
   mutarBase((b) => {
     const c = obterChamado(b, u, chamadoId);
     const enc = encaminhamentos(b, c).find((e) => e.id === encaminhamentoId);
-    if (!enc || u.perfil !== "organizador" || u.organizacaoId !== enc.organizacaoId) throw new ErroDominio("chamado", "Chamado não encontrado.");
-    if (c.status === "fechado") throw new ErroDominio("status", "Chamado fechado: somente leitura.");
+    if (!enc || u.perfil !== "organizador" || u.organizacaoId !== enc.organizacaoId) throw new ErroDominio("chamado", tr("chamado_nao_encontrado"));
+    if (c.status === "fechado") throw new ErroDominio("status", tr("chamado_fechado_somente_leitura"));
     if (enc.situacao === "retorno_enviado") return;
     historico(c, u.id, "Retorno enviado à administração.", { tipo: "retorno", valor: enc.id }, { canal: "interno", encaminhamentoId: enc.id });
     notificar(b, admins(b, c), u.id, "Retorno do organizador recebido", `Protocolo ${protocolo(c)}.`, c.id);
@@ -199,12 +200,12 @@ export function marcarChamadoLido(u: Usuario, chamadoId: string, ate: string): v
 export function definirResponsavel(u: Usuario, chamadoId: string, novoId?: string): void {
   mutarBase((b) => {
     const c = obterChamado(b, u, chamadoId);
-    if (!podeAtender(b, u, c)) throw new ErroDominio("sem_permissao", "Você não atende este chamado.");
-    if (c.status === "fechado") throw new ErroDominio("status", "Chamado fechado: somente leitura.");
+    if (!podeAtender(b, u, c)) throw new ErroDominio("sem_permissao", tr("voce_nao_atende_este_chamado"));
+    if (c.status === "fechado") throw new ErroDominio("status", tr("chamado_fechado_somente_leitura"));
     const alvoId = novoId ?? u.id;
-    if (alvoId !== u.id && u.perfil !== "admin") throw new ErroDominio("sem_permissao", "Somente a administração atribui chamados a outras pessoas.");
+    if (alvoId !== u.id && u.perfil !== "admin") throw new ErroDominio("sem_permissao", tr("somente_a_administracao_atribui_chamados"));
     const alvo = b.usuarios.find((x) => x.id === alvoId);
-    if (!alvo || !podeAtender(b, alvo, c)) throw new ErroDominio("responsavel", "Essa pessoa não pode atender este chamado.");
+    if (!alvo || !podeAtender(b, alvo, c)) throw new ErroDominio("responsavel", tr("essa_pessoa_nao_pode_atender_este"));
     if (responsavelId(c) === alvoId) return;
     const nome = alvo.nomeExibicao || alvo.nomeCompleto;
     historico(c, u.id, alvoId === u.id ? `${nome} assumiu o atendimento.` : `Atendimento atribuído a ${nome}.`, { tipo: "responsavel", valor: alvoId });
@@ -220,7 +221,7 @@ export function alterarStatus(u: Usuario, chamadoId: string, acao: AcaoStatus, d
     const solicitante = c.solicitanteId === u.id;
     let novo: StatusChamado;
     try { novo = transicao(c, acao, atende, solicitante); } catch (e) { throw new ErroDominio("status", (e as Error).message); }
-    if (acao === "resolver" && !descricao?.trim()) throw new ErroDominio("solucao", "Descreva brevemente a solução.");
+    if (acao === "resolver" && !descricao?.trim()) throw new ErroDominio("solucao", tr("descreva_brevemente_a_solucao"));
     const textos: Record<AcaoStatus, string> = {
       aguardar: "Aguardando resposta do participante.",
       resolver: (descricao ?? "").trim().slice(0, 500),

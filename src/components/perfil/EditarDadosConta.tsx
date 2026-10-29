@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Campo, Modal } from "@/components/ui";
+import { tr } from "@/i18n/components/perfil/EditarDadosConta";
 
 const UFS = Object.keys(NOMES_UF).sort((a, b) => NOMES_UF[a]!.localeCompare(NOMES_UF[b]!));
 
@@ -60,30 +61,28 @@ export function EditarDadosConta({ usuario, aberto, onFechar }: { usuario: Usuar
       await atualizarDadosConta({ ...f, complemento: f.complemento || undefined, instagram: f.instagram || undefined, squad: f.squad || undefined });
       onFechar();
     } catch (er) {
-      setErro(er instanceof Error ? er.message : "Não foi possível salvar.");
+      setErro(er instanceof Error ? er.message : tr("nao_foi_possivel_salvar"));
     } finally {
       setSalvando(false);
     }
   };
 
   return (
-    <Modal aberto={aberto} titulo="Editar meus dados" onFechar={onFechar}>
+    <Modal aberto={aberto} titulo={tr("editar_meus_dados")} onFechar={onFechar}>
       <form onSubmit={salvar} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <Bloqueado rotulo="CPF" valor={mascararCpf(usuario.cpf)} />
-          <Bloqueado rotulo="E-mail" valor={usuario.email} />
-          <p className="-mt-2 text-xs text-muted-foreground sm:col-span-2">
-            CPF e e-mail identificam a sua conta e não podem ser alterados aqui. Para corrigi-los, abra um chamado no suporte.
-          </p>
+          <Bloqueado rotulo={tr("e_mail")} valor={usuario.email} />
+          <p className="-mt-2 text-xs text-muted-foreground sm:col-span-2">{tr("cpf_e_e_mail_identificam_a")}</p>
           <div className="sm:col-span-2">
-            <Campo rotulo="Nome completo" htmlFor="conta-nome">
+            <Campo rotulo={tr("nome_completo")} htmlFor="conta-nome">
               <Input id="conta-nome" autoComplete="name" value={f.nomeCompleto} onChange={set("nomeCompleto")} required />
             </Campo>
           </div>
-          <Campo rotulo="Data de nascimento" htmlFor="conta-nasc">
+          <Campo rotulo={tr("data_de_nascimento")} htmlFor="conta-nasc">
             <Input id="conta-nasc" type="date" value={f.dataNascimento} onChange={set("dataNascimento")} required />
           </Campo>
-          <Campo rotulo="WhatsApp" htmlFor="conta-whats">
+          <Campo rotulo={tr("whatsapp")} htmlFor="conta-whats">
             <Input id="conta-whats" inputMode="tel" autoComplete="tel" value={f.whatsapp} onChange={(e) => setF((p) => ({ ...p, whatsapp: mascaraTelefone(e.target.value) }))} placeholder="(11) 99999-9999" required />
           </Campo>
           <Campo rotulo="CEP" htmlFor="conta-cep">
@@ -92,38 +91,38 @@ export function EditarDadosConta({ usuario, aberto, onFechar }: { usuario: Usuar
               <p aria-live="polite" className={`text-xs ${buscaCep.status === "erro" ? "text-destructive" : "text-muted-foreground"}`}>{textoBuscaCep(buscaCep)}</p>
             )}
           </Campo>
-          <Campo rotulo="Logradouro" htmlFor="conta-logr">
+          <Campo rotulo={tr("logradouro")} htmlFor="conta-logr">
             <Input id="conta-logr" autoComplete="address-line1" value={f.logradouro} onChange={set("logradouro")} required />
           </Campo>
-          <Campo rotulo="Número" htmlFor="conta-num">
+          <Campo rotulo={tr("numero")} htmlFor="conta-num">
             <Input id="conta-num" value={f.numero} onChange={set("numero")} required />
           </Campo>
-          <Campo rotulo="Complemento (opcional)" htmlFor="conta-comp">
+          <Campo rotulo={tr("complemento_opcional")} htmlFor="conta-comp">
             <Input id="conta-comp" autoComplete="address-line2" value={f.complemento} onChange={set("complemento")} />
           </Campo>
-          <Campo rotulo="Bairro" htmlFor="conta-bairro">
+          <Campo rotulo={tr("bairro")} htmlFor="conta-bairro">
             <Input id="conta-bairro" value={f.bairro} onChange={set("bairro")} required />
           </Campo>
-          <Campo rotulo="Cidade" htmlFor="conta-cidade">
+          <Campo rotulo={tr("cidade")} htmlFor="conta-cidade">
             <Input id="conta-cidade" autoComplete="address-level2" value={f.cidade} onChange={set("cidade")} required />
           </Campo>
-          <Campo rotulo="UF / Estado" htmlFor="conta-uf">
+          <Campo rotulo={tr("uf_estado")} htmlFor="conta-uf">
             <NativeSelect id="conta-uf" value={f.uf} onChange={set("uf")} required>
-              <option value="">Selecione</option>
+              <option value="">{tr("selecione")}</option>
               {UFS.map((uf) => <option key={uf} value={uf}>{uf} — {NOMES_UF[uf]}</option>)}
             </NativeSelect>
           </Campo>
-          <Campo rotulo="Instagram (opcional)" htmlFor="conta-insta">
+          <Campo rotulo={tr("instagram_opcional")} htmlFor="conta-insta">
             <Input id="conta-insta" value={f.instagram} onChange={set("instagram")} placeholder="@seuperfil" />
           </Campo>
-          <Campo rotulo="Squad (opcional)" htmlFor="conta-squad">
+          <Campo rotulo={tr("squad_opcional")} htmlFor="conta-squad">
             <Input id="conta-squad" value={f.squad} onChange={set("squad")} />
           </Campo>
         </div>
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onFechar} disabled={salvando}>Cancelar</Button>
-          <Button type="submit" disabled={salvando}>{salvando ? "Salvando…" : "Salvar alterações"}</Button>
+          <Button type="button" variant="outline" onClick={onFechar} disabled={salvando}>{tr("cancelar")}</Button>
+          <Button type="submit" disabled={salvando}>{salvando ? tr("salvando") : tr("salvar_alteracoes")}</Button>
         </div>
       </form>
     </Modal>

@@ -5,6 +5,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { tr } from "@/i18n/components/ui/dialog";
 
 const Dialog = DialogPrimitive.Root;
 
@@ -51,7 +52,7 @@ const DialogContent = React.forwardRef<
       {showCloseButton && (
         <DialogPrimitive.Close className="absolute right-4 top-4 cursor-pointer rounded-sm opacity-70 transition-opacity hover:opacity-100 disabled:pointer-events-none">
           <X className="h-4 w-4" />
-          <span className="sr-only">Fechar</span>
+          <span className="sr-only">{tr("fechar")}</span>
         </DialogPrimitive.Close>
       )}
     </DialogPrimitive.Content>

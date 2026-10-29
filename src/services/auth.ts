@@ -16,6 +16,7 @@ import { validarFoto } from "@/services/conta";
 import type { Usuario } from "@/lib/domain/types";
 import { erroSenha } from "@/lib/domain/senha";
 import { erroFicha, montarFicha, type DadosFicha } from "@/lib/fichaEmergencia";
+import { tr } from "@/i18n/services/auth";
 
 /** Dados do perfil do participante (cadastro por e-mail ou conta Google sem perfil). */
 export interface DadosPerfil {
@@ -55,7 +56,7 @@ export function validarCadastro(dados: DadosCadastro) {
   const problemaSenha = erroSenha(dados.senha);
   if (problemaSenha) throw new ErroDominio("senha", problemaSenha);
   if (dados.senha !== dados.confirmacaoSenha) {
-    throw new ErroDominio("senha_confirmacao", "A confirmação de senha não confere.");
+    throw new ErroDominio("senha_confirmacao", tr("a_confirmacao_de_senha_nao_confere"));
   }
   return normalizados;
 }
@@ -67,14 +68,14 @@ export function validarPerfil(dados: DadosPerfil) {
   const whatsapp = somenteDigitos(dados.whatsapp);
 
   if (!dados.aceiteTermos || !dados.cienciaPrivacidade) {
-    throw new ErroDominio("termos", "É obrigatório aceitar os termos e o aviso de privacidade.");
+    throw new ErroDominio("termos", tr("e_obrigatorio_aceitar_os_termos_e"));
   }
-  if (!emailValido(email)) throw new ErroDominio("email", "Informe um e-mail válido.");
-  if (!cpfValido(cpf)) throw new ErroDominio("cpf", "CPF inválido.");
-  if (!telefoneValido(whatsapp)) throw new ErroDominio("telefone", "Telefone/WhatsApp inválido.");
+  if (!emailValido(email)) throw new ErroDominio("email", tr("informe_um_e_mail_valido"));
+  if (!cpfValido(cpf)) throw new ErroDominio("cpf", tr("cpf_invalido"));
+  if (!telefoneValido(whatsapp)) throw new ErroDominio("telefone", tr("telefone_whatsapp_invalido"));
   const idade = idadeEmAnos(dados.dataNascimento);
   if (idade < IDADE_MINIMA) {
-    throw new ErroDominio("idade", `É necessário ter ao menos ${IDADE_MINIMA} anos.`);
+    throw new ErroDominio("idade", tr("e_necessario_ter_ao_menos_idade", { IDADE_MINIMA }));
   }
   const problemaFicha = dados.fichaEmergencia ? erroFicha(dados.fichaEmergencia) : "";
   if (problemaFicha) throw new ErroDominio("ficha_emergencia", problemaFicha);
@@ -87,10 +88,10 @@ export function registrarPerfil(id: string, dados: DadosPerfil): Usuario {
   if (dados.fotoUrl) validarFoto(dados.fotoUrl);
   return mutarBase((base) => {
     if (base.usuarios.some((u) => u.cpf === cpf)) {
-      throw new ErroDominio("cpf_duplicado", "Já existe um cadastro com este CPF.");
+      throw new ErroDominio("cpf_duplicado", tr("ja_existe_um_cadastro_com_este"));
     }
     if (base.usuarios.some((u) => u.email === email)) {
-      throw new ErroDominio("email_duplicado", "Já existe um cadastro com este e-mail.");
+      throw new ErroDominio("email_duplicado", tr("ja_existe_um_cadastro_com_este_2"));
     }
     const menor = idade < 18;
     const usuario: Usuario = {

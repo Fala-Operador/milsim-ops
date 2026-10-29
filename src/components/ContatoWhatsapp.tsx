@@ -5,6 +5,7 @@ import { MessageCircle, Users } from "lucide-react";
 import { linkContatoEvento } from "@/lib/contatoEvento";
 import type { Evento } from "@/lib/domain/types";
 import { Button } from "@/components/ui/button";
+import { tr } from "@/i18n/components/ContatoWhatsapp";
 
 
 export function ContatoWhatsapp({ evento, className = "" }: { evento: Evento; className?: string }) {
@@ -15,17 +16,13 @@ export function ContatoWhatsapp({ evento, className = "" }: { evento: Evento; cl
       {evento.whatsappGrupoUrl && (
         <Button asChild className="px-3">
           <a href={evento.whatsappGrupoUrl} target="_blank" rel="noopener noreferrer">
-            <Users className="h-4 w-4" aria-hidden="true" />
-            Entrar no grupo do WhatsApp
-          </a>
+            <Users className="h-4 w-4" aria-hidden="true" />{tr("entrar_no_grupo_do_whatsapp")}</a>
         </Button>
       )}
       {contato && (
         <Button asChild variant="outline" className="px-3">
           <a href={contato} target="_blank" rel="noopener noreferrer">
-            <MessageCircle className="h-4 w-4" aria-hidden="true" />
-            Falar com o organizador no WhatsApp
-          </a>
+            <MessageCircle className="h-4 w-4" aria-hidden="true" />{tr("falar_com_o_organizador_no_whatsapp")}</a>
         </Button>
       )}
     </div>

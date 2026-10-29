@@ -1,0 +1,31 @@
+// Textos de src/services/organizador.ts.
+import { dicionario } from "@/i18n/dicionario";
+
+export const tr = dicionario("services/organizador", {
+  "cnpj_invalido": { pt: "CNPJ inválido.", en: "Invalid CNPJ." },
+  "telefone_invalido": { pt: "Telefone inválido.", en: "Invalid phone." },
+  "informe_o_nome_da_organizacao": { pt: "Informe o nome da organização.", en: "Enter the organization name." },
+  "voce_ja_possui_uma_solicitacao_em": { pt: "Você já possui uma solicitação em andamento.", en: "You already have a request in progress." },
+  "esta_solicitacao_nao_pode_ser_reenviada": { pt: "Esta solicitação não pode ser reenviada.", en: "This request cannot be resubmitted." },
+  "voce_so_pode_gerenciar_eventos_da": { pt: "Você só pode gerenciar eventos da sua organização.", en: "You can only manage events from your own organization." },
+  "capacidade_total_abaixo_da_ocupacao_atua": { pt: "Capacidade total abaixo da ocupação atual.", en: "Total capacity below current occupancy." },
+  "capacidade_do_nome_abaixo_da_ocupacao": { pt: "Capacidade do {nome} abaixo da ocupação atual.", en: "Capacity of {nome} below current occupancy." },
+  "ha_exercitos_com_nomes_duplicados": { pt: "Há exércitos com nomes duplicados.", en: "There are armies with duplicate names." },
+  "eventos_publicados_precisam_de_uma_modal": { pt: "Eventos publicados precisam de uma modalidade principal.", en: "Published events need a main game mode." },
+  "nome_obrigatorio": { pt: "Nome obrigatório.", en: "Name required." },
+  "descricao_resumida_obrigatoria": { pt: "Descrição resumida obrigatória.", en: "Short description required." },
+  "enredo_obrigatorio": { pt: "Enredo obrigatório.", en: "Storyline required." },
+  "local_obrigatorio": { pt: "Local obrigatório.", en: "Venue required." },
+  "adicione_a_imagem_principal_do_evento": { pt: "Adicione a imagem principal do evento.", en: "Add the event main image." },
+  "cadastre_ao_menos_um_exercito": { pt: "Cadastre ao menos um exército.", en: "Add at least one army." },
+  "cadastre_ao_menos_um_tipo_de": { pt: "Cadastre ao menos um tipo de ingresso.", en: "Add at least one ticket type." },
+  "o_cronograma_precisa_de_ao_menos": { pt: "O cronograma precisa de ao menos uma atividade.", en: "The schedule needs at least one activity." },
+  "atividade_titulo_fora_do_periodo_do": { pt: "Atividade \"{titulo}\" fora do período do evento.", en: "Activity \"{titulo}\" is outside the event period." },
+  "lote_nome_as_vendas_devem_terminar": { pt: "Lote \"{nome}\": as vendas devem terminar até o término da operação.", en: "Batch \"{nome}\": sales must end by the end of the operation." },
+  "evento_nao_encontrado": { pt: "Evento não encontrado.", en: "Event not found." },
+  "o_inicio_da_operacao_ja_passou": { pt: "O início da operação já passou.", en: "The operation start has already passed." },
+  "informe_a_justificativa": { pt: "Informe a justificativa.", en: "Enter the justification." },
+  "cupom_nao_encontrado": { pt: "Cupom não encontrado.", en: "Coupon not found." },
+  "o_limite_nao_pode_ser_menor": { pt: "O limite não pode ser menor que as {usos} utilizações já feitas.", en: "The limit cannot be lower than the {usos} uses already made." },
+  "ha_inscricoes_confirmadas_ou_aguardando": { pt: "Há inscrições confirmadas ou aguardando pagamento. Cancele o evento em vez de excluí-lo.", en: "There are confirmed registrations or ones awaiting payment. Cancel the event instead of deleting it." },
+});

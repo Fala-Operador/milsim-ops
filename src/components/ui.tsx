@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { formatarTexto } from "@/lib/textoFormatado";
+import { tr } from "@/i18n/components/ui";
 
 export function Campo({
   rotulo,
@@ -47,10 +48,10 @@ export function TextoLivre({ texto, className, as: Tag = "p" }: { texto?: string
   if (!t) return null;
   return (
     <Tag className={cn("whitespace-pre-line [overflow-wrap:anywhere]", className)}>
-      {formatarTexto(t).map((tr, i) =>
-        tr.tipo === "negrito" ? <strong key={i} className="font-semibold text-foreground">{tr.texto}</strong>
-        : tr.tipo === "italico" ? <em key={i}>{tr.texto}</em>
-        : <Fragment key={i}>{tr.texto}</Fragment>,
+      {formatarTexto(t).map((trecho, i) =>
+        trecho.tipo === "negrito" ? <strong key={i} className="font-semibold text-foreground">{trecho.texto}</strong>
+        : trecho.tipo === "italico" ? <em key={i}>{trecho.texto}</em>
+        : <Fragment key={i}>{trecho.texto}</Fragment>,
       )}
     </Tag>
   );
@@ -94,7 +95,7 @@ export function Modal({
       >
         <div className="mb-4 flex items-center justify-between gap-3">
           <DialogTitle className="min-w-0">{titulo}</DialogTitle>
-          <Button variant="ghost" className="shrink-0" onClick={onFechar} aria-label="Fechar">
+          <Button variant="ghost" className="shrink-0" onClick={onFechar} aria-label={tr("fechar")}>
             ✕
           </Button>
         </div>
@@ -141,14 +142,14 @@ export function ModalTexto({
   }, [aberto]);
 
   const enviar = async () => {
-    if (!texto.trim()) return setErro("Preencha este campo.");
+    if (!texto.trim()) return setErro(tr("preencha_este_campo"));
     setEnviando(true);
     setErro("");
     try {
       await onConfirmar(texto.trim());
       onFechar();
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível concluir. Tente novamente.");
+      setErro(e instanceof Error ? e.message : tr("nao_foi_possivel_concluir_tente_novament"));
     } finally {
       setEnviando(false);
     }
@@ -161,9 +162,9 @@ export function ModalTexto({
         <Textarea id={id} rows={4} maxLength={maximo} value={texto} onChange={(e) => setTexto(e.target.value)} autoFocus />
       </Campo>
       <div className="mt-4 flex justify-end gap-2">
-        <Button variant="ghost" onClick={onFechar} disabled={enviando}>Cancelar</Button>
+        <Button variant="ghost" onClick={onFechar} disabled={enviando}>{tr("cancelar")}</Button>
         <Button variant={destrutivo ? "destructive" : "default"} onClick={enviar} disabled={enviando}>
-          {enviando ? "Enviando..." : confirmar}
+          {enviando ? tr("enviando") : confirmar}
         </Button>
       </div>
     </Modal>
@@ -213,7 +214,7 @@ export function DialogoConfirmacao({
 
 export function SkeletonCartao() {
   return (
-    <div className="rounded-lg border border-border bg-card p-5" role="status" aria-label="Carregando conteúdo">
+    <div className="rounded-lg border border-border bg-card p-5" role="status" aria-label={tr("carregando_conteudo")}>
       <Skeleton className="h-32 w-full" />
       <Skeleton className="mt-4 h-5 w-3/4" />
       <Skeleton className="mt-2 h-4 w-1/2" />
@@ -223,7 +224,7 @@ export function SkeletonCartao() {
 }
 
 /** Lista/tabela carregando: linhas com avatar ou posição, texto e valor à direita. */
-export function SkeletonLista({ linhas = 5, rotulo = "Carregando lista" }: { linhas?: number; rotulo?: string }) {
+export function SkeletonLista({ linhas = 5, rotulo = tr("carregando_lista") }: { linhas?: number; rotulo?: string }) {
   return (
     <div className="divide-y divide-border rounded-md border border-border" role="status" aria-label={rotulo}>
       {Array.from({ length: linhas }, (_, i) => (
@@ -249,7 +250,7 @@ export function SkeletonGrade({ quantidade = 6 }: { quantidade?: number }) {
 
 export function SkeletonPagina() {
   return (
-    <div className="mx-auto max-w-4xl space-y-4 px-4 py-8" role="status" aria-label="Carregando página">
+    <div className="mx-auto max-w-4xl space-y-4 px-4 py-8" role="status" aria-label={tr("carregando_pagina")}>
       <Skeleton className="h-40 w-full" />
       <Skeleton className="h-8 w-1/2" />
       <Skeleton className="h-4 w-2/3" />
@@ -264,8 +265,8 @@ export function SkeletonPagina() {
 
 // Limite de erro de uma seção: mostra recuperação em vez de tela em branco.
 export function ErroSecao({
-  titulo = "Esta seção não carregou",
-  descricao = "Algo deu errado ao exibir este conteúdo. Tente novamente ou volte ao início.",
+  titulo = tr("esta_secao_nao_carregou"),
+  descricao = tr("algo_deu_errado_ao_exibir_este"),
   onTentar,
 }: {
   titulo?: string;
@@ -279,18 +280,17 @@ export function ErroSecao({
       <div className="mt-5 flex flex-wrap justify-center gap-2">
         {onTentar && (
           <Button onClick={onTentar}>
-            Tentar novamente
-          </Button>
+            {tr("tentar_novamente")}</Button>
         )}
         <Button variant="outline" asChild>
-          <a href="/">Voltar ao início</a>
+          <a href="/">{tr("voltar_ao_inicio")}</a>
         </Button>
       </div>
     </div>
   );
 }
 
-export function Spinner({ texto = "Carregando..." }: { texto?: string }) {
+export function Spinner({ texto = tr("carregando") }: { texto?: string }) {
   return (
     <div className="flex items-center justify-center gap-2 p-8 text-muted-foreground" role="status">
       <span className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-primary" />

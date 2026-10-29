@@ -2,6 +2,7 @@
 // A cobrança é feita pela plataforma com destino à conta da organização: o Stripe
 // transfere o valor menos a taxa da plataforma, e a organização saca para o banco dela.
 import type { BaseDados, Organizacao, RecebimentoOrganizacao, StatusRecebimento, Usuario } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/repasses";
 
 /** Campos da conta conectada (GET /v1/accounts/:id ou evento account.updated) usados aqui. */
 export interface ContaStripe {
@@ -115,9 +116,9 @@ export function recebimentoDaConta(conta: ContaStripe, agora = new Date()): Rece
 
 /** A organização pode receber o repasse de uma venda agora (transferências ativas no Stripe). */
 /** Mostrado ao comprador quando a organização ainda não pode vender ingressos pagos. */
-export const MSG_SEM_RECEBIMENTO = "A venda de ingressos deste evento ainda não está aberta.";
+export const MSG_SEM_RECEBIMENTO = () => tr("msg_sem_recebimento");
 /** Mostrado à organização (painel e editor de evento) enquanto a conta de recebimento não está ativa. */
-export const MSG_ORG_SEM_RECEBIMENTO = "A organização precisa concluir a conta de recebimento para vender ingressos pagos.";
+export const MSG_ORG_SEM_RECEBIMENTO = () => tr("msg_org_sem_recebimento");
 
 export function contaParaRepasse(org: Organizacao | undefined): string | undefined {
   const r = org?.recebimento;
@@ -138,9 +139,9 @@ export function taxaDoComprador(org: Pick<Organizacao, "taxaCompradorPercentual"
 
 /** Erro de validação da taxa digitada pela administração (vazio = válida). */
 export function erroTaxa(percentual: number): string {
-  if (!Number.isFinite(percentual)) return "Informe a taxa em porcentagem.";
-  if (percentual < 0 || percentual > 50) return "A taxa deve ficar entre 0% e 50%.";
-  if (Math.round(percentual * 100) !== percentual * 100) return "Use no máximo duas casas decimais.";
+  if (!Number.isFinite(percentual)) return tr("informe_a_taxa_em_porcentagem");
+  if (percentual < 0 || percentual > 50) return tr("a_taxa_deve_ficar_entre_0");
+  if (Math.round(percentual * 100) !== percentual * 100) return tr("use_no_maximo_duas_casas_decimais");
   return "";
 }
 
@@ -167,10 +168,10 @@ export function organizacaoVisivel(org: Organizacao, usuario: Usuario | null): O
 }
 
 export const ROTULO_RECEBIMENTO: Record<StatusRecebimento, string> = {
-  pendente: "Cadastro incompleto",
-  em_analise: "Em análise pelo Stripe",
-  ativa: "Recebimentos ativos",
-  restrita: "Pendências no Stripe",
+  get pendente() { return tr("cadastro_incompleto"); },
+  get em_analise() { return tr("em_analise_pelo_stripe"); },
+  get ativa() { return tr("recebimentos_ativos"); },
+  get restrita() { return tr("pendencias_no_stripe"); },
 };
 
 /** Resumo do repasse das vendas pagas online de um evento (confirmadas, não estornadas). */
@@ -189,11 +190,11 @@ export function resumoRepasse(base: BaseDados, eventoId: string) {
 // ---------- Saldo e saques da conta conectada (lidos do Stripe, nunca guardados na base) ----------
 
 export const ROTULO_SAQUE: Record<StatusSaque, string> = {
-  paid: "Pago",
-  pending: "Agendado",
-  in_transit: "A caminho do banco",
-  canceled: "Cancelado",
-  failed: "Falhou",
+  get paid() { return tr("pago"); },
+  get pending() { return tr("agendado"); },
+  get in_transit() { return tr("a_caminho_do_banco"); },
+  get canceled() { return tr("cancelado"); },
+  get failed() { return tr("falhou"); },
 };
 
 export interface SaqueResumido {
@@ -222,19 +223,19 @@ const somaBrl = (itens: { amount: number; currency: string }[] | undefined) =>
 const statusSaque = (s: string): StatusSaque => (s in ROTULO_SAQUE ? (s as StatusSaque) : "pending");
 
 const DIAS_SEMANA: Record<string, string> = {
-  monday: "segunda-feira", tuesday: "terça-feira", wednesday: "quarta-feira", thursday: "quinta-feira",
-  friday: "sexta-feira", saturday: "sábado", sunday: "domingo",
+  get monday() { return tr("dia_segunda"); }, get tuesday() { return tr("dia_terca"); }, get wednesday() { return tr("dia_quarta"); },
+  get thursday() { return tr("dia_quinta"); }, get friday() { return tr("dia_sexta"); }, get saturday() { return tr("dia_sabado"); }, get sunday() { return tr("dia_domingo"); },
 };
 
 /** Cronograma de saque em português (ex.: "Semanal, às segundas-feiras"). */
 export function descreverCronograma(c: CronogramaStripe | null | undefined): string {
-  const prazo = c?.delay_days ? ` (cada venda fica disponível ${c.delay_days} ${c.delay_days === 1 ? "dia" : "dias"} depois)` : "";
+  const prazo = c?.delay_days ? (c.delay_days === 1 ? tr("prazo_um_dia") : tr("prazo_n_dias", { n: c.delay_days })) : "";
   switch (c?.interval) {
-    case "daily": return `Diário${prazo}`;
-    case "weekly": return `Semanal, toda ${DIAS_SEMANA[c.weekly_anchor ?? ""] ?? "semana"}${prazo}`;
-    case "monthly": return `Mensal, no dia ${c.monthly_anchor ?? 1}${prazo}`;
-    case "manual": return "Manual, pelo painel do Stripe";
-    default: return "Definido pelo Stripe";
+    case "daily": return tr("cronograma_diario", { prazo });
+    case "weekly": return tr("cronograma_semanal", { dia: DIAS_SEMANA[c.weekly_anchor ?? ""] ?? tr("semana"), prazo });
+    case "monthly": return tr("cronograma_mensal", { dia: c.monthly_anchor ?? 1, prazo });
+    case "manual": return tr("manual_pelo_painel_do_stripe");
+    default: return tr("definido_pelo_stripe");
   }
 }
 
@@ -243,7 +244,7 @@ export function bancoDaConta(conta: ContaStripe): string | undefined {
   const contas = conta.external_accounts?.data ?? [];
   const c = contas.find((x) => x.default_for_currency) ?? contas[0];
   if (!c?.last4) return undefined;
-  return `${c.bank_name ?? (c.object === "card" ? "Cartão" : "Conta")} •••• ${c.last4}`;
+  return `${c.bank_name ?? (c.object === "card" ? tr("cartao") : tr("conta"))} •••• ${c.last4}`;
 }
 
 /** Junta saldo, saques e conta do Stripe no resumo mostrado em Financeiro (valores em BRL). */
