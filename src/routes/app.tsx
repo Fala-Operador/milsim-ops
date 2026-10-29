@@ -9,6 +9,7 @@ import { LayoutMenuLateral } from "@/components/MenuLateral";
 import { LayoutDashboard, LifeBuoy, MessagesSquare, Shield, Target, Ticket, UserRound } from "lucide-react";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
 import type { ErrorComponentProps } from "@tanstack/react-router";
+import { tr } from "@/i18n/routes/app";
 
 function ErroApp({ error, reset }: ErrorComponentProps) {
   console.error(error);
@@ -24,13 +25,13 @@ export const Route = createFileRoute("/app")({
 });
 
 const ITENS = [
-  { to: "/app", rotulo: "Visão geral" },
-  { to: "/app/ingressos", rotulo: "Meus ingressos" },
-  { to: "/app/comunidades", rotulo: "Comunidades" },
-  { to: "/app/missoes", rotulo: "Missões" },
-  { to: "/app/suporte", rotulo: "Suporte" },
-  { to: "/app/perfil", rotulo: "Meu perfil" },
-  { to: "/app/privacidade", rotulo: "Privacidade" },
+  { to: "/app", get rotulo() { return tr("visao_geral"); } },
+  { to: "/app/ingressos", get rotulo() { return tr("meus_ingressos"); } },
+  { to: "/app/comunidades", get rotulo() { return tr("comunidades"); } },
+  { to: "/app/missoes", get rotulo() { return tr("missoes"); } },
+  { to: "/app/suporte", get rotulo() { return tr("suporte"); } },
+  { to: "/app/perfil", get rotulo() { return tr("meu_perfil"); } },
+  { to: "/app/privacidade", get rotulo() { return tr("privacidade"); } },
 ] as const;
 
 function LayoutApp() {
@@ -48,17 +49,17 @@ function LayoutApp() {
   if (!montado || !usuario) return <SkeletonPagina />;
 
   return (
-    <LayoutMenuLateral titulo="Minha área" rotuloNav="Área do participante" grupos={[
-      { titulo: "Operações", itens: [
-        { to: "/app", rotulo: "Visão geral", icone: LayoutDashboard, exato: true },
-        { to: "/app/ingressos", rotulo: "Meus ingressos", icone: Ticket },
-        { to: "/app/missoes", rotulo: "Missões", icone: Target },
-        { to: "/app/comunidades", rotulo: "Comunidades", icone: MessagesSquare },
+    <LayoutMenuLateral titulo={tr("minha_area")} rotuloNav={tr("area_do_participante")} grupos={[
+      { titulo: tr("operacoes"), itens: [
+        { to: "/app", rotulo: tr("visao_geral"), icone: LayoutDashboard, exato: true },
+        { to: "/app/ingressos", rotulo: tr("meus_ingressos"), icone: Ticket },
+        { to: "/app/missoes", rotulo: tr("missoes"), icone: Target },
+        { to: "/app/comunidades", rotulo: tr("comunidades"), icone: MessagesSquare },
       ] },
-      { titulo: "Conta", itens: [
-        { to: "/app/perfil", rotulo: "Meu perfil", icone: UserRound },
-        { to: "/app/suporte", rotulo: "Suporte", icone: LifeBuoy, contador: naoLidasParticipante },
-        { to: "/app/privacidade", rotulo: "Privacidade", icone: Shield },
+      { titulo: tr("conta"), itens: [
+        { to: "/app/perfil", rotulo: tr("meu_perfil"), icone: UserRound },
+        { to: "/app/suporte", rotulo: tr("suporte"), icone: LifeBuoy, contador: naoLidasParticipante },
+        { to: "/app/privacidade", rotulo: tr("privacidade"), icone: Shield },
       ] },
     ]}>
       <Outlet />

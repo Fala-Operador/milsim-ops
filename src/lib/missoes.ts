@@ -8,6 +8,7 @@
 import type {
   BaseDados, CampanhaMissoes, EntregaMissao, Evento, Missao, ResultadoExercito, StatusMissao,
 } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/missoes";
 
 export const MAX_PONTOS_MISSAO = 10000;
 export const LIMITE_TEXTO_ENTREGA = 2000;
@@ -25,22 +26,22 @@ export function situacaoMissao(m: Pick<Missao, "rascunho" | "abreEm" | "prazo">,
 }
 
 export const ROTULO_SITUACAO: Record<SituacaoMissao, string> = {
-  rascunho: "Rascunho", agendada: "Agendada", aberta: "Aberta", encerrada: "Encerrada",
+  get rascunho() { return tr("rascunho"); }, get agendada() { return tr("agendada"); }, get aberta() { return tr("aberta"); }, get encerrada() { return tr("encerrada"); },
 };
 
 export const ROTULO_STATUS_ENTREGA: Record<StatusMissao, string> = {
-  disponivel: "Disponível",
-  enviada: "Em análise",
-  concluida: "Concluída",
-  ajustes_solicitados: "Ajustes solicitados",
-  prazo_encerrado: "Prazo encerrado",
-  recusada: "Recusada",
+  get disponivel() { return tr("disponivel"); },
+  get enviada() { return tr("em_analise"); },
+  get concluida() { return tr("concluida"); },
+  get ajustes_solicitados() { return tr("ajustes_solicitados"); },
+  get prazo_encerrado() { return tr("prazo_encerrado"); },
+  get recusada() { return tr("recusada"); },
 };
 
 export const ROTULO_TIPO_ENTREGA: Record<Missao["tipoEntrega"], string> = {
-  confirmacao: "Confirmação",
-  texto: "Texto ou link",
-  imagem: "Foto",
+  get confirmacao() { return tr("confirmacao"); },
+  get texto() { return tr("texto_ou_link"); },
+  get imagem() { return tr("foto"); },
   codigo: "Código secreto",
 };
 
@@ -70,14 +71,14 @@ export function bloqueioEnvio(
   campanha: Pick<CampanhaMissoes, "encerradaEm"> | undefined,
   agora: Date = new Date(),
 ): string | null {
-  if (campanha?.encerradaEm) return "A campanha de missões deste evento foi encerrada.";
+  if (campanha?.encerradaEm) return tr("a_campanha_de_missoes_deste_evento");
   const s = situacaoMissao(m, agora);
-  if (s === "rascunho") return "Missão indisponível.";
-  if (s === "agendada") return "Esta missão ainda não abriu.";
-  if (s === "encerrada") return "O prazo desta missão terminou.";
-  if (entrega?.status === "concluida") return "Você já concluiu esta missão.";
-  if (entrega?.status === "enviada") return "Sua entrega está em análise.";
-  if (entrega?.status === "recusada") return "Sua entrega foi recusada pela organização.";
+  if (s === "rascunho") return tr("missao_indisponivel");
+  if (s === "agendada") return tr("esta_missao_ainda_nao_abriu");
+  if (s === "encerrada") return tr("o_prazo_desta_missao_terminou");
+  if (entrega?.status === "concluida") return tr("voce_ja_concluiu_esta_missao");
+  if (entrega?.status === "enviada") return tr("sua_entrega_esta_em_analise");
+  if (entrega?.status === "recusada") return tr("sua_entrega_foi_recusada_pela_organizaca");
   return null;
 }
 

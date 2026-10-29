@@ -1,0 +1,31 @@
+// Textos de src/components/suporte/NovoChamado.tsx.
+import { dicionario } from "@/i18n/dicionario";
+
+export const tr = dicionario("components/suporte/NovoChamado", {
+  "continuacao_assunto": { pt: "Continuação: {assunto}", en: "Continuation: {assunto}" },
+  "escolha_o_evento": { pt: "Escolha o evento.", en: "Choose the event." },
+  "informe_o_assunto": { pt: "Informe o assunto.", en: "Enter the subject." },
+  "descreva_a_solicitacao": { pt: "Descreva a solicitação.", en: "Describe the request." },
+  "nao_foi_possivel_abrir_o_chamado": { pt: "Não foi possível abrir o chamado.", en: "Could not open the ticket." },
+  "novo_chamado": { pt: "Novo chamado", en: "New ticket" },
+  "como_podemos_ajudar": { pt: "Como podemos ajudar?", en: "How can we help?" },
+  "continuacao_do_protocolo": { pt: "Continuação do protocolo", en: "Continuation of ticket" },
+  "conte_o_que_aconteceu_a_administracao": { pt: "Conte o que aconteceu. A administração responde por aqui e avisa você nas notificações.", en: "Tell us what happened. The administration replies here and lets you know in your notifications." },
+  "tipo_de_atendimento": { pt: "Tipo de atendimento", en: "Support type" },
+  "suporte_do_evento": { pt: "Suporte do evento", en: "Event support" },
+  "sobre_uma_operacao_a_organizacao_do": { pt: "Sobre uma operação: a organização do evento e a administração atendem.", en: "About an operation: the event organizers and the administration handle it." },
+  "suporte_da_plataforma": { pt: "Suporte da plataforma", en: "Platform support" },
+  "conta_funcionamento_ou_outras_questoes_s": { pt: "Conta, funcionamento ou outras questões: só a administração atende.", en: "Account, how things work or other questions: only the administration handles it." },
+  "evento": { pt: "Evento", en: "Event" },
+  "selecione": { pt: "Selecione…", en: "Select…" },
+  "assunto": { pt: "Assunto", en: "Subject" },
+  "categoria": { pt: "Categoria", en: "Category" },
+  "descricao": { pt: "Descrição", en: "Description" },
+  "remover_anexo": { pt: "Remover anexo", en: "Remove attachment" },
+  "anexar_imagem_ou_pdf": { pt: "Anexar imagem ou PDF", en: "Attach image or PDF" },
+  "opcional": { pt: "(opcional)", en: "(optional)" },
+  "jpeg_png_webp_ou_pdf_ate": { pt: "JPEG, PNG, WebP ou PDF, até 5 MB. Não anexe documentos pessoais além do necessário.", en: "JPEG, PNG, WebP or PDF, up to 5 MB. Do not attach personal documents beyond what is needed." },
+  "cancelar": { pt: "Cancelar", en: "Cancel" },
+  "enviando": { pt: "Enviando…", en: "Sending…" },
+  "abrir_chamado": { pt: "Abrir chamado", en: "Open ticket" },
+});

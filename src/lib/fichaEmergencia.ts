@@ -5,6 +5,7 @@
 import { z } from "zod";
 import { somenteDigitos, telefoneValido } from "@/lib/domain/validators";
 import type { BaseDados, FichaEmergencia, TipoSanguineo, Usuario } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/fichaEmergencia";
 
 export const TIPOS_SANGUINEOS: readonly TipoSanguineo[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 export const DIAS_ANTES_DO_EVENTO = 7;
@@ -41,14 +42,14 @@ export function fichaPreenchida(f: { tipoSanguineo?: string | undefined; alergia
 /** Primeiro problema do formulário (vazio = válido). Todos os campos são opcionais. */
 export function erroFicha(d: DadosFicha): string {
   const tipo = d.tipoSanguineo?.trim();
-  if (tipo && !ehTipoSanguineo(tipo)) return "Tipo sanguíneo inválido.";
-  if ((d.alergias ?? "").trim().length > LIMITE_ALERGIAS) return `Descreva as alergias em até ${LIMITE_ALERGIAS} caracteres.`;
+  if (tipo && !ehTipoSanguineo(tipo)) return tr("tipo_sanguineo_invalido");
+  if ((d.alergias ?? "").trim().length > LIMITE_ALERGIAS) return tr("descreva_as_alergias_em_ate_limite", { LIMITE_ALERGIAS });
   const nome = (d.contatoNome ?? "").trim();
   const tel = somenteDigitos(d.contatoTelefone ?? "");
-  if (nome.length > LIMITE_NOME_CONTATO) return `Nome do contato com até ${LIMITE_NOME_CONTATO} caracteres.`;
-  if (tel && !telefoneValido(tel)) return "Telefone do contato de emergência inválido. Informe com DDD.";
-  if (nome && !tel) return "Informe o telefone do contato de emergência.";
-  if (tel && !nome) return "Informe o nome do contato de emergência.";
+  if (nome.length > LIMITE_NOME_CONTATO) return tr("nome_do_contato_com_ate_limite", { LIMITE_NOME_CONTATO });
+  if (tel && !telefoneValido(tel)) return tr("telefone_do_contato_de_emergencia_invali");
+  if (nome && !tel) return tr("informe_o_telefone_do_contato_de");
+  if (tel && !nome) return tr("informe_o_nome_do_contato_de");
   return "";
 }
 

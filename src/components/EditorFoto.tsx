@@ -11,6 +11,7 @@ import {
 } from "@/lib/recorteFoto";
 import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
+import { tr } from "@/i18n/components/EditorFoto";
 
 const LADO_PREVIA = 288; // px na tela (cabe em celulares de 320 px)
 const PASSO_TECLADO = 0.02;
@@ -38,7 +39,7 @@ export function EditorFoto({ arquivo, onConfirmar, onCancelar }: {
     const url = URL.createObjectURL(arquivo);
     const i = new Image();
     i.onload = () => { if (ativo) { setErro(""); setImg(i); } };
-    i.onerror = () => { if (ativo) setErro("Não foi possível abrir esta imagem."); };
+    i.onerror = () => { if (ativo) setErro(tr("nao_foi_possivel_abrir_esta_imagem")); };
     i.src = url;
     return () => {
       ativo = false;
@@ -124,11 +125,11 @@ export function EditorFoto({ arquivo, onConfirmar, onCancelar }: {
       saida.width = LADO_SAIDA;
       saida.height = LADO_SAIDA;
       const ctx = saida.getContext("2d");
-      if (!ctx) throw new Error("Seu navegador não permitiu editar a imagem.");
+      if (!ctx) throw new Error(tr("seu_navegador_nao_permitiu_editar_a"));
       desenharRecorte(ctx, img, ajustes, LADO_SAIDA);
       await onConfirmar(saida.toDataURL("image/jpeg", 0.88));
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível salvar a foto.");
+      setErro(e instanceof Error ? e.message : tr("nao_foi_possivel_salvar_a_foto"));
       setSalvando(false);
     }
   };
@@ -142,14 +143,14 @@ export function EditorFoto({ arquivo, onConfirmar, onCancelar }: {
   );
 
   return (
-    <Modal aberto titulo="Ajustar foto de perfil" onFechar={salvando ? () => {} : onCancelar}>
+    <Modal aberto titulo={tr("ajustar_foto_de_perfil")} onFechar={salvando ? () => {} : onCancelar}>
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
         <div className="shrink-0">
           <div
             ref={areaRef}
             role="application"
             tabIndex={0}
-            aria-label="Área de recorte: arraste para posicionar, use + e − para zoom e as setas para mover"
+            aria-label={tr("area_de_recorte_arraste_para_posicionar")}
             className="relative cursor-grab touch-none select-none overflow-hidden rounded-md bg-secondary outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
             style={{ width: LADO_PREVIA, height: LADO_PREVIA }}
             onPointerDown={aoPressionar}
@@ -164,32 +165,30 @@ export function EditorFoto({ arquivo, onConfirmar, onCancelar }: {
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-white/80" />
             {!img && !erro && <Skeleton className="absolute inset-0 rounded-none" />}
           </div>
-          <p className="mt-2 text-center text-xs text-muted-foreground">Arraste para posicionar · role ou faça pinça para o zoom</p>
+          <p className="mt-2 text-center text-xs text-muted-foreground">{tr("arraste_para_posicionar_role_ou_faca")}</p>
         </div>
 
         <div className="w-full space-y-3">
           <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" aria-label="Diminuir zoom" onClick={() => ajustar((a) => ({ ...a, zoom: a.zoom - 0.2 }))}><ZoomOut className="h-4 w-4" /></Button>
+            <Button type="button" variant="outline" aria-label={tr("diminuir_zoom")} onClick={() => ajustar((a) => ({ ...a, zoom: a.zoom - 0.2 }))}><ZoomOut className="h-4 w-4" /></Button>
             <div className="flex-1">
-              {deslizante("Zoom", ajustes.zoom, ZOOM_MINIMO, ZOOM_MAXIMO, 0.01, (v) => ajustar((a) => ({ ...a, zoom: v })), `${Math.round(ajustes.zoom * 100)}%`)}
+              {deslizante(tr("zoom"), ajustes.zoom, ZOOM_MINIMO, ZOOM_MAXIMO, 0.01, (v) => ajustar((a) => ({ ...a, zoom: v })), `${Math.round(ajustes.zoom * 100)}%`)}
             </div>
-            <Button type="button" variant="outline" aria-label="Aumentar zoom" onClick={() => ajustar((a) => ({ ...a, zoom: a.zoom + 0.2 }))}><ZoomIn className="h-4 w-4" /></Button>
+            <Button type="button" variant="outline" aria-label={tr("aumentar_zoom")} onClick={() => ajustar((a) => ({ ...a, zoom: a.zoom + 0.2 }))}><ZoomIn className="h-4 w-4" /></Button>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" onClick={() => ajustar((a) => ({ ...a, rotacao: proximaRotacao(a.rotacao) }))}>
-              <RotateCw className="mr-1 inline h-4 w-4" /> Girar
-            </Button>
+              <RotateCw className="mr-1 inline h-4 w-4" />{" "}{tr("girar")}</Button>
             <Button type="button" variant={ajustes.espelhar ? "secondary" : "outline"} aria-pressed={ajustes.espelhar} onClick={() => ajustar((a) => ({ ...a, espelhar: !a.espelhar }))}>
-              <FlipHorizontal2 className="mr-1 inline h-4 w-4" /> Espelhar
-            </Button>
-            <Button type="button" variant="ghost" onClick={() => setAjustes(AJUSTES_INICIAIS)}>Redefinir</Button>
+              <FlipHorizontal2 className="mr-1 inline h-4 w-4" />{" "}{tr("espelhar")}</Button>
+            <Button type="button" variant="ghost" onClick={() => setAjustes(AJUSTES_INICIAIS)}>{tr("redefinir")}</Button>
           </div>
-          {deslizante("Brilho", ajustes.brilho, 50, 150, 1, (v) => ajustar((a) => ({ ...a, brilho: v })), `${ajustes.brilho}%`)}
-          {deslizante("Contraste", ajustes.contraste, 50, 150, 1, (v) => ajustar((a) => ({ ...a, contraste: v })), `${ajustes.contraste}%`)}
+          {deslizante(tr("brilho"), ajustes.brilho, 50, 150, 1, (v) => ajustar((a) => ({ ...a, brilho: v })), `${ajustes.brilho}%`)}
+          {deslizante(tr("contraste"), ajustes.contraste, 50, 150, 1, (v) => ajustar((a) => ({ ...a, contraste: v })), `${ajustes.contraste}%`)}
           {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={onCancelar} disabled={salvando}>Cancelar</Button>
-            <Button type="button" onClick={confirmar} disabled={!img || salvando}>{salvando ? "Salvando..." : "Usar esta foto"}</Button>
+            <Button type="button" variant="ghost" onClick={onCancelar} disabled={salvando}>{tr("cancelar")}</Button>
+            <Button type="button" onClick={confirmar} disabled={!img || salvando}>{salvando ? tr("salvando") : tr("usar_esta_foto")}</Button>
           </div>
         </div>
       </div>

@@ -11,14 +11,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EstadoVazio } from "@/components/ui";
 import { SilencioNotificacoes } from "@/components/SilencioNotificacoes";
+import { tr } from "@/i18n/routes/app.notificacoes";
 
 export const Route = createFileRoute("/app/notificacoes")({
   head: () => ({
     meta: [
-      { title: "Notificações — MilSim Ops" },
-      { name: "description", content: "Central de notificações da plataforma." },
-      { property: "og:title", content: "Notificações — MilSim Ops" },
-      { property: "og:description", content: "Central de notificações." },
+      { title: tr("notificacoes_milsim_ops") },
+      { name: "description", content: tr("central_de_notificacoes_da_plataforma") },
+      { property: "og:title", content: tr("notificacoes_milsim_ops") },
+      { property: "og:description", content: tr("central_de_notificacoes") },
     ],
   }),
   component: CentralNotificacoes,
@@ -36,36 +37,34 @@ function CentralNotificacoes() {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="titulo-pagina">Notificações</h1>
+        <h1 className="titulo-pagina">{tr("notificacoes")}</h1>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setSoNaoLidas((v) => !v)}>
-            {soNaoLidas ? "Mostrar todas" : `Somente não lidas (${naoLidas})`}
+            {soNaoLidas ? tr("mostrar_todas") : tr("somente_nao_lidas_naolidas", { naoLidas })}
           </Button>
-          <Button variant="ghost" onClick={marcarTodasLidas} disabled={naoLidas === 0}>
-            Marcar todas como lidas
-          </Button>
+          <Button variant="ghost" onClick={marcarTodasLidas} disabled={naoLidas === 0}>{tr("marcar_todas_como_lidas")}</Button>
         </div>
       </div>
       <SilencioNotificacoes />
 
       {lista.length === 0 ? (
         <div className="mt-4">
-          <EstadoVazio titulo="Nenhuma notificação" descricao="Você está em dia." />
+          <EstadoVazio titulo={tr("nenhuma_notificacao")} descricao={tr("voce_esta_em_dia")} />
         </div>
       ) : (
         <ul className="mt-6 divide-y divide-border border-y border-border">
           {lista.map((n) => (
             <li key={n.id} className={`grid grid-cols-[12px_minmax(0,1fr)_auto] gap-x-3 py-4 ${n.lida ? "text-muted-foreground" : ""}`}>
-              <span className={`mt-2 h-2 w-2 rounded-full ${n.lida ? "bg-transparent" : "bg-accent"}`} aria-label={n.lida ? undefined : "Não lida"} />
+              <span className={`mt-2 h-2 w-2 rounded-full ${n.lida ? "bg-transparent" : "bg-accent"}`} aria-label={n.lida ? undefined : tr("nao_lida")} />
               <div className="min-w-0">
                 <p className={`font-semibold ${n.lida ? "font-medium" : "text-foreground"}`}>{n.titulo}</p>
                 <p className="mt-0.5 text-sm text-muted-foreground">{n.corpo}</p>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                   {n.link && (
                     <Link {...(destinoDoLink(resolverLinkSuporte(carregarBase(), usuarioLink, n.link)) as { to: string })}
-                      className="font-medium text-accent hover:underline" onClick={() => marcarLida(n.id)}>Abrir</Link>
+                      className="font-medium text-accent hover:underline" onClick={() => marcarLida(n.id)}>{tr("abrir")}</Link>
                   )}
-                  {!n.lida && <Button variant="link" size="none" className="text-sm text-muted-foreground" onClick={() => marcarLida(n.id)}>Marcar como lida</Button>}
+                  {!n.lida && <Button variant="link" size="none" className="text-sm text-muted-foreground" onClick={() => marcarLida(n.id)}>{tr("marcar_como_lida")}</Button>}
                 </div>
               </div>
               <time className="font-mono text-xs text-muted-foreground">{formatarDataHoraBR(n.criadoEm)}</time>

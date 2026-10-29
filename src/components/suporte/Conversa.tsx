@@ -31,18 +31,20 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { tr } from "@/i18n/components/suporte/Conversa";
+import { localeAtual } from "@/i18n/dicionario";
 
 const PAGINA = 30;
 const AGRUPAR_MS = 10 * 60_000; // mensagens seguidas da mesma pessoa em até 10 min: sem repetir o nome
 const hora = (iso: string) =>
-  new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  new Date(iso).toLocaleTimeString(localeAtual(), { hour: "2-digit", minute: "2-digit" });
 const rotuloDia = (iso: string) => {
   const d = diaDe(iso);
   const hoje = diaDe(new Date().toISOString());
   const ontem = diaDe(new Date(Date.now() - 864e5).toISOString());
-  if (d === hoje) return "Hoje";
-  if (d === ontem) return "Ontem";
-  return new Date(iso).toLocaleDateString("pt-BR", {
+  if (d === hoje) return tr("hoje");
+  if (d === ontem) return tr("ontem");
+  return new Date(iso).toLocaleDateString(localeAtual(), {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -81,15 +83,15 @@ export function lerArquivo(f: File): Promise<string> {
   return new Promise((ok, falha) => {
     const r = new FileReader();
     r.onload = () => ok(String(r.result));
-    r.onerror = () => falha(new Error("Não foi possível ler o arquivo."));
+    r.onerror = () => falha(new Error(tr("nao_foi_possivel_ler_o_arquivo")));
     r.readAsDataURL(f);
   });
 }
 
 export function validarArquivo(f: File): string | null {
   if (!(TIPOS_ANEXO as readonly string[]).includes(f.type))
-    return "Formato não aceito. Envie imagem (JPEG, PNG, WebP) ou PDF.";
-  if (f.size > TAMANHO_MAX_ANEXO) return "Arquivo acima de 5 MB.";
+    return tr("formato_nao_aceito_envie_imagem_jpeg");
+  if (f.size > TAMANHO_MAX_ANEXO) return tr("arquivo_acima_de_5_mb");
   return null;
 }
 
@@ -107,7 +109,7 @@ function VisualizadorImagem({ aberto, onFechar, url, nome, onBaixar }: {
   const baixar = async () => {
     setBaixando(true);
     setErro("");
-    try { await onBaixar(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha ao baixar."); } finally { setBaixando(false); }
+    try { await onBaixar(); } catch (e) { setErro(e instanceof Error ? e.message : tr("falha_ao_baixar")); } finally { setBaixando(false); }
   };
   return (
     <Dialog open={aberto} onOpenChange={(a) => !a && onFechar()}>
@@ -121,10 +123,10 @@ function VisualizadorImagem({ aberto, onFechar, url, nome, onBaixar }: {
           {url && (
             <Button type="button" variant="ghost" className="shrink-0 text-white hover:bg-white/10 hover:text-white" onClick={() => void baixar()} disabled={baixando}>
               {baixando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              <span className="hidden sm:inline">Baixar</span>
+              <span className="hidden sm:inline">{tr("baixar")}</span>
             </Button>
           )}
-          <Button type="button" variant="ghost" className="shrink-0 text-white hover:bg-white/10 hover:text-white" onClick={onFechar} aria-label="Fechar">
+          <Button type="button" variant="ghost" className="shrink-0 text-white hover:bg-white/10 hover:text-white" onClick={onFechar} aria-label={tr("fechar")}>
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -169,7 +171,7 @@ function ImagemAnexo({ chamadoId, m }: { chamadoId: string; m: MensagemChamado }
       <Button variant="plain" size="none" ref={caixa} type="button"
         onClick={() => q.data && setAmpliada(true)}
         disabled={!q.data || falhou}
-        aria-label={`Ampliar imagem ${m.anexo.nome}`}
+        aria-label={tr("ampliar_imagem_nome", { nome: m.anexo.nome })}
         className="relative block overflow-hidden rounded-xl bg-background/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-100"
       >
         {q.data && !falhou && (
@@ -182,9 +184,7 @@ function ImagemAnexo({ chamadoId, m }: { chamadoId: string; m: MensagemChamado }
           />
         )}
         {!carregada && (falhou ? (
-          <span className="flex h-48 w-64 max-w-full items-center justify-center px-3 text-center text-xs text-muted-foreground">
-            Não foi possível carregar a imagem.
-          </span>
+          <span className="flex h-48 w-64 max-w-full items-center justify-center px-3 text-center text-xs text-muted-foreground">{tr("nao_foi_possivel_carregar_a_imagem")}</span>
         ) : (
           <Skeleton className="block h-48 w-64 max-w-full rounded-xl" />
         ))}
@@ -215,7 +215,7 @@ function BotaoAnexo({ chamadoId, m }: { chamadoId: string; m: MensagemChamado })
       } else window.location.assign(url);
     } catch (e) {
       janela?.close();
-      setErro(e instanceof Error ? e.message : "Falha ao abrir.");
+      setErro(e instanceof Error ? e.message : tr("falha_ao_abrir"));
     } finally {
       setAbrindo(false);
     }
@@ -255,7 +255,7 @@ export function Conversa({
   rodape,
   somenteLeitura = false,
   encaminhamentoId,
-  rotuloEnviar = "Enviar",
+  rotuloEnviar = tr("enviar"),
   aviso,
   textoVazio,
 }: {
@@ -316,7 +316,7 @@ export function Conversa({
 
   const nomeDe = (id: string) => {
     const u = base.usuarios.find((x) => x.id === id);
-    return id === usuarioId ? "Você" : u ? u.nomeExibicao || u.nomeCompleto : "Pessoa removida";
+    return id === usuarioId ? tr("voce") : u ? u.nomeExibicao || u.nomeCompleto : tr("pessoa_removida");
   };
 
   const verificarFim = () => {
@@ -397,7 +397,7 @@ export function Conversa({
         onScroll={verificarFim}
         role="region"
         className="rolagem-discreta relative min-h-0 flex-1 px-3 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-4"
-        aria-label="Histórico da conversa"
+        aria-label={tr("historico_da_conversa")}
         tabIndex={0}
       >
         {inicio > 0 && (
@@ -407,9 +407,7 @@ export function Conversa({
               variant="outline"
               className="!py-1 text-xs"
               onClick={carregarAnteriores}
-            >
-              Carregar mensagens anteriores
-            </Button>
+            >{tr("carregar_mensagens_anteriores")}</Button>
           </div>
         )}
         <ol className="flex flex-col" aria-live="polite">
@@ -444,16 +442,13 @@ export function Conversa({
                 )}
                 {naoLida && (
                   <p className="mb-3 flex items-center gap-2 text-xs font-semibold text-accent">
-                    <span className="h-px flex-1 bg-accent/50" />
-                    Não lidas
-                    <span className="h-px flex-1 bg-accent/50" />
+                    <span className="h-px flex-1 bg-accent/50" />{tr("nao_lidas")}<span className="h-px flex-1 bg-accent/50" />
                   </p>
                 )}
                 {m.tipo === "sistema" ? (
                   <p className="mx-auto w-fit max-w-[92%] break-words rounded-md bg-secondary/50 px-3 py-1 text-center text-xs text-muted-foreground">
                     {m.acao?.tipo === "status" && m.acao.valor === "resolvido" ? (
-                      <>
-                        Resolvido por {nomeDe(m.autorId)}: <TextoComLinks texto={m.corpo} />
+                      <>{tr("resolvido_por_autorid", { autorId: nomeDe(m.autorId) })}{" "}<TextoComLinks texto={m.corpo} />
                       </>
                     ) : (
                       m.corpo
@@ -514,14 +509,11 @@ export function Conversa({
                 )}
                 {p.estado === "enviando" ? (
                   <p className="mt-0.5 flex items-center justify-end gap-1 text-[11px] text-muted-foreground">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Enviando…
-                  </p>
+                    <Loader2 className="h-3 w-3 animate-spin" />{tr("enviando")}</p>
                 ) : (
                   <div className="mt-1 text-[11px]">
                     <p role="alert" className="flex items-center gap-1 text-destructive">
-                      <AlertCircle className="h-3 w-3 shrink-0" />
-                      Falha no envio{p.erro ? `: ${p.erro}` : ""}
+                      <AlertCircle className="h-3 w-3 shrink-0" />{tr("falha_no_envio")}{p.erro ? `: ${p.erro}` : ""}
                     </p>
                     <div className="mt-1 flex flex-wrap justify-end gap-x-3 gap-y-1">
                       <Button variant="plain" size="none"
@@ -529,16 +521,12 @@ export function Conversa({
                         className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-2 hover:underline"
                         onClick={() => tentarNovamente(p.clienteId)}
                       >
-                        <RotateCw className="h-3 w-3" />
-                        Tentar novamente
-                      </Button>
+                        <RotateCw className="h-3 w-3" />{tr("tentar_novamente")}</Button>
                       <Button variant="plain" size="none"
                         type="button"
                         className="text-muted-foreground hover:underline"
                         onClick={() => descartar(p.clienteId)}
-                      >
-                        Voltar ao rascunho
-                      </Button>
+                      >{tr("voltar_ao_rascunho")}</Button>
                     </div>
                   </div>
                 )}
@@ -557,9 +545,7 @@ export function Conversa({
                 verificarFim();
               }}
             >
-              <ArrowDown className="h-3.5 w-3.5" />
-              Novas mensagens
-            </Button>
+              <ArrowDown className="h-3.5 w-3.5" />{tr("novas_mensagens")}</Button>
           </div>
         )}
       </div>
@@ -579,7 +565,7 @@ export function Conversa({
               <Button variant="plain" size="none"
                 type="button"
                 className="shrink-0"
-                aria-label="Remover anexo"
+                aria-label={tr("remover_anexo")}
                 onClick={() => setAnexo(null)}
               >
                 <X className="h-3.5 w-3.5" />
@@ -607,22 +593,20 @@ export function Conversa({
               type="button"
               variant="outline"
               className="h-10 shrink-0 !px-2.5"
-              aria-label="Anexar imagem ou PDF (até 5 MB)"
-              title="Anexar imagem ou PDF (até 5 MB)"
+              aria-label={tr("anexar_imagem_ou_pdf_ate_5")}
+              title={tr("anexar_imagem_ou_pdf_ate_5")}
               onClick={() => arquivo.current?.click()}
             >
               <Paperclip className="h-4 w-4" />
             </Button>
-            <Label htmlFor={`msg-${chamado.id}${encaminhamentoId ?? ""}`} className="sr-only text-[length:inherit] font-normal text-inherit">
-              Mensagem
-            </Label>
+            <Label htmlFor={`msg-${chamado.id}${encaminhamentoId ?? ""}`} className="sr-only text-[length:inherit] font-normal text-inherit">{tr("mensagem")}</Label>
             <Textarea
               id={`msg-${chamado.id}${encaminhamentoId ?? ""}`}
               ref={campo}
               rows={1}
               value={rascunho}
               maxLength={4000}
-              placeholder="Escreva sua mensagem"
+              placeholder={tr("escreva_sua_mensagem")}
               onChange={(e) => setRascunho(e.target.value)}
               onKeyDown={(e) => {
                 if (desktop && e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -637,15 +621,13 @@ export function Conversa({
               className="h-10 shrink-0 !px-3"
               onClick={submeter}
               disabled={!rascunho.trim() && !anexo}
-              aria-label={rotuloEnviar === "Enviar" ? "Enviar mensagem" : rotuloEnviar}
+              aria-label={rotuloEnviar === "Enviar" ? tr("enviar_mensagem") : rotuloEnviar}
             >
               <SendHorizontal className="h-4 w-4" />
               <span className="hidden @min-[480px]:inline">{rotuloEnviar}</span>
             </Button>
           </div>
-          <p className="mt-1 hidden text-[11px] text-muted-foreground @min-[560px]:block">
-            Enter envia · Shift+Enter quebra linha · Imagem ou PDF até 5 MB
-          </p>
+          <p className="mt-1 hidden text-[11px] text-muted-foreground @min-[560px]:block">{tr("enter_envia_shift_enter_quebra_linha")}</p>
         </div>
       )}
     </div>

@@ -1,0 +1,30 @@
+// Textos de src/components/suporte/EncaminhamentosOrganizacao.tsx.
+import { dicionario } from "@/i18n/dicionario";
+
+export const tr = dicionario("components/suporte/EncaminhamentosOrganizacao", {
+  "falha_ao_abrir": { pt: "Falha ao abrir.", en: "Could not open." },
+  "a_administracao_encaminha": { pt: "A administração encaminha", en: "The administration forwards" },
+  "quando_um_chamado_depende_da_organizacao": { pt: "Quando um chamado depende da organização, chega aqui com a orientação do que é preciso.", en: "When a ticket depends on the organization, it arrives here with guidance on what is needed." },
+  "voce_responde_a_administracao": { pt: "Você responde à administração", en: "You reply to the administration" },
+  "a_conversa_e_interna_o_participante": { pt: "A conversa é interna: o participante não vê estas mensagens.", en: "The conversation is internal: the participant does not see these messages." },
+  "marque_o_retorno_enviado": { pt: "Marque o retorno enviado", en: "Mark the reply as sent" },
+  "a_administracao_da_a_devolutiva_ao": { pt: "A administração dá a devolutiva ao participante e encerra o chamado.", en: "The administration answers the participant and closes the ticket." },
+  "demandas": { pt: "Demandas", en: "Requests" },
+  "como_funciona_para_a_organizacao": { pt: "Como funciona para a organização", en: "How it works for the organization" },
+  "falha": { pt: "Falha.", en: "Failed." },
+  "demandas_encaminhadas": { pt: "Demandas encaminhadas", en: "Forwarded requests" },
+  "nenhuma_demanda_por_aqui": { pt: "Nenhuma demanda por aqui", en: "No requests here" },
+  "quando_a_administracao_precisar_da_organ": { pt: "Quando a administração precisar da organização, a demanda aparece nesta lista.", en: "When the administration needs the organization, the request appears in this list." },
+  "n_nao_lidas": { pt: "{n} não lidas", en: "{n} unread" },
+  "evento": { pt: "Evento", en: "Event" },
+  "demanda": { pt: "Demanda", en: "Request" },
+  "voltar_para_a_lista": { pt: "Voltar para a lista", en: "Back to the list" },
+  "chamado_valor": { pt: "· Chamado: {valor}", en: "· Ticket: {valor}" },
+  "orientacao_da_administracao": { pt: "Orientação da administração", en: "Administration guidance" },
+  "marcar_retorno_enviado_a_administracao": { pt: "Marcar retorno enviado à administração", en: "Mark reply sent to the administration" },
+  "interno": { pt: "Interno", en: "Internal" },
+  "suas_mensagens_vao_para_a_administracao": { pt: "Suas mensagens vão para a administração, que dá a devolutiva ao participante.", en: "Your messages go to the administration, which answers the participant." },
+  "enviar_a_administracao": { pt: "Enviar à administração", en: "Send to the administration" },
+  "destino_administracao": { pt: "Destino: administração.", en: "To: administration." },
+  "responda_a_administracao_com_as_informac": { pt: "Responda à administração com as informações solicitadas.", en: "Reply to the administration with the requested information." },
+});

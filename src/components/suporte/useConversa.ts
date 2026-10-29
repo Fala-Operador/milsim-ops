@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { enviarMensagemSuporte, type AnexoEnvio } from "@/api/suporte.functions";
 import { useSuporte } from "@/contexts/SuporteContext";
+import { tr } from "@/i18n/components/suporte/useConversa";
 
 export interface Pendente {
   clienteId: string;
@@ -61,7 +62,7 @@ export function useConversa(chamadoId: string, usuarioId: string, encaminhamento
       atualizarPendentes((l) => l.filter((x) => x.clienteId !== p.clienteId));
       sinalizar(p.chamadoId);
     } catch (e) {
-      atualizarPendentes((l) => l.map((x) => (x.clienteId === p.clienteId ? { ...x, estado: "falha", erro: e instanceof Error ? e.message : "Falha no envio." } : x)));
+      atualizarPendentes((l) => l.map((x) => (x.clienteId === p.clienteId ? { ...x, estado: "falha", erro: e instanceof Error ? e.message : tr("falha_no_envio") } : x)));
     }
   }, [sinalizar]);
 

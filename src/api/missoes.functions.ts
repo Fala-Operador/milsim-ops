@@ -11,6 +11,7 @@ import { entregasDoEvento, nomeExercito, placarExercitos, rankingIndividual, tem
 import { exigirUsuario, ler, mutar } from "@/server/unidade.server";
 import { chamar } from "@/api/cliente";
 import type { BaseDados, CampanhaMissoes } from "@/lib/domain/types";
+import { tr } from "@/i18n/api/missoes.functions";
 
 const id = z.string().min(1).max(120);
 const imagem = z.string().max(3 * 1024 * 1024);
@@ -93,7 +94,7 @@ export const placarMissoesFn = createServerFn({ method: "POST" })
   .handler(({ data }) =>
     ler(({ base, usuario }) => {
       const u = exigirUsuario(usuario);
-      if (!papelNoEvento(base, u, data.eventoId)) throw new ErroDominio("sem_acesso", "O placar é só para inscritos confirmados e a organização.");
+      if (!papelNoEvento(base, u, data.eventoId)) throw new ErroDominio("sem_acesso", tr("o_placar_e_so_para_inscritos"));
       return montarPlacar(base, data.eventoId, u.id);
     }),
   );
@@ -107,7 +108,7 @@ export const temporadaMissoesFn = createServerFn({ method: "POST" })
       const eventosOrg = base.eventos.filter((e) => e.organizacaoId === data.organizacaoId);
       const gere = eventosOrg.some((e) => gereEvento(u, e)) || (u.perfil === "organizador" && u.organizacaoId === data.organizacaoId);
       const participa = base.inscricoes.some((i) => i.usuarioId === u.id && i.status === "confirmada" && eventosOrg.some((e) => e.id === i.eventoId));
-      if (!gere && !participa && u.perfil !== "admin") throw new ErroDominio("sem_acesso", "Temporada disponível para quem participa dos eventos desta organização.");
+      if (!gere && !participa && u.perfil !== "admin") throw new ErroDominio("sem_acesso", tr("temporada_disponivel_para_quem_participa"));
       const linhas = temporada(base, data.organizacaoId, data.ano);
       return {
         organizacao: base.organizacoes.find((o) => o.id === data.organizacaoId)?.nome ?? "",

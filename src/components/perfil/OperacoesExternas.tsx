@@ -18,14 +18,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Campo, EstadoVazio, Modal, TextoLivre } from "@/components/ui";
 import { useConfirmacao } from "@/contexts/ConfirmacaoContext";
+import { tr } from "@/i18n/components/perfil/OperacoesExternas";
 
-const msg = (e: unknown) => (e instanceof Error ? e.message : "Algo deu errado.");
+const msg = (e: unknown) => (e instanceof Error ? e.message : tr("algo_deu_errado"));
 const UFS = Object.keys(NOMES_UF).sort((a, b) => NOMES_UF[a]!.localeCompare(NOMES_UF[b]!));
 const hoje = () => new Date().toISOString().slice(0, 10);
 
 /** Selo usado na lista, no mapa e no perfil público. */
 export function BadgeRegistrada() {
-  return <Badge variant="outline" className="gap-1 whitespace-nowrap"><MapPinned className="size-3" aria-hidden="true" />Registrada pelo operador</Badge>;
+  return <Badge variant="outline" className="gap-1 whitespace-nowrap"><MapPinned className="size-3" aria-hidden="true" />{tr("registrada_pelo_operador")}</Badge>;
 }
 
 interface Formulario {
@@ -51,7 +52,7 @@ export function OperacoesExternas({ externas, proprio, onMudou }: { externas?: O
     try { await salvarOperacaoExterna({ ...doDTO(o), visivel: !o.visivel }); onMudou(); } catch (e) { setErro(msg(e)); }
   };
   const excluir = async (o: OperacaoExternaDTO) => {
-    if (!(await confirmar({ titulo: "Excluir operação?", descricao: `"${o.nome}" sairá das suas operações.`, confirmar: "Excluir", destrutivo: true }))) return;
+    if (!(await confirmar({ titulo: tr("excluir_operacao"), descricao: tr("nome_saira_das_suas_operacoes", { nome: o.nome }), confirmar: tr("excluir"), destrutivo: true }))) return;
     setErro("");
     try { await excluirOperacaoExterna(o.id); onMudou(); } catch (e) { setErro(msg(e)); }
   };
@@ -60,28 +61,28 @@ export function OperacoesExternas({ externas, proprio, onMudou }: { externas?: O
     <section aria-labelledby="titulo-externas" className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h2 id="titulo-externas" className="font-display text-lg font-semibold uppercase">Operações fora da plataforma</h2>
+          <h2 id="titulo-externas" className="font-display text-lg font-semibold uppercase">{tr("operacoes_fora_da_plataforma")}</h2>
           <p className="text-sm text-muted-foreground">
             {proprio
-              ? "Registre eventos de que você participou fora do MilSim Ops. Eles aparecem no mapa, mas não contam para insígnias e recompensas."
-              : "Registradas pelo próprio operador; não confirmadas pela plataforma."}
+              ? tr("registre_eventos_de_que_voce_participou")
+              : tr("registradas_pelo_proprio_operador_nao_co")}
           </p>
         </div>
-        {proprio && <Button onClick={() => { setErro(""); setForm(vazio()); }}><Plus className="size-4" aria-hidden="true" />Registrar operação</Button>}
+        {proprio && <Button onClick={() => { setErro(""); setForm(vazio()); }}><Plus className="size-4" aria-hidden="true" />{tr("registrar_operacao")}</Button>}
       </div>
       {erro && !form && <p role="alert" className="text-sm text-destructive">{erro}</p>}
 
       {externas.length === 0 ? (
-        <EstadoVazio titulo="Nenhuma operação registrada" descricao="Adicione as operações de que você participou antes de usar a plataforma, com uma foto." />
+        <EstadoVazio titulo={tr("nenhuma_operacao_registrada")} descricao={tr("adicione_as_operacoes_de_que_voce")} />
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {externas.map((o) => (
             <li key={o.id} className="overflow-hidden rounded-lg border border-border bg-card">
-              <img src={o.fotoUrl} alt={o.fotoAlt ?? `Foto da ${o.nome}`} className="aspect-[4/3] w-full object-cover" loading="lazy" />
+              <img src={o.fotoUrl} alt={o.fotoAlt ?? tr("foto_da_nome", { nome: o.nome })} className="aspect-[4/3] w-full object-cover" loading="lazy" />
               <div className="space-y-1 p-3 text-sm">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <p className="font-medium">{o.nome}</p>
-                  {proprio && !o.visivel && <Badge variant="secondary" className="gap-1"><EyeOff className="size-3" aria-hidden="true" />Privada</Badge>}
+                  {proprio && !o.visivel && <Badge variant="secondary" className="gap-1"><EyeOff className="size-3" aria-hidden="true" />{tr("privada")}</Badge>}
                 </div>
                 <p className="text-muted-foreground">
                   {formatarDataBR(o.data)} · {o.cidade}/{o.uf}{o.modalidade ? ` · ${nomeModalidade(o.modalidade)}` : ""}
@@ -91,11 +92,11 @@ export function OperacoesExternas({ externas, proprio, onMudou }: { externas?: O
                 <div className="pt-1"><BadgeRegistrada /></div>
                 {proprio && (
                   <div className="flex flex-wrap gap-1 pt-2">
-                    <Button variant="ghost" className="text-xs" onClick={() => { setErro(""); setForm(doDTO(o)); }}><Pencil className="size-3" aria-hidden="true" />Editar</Button>
-                    <Button variant="ghost" className="text-xs" onClick={() => alternarVisivel(o)} aria-label={o.visivel ? `Ocultar ${o.nome} do perfil público` : `Mostrar ${o.nome} no perfil público`}>
-                      {o.visivel ? <><Eye className="size-3" aria-hidden="true" />Visível</> : <><EyeOff className="size-3" aria-hidden="true" />Privada</>}
+                    <Button variant="ghost" className="text-xs" onClick={() => { setErro(""); setForm(doDTO(o)); }}><Pencil className="size-3" aria-hidden="true" />{tr("editar")}</Button>
+                    <Button variant="ghost" className="text-xs" onClick={() => alternarVisivel(o)} aria-label={o.visivel ? tr("ocultar_nome_do_perfil_publico", { nome: o.nome }) : tr("mostrar_nome_no_perfil_publico", { nome: o.nome })}>
+                      {o.visivel ? <><Eye className="size-3" aria-hidden="true" />{tr("visivel")}</> : <><EyeOff className="size-3" aria-hidden="true" />{tr("privada")}</>}
                     </Button>
-                    <Button variant="ghost" className="text-xs" onClick={() => excluir(o)} aria-label={`Excluir ${o.nome}`}><Trash2 className="size-3" aria-hidden="true" /></Button>
+                    <Button variant="ghost" className="text-xs" onClick={() => excluir(o)} aria-label={tr("excluir_nome", { nome: o.nome })}><Trash2 className="size-3" aria-hidden="true" /></Button>
                   </div>
                 )}
               </div>
@@ -122,7 +123,7 @@ function FormOperacao({ inicial, onFechar, onSalvo }: { inicial: Formulario; onF
   };
   const salvar = async () => {
     setErro("");
-    if (!f.foto) return setErro("Adicione uma foto da operação.");
+    if (!f.foto) return setErro(tr("adicione_uma_foto_da_operacao"));
     setSalvando(true);
     try {
       await salvarOperacaoExterna({
@@ -137,64 +138,62 @@ function FormOperacao({ inicial, onFechar, onSalvo }: { inicial: Formulario; onF
   };
 
   return (
-    <Modal aberto titulo={f.id ? "Editar operação" : "Registrar operação"} onFechar={onFechar}>
+    <Modal aberto titulo={f.id ? tr("editar_operacao") : tr("registrar_operacao")} onFechar={onFechar}>
       <div className="space-y-3">
         <div>
           {f.foto ? (
-            <img src={f.foto} alt="Prévia da foto" className="aspect-[4/3] w-full rounded-md object-cover" />
+            <img src={f.foto} alt={tr("previa_da_foto")} className="aspect-[4/3] w-full rounded-md object-cover" />
           ) : (
-            <div className="flex aspect-[4/3] w-full items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground">Foto obrigatória</div>
+            <div className="flex aspect-[4/3] w-full items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground">{tr("foto_obrigatoria")}</div>
           )}
           <Label className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-secondary">
-            <Camera className="size-4" aria-hidden="true" />{f.foto ? "Trocar foto" : "Escolher foto"}
+            <Camera className="size-4" aria-hidden="true" />{f.foto ? tr("trocar_foto") : tr("escolher_foto")}
             <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => { const a = e.target.files?.[0]; e.target.value = ""; void escolherFoto(a); }} />
           </Label>
         </div>
-        <Campo rotulo="Texto alternativo da foto (opcional)" htmlFor="opx-alt">
-          <Input id="opx-alt" maxLength={200} value={f.fotoAlt} onChange={(e) => set("fotoAlt", e.target.value)} placeholder="Ex.: equipe reunida antes da operação" />
+        <Campo rotulo={tr("texto_alternativo_da_foto_opcional")} htmlFor="opx-alt">
+          <Input id="opx-alt" maxLength={200} value={f.fotoAlt} onChange={(e) => set("fotoAlt", e.target.value)} placeholder={tr("ex_equipe_reunida_antes_da_operacao")} />
         </Campo>
-        <Campo rotulo="Nome da operação" htmlFor="opx-nome">
+        <Campo rotulo={tr("nome_da_operacao")} htmlFor="opx-nome">
           <Input id="opx-nome" maxLength={120} value={f.nome} onChange={(e) => set("nome", e.target.value)} />
         </Campo>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Campo rotulo="Data" htmlFor="opx-data">
+          <Campo rotulo={tr("data")} htmlFor="opx-data">
             <Input id="opx-data" type="date" max={hoje()} value={f.data} onChange={(e) => set("data", e.target.value)} />
           </Campo>
-          <Campo rotulo="Modalidade (opcional)" htmlFor="opx-mod">
+          <Campo rotulo={tr("modalidade_opcional")} htmlFor="opx-mod">
             <NativeSelect id="opx-mod" value={f.modalidade} onChange={(e) => set("modalidade", e.target.value)}>
-              <option value="">Não informada</option>
+              <option value="">{tr("nao_informada")}</option>
               {MODALIDADES.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
             </NativeSelect>
           </Campo>
         </div>
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
-          <Campo rotulo="Cidade" htmlFor="opx-cidade">
+          <Campo rotulo={tr("cidade")} htmlFor="opx-cidade">
             <Input id="opx-cidade" maxLength={80} value={f.cidade} onChange={(e) => set("cidade", e.target.value)} />
           </Campo>
-          <Campo rotulo="Estado" htmlFor="opx-uf">
+          <Campo rotulo={tr("estado")} htmlFor="opx-uf">
             <NativeSelect id="opx-uf" value={f.uf} onChange={(e) => set("uf", e.target.value)}>
-              <option value="">UF</option>
+              <option value="">{tr("uf")}</option>
               {UFS.map((uf) => <option key={uf} value={uf}>{uf}</option>)}
             </NativeSelect>
           </Campo>
         </div>
-        <Campo rotulo="Organização (opcional)" htmlFor="opx-org">
+        <Campo rotulo={tr("organizacao_opcional")} htmlFor="opx-org">
           <Input id="opx-org" maxLength={120} value={f.organizacao} onChange={(e) => set("organizacao", e.target.value)} />
         </Campo>
-        <Campo rotulo={`Comentário (opcional, ${f.descricao.length}/400)`} htmlFor="opx-desc">
+        <Campo rotulo={tr("comentario_opcional_length_400", { length: f.descricao.length })} htmlFor="opx-desc">
           <Textarea id="opx-desc" maxLength={400} rows={3} value={f.descricao} onChange={(e) => set("descricao", e.target.value)} />
         </Campo>
         <div className="flex items-center gap-2">
           <Checkbox id="opx-vis" checked={f.visivel} onCheckedChange={(v) => set("visivel", v === true)} />
-          <Label htmlFor="opx-vis" className="text-sm font-normal">Mostrar no meu perfil público (segue a privacidade do mapa)</Label>
+          <Label htmlFor="opx-vis" className="text-sm font-normal">{tr("mostrar_no_meu_perfil_publico_segue")}</Label>
         </div>
-        <p className="rounded-md border border-border bg-secondary/40 p-2 text-xs text-muted-foreground">
-          Operações registradas por você aparecem como "Registrada pelo operador" e não contam para insígnias e recompensas, que só valem para eventos com presença confirmada na plataforma.
-        </p>
+        <p className="rounded-md border border-border bg-secondary/40 p-2 text-xs text-muted-foreground">{tr("operacoes_registradas_por_voce_aparecem")}</p>
         {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onFechar} disabled={salvando}>Cancelar</Button>
-          <Button onClick={salvar} disabled={salvando}>{salvando ? "Salvando..." : "Salvar operação"}</Button>
+          <Button variant="outline" onClick={onFechar} disabled={salvando}>{tr("cancelar")}</Button>
+          <Button onClick={salvar} disabled={salvando}>{salvando ? tr("salvando") : tr("salvar_operacao")}</Button>
         </div>
       </div>
     </Modal>

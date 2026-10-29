@@ -13,6 +13,7 @@ import { tempoRelativo } from "@/lib/tempoRelativo";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { Notificacao } from "@/lib/domain/types";
+import { tr } from "@/i18n/components/SinoNotificacoes";
 
 const LIMITE = 8;
 const foco = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
@@ -24,7 +25,7 @@ function Conteudo({ n, agora }: { n: Notificacao; agora: Date }) {
       <span className="min-w-0 flex-1">
         <span className={`block text-sm ${n.lida ? "text-muted-foreground" : "font-medium text-foreground"}`}>
           {n.titulo}
-          {!n.lida && <span className="sr-only"> (não lida)</span>}
+          {!n.lida && <span className="sr-only">{" "}{tr("nao_lida")}</span>}
         </span>
         <span className="mt-0.5 line-clamp-2 block text-xs text-muted-foreground">{n.corpo}</span>
         <span className="mt-0.5 block text-[11px] text-muted-foreground/80">{tempoRelativo(n.criadoEm, agora)}</span>
@@ -56,7 +57,7 @@ export function SinoNotificacoes() {
       <PopoverTrigger asChild>
         <Button variant="plain" size="none" type="button"
           className={`relative flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground ${foco}`}
-          aria-label={naoLidas > 0 ? `Notificações, ${naoLidas} não lidas` : "Notificações, nenhuma não lida"}>
+          aria-label={naoLidas > 0 ? tr("notificacoes_naolidas_nao_lidas", { naoLidas }) : tr("notificacoes_nenhuma_nao_lida")}>
           <Bell className={`h-5 w-5 ${naoLidas > 0 ? "text-warning" : ""}`} aria-hidden="true" />
           {naoLidas > 0 && (
             <span aria-hidden="true" className="absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-warning px-1 text-[10px] font-bold leading-none text-warning-foreground">
@@ -67,16 +68,12 @@ export function SinoNotificacoes() {
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={8} collisionPadding={8} className="w-[min(24rem,calc(100vw-1rem))] p-0">
         <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5">
-          <p className="font-display text-sm font-semibold uppercase tracking-wide">Notificações</p>
-          <Button variant="ghost" className="h-7 px-2 text-xs" disabled={naoLidas === 0} onClick={marcarTodasLidas}>
-            Marcar todas como lidas
-          </Button>
+          <p className="font-display text-sm font-semibold uppercase tracking-wide">{tr("notificacoes")}</p>
+          <Button variant="ghost" className="h-7 px-2 text-xs" disabled={naoLidas === 0} onClick={marcarTodasLidas}>{tr("marcar_todas_como_lidas")}</Button>
         </div>
         {recentes.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-4 py-8 text-center text-sm text-muted-foreground">
-            <BellOff className="h-6 w-6" aria-hidden="true" />
-            Você está em dia. Nenhuma notificação por aqui.
-          </div>
+            <BellOff className="h-6 w-6" aria-hidden="true" />{tr("voce_esta_em_dia_nenhuma_notificacao")}</div>
         ) : (
           <ul className="max-h-[min(28rem,65vh)] space-y-0.5 overflow-y-auto overscroll-contain p-1.5">
             {recentes.map((n) => (
@@ -103,9 +100,7 @@ export function SinoNotificacoes() {
         )}
         <div className="border-t border-border p-1.5">
           <Link to="/app/notificacoes" onClick={() => setAberto(false)}
-            className={`block rounded-md px-3 py-2 text-center text-sm font-medium text-accent hover:bg-secondary ${foco}`}>
-            Ver todas as notificações
-          </Link>
+            className={`block rounded-md px-3 py-2 text-center text-sm font-medium text-accent hover:bg-secondary ${foco}`}>{tr("ver_todas_as_notificacoes")}</Link>
         </div>
       </PopoverContent>
     </Popover>
