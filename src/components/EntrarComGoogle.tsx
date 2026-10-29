@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { iniciarLoginGoogle } from "@/api/sessao.functions";
 import { Button } from "@/components/ui/button";
+import { TextoEmLinha } from "@/components/TextoRico";
 import { tr } from "@/i18n/components/EntrarComGoogle";
 
 function LogoGoogle() {
@@ -38,6 +39,10 @@ export function EntrarComGoogle({ redirect, texto = tr("entrar_com_o_google") }:
         {indo ? tr("abrindo_o_google") : texto}
       </Button>
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
+      {/* Exigência da verificação do Google: o aviso sobre os dados do Google fica visível no ponto do login. */}
+      <p className="text-xs text-muted-foreground [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-2">
+        <TextoEmLinha texto={tr("aviso_dados_google")} />
+      </p>
     </div>
   );
 }
