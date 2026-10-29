@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { obterConfigTurnstile } from "@/api/sessao.functions";
+import { tr } from "@/i18n/components/Turnstile";
 
 interface ApiTurnstile {
   render: (el: HTMLElement, opcoes: Record<string, unknown>) => string;
@@ -90,8 +91,7 @@ export function useTurnstile(acao: string) {
       <div ref={setCaixa} className="min-h-[65px]" />
       {falhou && (
         <p role="alert" className="text-xs text-destructive">
-          A verificação anti-robô não carregou. Recarregue a página ou desative bloqueadores de conteúdo.
-        </p>
+          {tr("a_verificacao_anti_robo_nao_carregou")}</p>
       )}
     </div>
   ) : null;

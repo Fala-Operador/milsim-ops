@@ -30,6 +30,7 @@ import { MailCheck } from "lucide-react";
 import { fichaPreenchida, type DadosFicha } from "@/lib/fichaEmergencia";
 import imgTrilha from "@/assets/comunidade-trilha.jpg";
 import imgEquipamento from "@/assets/comunidade-equipamento.jpg";
+import { tr } from "@/i18n/routes/cadastro";
 
 // ?completar=google: conta Google sem perfil (veja src/routes/entrar-google.tsx). Mesmas etapas,
 // sem a de conta: o e-mail vem do Google e não há senha nem CAPTCHA.
@@ -40,10 +41,10 @@ export const Route = createFileRoute("/cadastro")({
   }),
   head: () => ({
     meta: [
-      { title: "Cadastro de participante — MilSim Ops" },
-      { name: "description", content: "Cadastre-se para se inscrever em eventos de simulação militar. Demonstração." },
-      { property: "og:title", content: "Cadastro de participante — MilSim Ops" },
-      { property: "og:description", content: "Cadastre-se na plataforma. Demonstração." },
+      { title: tr("cadastro_de_participante_milsim_ops") },
+      { name: "description", content: tr("cadastre_se_para_se_inscrever_em") },
+      { property: "og:title", content: tr("cadastro_de_participante_milsim_ops") },
+      { property: "og:description", content: tr("cadastre_se_na_plataforma_demonstracao") },
     ],
   }),
   component: PaginaCadastro,
@@ -60,11 +61,11 @@ const UFS: Array<[string, string]> = [
 ];
 
 const ETAPAS = [
-  { chave: "conta", titulo: "Conta", descricao: "E-mail e senha para entrar na plataforma." },
-  { chave: "pessoais", titulo: "Dados pessoais", descricao: "Usados só para identificar você na portaria do evento." },
-  { chave: "endereco", titulo: "Endereço", descricao: "Digite o CEP: o endereço é preenchido sozinho." },
-  { chave: "jogo", titulo: "Perfil de jogo", descricao: "Opcional. Ajuda o organizador e a equipe de resgate em campo." },
-  { chave: "revisao", titulo: "Revisão", descricao: "Confira os dados e aceite os termos para criar a conta." },
+  { chave: "conta", get titulo() { return tr("conta"); }, get descricao() { return tr("e_mail_e_senha_para_entrar"); } },
+  { chave: "pessoais", get titulo() { return tr("dados_pessoais"); }, get descricao() { return tr("usados_so_para_identificar_voce_na"); } },
+  { chave: "endereco", get titulo() { return tr("endereco"); }, get descricao() { return tr("digite_o_cep_o_endereco_e"); } },
+  { chave: "jogo", get titulo() { return tr("perfil_de_jogo"); }, get descricao() { return tr("opcional_ajuda_o_organizador_e_a"); } },
+  { chave: "revisao", get titulo() { return tr("revisao"); }, get descricao() { return tr("confira_os_dados_e_aceite_os"); } },
 ] as const;
 type ChaveEtapa = (typeof ETAPAS)[number]["chave"];
 const ETAPAS_GOOGLE = ETAPAS.filter((e) => e.chave !== "conta");
@@ -120,7 +121,7 @@ function PaginaCadastro() {
   const avancar = (e: React.FormEvent) => {
     if (etapa === ultima) return aoEnviar(e);
     e.preventDefault();
-    if (chave === "conta" && !senhaValida) return setErro(erroSenha(f.senha) ?? "A confirmação de senha não confere.");
+    if (chave === "conta" && !senhaValida) return setErro(erroSenha(f.senha) ?? tr("a_confirmacao_de_senha_nao_confere"));
     irPara(etapa + 1);
   };
 
@@ -172,7 +173,7 @@ function PaginaCadastro() {
       await completarCadastroGoogle(dadosPerfil());
       navigate({ ...destinoDoLink(redirectSeguro(redirect)) } as { to: string });
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Falha no cadastro.");
+      setErro(err instanceof Error ? err.message : tr("falha_no_cadastro"));
     } finally {
       setCarregando(false);
     }
@@ -187,7 +188,7 @@ function PaginaCadastro() {
     e.preventDefault();
     setErro("");
     if (google) return aoCompletarGoogle();
-    if (!senhaValida) return setErro(erroSenha(f.senha) ?? "A confirmação de senha não confere.");
+    if (!senhaValida) return setErro(erroSenha(f.senha) ?? tr("a_confirmacao_de_senha_nao_confere"));
     setCarregando(true);
     try {
       const conta = await registrar({
@@ -202,7 +203,7 @@ function PaginaCadastro() {
       // Retorna ao fluxo de inscrição quando o cadastro começou em um evento
       navigate({ ...destinoDoLink(redirectSeguro(redirect)) } as { to: string });
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Falha no cadastro.");
+      setErro(err instanceof Error ? err.message : tr("falha_no_cadastro"));
       turnstile.resetar();
     } finally {
       setCarregando(false);
@@ -211,17 +212,15 @@ function PaginaCadastro() {
 
   if (aguardandoConfirmacao) {
     return (
-      <LayoutAcesso titulo="Confirme seu e-mail" rotulo="Quase lá" frase="Abra o link do e-mail para ativar a sua conta." imagem={imgTrilha}>
+      <LayoutAcesso titulo={tr("confirme_seu_e_mail")} rotulo={tr("quase_la")} frase={tr("abra_o_link_do_e_mail")} imagem={imgTrilha}>
         <div className="mt-4 space-y-4">
           <MailCheck className="h-8 w-8 text-accent" aria-hidden="true" />
           <p className="text-sm">
-            Sua conta foi criada. Enviamos um link de confirmação para <strong className="break-all">{aguardandoConfirmacao}</strong>.
-            Abra o link para ativar o acesso — ele vale por 1 hora.
-          </p>
-          <p className="text-sm text-muted-foreground">Não chegou? Confira a caixa de spam ou peça outro e-mail.</p>
+            {tr("sua_conta_foi_criada_enviamos_um")}{" "}<strong className="break-all">{aguardandoConfirmacao}</strong>{tr("abra_o_link_para_ativar_o")}</p>
+          <p className="text-sm text-muted-foreground">{tr("nao_chegou_confira_a_caixa_de")}</p>
           <ReenviarConfirmacao email={aguardandoConfirmacao} />
           <p className="text-sm">
-            Já confirmou? <Link to="/login" search={{ redirect }} className="text-accent hover:underline">Entrar</Link>
+            {tr("ja_confirmou")}{" "}<Link to="/login" search={{ redirect }} className="text-accent hover:underline">{tr("entrar")}</Link>
           </p>
         </div>
       </LayoutAcesso>
@@ -230,11 +229,11 @@ function PaginaCadastro() {
 
   if (google && contaGoogle !== "ok") {
     return (
-      <LayoutAcesso titulo="Complete seu cadastro" rotulo="Cadastro de operador" frase="Uma conta para todas as operações do Brasil." imagem={imgEquipamento}>
-        {contaGoogle === "carregando" ? <p className="mt-4 text-sm text-muted-foreground">Carregando sua conta Google...</p> : (
+      <LayoutAcesso titulo={tr("complete_seu_cadastro")} rotulo={tr("cadastro_de_operador")} frase={tr("uma_conta_para_todas_as_operacoes")} imagem={imgEquipamento}>
+        {contaGoogle === "carregando" ? <p className="mt-4 text-sm text-muted-foreground">{tr("carregando_sua_conta_google")}</p> : (
           <div className="mt-4 space-y-4 text-sm">
-            <p>Sua sessão com o Google terminou ou o cadastro já foi concluído.</p>
-            <Link to="/login" search={{ redirect }} className="text-accent hover:underline">Ir para o login</Link>
+            <p>{tr("sua_sessao_com_o_google_terminou")}</p>
+            <Link to="/login" search={{ redirect }} className="text-accent hover:underline">{tr("ir_para_o_login")}</Link>
           </div>
         )}
       </LayoutAcesso>
@@ -243,19 +242,19 @@ function PaginaCadastro() {
 
   // [rótulo, valor, etapa para editar (null = não editável aqui)]
   const resumo: Array<[string, string, ChaveEtapa | null]> = [
-    ["E-mail", google ? `${f.email} (Google)` : f.email, google ? null : "conta"], ["Nome", f.nomeCompleto, "pessoais"], ["CPF", f.cpf, "pessoais"], ["Nascimento", f.dataNascimento.split("-").reverse().join("/"), "pessoais"],
-    ["WhatsApp", f.whatsapp, "pessoais"], ["Endereço", [f.logradouro, f.numero, f.bairro, f.cidade && `${f.cidade}/${f.uf}`].filter(Boolean).join(", "), "endereco"],
-    ["Squad", f.squad || "—", "jogo"], ["Ficha de emergência", fichaPreenchida(ficha) ? "Preenchida" : "Não preenchida", "jogo"],
+    [tr("e_mail"), google ? tr("email_google", { email: f.email }) : f.email, google ? null : "conta"], [tr("nome"), f.nomeCompleto, "pessoais"], ["CPF", f.cpf, "pessoais"], [tr("nascimento"), f.dataNascimento.split("-").reverse().join("/"), "pessoais"],
+    [tr("whatsapp"), f.whatsapp, "pessoais"], [tr("endereco"), [f.logradouro, f.numero, f.bairro, f.cidade && `${f.cidade}/${f.uf}`].filter(Boolean).join(", "), "endereco"],
+    [tr("squad"), f.squad || "—", "jogo"], [tr("ficha_de_emergencia"), fichaPreenchida(ficha) ? tr("preenchida") : tr("nao_preenchida"), "jogo"],
   ];
 
   return (
     <LayoutAcesso largo
-      titulo={google ? "Complete seu cadastro" : "Criar conta"}
+      titulo={google ? tr("complete_seu_cadastro") : tr("criar_conta")}
       subtitulo={google
-        ? "Você entrou com o Google. Faltam os dados para a portaria dos eventos: quatro etapas rápidas."
-        : "Cinco etapas rápidas. Você pode voltar e corrigir antes de concluir."}
-      imagem={imgEquipamento} rotulo="Cadastro de operador" frase="Uma conta para todas as operações do Brasil.">
-      <ol className={`mt-6 grid gap-1.5 ${google ? "grid-cols-4" : "grid-cols-5"}`} aria-label="Etapas do cadastro">
+        ? tr("voce_entrou_com_o_google_faltam")
+        : tr("cinco_etapas_rapidas_voce_pode_voltar")}
+      imagem={imgEquipamento} rotulo={tr("cadastro_de_operador")} frase={tr("uma_conta_para_todas_as_operacoes")}>
+      <ol className={`mt-6 grid gap-1.5 ${google ? "grid-cols-4" : "grid-cols-5"}`} aria-label={tr("etapas_do_cadastro")}>
         {etapas.map((et, i) => (
           <li key={et.titulo} aria-current={i === etapa ? "step" : undefined}>
             <Button variant="plain" size="none" type="button" disabled={i > etapa} onClick={() => irPara(i)} className="block w-full text-left">
@@ -266,7 +265,7 @@ function PaginaCadastro() {
         ))}
       </ol>
       <div className="mt-6 border-b border-border pb-4">
-        <p className="rotulo-tecnico">Etapa {etapa + 1} de {etapas.length}</p>
+        <p className="rotulo-tecnico">{tr("etapa_valor_de_length", { valor: etapa + 1, length: etapas.length })}</p>
         <h2 className="mt-1 text-xl font-semibold">{etapas[etapa]!.titulo}</h2>
         <p className="text-sm text-muted-foreground">{etapas[etapa]!.descricao}</p>
       </div>
@@ -274,18 +273,18 @@ function PaginaCadastro() {
       <form onSubmit={avancar} className="mt-5 grid gap-4 sm:grid-cols-2">
         {chave === "conta" && <>
           <div className="sm:col-span-2 space-y-4">
-            <EntrarComGoogle redirect={redirect} texto="Criar conta com o Google" />
+            <EntrarComGoogle redirect={redirect} texto={tr("criar_conta_com_o_google")} />
             <SeparadorOu />
           </div>
           <div className="sm:col-span-2">
-            <Campo rotulo="E-mail" htmlFor="email">
+            <Campo rotulo={tr("e_mail")} htmlFor="email">
               <Input id="email" type="email" autoComplete="email" value={f.email} onChange={set("email")} required />
             </Campo>
           </div>
-          <Campo rotulo="Senha" htmlFor="senha">
+          <Campo rotulo={tr("senha")} htmlFor="senha">
             <InputSenha id="senha" autoComplete="new-password" value={f.senha} onChange={set("senha")} aria-describedby="requisitos-senha" required />
           </Campo>
-          <Campo rotulo="Confirmar senha" htmlFor="senha2">
+          <Campo rotulo={tr("confirmar_senha")} htmlFor="senha2">
             <InputSenha id="senha2" autoComplete="new-password" value={f.confirmacaoSenha} onChange={set("confirmacaoSenha")} required />
           </Campo>
           <div className="sm:col-span-2">
@@ -295,8 +294,8 @@ function PaginaCadastro() {
 
         {chave === "pessoais" && <>
           <div className="sm:col-span-2 flex items-center gap-4">
-            <img src={fotoUrl} alt="Prévia da foto de perfil" className="h-16 w-16 rounded-full border border-border object-cover" />
-            <Campo rotulo="Foto de perfil (opcional)" htmlFor="foto">
+            <img src={fotoUrl} alt={tr("previa_da_foto_de_perfil")} className="h-16 w-16 rounded-full border border-border object-cover" />
+            <Campo rotulo={tr("foto_de_perfil_opcional")} htmlFor="foto">
               <input id="foto" type="file" accept={TIPOS_FOTO.join(",")} onChange={aoSelecionarFoto} className="w-full" />
             </Campo>
           </div>
@@ -305,17 +304,17 @@ function PaginaCadastro() {
               onConfirmar={(dataUrl) => { setFotoUrl(dataUrl); setArquivoFoto(null); }} />
           )}
           <div className="sm:col-span-2">
-            <Campo rotulo="Nome completo" htmlFor="nome">
+            <Campo rotulo={tr("nome_completo")} htmlFor="nome">
               <Input id="nome" autoComplete="name" value={f.nomeCompleto} onChange={set("nomeCompleto")} required />
             </Campo>
           </div>
           <Campo rotulo="CPF" htmlFor="cpf">
             <Input id="cpf" inputMode="numeric" value={f.cpf} onChange={(e) => setF((p) => ({ ...p, cpf: mascaraCpf(e.target.value) }))} placeholder="000.000.000-00" required />
           </Campo>
-          <Campo rotulo="Data de nascimento" htmlFor="nasc">
+          <Campo rotulo={tr("data_de_nascimento")} htmlFor="nasc">
             <Input id="nasc" type="date" value={f.dataNascimento} onChange={set("dataNascimento")} required />
           </Campo>
-          <Campo rotulo="WhatsApp" htmlFor="whats">
+          <Campo rotulo={tr("whatsapp")} htmlFor="whats">
             <Input id="whats" inputMode="tel" value={f.whatsapp} onChange={(e) => setF((p) => ({ ...p, whatsapp: mascaraTelefone(e.target.value) }))} placeholder="(11) 99999-9999" required />
           </Campo>
         </>}
@@ -325,30 +324,30 @@ function PaginaCadastro() {
             <Campo rotulo="CEP" htmlFor="cep">
               <Input id="cep" inputMode="numeric" autoComplete="postal-code" value={f.cep} onChange={(e) => setF((p) => ({ ...p, cep: mascaraCep(e.target.value) }))} placeholder="00000-000" required className="sm:max-w-48" />
               <p aria-live="polite" className={`text-xs ${buscaCep.status === "erro" ? "text-destructive" : "text-muted-foreground"}`}>
-                {textoBuscaCep(buscaCep) || "Digite o CEP para preencher o endereço automaticamente."}
+                {textoBuscaCep(buscaCep) || tr("digite_o_cep_para_preencher_o")}
               </p>
             </Campo>
           </div>
-          <div className="sm:col-span-2"><Campo rotulo="Logradouro" htmlFor="logr"><Input id="logr" value={f.logradouro} onChange={set("logradouro")} required /></Campo></div>
-          <Campo rotulo="Número" htmlFor="num"><Input id="num" value={f.numero} onChange={set("numero")} required /></Campo>
-          <Campo rotulo="Complemento (opcional)" htmlFor="comp"><Input id="comp" value={f.complemento} onChange={set("complemento")} /></Campo>
-          <Campo rotulo="Bairro" htmlFor="bairro"><Input id="bairro" value={f.bairro} onChange={set("bairro")} required /></Campo>
-          <Campo rotulo="Cidade" htmlFor="cidade"><Input id="cidade" value={f.cidade} onChange={set("cidade")} required /></Campo>
-          <Campo rotulo="UF / Estado" htmlFor="uf">
+          <div className="sm:col-span-2"><Campo rotulo={tr("logradouro")} htmlFor="logr"><Input id="logr" value={f.logradouro} onChange={set("logradouro")} required /></Campo></div>
+          <Campo rotulo={tr("numero")} htmlFor="num"><Input id="num" value={f.numero} onChange={set("numero")} required /></Campo>
+          <Campo rotulo={tr("complemento_opcional")} htmlFor="comp"><Input id="comp" value={f.complemento} onChange={set("complemento")} /></Campo>
+          <Campo rotulo={tr("bairro")} htmlFor="bairro"><Input id="bairro" value={f.bairro} onChange={set("bairro")} required /></Campo>
+          <Campo rotulo={tr("cidade")} htmlFor="cidade"><Input id="cidade" value={f.cidade} onChange={set("cidade")} required /></Campo>
+          <Campo rotulo={tr("uf_estado")} htmlFor="uf">
             <NativeSelect id="uf" value={f.uf} onChange={set("uf")} required>
-              <option value="">Selecione</option>
+              <option value="">{tr("selecione")}</option>
               {UFS.map(([sigla, nome]) => <option key={sigla} value={sigla}>{sigla} — {nome}</option>)}
             </NativeSelect>
           </Campo>
         </>}
 
         {chave === "jogo" && <>
-          <Campo rotulo="Instagram (opcional)" htmlFor="insta"><Input id="insta" value={f.instagram} onChange={set("instagram")} placeholder="@seuperfil" /></Campo>
-          <Campo rotulo="Squad (opcional)" htmlFor="squad"><Input id="squad" value={f.squad} onChange={set("squad")} /></Campo>
+          <Campo rotulo={tr("instagram_opcional")} htmlFor="insta"><Input id="insta" value={f.instagram} onChange={set("instagram")} placeholder="@seuperfil" /></Campo>
+          <Campo rotulo={tr("squad_opcional")} htmlFor="squad"><Input id="squad" value={f.squad} onChange={set("squad")} /></Campo>
           <section aria-labelledby="titulo-ficha" className="sm:col-span-2 space-y-3 border-t border-border pt-4">
             <div>
-              <h3 id="titulo-ficha" className="font-semibold">Ficha de emergência</h3>
-              <p className="mt-1 text-xs text-muted-foreground">Tipo sanguíneo, alergias e um contato para emergências em campo. Você pode preencher depois em Meu perfil.</p>
+              <h3 id="titulo-ficha" className="font-semibold">{tr("ficha_de_emergencia")}</h3>
+              <p className="mt-1 text-xs text-muted-foreground">{tr("tipo_sanguineo_alergias_e_um_contato")}</p>
             </div>
             <CamposFicha valor={ficha} onChange={setFicha} prefixo="cad-ficha" />
           </section>
@@ -360,24 +359,24 @@ function PaginaCadastro() {
               <div key={r} className="flex items-baseline gap-3 px-4 py-2.5">
                 <dt className="w-36 shrink-0 text-muted-foreground">{r}</dt>
                 <dd className="min-w-0 flex-1 break-words">{v || "—"}</dd>
-                {n ? <Button variant="link" size="none" type="button" className="text-xs" onClick={() => irParaChave(n)}>Editar</Button> : <span className="w-[2.6rem]" />}
+                {n ? <Button variant="link" size="none" type="button" className="text-xs" onClick={() => irParaChave(n)}>{tr("editar")}</Button> : <span className="w-[2.6rem]" />}
               </div>
             ))}
           </dl>
           <div className="sm:col-span-2 space-y-2 text-sm">
             <Label className="flex items-start gap-2 text-[length:inherit] font-normal text-inherit">
               <Checkbox checked={aceite} onCheckedChange={(m) => setAceite(m === true)} className="mt-1" required />
-              <span>Li e aceito os <Link to="/termos" className="text-accent hover:underline">termos de uso</Link>.</span>
+              <span>{tr("li_e_aceito_os")}{" "}<Link to="/termos" className="text-accent hover:underline">{tr("termos_de_uso")}</Link>.</span>
             </Label>
             <Label className="flex items-start gap-2 text-[length:inherit] font-normal text-inherit">
               <Checkbox checked={privacidade} onCheckedChange={(m) => setPrivacidade(m === true)} className="mt-1" required />
-              <span>Estou ciente do <Link to="/privacidade" className="text-accent hover:underline">aviso de privacidade</Link>.</span>
+              <span>{tr("estou_ciente_do")}{" "}<Link to="/privacidade" className="text-accent hover:underline">{tr("aviso_de_privacidade")}</Link>.</span>
             </Label>
             <Label className="flex items-start gap-2 text-[length:inherit] font-normal text-inherit">
               <Checkbox checked={promocional} onCheckedChange={(m) => setPromocional(m === true)} className="mt-1" />
-              <span>Autorizo o recebimento de comunicações promocionais (opcional).</span>
+              <span>{tr("autorizo_o_recebimento_de_comunicacoes_p")}</span>
             </Label>
-            <p className="text-xs text-muted-foreground">Participantes de 15 a 17 anos: a inscrição em eventos é liberada após a aprovação do responsável.</p>
+            <p className="text-xs text-muted-foreground">{tr("participantes_de_15_a_17_anos")}</p>
           </div>
           {!google && turnstile.elemento && <div className="sm:col-span-2">{turnstile.elemento}</div>}
         </>}
@@ -386,13 +385,13 @@ function PaginaCadastro() {
           <p role="alert" className="sm:col-span-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>
         )}
         <div className="sm:col-span-2 flex items-center justify-between gap-3 border-t border-border pt-4">
-          {etapa > 0 ? <Button type="button" variant="ghost" onClick={() => irPara(etapa - 1)}>Voltar</Button>
-            : google ? <Button type="button" variant="ghost" onClick={aoCancelarGoogle}>Cancelar</Button>
-            : <Link to="/login" search={{ redirect }} className="text-sm text-accent hover:underline">Já tenho conta</Link>}
+          {etapa > 0 ? <Button type="button" variant="ghost" onClick={() => irPara(etapa - 1)}>{tr("voltar")}</Button>
+            : google ? <Button type="button" variant="ghost" onClick={aoCancelarGoogle}>{tr("cancelar")}</Button>
+            : <Link to="/login" search={{ redirect }} className="text-sm text-accent hover:underline">{tr("ja_tenho_conta")}</Link>}
           {etapa < ultima
-            ? <Button type="submit" size="lg">Continuar</Button>
+            ? <Button type="submit" size="lg">{tr("continuar")}</Button>
             : <Button type="submit" size="lg" disabled={carregando || !aceite || !privacidade || (!google && (!senhaValida || !turnstile.pronto))}>
-                {carregando ? (google ? "Salvando..." : "Criando conta...") : (google ? "Concluir cadastro" : "Criar conta")}
+                {carregando ? (google ? tr("salvando") : tr("criando_conta")) : (google ? tr("concluir_cadastro") : tr("criar_conta"))}
               </Button>}
         </div>
       </form>

@@ -11,6 +11,7 @@ import { RequisitosSenha } from "@/components/RequisitosSenha";
 import { useTurnstile } from "@/components/Turnstile";
 import { erroSenha } from "@/lib/domain/senha";
 import imgSar from "@/assets/modalidade-sar.jpg";
+import { tr } from "@/i18n/routes/recuperar-senha";
 
 export const Route = createFileRoute("/recuperar-senha")({
   // O e-mail de recuperação (supabase/templates/recuperar-senha.html) volta para esta página com
@@ -28,10 +29,10 @@ export const Route = createFileRoute("/recuperar-senha")({
   }),
   head: () => ({
     meta: [
-      { title: "Recuperar senha — MilSim Ops" },
-      { name: "description", content: "Receba um link por e-mail para redefinir a sua senha." },
-      { property: "og:title", content: "Recuperar senha — MilSim Ops" },
-      { property: "og:description", content: "Redefinição de senha." },
+      { title: tr("recuperar_senha_milsim_ops") },
+      { name: "description", content: tr("receba_um_link_por_e_mail") },
+      { property: "og:title", content: tr("recuperar_senha_milsim_ops") },
+      { property: "og:description", content: tr("redefinicao_de_senha") },
     ],
   }),
   component: PaginaRecuperar,
@@ -42,12 +43,12 @@ function PaginaRecuperar() {
   const link: LinkRecuperacao | null = token_hash && (!type || type === "recovery") ? { tokenHash: token_hash }
     : code ? { codigo: code } : sessao === "recuperacao" ? { sessaoAberta: true } : null;
   return (
-    <LayoutAcesso titulo={link ? "Criar nova senha" : "Recuperar senha"}
-      subtitulo={link ? undefined : "Informe o e-mail da conta. Enviamos um link que vale por 1 hora."}
-      imagem={imgSar} rotulo="Acesso à conta" frase="Volte para o campo em menos de um minuto.">
+    <LayoutAcesso titulo={link ? tr("criar_nova_senha") : tr("recuperar_senha")}
+      subtitulo={link ? undefined : tr("informe_o_e_mail_da_conta")}
+      imagem={imgSar} rotulo={tr("acesso_a_conta")} frase={tr("volte_para_o_campo_em_menos")}>
       {link ? <NovaSenha link={link} /> : <PedirLink erroLink={error_description} />}
       <p className="mt-4 text-sm">
-        <Link to="/login" search={{ redirect: undefined }} className="text-accent hover:underline">Voltar ao login</Link>
+        <Link to="/login" search={{ redirect: undefined }} className="text-accent hover:underline">{tr("voltar_ao_login")}</Link>
       </p>
     </LayoutAcesso>
   );
@@ -57,7 +58,7 @@ function PedirLink({ erroLink }: { erroLink?: string | undefined }) {
   const [email, setEmail] = useState("");
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
-  const [erro, setErro] = useState(erroLink ? "O link de recuperação é inválido ou expirou. Solicite um novo." : "");
+  const [erro, setErro] = useState(erroLink ? tr("o_link_de_recuperacao_e_invalido") : "");
   const turnstile = useTurnstile("recuperar_senha");
 
   const aoEnviar = async (e: React.FormEvent) => {
@@ -68,7 +69,7 @@ function PedirLink({ erroLink }: { erroLink?: string | undefined }) {
       await recuperarSenha(email, turnstile.token);
       setEnviado(true);
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Falha ao processar.");
+      setErro(err instanceof Error ? err.message : tr("falha_ao_processar"));
       turnstile.resetar();
     } finally {
       setEnviando(false);
@@ -78,17 +79,16 @@ function PedirLink({ erroLink }: { erroLink?: string | undefined }) {
   if (enviado) {
     return (
       <p className="mt-4 rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm text-success">
-        Se houver uma conta com este e-mail, enviamos um link para redefinir a senha. Confira também a caixa de spam.
-      </p>
+        {tr("se_houver_uma_conta_com_este")}</p>
     );
   }
   return (
     <form onSubmit={aoEnviar} className="mt-6 space-y-4">
-      <Campo rotulo="E-mail" htmlFor="email" erro={erro || undefined}>
+      <Campo rotulo={tr("e_mail")} htmlFor="email" erro={erro || undefined}>
         <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </Campo>
       {turnstile.elemento}
-      <Button type="submit" size="lg" className="w-full" disabled={enviando || !turnstile.pronto}>{enviando ? "Enviando..." : "Enviar link de recuperação"}</Button>
+      <Button type="submit" size="lg" className="w-full" disabled={enviando || !turnstile.pronto}>{enviando ? tr("enviando") : tr("enviar_link_de_recuperacao")}</Button>
     </form>
   );
 }
@@ -136,19 +136,19 @@ function NovaSenha({ link }: { link: LinkRecuperacao }) {
     e.preventDefault();
     setErro("");
     if (problemaSenha) return setErro(problemaSenha);
-    if (!iguais) return setErro("A confirmação de senha não confere.");
+    if (!iguais) return setErro(tr("a_confirmacao_de_senha_nao_confere"));
     setSalvando(true);
     try {
       await definirNovaSenha(senha);
       setEstado("concluido");
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Falha ao salvar a senha.");
+      setErro(err instanceof Error ? err.message : tr("falha_ao_salvar_a_senha"));
     } finally {
       setSalvando(false);
     }
   };
 
-  if (estado === "validando") return <div className="mt-4"><Spinner texto="Validando o link do e-mail..." /></div>;
+  if (estado === "validando") return <div className="mt-4"><Spinner texto={tr("validando_o_link_do_e_mail")} /></div>;
 
   if (estado === "invalido") {
     return (
@@ -156,14 +156,13 @@ function NovaSenha({ link }: { link: LinkRecuperacao }) {
         <div className="flex gap-3 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
           <ShieldAlert className="mt-0.5 size-5 shrink-0 text-destructive" aria-hidden="true" />
           <div>
-            <p className="font-medium text-destructive">Este link não vale mais</p>
+            <p className="font-medium text-destructive">{tr("este_link_nao_vale_mais")}</p>
             <p className="mt-1 text-muted-foreground">
-              O link de redefinição vale por 1 hora e só pode ser usado uma vez. Peça um novo e use o e-mail mais recente.
-            </p>
+              {tr("o_link_de_redefinicao_vale_por")}</p>
           </div>
         </div>
         <Button asChild className="w-full">
-          <Link to="/recuperar-senha" search={{}}>Pedir um novo link</Link>
+          <Link to="/recuperar-senha" search={{}}>{tr("pedir_um_novo_link")}</Link>
         </Button>
       </div>
     );
@@ -175,19 +174,19 @@ function NovaSenha({ link }: { link: LinkRecuperacao }) {
         <div className="flex gap-3 rounded-md border border-success/40 bg-success/10 p-3 text-sm">
           <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" aria-hidden="true" />
           <div>
-            <p className="font-medium text-success">Senha alterada</p>
-            <p className="mt-1 text-muted-foreground">Sua nova senha já está valendo e você já entrou na sua conta.</p>
+            <p className="font-medium text-success">{tr("senha_alterada")}</p>
+            <p className="mt-1 text-muted-foreground">{tr("sua_nova_senha_ja_esta_valendo")}</p>
           </div>
         </div>
-        <Button className="w-full" onClick={() => navigate({ to: "/app" })}>Ir para minha conta</Button>
+        <Button className="w-full" onClick={() => navigate({ to: "/app" })}>{tr("ir_para_minha_conta")}</Button>
       </div>
     );
   }
 
   return (
     <form onSubmit={aoSalvar} className="mt-4 space-y-4" noValidate>
-      <p className="text-sm text-muted-foreground">Escolha uma nova senha para a sua conta. Depois de salvar, você entra direto.</p>
-      <Campo rotulo="Nova senha" htmlFor="senha">
+      <p className="text-sm text-muted-foreground">{tr("escolha_uma_nova_senha_para_a")}</p>
+      <Campo rotulo={tr("nova_senha")} htmlFor="senha">
         <InputSenha
           id="senha"
           autoComplete="new-password"
@@ -197,7 +196,7 @@ function NovaSenha({ link }: { link: LinkRecuperacao }) {
           aria-describedby="requisitos-senha"
         />
       </Campo>
-      <Campo rotulo="Confirme a nova senha" htmlFor="confirmacao">
+      <Campo rotulo={tr("confirme_a_nova_senha")} htmlFor="confirmacao">
         <InputSenha
           id="confirmacao"
           autoComplete="new-password"
@@ -208,7 +207,7 @@ function NovaSenha({ link }: { link: LinkRecuperacao }) {
       <RequisitosSenha id="requisitos-senha" senha={senha} confirmacao={confirmacao} />
       {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
       <Button type="submit" className="w-full" disabled={salvando || problemaSenha !== null || !iguais}>
-        {salvando ? "Salvando..." : "Salvar nova senha"}
+        {salvando ? tr("salvando") : tr("salvar_nova_senha")}
       </Button>
     </form>
   );

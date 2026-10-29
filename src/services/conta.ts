@@ -9,6 +9,7 @@ import type { Tema } from "@/lib/localizacao";
 import { erroFicha, montarFicha, type DadosFicha } from "@/lib/fichaEmergencia";
 import { IDADE_MINIMA, idadeEmAnos, somenteDigitos, telefoneValido } from "@/lib/domain/validators";
 import { NOMES_UF } from "@/lib/localizacao";
+import { tr } from "@/i18n/services/conta";
 
 const agoraIso = () => new Date().toISOString();
 
@@ -22,7 +23,7 @@ export function enviarEntregaMissao(usuario: Usuario, missaoId: string, texto?: 
 const TIPOS_PRIVACIDADE: SolicitacaoPrivacidade["tipo"][] = ["acesso", "correcao", "exportacao", "exclusao"];
 
 export function solicitarPrivacidade(usuario: Usuario, tipo: SolicitacaoPrivacidade["tipo"], detalhes: string): void {
-  if (!TIPOS_PRIVACIDADE.includes(tipo)) throw new ErroDominio("tipo", "Tipo de solicitação inválido.");
+  if (!TIPOS_PRIVACIDADE.includes(tipo)) throw new ErroDominio("tipo", tr("tipo_de_solicitacao_invalido"));
   mutarBase((b) => {
     b.privacidade.push({ id: gerarId("priv"), usuarioId: usuario.id, tipo, detalhes: detalhes.trim(), status: "aberta", criadoEm: agoraIso() });
     for (const admin of b.usuarios.filter((u) => u.perfil === "admin" && u.ativo)) {
@@ -43,9 +44,9 @@ export interface DadosChamado {
 }
 
 export function abrirChamado(usuario: Usuario, d: DadosChamado): Chamado {
-  if (!d.assunto.trim() || !d.descricao.trim()) throw new ErroDominio("campos", "Informe assunto e descrição.");
+  if (!d.assunto.trim() || !d.descricao.trim()) throw new ErroDominio("campos", tr("informe_assunto_e_descricao"));
   return mutarBase((b) => {
-    if (d.eventoId && !b.eventos.some((e) => e.id === d.eventoId)) throw new ErroDominio("evento", "Evento não encontrado.");
+    if (d.eventoId && !b.eventos.some((e) => e.id === d.eventoId)) throw new ErroDominio("evento", tr("evento_nao_encontrado"));
     const chamado: Chamado = {
       id: gerarId("cha"),
       eventoId: d.eventoId || undefined,
@@ -64,15 +65,15 @@ export function abrirChamado(usuario: Usuario, d: DadosChamado): Chamado {
 }
 
 export function responderChamado(usuario: Usuario, chamadoId: string, corpo: string): void {
-  if (!corpo.trim()) throw new ErroDominio("corpo", "Escreva a mensagem.");
+  if (!corpo.trim()) throw new ErroDominio("corpo", tr("escreva_a_mensagem"));
   mutarBase((b) => {
     const c = b.chamados.find((x) => x.id === chamadoId);
-    if (!c) throw new ErroDominio("chamado", "Chamado não encontrado.");
+    if (!c) throw new ErroDominio("chamado", tr("chamado_nao_encontrado"));
     const evento = c.eventoId ? b.eventos.find((e) => e.id === c.eventoId) : undefined;
     const atende =
       usuario.perfil === "admin" ||
       (usuario.perfil === "organizador" && !!evento && evento.organizacaoId === usuario.organizacaoId);
-    if (c.solicitanteId !== usuario.id && !atende) throw new ErroDominio("sem_permissao", "Você não participa deste chamado.");
+    if (c.solicitanteId !== usuario.id && !atende) throw new ErroDominio("sem_permissao", tr("voce_nao_participa_deste_chamado"));
     c.mensagens.push({ id: gerarId("msg"), autorId: usuario.id, corpo: corpo.trim(), criadoEm: agoraIso() });
     c.status = c.solicitanteId === usuario.id ? "aberto" : "aguardando_participante";
     c.atualizadoEm = agoraIso();
@@ -90,7 +91,7 @@ export function marcarNotificacaoLida(usuario: Usuario, id: string): void {
 
 /** `plataforma` (somente admin) marca todas as notificações; senão, só as próprias. */
 export function marcarNotificacoesLidas(usuario: Usuario, plataforma = false): void {
-  if (plataforma && usuario.perfil !== "admin") throw new ErroDominio("sem_permissao", "Apenas administradores.");
+  if (plataforma && usuario.perfil !== "admin") throw new ErroDominio("sem_permissao", tr("apenas_administradores"));
   mutarBase((b) => {
     for (const n of b.notificacoes) if (plataforma || n.usuarioId === usuario.id) n.lida = true;
   });
@@ -111,13 +112,13 @@ export function definirFoto(usuario: Usuario, foto: string | null): void {
 
 /** Foto nova enviada pelo navegador: data URL de imagem, dentro do limite. */
 export function validarFoto(foto: string): void {
-  if (foto.length > TAMANHO_MAXIMO_FOTO) throw new ErroDominio("foto", "A foto é grande demais. Tente uma imagem menor.");
-  if (!FOTO_DATA_URL.test(foto)) throw new ErroDominio("foto", "Formato de foto inválido. Use JPG, PNG ou WebP.");
+  if (foto.length > TAMANHO_MAXIMO_FOTO) throw new ErroDominio("foto", tr("a_foto_e_grande_demais_tente"));
+  if (!FOTO_DATA_URL.test(foto)) throw new ErroDominio("foto", tr("formato_de_foto_invalido_use_jpg"));
 }
 
 // ---------- Aparência e preferências ----------
 export function definirTema(usuario: Usuario, tema: Tema): void {
-  if (tema !== "dark" && tema !== "light") throw new ErroDominio("tema", "Tema inválido.");
+  if (tema !== "dark" && tema !== "light") throw new ErroDominio("tema", tr("tema_invalido"));
   usuario.tema = tema;
 }
 
@@ -151,22 +152,22 @@ const DATA_CIVIL = /^\d{4}-\d{2}-\d{2}$/;
  */
 export function atualizarDadosConta(usuario: Usuario, d: DadosConta): void {
   const nome = d.nomeCompleto.trim().replace(/\s+/g, " ");
-  if (!nome) throw new ErroDominio("nome", "Informe o nome completo.");
+  if (!nome) throw new ErroDominio("nome", tr("informe_o_nome_completo"));
   if (!DATA_CIVIL.test(d.dataNascimento) || Number.isNaN(Date.parse(`${d.dataNascimento}T00:00:00Z`))) {
-    throw new ErroDominio("nascimento", "Informe uma data de nascimento válida.");
+    throw new ErroDominio("nascimento", tr("informe_uma_data_de_nascimento_valida"));
   }
   const idade = idadeEmAnos(d.dataNascimento);
-  if (idade < IDADE_MINIMA) throw new ErroDominio("idade", `É necessário ter ao menos ${IDADE_MINIMA} anos.`);
-  if (idade > 120) throw new ErroDominio("nascimento", "Informe uma data de nascimento válida.");
+  if (idade < IDADE_MINIMA) throw new ErroDominio("idade", tr("e_necessario_ter_ao_menos_idade", { IDADE_MINIMA }));
+  if (idade > 120) throw new ErroDominio("nascimento", tr("informe_uma_data_de_nascimento_valida"));
   const whatsapp = somenteDigitos(d.whatsapp);
-  if (!telefoneValido(whatsapp)) throw new ErroDominio("telefone", "Telefone/WhatsApp inválido.");
+  if (!telefoneValido(whatsapp)) throw new ErroDominio("telefone", tr("telefone_whatsapp_invalido"));
   const cep = somenteDigitos(d.cep);
-  if (cep.length !== 8) throw new ErroDominio("cep", "Informe um CEP válido.");
+  if (cep.length !== 8) throw new ErroDominio("cep", tr("informe_um_cep_valido"));
   const uf = d.uf.trim().toUpperCase();
-  if (!NOMES_UF[uf]) throw new ErroDominio("uf", "Selecione o estado.");
+  if (!NOMES_UF[uf]) throw new ErroDominio("uf", tr("selecione_o_estado"));
   const obrigatorios = { logradouro: d.logradouro, numero: d.numero, bairro: d.bairro, cidade: d.cidade };
   if (Object.values(obrigatorios).some((v) => !v.trim())) {
-    throw new ErroDominio("endereco", "Preencha logradouro, número, bairro e cidade.");
+    throw new ErroDominio("endereco", tr("preencha_logradouro_numero_bairro_e_cida"));
   }
 
   usuario.nomeCompleto = nome;
