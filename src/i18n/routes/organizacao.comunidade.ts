@@ -1,0 +1,30 @@
+// Textos de src/routes/organizacao.comunidade.tsx.
+import { dicionario } from "@/i18n/dicionario";
+
+export const tr = dicionario("routes/organizacao.comunidade", {
+  "comunidade_minha_organizacao_milsim_ops": { pt: "Comunidade — Minha organização — MilSim Ops", en: "Community — My organization — MilSim Ops" },
+  "resumo_da_comunidade_do_evento_e": { pt: "Resumo da comunidade do evento e acesso à moderação.", en: "Event community summary and access to moderation." },
+  "comunidade": { pt: "Comunidade", en: "Community" },
+  "nenhum_evento_criado_ainda_crie_um": { pt: "Nenhum evento criado ainda. Crie um evento no Painel.", en: "No events created yet. Create an event in the Dashboard." },
+  "resumo_da_comunidade": { pt: "Resumo da comunidade", en: "Community summary" },
+  "foruns_ativos": { pt: "Fóruns ativos", en: "Active forums" },
+  "length_arquivados": { pt: "{length} arquivados", en: "{length} archived" },
+  "publicacoes": { pt: "Publicações", en: "Posts" },
+  "length_respostas": { pt: "{length} respostas", en: "{length} replies" },
+  "denuncias_pendentes": { pt: "Denúncias pendentes", en: "Pending reports" },
+  "exigem_analise": { pt: "Exigem análise", en: "Need review" },
+  "nada_a_revisar": { pt: "Nada a revisar", en: "Nothing to review" },
+  "participantes_suspensos": { pt: "Participantes suspensos", en: "Suspended participants" },
+  "restricoes_ativas": { pt: "Restrições ativas", en: "Active restrictions" },
+  "moderacao_e_foruns": { pt: "Moderação e fóruns", en: "Moderation and forums" },
+  "gerencie_foruns_analise_denuncias_fixe_p": { pt: "Gerencie fóruns, analise denúncias, fixe publicações e suspenda participantes.", en: "Manage forums, review reports, pin posts and suspend participants." },
+  "ver_comunidade": { pt: "Ver comunidade", en: "See community" },
+  "gerenciar_comunidade": { pt: "Gerenciar comunidade", en: "Manage community" },
+  "ha_length_denuncia_s_aguardando_analise": { pt: "Há {length} denúncia(s) aguardando análise na moderação.", en: "There are {length} report(s) awaiting moderation review." },
+  "foruns_do_evento": { pt: "Fóruns do evento", en: "Event forums" },
+  "todos_os_inscritos": { pt: "todos os inscritos", en: "all registrants" },
+  "restrito_a_um_exercito": { pt: "restrito a um exército", en: "restricted to one army" },
+  "publicacoes_2": { pt: "publicações", en: "posts" },
+  "arquivado": { pt: "arquivado", en: "archived" },
+  "nenhum_forum_eles_sao_criados_automatica": { pt: "Nenhum fórum. Eles são criados automaticamente ao publicar a comunidade.", en: "No forums. They are created automatically when the community is published." },
+});

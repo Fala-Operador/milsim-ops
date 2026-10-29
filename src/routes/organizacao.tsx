@@ -16,14 +16,15 @@ function ErroOrganizacao({ error, reset }: ErrorComponentProps) {
   return <ErroSecao onTentar={() => reset()} />;
 }
 import { LayoutDashboard, Users, MessagesSquare, Wallet, Gift, LifeBuoy, BarChart3, QrCode, Target, Rocket } from "lucide-react";
+import { tr } from "@/i18n/routes/organizacao";
 
 export const Route = createFileRoute("/organizacao")({
   head: () => ({
     meta: [
-      { title: "Minha organização — MilSim Ops" },
-      { name: "description", content: "Painel do organizador: eventos, inscritos, comunidade e financeiro." },
-      { property: "og:title", content: "Minha organização — MilSim Ops" },
-      { property: "og:description", content: "Painel do organizador." },
+      { title: tr("minha_organizacao_milsim_ops") },
+      { name: "description", content: tr("painel_do_organizador_eventos_inscritos") },
+      { property: "og:title", content: tr("minha_organizacao_milsim_ops") },
+      { property: "og:description", content: tr("painel_do_organizador") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -51,28 +52,28 @@ function LayoutOrganizacao() {
   if (usuario.perfil !== "organizador" && usuario.perfil !== "admin") return null;
 
   const grupos: GrupoMenuLateral[] = [
-    { titulo: "Evento", itens: [
-      { to: "/organizacao", rotulo: "Painel", icone: LayoutDashboard, exato: true },
-      { to: "/organizacao/inscritos", rotulo: "Inscritos", icone: Users },
-      { to: "/organizacao/checkin", rotulo: "Check-in", icone: QrCode },
+    { titulo: tr("evento"), itens: [
+      { to: "/organizacao", rotulo: tr("painel"), icone: LayoutDashboard, exato: true },
+      { to: "/organizacao/inscritos", rotulo: tr("inscritos"), icone: Users },
+      { to: "/organizacao/checkin", rotulo: tr("check_in"), icone: QrCode },
     ] },
-    { titulo: "Engajamento", itens: [
-      { to: "/organizacao/comunidade", rotulo: "Comunidade", icone: MessagesSquare },
-      { to: "/organizacao/missoes", rotulo: "Missões", icone: Target },
-      { to: "/organizacao/recompensas", rotulo: "Recompensas", icone: Gift },
+    { titulo: tr("engajamento"), itens: [
+      { to: "/organizacao/comunidade", rotulo: tr("comunidade"), icone: MessagesSquare },
+      { to: "/organizacao/missoes", rotulo: tr("missoes"), icone: Target },
+      { to: "/organizacao/recompensas", rotulo: tr("recompensas"), icone: Gift },
     ] },
-    { titulo: "Vendas", itens: [
-      { to: "/organizacao/financeiro", rotulo: "Financeiro", icone: Wallet },
-      { to: "/organizacao/metricas", rotulo: "Métricas", icone: BarChart3 },
-      { to: "/organizacao/impulsos", rotulo: "Impulsionar", icone: Rocket },
+    { titulo: tr("vendas"), itens: [
+      { to: "/organizacao/financeiro", rotulo: tr("financeiro"), icone: Wallet },
+      { to: "/organizacao/metricas", rotulo: tr("metricas"), icone: BarChart3 },
+      { to: "/organizacao/impulsos", rotulo: tr("impulsionar"), icone: Rocket },
     ] },
-    { titulo: "Ajuda", itens: [
-      { to: "/organizacao/suporte", rotulo: "Suporte", icone: LifeBuoy, contador: atencaoEquipe, rotuloContador: `${atencaoEquipe} chamados exigem atenção` },
+    { titulo: tr("ajuda"), itens: [
+      { to: "/organizacao/suporte", rotulo: tr("suporte"), icone: LifeBuoy, contador: atencaoEquipe, rotuloContador: tr("atencaoequipe_chamados_exigem_atencao", { atencaoEquipe }) },
     ] },
   ];
 
   return (
-    <LayoutMenuLateral titulo="Minha organização" rotuloNav="Seções da organização" grupos={grupos}>
+    <LayoutMenuLateral titulo={tr("minha_organizacao")} rotuloNav={tr("secoes_da_organizacao")} grupos={grupos}>
       <Outlet />
     </LayoutMenuLateral>
   );

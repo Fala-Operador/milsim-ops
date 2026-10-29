@@ -19,6 +19,7 @@ import { EtapaIngressos } from "./EventTicketsStep";
 import { EtapaRevisao } from "./EventReviewStep";
 import { ABRIR_SECAO } from "./comum";
 import { AvisoRecebimento } from "@/components/AvisoRecebimento";
+import { tr } from "@/i18n/components/editorEvento/EventEditorDrawer";
 
 type EstadoSalvamento = "ocioso" | "salvando" | "salvo" | "erro";
 const ESPERA_AUTOSAVE = 1500;
@@ -94,7 +95,7 @@ export function EventEditorDrawer(p: PropsEditor) {
         silencioso.current = false;
         versaoRef.current += 1;
         setVersao(versaoRef.current);
-        setMsg("Alterações não publicadas restauradas deste dispositivo.");
+        setMsg(tr("alteracoes_nao_publicadas_restauradas_de"));
       }
       if (p.etapaInicial === undefined && r.etapa > 0) {
         const lim = primeiraEtapaInvalida(form.getValues(), ocupacao);
@@ -113,7 +114,7 @@ export function EventEditorDrawer(p: PropsEditor) {
     const snap = structuredClone(form.getValues());
     const v = versaoRef.current;
     if (modoServidor && !existeRef.current && !snap.nome.trim()) {
-      if (manual) { setEstado("erro"); setMsg("Dê um nome ao evento para salvar o rascunho."); }
+      if (manual) { setEstado("erro"); setMsg(tr("de_um_nome_ao_evento_para")); }
       return false;
     }
     salvandoRef.current = true;
@@ -141,7 +142,7 @@ export function EventEditorDrawer(p: PropsEditor) {
       return true;
     } catch (e) {
       setEstado("erro");
-      setMsg(e instanceof Error ? e.message : "Falha ao salvar.");
+      setMsg(e instanceof Error ? e.message : tr("falha_ao_salvar"));
       return false;
     } finally {
       salvandoRef.current = false;
@@ -219,7 +220,7 @@ export function EventEditorDrawer(p: PropsEditor) {
       setErros(Object.fromEntries(probs.map((x) => [x.campo, x.mensagem])));
       focoPendente.current = probs[0]?.campo ?? null;
       setVersao((v) => v); // força o efeito de foco
-      setMsg(`Revise ${probs.length === 1 ? "1 campo" : `${probs.length} campos`} desta etapa.`);
+      setMsg(probs.length === 1 ? tr("revise_1_campo") : tr("revise_n_campos", { n: probs.length }));
       return;
     }
     setErros({});
@@ -243,7 +244,7 @@ export function EventEditorDrawer(p: PropsEditor) {
 
   const finalizar = async () => {
     if (revisao.erros.length) {
-      setMsg("Ainda há pendências que impedem concluir. Use os links da revisão.");
+      setMsg(tr("ainda_ha_pendencias_que_impedem_concluir"));
       return;
     }
     setEnviando(true);
@@ -254,25 +255,25 @@ export function EventEditorDrawer(p: PropsEditor) {
         if (!(await persistir(true))) return;
         await publicarEvento(inicial.id);
         await apagarRascunhoLocal(inicial.id);
-        p.onConcluido("Operação publicada.");
+        p.onConcluido(tr("operacao_publicada"));
       } else {
         setEstado("salvando");
         await salvarEvento(structuredClone(form.getValues()));
         await apagarRascunhoLocal(inicial.id);
-        p.onConcluido("Alterações salvas.");
+        p.onConcluido(tr("alteracoes_salvas"));
       }
       setEntrou(false);
       setTimeout(p.onFechar, 200);
     } catch (e) {
       setEstado("erro");
-      const mensagem = e instanceof Error ? e.message : "Falha ao concluir.";
+      const mensagem = e instanceof Error ? e.message : tr("falha_ao_concluir");
       const probs = problemasDoServidor(mensagem, form.getValues());
       // Só vira lista por etapa quando é validação do evento (falha de rede etc. segue como texto).
       if (probs.some((x) => x.etapa < ETAPAS.length - 1)) {
         setErrosServidor(probs);
         // Erros com campo (ex.: cada atividade do cronograma) também aparecem no próprio card.
         setErros(Object.fromEntries(probs.filter((x) => x.campo).map((x) => [x.campo, x.mensagem])));
-        setMsg(probs.length === 1 ? "Não foi possível concluir. Corrija a pendência abaixo:" : `Não foi possível concluir. Corrija as ${probs.length} pendências abaixo:`);
+        setMsg(probs.length === 1 ? tr("nao_foi_possivel_concluir_corrija_a") : tr("nao_foi_possivel_concluir_corrija_as", { length: probs.length }));
       } else {
         setMsg(mensagem);
       }
@@ -282,13 +283,13 @@ export function EventEditorDrawer(p: PropsEditor) {
   };
 
   const textoEstado =
-    estado === "salvando" ? "Salvando…"
-    : estado === "erro" ? "Falha ao salvar"
-    : pendente ? "Alterações não salvas"
-    : estado === "salvo" ? (modoServidor ? "Salvo" : "Salvo neste dispositivo")
+    estado === "salvando" ? tr("salvando")
+    : estado === "erro" ? tr("falha_ao_salvar_2")
+    : pendente ? tr("alteracoes_nao_salvas")
+    : estado === "salvo" ? (modoServidor ? tr("salvo") : tr("salvo_neste_dispositivo"))
     : "";
   const ultima = etapa === ETAPAS.length - 1;
-  const titulo = p.existente ? "Editar operação" : "Criar operação";
+  const titulo = p.existente ? tr("editar_operacao") : tr("criar_operacao");
 
   return (
     <Sheet open={entrou} onOpenChange={(abrir) => !abrir && pedirFechar()}>
@@ -308,12 +309,11 @@ export function EventEditorDrawer(p: PropsEditor) {
             <div className="min-w-0">
               <SheetTitle id="editor-evento-titulo" ref={tituloRef} tabIndex={-1} className="uppercase tracking-wide focus:outline-none">{titulo}</SheetTitle>
               <p className="truncate text-sm text-muted-foreground">
-                {ev.nome ? <span className="text-foreground">{ev.nome} · </span> : null}
-                Etapa {etapa + 1} de {ETAPAS.length}
+                {ev.nome ? <span className="text-foreground">{ev.nome} · </span> : null}{tr("etapa_valor_de_length", { valor: etapa + 1, length: ETAPAS.length })}
                 {textoEstado && <span role="status" className={`ml-2 ${estado === "erro" ? "text-destructive" : ""}`}>· {textoEstado}</span>}
               </p>
             </div>
-            <Button type="button" variant="ghost" aria-label="Fechar editor" onClick={pedirFechar}>✕</Button>
+            <Button type="button" variant="ghost" aria-label={tr("fechar_editor")} onClick={pedirFechar}>✕</Button>
           </div>
           <EventStepNavigation atual={etapa} alcancada={alcancada} comErro={etapasComErro} irPara={(i) => irPara(i)} />
         </header>
@@ -335,27 +335,27 @@ export function EventEditorDrawer(p: PropsEditor) {
         <footer className="border-t border-border px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:px-6">
           {msg && <p role="alert" className={`mb-2 text-sm ${estado === "erro" ? "text-destructive" : "text-muted-foreground"}`}>{msg}</p>}
           {errosServidor.length > 0 && (
-            <ul className="mb-3 max-h-40 space-y-1 overflow-y-auto text-sm" aria-label="Pendências por etapa">
+            <ul className="mb-3 max-h-40 space-y-1 overflow-y-auto text-sm" aria-label={tr("pendencias_por_etapa")}>
               {errosServidor.map((x, i) => (
                 <li key={i} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1.5 text-destructive">
-                  <span className="shrink-0 font-medium">Etapa {x.etapa + 1} · {ETAPAS[x.etapa]?.titulo}</span>
+                  <span className="shrink-0 font-medium">{tr("etapa_valor_titulo", { valor: x.etapa + 1, titulo: ETAPAS[x.etapa]?.titulo })}</span>
                   <span className="min-w-0 flex-1 break-words">{x.mensagem}</span>
-                  <Button type="button" variant="outline" className="h-7 shrink-0 px-2 text-xs" onClick={() => irParaProblema(x)}>Ir para a etapa</Button>
+                  <Button type="button" variant="outline" className="h-7 shrink-0 px-2 text-xs" onClick={() => irParaProblema(x)}>{tr("ir_para_a_etapa")}</Button>
                 </li>
               ))}
             </ul>
           )}
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <Button type="button" variant="outline" disabled={etapa === 0} onClick={() => { setErros({}); setEtapa(etapa - 1); }}>Voltar</Button>
+            <Button type="button" variant="outline" disabled={etapa === 0} onClick={() => { setErros({}); setEtapa(etapa - 1); }}>{tr("voltar")}</Button>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="ghost" disabled={enviando || estado === "salvando"} onClick={salvarESair}
-                title={modoServidor ? undefined : "Guarda as alterações neste dispositivo sem alterar a página pública"}>Salvar e sair</Button>
+                title={modoServidor ? undefined : tr("guarda_as_alteracoes_neste_dispositivo_s")}>{tr("salvar_e_sair")}</Button>
               {ultima ? (
                 <Button type="button" disabled={enviando || estado === "salvando"} onClick={finalizar}>
-                  {enviando ? "Enviando…" : modoServidor ? "Publicar operação" : "Salvar alterações"}
+                  {enviando ? tr("enviando") : modoServidor ? tr("publicar_operacao") : tr("salvar_alteracoes")}
                 </Button>
               ) : (
-                <Button type="button" onClick={continuar}>Continuar</Button>
+                <Button type="button" onClick={continuar}>{tr("continuar")}</Button>
               )}
             </div>
           </div>
@@ -367,14 +367,13 @@ export function EventEditorDrawer(p: PropsEditor) {
             onOpenAutoFocus={(e) => e.preventDefault()}
             className="block w-[calc(100%-2rem)] max-w-md rounded-lg bg-card p-5 text-card-foreground"
           >
-            <AlertDialogTitle className="text-base uppercase">Sair do editor?</AlertDialogTitle>
+            <AlertDialogTitle className="text-base uppercase">{tr("sair_do_editor")}</AlertDialogTitle>
             <AlertDialogDescription className="mt-1">
-              {estado === "erro" ? "O último salvamento falhou. " : ""}Há alterações que ainda não foram salvas.
-            </AlertDialogDescription>
+              {estado === "erro" ? `${tr("o_ultimo_salvamento_falhou")} ` : ""}{tr("ha_alteracoes_que_ainda_nao_foram")}</AlertDialogDescription>
             <div className="mt-4 flex flex-col gap-2">
-              <Button type="button" autoFocus onClick={salvarESair}>Salvar e sair</Button>
-              <Button type="button" variant="destructive" onClick={descartar}>Descartar alterações não salvas</Button>
-              <Button type="button" variant="outline" onClick={() => setConfirmar(false)}>Continuar editando</Button>
+              <Button type="button" autoFocus onClick={salvarESair}>{tr("salvar_e_sair")}</Button>
+              <Button type="button" variant="destructive" onClick={descartar}>{tr("descartar_alteracoes_nao_salvas")}</Button>
+              <Button type="button" variant="outline" onClick={() => setConfirmar(false)}>{tr("continuar_editando")}</Button>
             </div>
           </AlertDialogContent>
         </AlertDialog>

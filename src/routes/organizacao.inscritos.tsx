@@ -26,14 +26,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Progress } from "@/components/ui/progress";
+import { tr } from "@/i18n/routes/organizacao.inscritos";
+import { localeAtual } from "@/i18n/dicionario";
 
 export const Route = createFileRoute("/organizacao/inscritos")({
   head: () => ({
     meta: [
-      { title: "Inscritos por evento — Minha organização — MilSim Ops" },
-      { name: "description", content: "Selecione uma operação para consultar e gerenciar seus participantes." },
-      { property: "og:title", content: "Inscritos por evento — MilSim Ops" },
-      { property: "og:description", content: "Consulte e gerencie os participantes de cada operação." },
+      { title: tr("inscritos_por_evento_minha_organizacao_m") },
+      { name: "description", content: tr("selecione_uma_operacao_para_consultar_e") },
+      { property: "og:title", content: tr("inscritos_por_evento_milsim_ops") },
+      { property: "og:description", content: tr("consulte_e_gerencie_os_participantes_de") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -61,17 +63,17 @@ function PaginaInscritos() {
   return (
     <div className="min-h-[70vh] min-w-0 space-y-6">
       <header>
-        <h2 className="titulo-pagina">Inscritos por evento</h2>
-        <p className="subtitulo-pagina">Selecione uma operação para consultar e gerenciar seus participantes.</p>
+        <h2 className="titulo-pagina">{tr("inscritos_por_evento")}</h2>
+        <p className="subtitulo-pagina">{tr("selecione_uma_operacao_para_consultar_e")}</p>
       </header>
 
       {ordenados.length === 0 ? (
-        <EstadoVazio titulo="Sua organização ainda não tem eventos" descricao="Crie um evento no Painel para começar a receber inscrições." />
+        <EstadoVazio titulo={tr("sua_organizacao_ainda_nao_tem_eventos")} descricao={tr("crie_um_evento_no_painel_para")} />
       ) : (
         <>
           <OperacaoSelecionada eventos={ordenados} evento={evento} invalido={invalido} onSelecionar={selecionar} />
           {evento && (trocando ? (
-            <div role="status" aria-label="Carregando evento" className="space-y-4">
+            <div role="status" aria-label={tr("carregando_evento")} className="space-y-4">
               <div className="grid grid-cols-2 gap-3 md:grid-cols-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-20" />)}</div>
               <Skeleton className="h-64 w-full" />
             </div>
@@ -106,7 +108,7 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
   const fecharDetalhe = () => { setDetalhe(null); requestAnimationFrame(() => origemFoco.current?.focus()); };
   const [pagina, setPagina] = useState(1);
   const POR_PAGINA = 10;
-  const nomeDe = (i: Inscricao) => usuarios.find((u) => u.id === i.usuarioId)?.nomeCompleto ?? "Participante";
+  const nomeDe = (i: Inscricao) => usuarios.find((u) => u.id === i.usuarioId)?.nomeCompleto ?? tr("participante");
   const ind = indicadoresInscritos(evento, inscricoes);
   const filtradas = filtrarInscritos(inscricoes, filtros, nomeDe);
   const totalPaginas = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
@@ -133,16 +135,16 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
 
   const filtrosSelect = (
     <>
-      <NativeSelect aria-label="Filtrar por status" value={filtros.status} onChange={(e) => mudar({ status: e.target.value })}>
-        <option value="">Todos os status</option>
+      <NativeSelect aria-label={tr("filtrar_por_status")} value={filtros.status} onChange={(e) => mudar({ status: e.target.value })}>
+        <option value="">{tr("todos_os_status")}</option>
         {Object.entries(ROTULO_STATUS_INSCRICAO).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
       </NativeSelect>
-      <NativeSelect aria-label="Filtrar por exército" value={filtros.exercito} onChange={(e) => mudar({ exercito: e.target.value })}>
-        <option value="">Todos os exércitos</option>
+      <NativeSelect aria-label={tr("filtrar_por_exercito")} value={filtros.exercito} onChange={(e) => mudar({ exercito: e.target.value })}>
+        <option value="">{tr("todos_os_exercitos")}</option>
         {evento.exercitos.map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
       </NativeSelect>
-      <NativeSelect aria-label="Filtrar por tipo de ingresso" value={filtros.tipo} onChange={(e) => mudar({ tipo: e.target.value })}>
-        <option value="">Todos os ingressos</option>
+      <NativeSelect aria-label={tr("filtrar_por_tipo_de_ingresso")} value={filtros.tipo} onChange={(e) => mudar({ tipo: e.target.value })}>
+        <option value="">{tr("todos_os_ingressos")}</option>
         {evento.tipos.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
       </NativeSelect>
     </>
@@ -150,16 +152,16 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
 
   return (
     <>
-      <section aria-label="Indicadores de inscrições" className="space-y-3">
+      <section aria-label={tr("indicadores_de_inscricoes")} className="space-y-3">
         <div className="rounded-lg border border-border">
           <FaixaIndicadores className="rounded-none border-0 lg:grid-cols-3" itens={[
-            { rotulo: "Inscrições ativas", valor: String(ind.ativas) },
-            { rotulo: "Vagas disponíveis", valor: String(ind.disponiveis) },
-            { rotulo: "Capacidade total", valor: String(ind.capacidade) },
+            { rotulo: tr("inscricoes_ativas"), valor: String(ind.ativas) },
+            { rotulo: tr("vagas_disponiveis"), valor: String(ind.disponiveis) },
+            { rotulo: tr("capacidade_total"), valor: String(ind.capacidade) },
           ]} />
           <div className="border-t border-border px-4 py-3">
-            <div className="flex justify-between text-xs text-muted-foreground"><span>Ocupação</span><span className="font-mono">{Math.round(ind.ocupacao)}%</span></div>
-            <Progress className="mt-1.5 h-1.5" value={Math.min(ind.ocupacao, 100)} aria-label="Ocupação" indicatorClassName="rounded-full" />
+            <div className="flex justify-between text-xs text-muted-foreground"><span>{tr("ocupacao")}</span><span className="font-mono">{Math.round(ind.ocupacao)}%</span></div>
+            <Progress className="mt-1.5 h-1.5" value={Math.min(ind.ocupacao, 100)} aria-label={tr("ocupacao")} indicatorClassName="rounded-full" />
           </div>
         </div>
       </section>
@@ -170,49 +172,48 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
               <div className="relative col-span-2 min-w-0 lg:col-span-1">
                 <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  aria-label="Buscar por nome ou código"
-                  placeholder="Buscar por nome ou código"
+                  aria-label={tr("buscar_por_nome_ou_codigo")}
+                  placeholder={tr("buscar_por_nome_ou_codigo")}
                   value={filtros.busca}
                   onChange={(e) => mudar({ busca: e.target.value })}
                   className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm focus:border-ring focus:outline-none"
                 />
               </div>
               <Button variant="outline" className="shrink-0 whitespace-nowrap lg:hidden" onClick={() => setFiltrosMobile((v) => !v)} aria-expanded={filtrosMobile}>
-                <SlidersHorizontal className="h-4 w-4" /> Filtros{extras > 0 && ` (${extras})`}
+                <SlidersHorizontal className="h-4 w-4" />{" "}{tr("filtros")}{extras > 0 && ` (${extras})`}
               </Button>
             <div className="col-span-2 flex flex-wrap items-center gap-2 lg:col-span-1 lg:col-start-2 lg:row-start-1">
               <IncluirParticipante evento={evento} className="shrink-0 whitespace-nowrap" />
-              <Button variant="outline" className="shrink-0 whitespace-nowrap" onClick={exportar}><Download className="h-4 w-4 shrink-0" /> Exportar CSV</Button>
+              <Button variant="outline" className="shrink-0 whitespace-nowrap" onClick={exportar}><Download className="h-4 w-4 shrink-0" />{" "}{tr("exportar_csv")}</Button>
             </div>
             <div className="col-span-2 hidden min-w-0 grid-cols-3 gap-2 lg:grid">{filtrosSelect}</div>
           </div>
           {filtrosMobile && <div className="grid gap-2 sm:grid-cols-3 lg:hidden">{filtrosSelect}</div>}
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
-            <span>{filtradas.length} {filtradas.length === 1 ? "participante encontrado" : "participantes encontrados"} · a exportação usa este evento e os filtros aplicados</span>
+            <span>{filtradas.length} {filtradas.length === 1 ? tr("participante_encontrado") : tr("participantes_encontrados")}{" "}{tr("a_exportacao_usa_este_evento_e")}</span>
             {ativos > 0 && (
               <Button variant="ghost" className="" onClick={() => { setFiltros(FILTROS_VAZIOS); setPagina(1); }}>
-                <X className="h-4 w-4" /> Limpar filtros
-              </Button>
+                <X className="h-4 w-4" />{" "}{tr("limpar_filtros")}</Button>
             )}
           </div>
         </div>
 
         {inscricoes.length === 0 ? (
-          <div className="p-4"><EstadoVazio titulo="Este evento ainda não tem inscritos" /></div>
+          <div className="p-4"><EstadoVazio titulo={tr("este_evento_ainda_nao_tem_inscritos")} /></div>
         ) : filtradas.length === 0 ? (
-          <div className="p-4"><EstadoVazio titulo="Nenhum participante encontrado" descricao="Ajuste a busca ou limpe os filtros." /></div>
+          <div className="p-4"><EstadoVazio titulo={tr("nenhum_participante_encontrado")} descricao={tr("ajuste_a_busca_ou_limpe_os")} /></div>
         ) : (
           <>
             <div className="hidden overflow-x-auto md:block">
             <Table className="w-full min-w-[760px] text-[13px]">
               <TableHeader className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <TableRow>
-                  <TableHead className="px-4 py-3">Participante</TableHead>
-                  <TableHead className="px-4 py-3">Tipo de ingresso</TableHead>
-                  <TableHead className="px-4 py-3">Exército</TableHead>
-                  <TableHead className="px-4 py-3">Origem</TableHead>
-                  <TableHead className="min-w-[168px] px-4 py-3">Situação</TableHead>
-                  <TableHead className="px-4 py-3 text-right">Ações</TableHead>
+                  <TableHead className="px-4 py-3">{tr("participante")}</TableHead>
+                  <TableHead className="px-4 py-3">{tr("tipo_de_ingresso")}</TableHead>
+                  <TableHead className="px-4 py-3">{tr("exercito")}</TableHead>
+                  <TableHead className="px-4 py-3">{tr("origem")}</TableHead>
+                  <TableHead className="min-w-[168px] px-4 py-3">{tr("situacao")}</TableHead>
+                  <TableHead className="px-4 py-3 text-right">{tr("acoes")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -224,9 +225,8 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
                     <TableCell className="px-4 py-3">{ROTULO_ORIGEM[i.origem]}</TableCell>
                     <TableCell className="min-w-[168px] px-4 py-3"><div className="flex flex-col items-start gap-1.5"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div></TableCell>
                     <TableCell className="px-4 py-3 text-right">
-                      <Button variant="ghost" className="whitespace-nowrap" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={`Ver detalhes de ${nomeDe(i)}`}>
-                        <Eye className="h-4 w-4" /> Detalhes
-                      </Button>
+                      <Button variant="ghost" className="whitespace-nowrap" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={tr("ver_detalhes_de_i", { i: nomeDe(i) })}>
+                        <Eye className="h-4 w-4" />{" "}{tr("detalhes")}</Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -241,15 +241,15 @@ function ConteudoEvento({ evento, inscricoes, usuarios }: {
                     <div className="flex flex-wrap items-center gap-1.5"><StatusInscricao status={i.status} /><StatusCheckin presenca={presencaDe(i.id)} /></div>
                   </div>
                   <p className="text-xs text-muted-foreground">{nomeTipo(i.tipoId)} · {nomeEx(i.exercitoId)} · {ROTULO_ORIGEM[i.origem]}</p>
-                  <Button variant="outline" className="w-full" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={`Ver detalhes de ${nomeDe(i)}`}><Eye className="h-4 w-4" /> Detalhes</Button>
+                  <Button variant="outline" className="w-full" onClick={(e) => abrirDetalhe(i, e.currentTarget)} aria-label={tr("ver_detalhes_de_i", { i: nomeDe(i) })}><Eye className="h-4 w-4" />{" "}{tr("detalhes")}</Button>
                 </li>
               ))}
             </ul>
             {totalPaginas > 1 && (
               <div className="flex items-center justify-between border-t border-border p-3 text-sm">
-                <Button variant="outline" disabled={paginaAtual === 1} onClick={() => setPagina(paginaAtual - 1)}>Anterior</Button>
-                <span className="text-muted-foreground">Página {paginaAtual} de {totalPaginas}</span>
-                <Button variant="outline" disabled={paginaAtual === totalPaginas} onClick={() => setPagina(paginaAtual + 1)}>Próxima</Button>
+                <Button variant="outline" disabled={paginaAtual === 1} onClick={() => setPagina(paginaAtual - 1)}>{tr("anterior")}</Button>
+                <span className="text-muted-foreground">{tr("pagina_paginaatual_de_totalpaginas", { paginaAtual, totalPaginas })}</span>
+                <Button variant="outline" disabled={paginaAtual === totalPaginas} onClick={() => setPagina(paginaAtual + 1)}>{tr("proxima")}</Button>
               </div>
             )}
           </>
@@ -289,7 +289,7 @@ function PainelDetalhes({ inscricao, evento, nome, cpf, presenca, ficha, onFecha
   ficha: FichaEmergencia | undefined; onFechar: () => void;
 }) {
   const tipo = evento.tipos.find((t) => t.id === inscricao.tipoId)?.nome ?? "—";
-  const lote = inscricao.loteId ? evento.lotes.find((l) => l.id === inscricao.loteId)?.nome ?? "—" : "Sem lote (cortesia)";
+  const lote = inscricao.loteId ? evento.lotes.find((l) => l.id === inscricao.loteId)?.nome ?? "—" : tr("sem_lote_cortesia");
   const exercito = evento.exercitos.find((x) => x.id === inscricao.exercitoId)?.nome ?? "—";
   const Linha = ({ r, children }: { r: string; children: ReactNode }) => (
     <div className="grid grid-cols-[8rem_minmax(0,1fr)] gap-3 py-2"><dt className="text-muted-foreground">{r}</dt><dd className="min-w-0 break-words">{children}</dd></div>
@@ -304,8 +304,8 @@ function PainelDetalhes({ inscricao, evento, nome, cpf, presenca, ficha, onFecha
         className="flex h-[100dvh] w-full flex-col gap-0 p-0 shadow-2xl sm:max-w-none md:max-w-md"
       >
         <div className="flex items-center justify-between gap-2 border-b border-border px-5 py-4">
-          <SheetTitle className="uppercase">Detalhes da inscrição</SheetTitle>
-          <Button variant="ghost" onClick={onFechar} aria-label="Fechar detalhes"><X className="h-5 w-5" /></Button>
+          <SheetTitle className="uppercase">{tr("detalhes_da_inscricao")}</SheetTitle>
+          <Button variant="ghost" onClick={onFechar} aria-label={tr("fechar_detalhes")}><X className="h-5 w-5" /></Button>
         </div>
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-sm">
           <div className="flex items-center justify-between gap-3">
@@ -313,46 +313,44 @@ function PainelDetalhes({ inscricao, evento, nome, cpf, presenca, ficha, onFecha
             <StatusInscricao status={inscricao.status} />
           </div>
           <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Inscrição</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{tr("inscricao")}</h3>
             <dl className="mt-1 divide-y divide-border/60">
-              <Linha r="Ingresso">{tipo}</Linha>
-              <Linha r="Lote">{lote}</Linha>
-              <Linha r="Exército">{exercito}</Linha>
-              <Linha r="Origem">{ROTULO_ORIGEM[inscricao.origem]}</Linha>
-              <Linha r="Inscrito em">{formatarDataBR(inscricao.criadoEm)}</Linha>
-              {inscricao.motivoCancelamento && <Linha r="Motivo">{inscricao.motivoCancelamento}</Linha>}
+              <Linha r={tr("ingresso")}>{tipo}</Linha>
+              <Linha r={tr("lote")}>{lote}</Linha>
+              <Linha r={tr("exercito")}>{exercito}</Linha>
+              <Linha r={tr("origem")}>{ROTULO_ORIGEM[inscricao.origem]}</Linha>
+              <Linha r={tr("inscrito_em")}>{formatarDataBR(inscricao.criadoEm)}</Linha>
+              {inscricao.motivoCancelamento && <Linha r={tr("motivo")}>{inscricao.motivoCancelamento}</Linha>}
             </dl>
           </section>
           <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Check-in (presença)</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{tr("check_in_presenca")}</h3>
             <dl className="mt-1 divide-y divide-border/60">
-              <Linha r="Situação">{presenca ? "Check-in realizado" : "Ainda não credenciado"}</Linha>
-              {presenca && <Linha r="Horário">{new Date(presenca.em).toLocaleString("pt-BR")}</Linha>}
-              {presenca && <Linha r="Validação">{ROTULO_ORIGEM_ENTRADA[presenca.origem]} · {presenca.operadorNome}</Linha>}
+              <Linha r={tr("situacao")}>{presenca ? tr("check_in_realizado") : tr("ainda_nao_credenciado")}</Linha>
+              {presenca && <Linha r={tr("horario")}>{new Date(presenca.em).toLocaleString(localeAtual())}</Linha>}
+              {presenca && <Linha r={tr("validacao")}>{ROTULO_ORIGEM_ENTRADA[presenca.origem]} · {presenca.operadorNome}</Linha>}
             </dl>
-            <p className="mt-1 text-xs text-muted-foreground">Mostra entradas já sincronizadas. A inscrição confirmada não significa presença.</p>
+            <p className="mt-1 text-xs text-muted-foreground">{tr("mostra_entradas_ja_sincronizadas_a_inscr")}</p>
           </section>
           {inscricao.status === "confirmada" && (
             <section>
               {/* Só chega aqui com autorização do participante e na semana do evento (visão). */}
               <ResumoFichaEmergencia ficha={ficha} />
               {!ficha && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  A ficha aparece de {DIAS_ANTES_DO_EVENTO} dias antes até o fim do evento, se o participante autorizou.
-                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{tr("a_ficha_aparece_de_dias_antes", { DIAS_ANTES_DO_EVENTO })}</p>
               )}
             </section>
           )}
           <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Dados pessoais</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{tr("dados_pessoais")}</h3>
             <dl className="mt-1 divide-y divide-border/60">
-              <Linha r="Nome">{nome}</Linha>
+              <Linha r={tr("nome")}>{nome}</Linha>
               <Linha r="CPF"><span className="font-mono">{cpf}</span></Linha>
             </dl>
           </section>
           <section>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ações</h3>
-            <p className="mt-2 text-muted-foreground">Para registrar ou desfazer a presença, use a página Check-in.</p>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{tr("acoes")}</h3>
+            <p className="mt-2 text-muted-foreground">{tr("para_registrar_ou_desfazer_a_presenca")}</p>
           </section>
         </div>
       </SheetContent>

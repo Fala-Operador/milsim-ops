@@ -9,6 +9,7 @@ import { carregarBase, mutarBase, latencia, ErroDominio, gerarId, gerarCodigo } 
 import { silenciado } from "./notificacoes";
 import { cnpjValido, normalizarEmail, somenteDigitos, telefoneValido } from "@/lib/domain/validators";
 import type { Evento, SolicitacaoOrganizador } from "@/lib/domain/types";
+import { tr } from "@/i18n/services/organizador";
 
 export async function solicitarOrganizador(
   usuarioId: string,
@@ -16,17 +17,17 @@ export async function solicitarOrganizador(
 ): Promise<SolicitacaoOrganizador> {
   await latencia();
   if (dados.possuiCnpj && !cnpjValido(dados.cnpj ?? "")) {
-    throw new ErroDominio("cnpj", "CNPJ inválido.");
+    throw new ErroDominio("cnpj", tr("cnpj_invalido"));
   }
-  if (!telefoneValido(dados.telefone)) throw new ErroDominio("telefone", "Telefone inválido.");
-  if (!dados.nomeOrganizacao.trim()) throw new ErroDominio("nome", "Informe o nome da organização.");
+  if (!telefoneValido(dados.telefone)) throw new ErroDominio("telefone", tr("telefone_invalido"));
+  if (!dados.nomeOrganizacao.trim()) throw new ErroDominio("nome", tr("informe_o_nome_da_organizacao"));
 
   return mutarBase((base) => {
     const existente = base.solicitacoes.find(
       (s) => s.usuarioId === usuarioId && ["pendente", "em_analise"].includes(s.status),
     );
     if (existente) {
-      throw new ErroDominio("duplicada", "Você já possui uma solicitação em andamento.");
+      throw new ErroDominio("duplicada", tr("voce_ja_possui_uma_solicitacao_em"));
     }
     const sol: SolicitacaoOrganizador = {
       id: gerarId("sol"),
@@ -65,7 +66,7 @@ export async function reenviarSolicitacao(
   mutarBase((base) => {
     const sol = base.solicitacoes.find((s) => s.id === solicitacaoId);
     if (!sol || sol.status !== "ajustes_solicitados") {
-      throw new ErroDominio("status", "Esta solicitação não pode ser reenviada.");
+      throw new ErroDominio("status", tr("esta_solicitacao_nao_pode_ser_reenviada"));
     }
     sol.nomeOrganizacao = dados.nomeOrganizacao.trim();
     sol.instagram = dados.instagram?.trim() || undefined;
@@ -80,7 +81,7 @@ function assertDono(evento: Evento, usuarioId: string, perfil: string) {
   const usuario = base.usuarios.find((u) => u.id === usuarioId);
   if (perfil === "admin") return;
   if (!usuario?.organizacaoId || evento.organizacaoId !== usuario.organizacaoId) {
-    throw new ErroDominio("permissao", "Você só pode gerenciar eventos da sua organização.");
+    throw new ErroDominio("permissao", tr("voce_so_pode_gerenciar_eventos_da"));
   }
 }
 
@@ -100,21 +101,21 @@ export async function salvarEvento(
       // Não permitir redução de capacidade abaixo da ocupação atual
       const ativas = base.inscricoes.filter((i) => i.eventoId === evento.id && ocupaVaga(i));
       if (evento.capacidadeTotal < ativas.length) {
-        throw new ErroDominio("capacidade", "Capacidade total abaixo da ocupação atual.");
+        throw new ErroDominio("capacidade", tr("capacidade_total_abaixo_da_ocupacao_atua"));
       }
       for (const ex of evento.exercitos) {
         const ocup = ativas.filter((i) => i.exercitoId === ex.id).length;
         if (ex.capacidade < ocup) {
-          throw new ErroDominio("capacidade_exercito", `Capacidade do ${ex.nome} abaixo da ocupação atual.`);
+          throw new ErroDominio("capacidade_exercito", tr("capacidade_do_nome_abaixo_da_ocupacao", { nome: ex.nome }));
         }
       }
       const nomes = evento.exercitos.map((e) => e.nome.trim().toLowerCase());
       if (new Set(nomes).size !== nomes.length) {
-        throw new ErroDominio("exercito_duplicado", "Há exércitos com nomes duplicados.");
+        throw new ErroDominio("exercito_duplicado", tr("ha_exercitos_com_nomes_duplicados"));
       }
       const anterior = base.eventos[idx]!.modalidade;
       if (evento.status === "publicado" && !ehModalidade(evento.modalidade)) {
-        throw new ErroDominio("modalidade", "Eventos publicados precisam de uma modalidade principal.");
+        throw new ErroDominio("modalidade", tr("eventos_publicados_precisam_de_uma_modal"));
       }
       if (anterior !== evento.modalidade) {
         base.auditoria.push({
@@ -132,23 +133,23 @@ export async function salvarEvento(
 
 export function validarParaPublicacao(evento: Evento): string[] {
   const erros: string[] = [];
-  if (!evento.nome.trim()) erros.push("Nome obrigatório.");
+  if (!evento.nome.trim()) erros.push(tr("nome_obrigatorio"));
   const erroMod = erroModalidadeParaPublicar(evento);
   if (erroMod) erros.push(erroMod);
-  if (!evento.descricaoResumida.trim()) erros.push("Descrição resumida obrigatória.");
-  if (!evento.enredo.trim()) erros.push("Enredo obrigatório.");
-  if (!evento.local.trim()) erros.push("Local obrigatório.");
-  if (!evento.imagemUrl) erros.push("Adicione a imagem principal do evento.");
-  if (evento.exercitos.length === 0) erros.push("Cadastre ao menos um exército.");
-  if (evento.tipos.length === 0) erros.push("Cadastre ao menos um tipo de ingresso.");
-  if (evento.cronograma.length === 0) erros.push("O cronograma precisa de ao menos uma atividade.");
+  if (!evento.descricaoResumida.trim()) erros.push(tr("descricao_resumida_obrigatoria"));
+  if (!evento.enredo.trim()) erros.push(tr("enredo_obrigatorio"));
+  if (!evento.local.trim()) erros.push(tr("local_obrigatorio"));
+  if (!evento.imagemUrl) erros.push(tr("adicione_a_imagem_principal_do_evento"));
+  if (evento.exercitos.length === 0) erros.push(tr("cadastre_ao_menos_um_exercito"));
+  if (evento.tipos.length === 0) erros.push(tr("cadastre_ao_menos_um_tipo_de"));
+  if (evento.cronograma.length === 0) erros.push(tr("o_cronograma_precisa_de_ao_menos"));
   // Data e horário da atividade valem no fuso do evento (o servidor roda em UTC).
   for (const at of evento.cronograma) {
-    if (!atividadeNoPeriodo(evento, at)) erros.push(`Atividade "${at.titulo}" fora do período do evento.`);
+    if (!atividadeNoPeriodo(evento, at)) erros.push(tr("atividade_titulo_fora_do_periodo_do", { titulo: at.titulo }));
   }
   const fim = new Date(evento.fimEm).getTime();
   for (const l of evento.lotes) {
-    if (l.status !== "arquivado" && new Date(l.fimVendas).getTime() > fim) erros.push(`Lote "${l.nome}": as vendas devem terminar até o término da operação.`);
+    if (l.status !== "arquivado" && new Date(l.fimVendas).getTime() > fim) erros.push(tr("lote_nome_as_vendas_devem_terminar", { nome: l.nome }));
   }
   return erros;
 }
@@ -157,10 +158,10 @@ export async function publicarEvento(eventoId: string, usuarioId: string, perfil
   await latencia();
   mutarBase((base) => {
     const evento = base.eventos.find((e) => e.id === eventoId);
-    if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
+    if (!evento) throw new ErroDominio("evento", tr("evento_nao_encontrado"));
     assertDono(evento, usuarioId, perfil);
     const erros = validarParaPublicacao(evento);
-    if (new Date(evento.inicioEm).getTime() <= Date.now()) erros.unshift("O início da operação já passou.");
+    if (new Date(evento.inicioEm).getTime() <= Date.now()) erros.unshift(tr("o_inicio_da_operacao_ja_passou"));
     // Uma mensagem por linha: o editor separa e mostra cada uma na etapa certa.
     if (erros.length) throw new ErroDominio("validacao", erros.join("\n"));
     evento.status = "publicado";
@@ -174,10 +175,10 @@ export async function cancelarEvento(
   perfil: string,
 ): Promise<{ canceladas: number; sessoesAExpirar: string[] }> {
   await latencia();
-  if (!justificativa.trim()) throw new ErroDominio("justificativa", "Informe a justificativa.");
+  if (!justificativa.trim()) throw new ErroDominio("justificativa", tr("informe_a_justificativa"));
   return mutarBase((base) => {
     const evento = base.eventos.find((e) => e.id === eventoId);
-    if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
+    if (!evento) throw new ErroDominio("evento", tr("evento_nao_encontrado"));
     assertDono(evento, usuarioId, perfil);
     evento.status = "cancelado";
     let canceladas = 0;
@@ -213,7 +214,7 @@ export async function criarCupom(dados: DadosCupom & { eventoId: string }): Prom
   await latencia();
   mutarBase((base) => {
     const evento = base.eventos.find((e) => e.id === dados.eventoId);
-    if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
+    if (!evento) throw new ErroDominio("evento", tr("evento_nao_encontrado"));
     const erros = validarDadosCupom(dados, {
       codigosExistentes: base.cupons.filter((c) => c.eventoId === dados.eventoId).map((c) => c.codigo),
       tiposDoEvento: evento.tipos.filter((t) => !t.arquivado).map((t) => t.id),
@@ -232,14 +233,14 @@ export async function atualizarCupom(cupomId: string, dados: Omit<DadosCupom, "c
   await latencia();
   mutarBase((base) => {
     const cupom = base.cupons.find((c) => c.id === cupomId);
-    if (!cupom) throw new ErroDominio("cupom", "Cupom não encontrado.");
+    if (!cupom) throw new ErroDominio("cupom", tr("cupom_nao_encontrado"));
     const evento = base.eventos.find((e) => e.id === cupom.eventoId)!;
     const erros = validarDadosCupom({ ...dados, codigo: cupom.codigo }, {
       codigosExistentes: [],
       tiposDoEvento: evento.tipos.map((t) => t.id),
     });
     if (dados.limiteUsos !== null && dados.limiteUsos < cupom.usos) {
-      erros.limiteUsos = `O limite não pode ser menor que as ${cupom.usos} utilizações já feitas.`;
+      erros.limiteUsos = tr("o_limite_nao_pode_ser_menor", { usos: cupom.usos });
     }
     const primeiro = Object.values(erros)[0];
     if (primeiro) throw new ErroDominio("cupom_dados", primeiro);
@@ -270,11 +271,11 @@ export async function excluirEvento(eventoId: string, usuarioId: string, perfil:
   await latencia();
   mutarBase((base) => {
     const evento = base.eventos.find((e) => e.id === eventoId);
-    if (!evento) throw new ErroDominio("evento", "Evento não encontrado.");
+    if (!evento) throw new ErroDominio("evento", tr("evento_nao_encontrado"));
     assertDono(evento, usuarioId, perfil);
     const ativas = base.inscricoes.filter((i) => i.eventoId === eventoId && (i.status === "confirmada" || i.status === "pendente"));
     if (ativas.length > 0) {
-      throw new ErroDominio("inscricoes_ativas", "Há inscrições confirmadas ou aguardando pagamento. Cancele o evento em vez de excluí-lo.");
+      throw new ErroDominio("inscricoes_ativas", tr("ha_inscricoes_confirmadas_ou_aguardando"));
     }
     base.eventos = base.eventos.filter((e) => e.id !== eventoId);
     base.cupons = base.cupons.filter((c) => c.eventoId !== eventoId);

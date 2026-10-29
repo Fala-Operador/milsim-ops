@@ -1,0 +1,30 @@
+// Textos de src/components/editorEvento/EventReviewStep.tsx.
+import { dicionario } from "@/i18n/dicionario";
+
+export const tr = dicionario("components/editorEvento/EventReviewStep", {
+  "editar_titulo": { pt: "Editar {titulo}", en: "Edit {titulo}" },
+  "editar": { pt: "Editar", en: "Edit" },
+  "corrija_antes_de_publicar": { pt: "Corrija antes de publicar", en: "Fix before publishing" },
+  "avisos": { pt: "Avisos", en: "Warnings" },
+  "tudo_pronto_revise_o_resumo_abaixo": { pt: "Tudo pronto. Revise o resumo abaixo.", en: "All set. Review the summary below." },
+  "banner_e_card": { pt: "Banner e card", en: "Banner and card" },
+  "sem_imagem": { pt: "Sem imagem.", en: "No image." },
+  "informacoes_gerais": { pt: "Informações gerais", en: "General information" },
+  "modalidade_modalidade": { pt: "Modalidade: {modalidade}", en: "Game type: {modalidade}" },
+  "sem_descricao": { pt: "Sem descrição.", en: "No description." },
+  "data_e_localizacao": { pt: "Data e localização", en: "Date and location" },
+  "exercitos_e_capacidade": { pt: "Exércitos e capacidade", en: "Armies and capacity" },
+  "capacidade_total_capacidadetotal": { pt: "Capacidade total: {capacidadeTotal}", en: "Total capacity: {capacidadeTotal}" },
+  "sem_nome": { pt: "Sem nome", en: "Untitled" },
+  "capacidade_vagas": { pt: "· {capacidade} vagas", en: "· {capacidade} spots" },
+  "ingressos_e_lotes": { pt: "Ingressos e lotes", en: "Tickets and batches" },
+  "base_precobasecentavos_quantidademaxima": { pt: "· base {precoBaseCentavos} · {quantidadeMaxima} un.", en: "· base {precoBaseCentavos} · {quantidadeMaxima} units" },
+  "nenhum_lote": { pt: "Nenhum lote.", en: "No batches." },
+  "cronograma": { pt: "Cronograma", en: "Schedule" },
+  "sem_data": { pt: "Sem data", en: "No date" },
+  "as_horario": { pt: "às {horario}", en: "at {horario}" },
+  "sem_atividades": { pt: "Sem atividades.", en: "No activities." },
+  "documento_de_regras": { pt: "Documento de regras", en: "Rules document" },
+  "titulo_vversao_valor": { pt: "{titulo} · v{versao} · {valor}", en: "{titulo} · v{versao} · {valor}" },
+  "sem_caderno_de_regras": { pt: "Sem caderno de regras.", en: "No rulebook." },
+});

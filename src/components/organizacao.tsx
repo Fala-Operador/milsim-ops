@@ -19,6 +19,8 @@ import { Movimentacoes } from "@/components/financeiro/Movimentacoes";
 import { linhasDeMovimentacao } from "@/lib/movimentacoes";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
+import { tr } from "@/i18n/components/organizacao";
+import { localeAtual } from "@/i18n/dicionario";
 
 /** Eventos visíveis para o organizador logado (admin vê todos). */
 export function useEventosOrg() {
@@ -44,13 +46,11 @@ export function SeletorEvento({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Label htmlFor="sel-evento" className="text-sm text-muted-foreground font-normal">
-        Evento:
-      </Label>
+      <Label htmlFor="sel-evento" className="text-sm text-muted-foreground font-normal">{tr("evento")}</Label>
       <NativeSelect id="sel-evento" value={valor} onChange={(e) => onChange(e.target.value)} className="min-w-56">
         {eventos.map((e) => (
           <option key={e.id} value={e.id}>
-            {e.nome || "Sem nome"} — {formatarDataBR(e.inicioEm)}
+            {e.nome || tr("sem_nome")} — {formatarDataBR(e.inicioEm)}
           </option>
         ))}
       </NativeSelect>
@@ -66,18 +66,18 @@ export function TabelaInscritos({ eventoId }: { eventoId: string }) {
   return (
     <div>
       <p className="text-sm text-muted-foreground">
-        {confirmadas} confirmadas de {inscricoes.length} inscrições · capacidade {evento.capacidadeTotal}
+        {tr("confirmadas_confirmadas_de_length_inscri", { confirmadas, length: inscricoes.length, capacidadeTotal: evento.capacidadeTotal })}
       </p>
       <div className="mt-3 overflow-x-auto">
         <Table className="w-full text-sm">
           <TableHeader>
             <TableRow className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-              <TableHead className="py-2 pr-3">Participante</TableHead>
-              <TableHead className="py-2 pr-3">CPF</TableHead>
-              <TableHead className="py-2 pr-3">Tipo</TableHead>
-              <TableHead className="py-2 pr-3">Exército</TableHead>
-              <TableHead className="py-2 pr-3">Origem</TableHead>
-              <TableHead className="py-2">Status</TableHead>
+              <TableHead className="py-2 pr-3">{tr("participante")}</TableHead>
+              <TableHead className="py-2 pr-3">{tr("cpf")}</TableHead>
+              <TableHead className="py-2 pr-3">{tr("tipo")}</TableHead>
+              <TableHead className="py-2 pr-3">{tr("exercito")}</TableHead>
+              <TableHead className="py-2 pr-3">{tr("origem")}</TableHead>
+              <TableHead className="py-2">{tr("status")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -85,7 +85,7 @@ export function TabelaInscritos({ eventoId }: { eventoId: string }) {
               const u = base.usuarios.find((x) => x.id === i.usuarioId);
               return (
                 <TableRow key={i.id} className="border-b border-border/50">
-                  <TableCell className="py-2 pr-3">{u?.nomeCompleto ?? "Participante"}</TableCell>
+                  <TableCell className="py-2 pr-3">{u?.nomeCompleto ?? tr("participante")}</TableCell>
                   <TableCell className="py-2 pr-3 font-mono text-xs">{u ? mascararCpf(u.cpf) : "***"}</TableCell>
                   <TableCell className="py-2 pr-3">{evento.tipos.find((t) => t.id === i.tipoId)?.nome}</TableCell>
                   <TableCell className="py-2 pr-3">{evento.exercitos.find((e) => e.id === i.exercitoId)?.nome}</TableCell>
@@ -98,9 +98,7 @@ export function TabelaInscritos({ eventoId }: { eventoId: string }) {
             })}
             {inscricoes.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
-                  Nenhuma inscrição neste evento.
-                </TableCell>
+                <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">{tr("nenhuma_inscricao_neste_evento")}</TableCell>
               </TableRow>
             )}
           </TableBody>
@@ -112,7 +110,7 @@ export function TabelaInscritos({ eventoId }: { eventoId: string }) {
         onClick={() => {
           const linhas = inscricoes.map((i) => {
             const u = base.usuarios.find((x) => x.id === i.usuarioId);
-            return [u?.nomeCompleto ?? "Participante", i.codigo, i.status, i.origem].join(";");
+            return [u?.nomeCompleto ?? tr("participante"), i.codigo, i.status, i.origem].join(";");
           });
           const csv = "nome;codigo;status;origem\n" + linhas.join("\n");
           const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
@@ -122,9 +120,7 @@ export function TabelaInscritos({ eventoId }: { eventoId: string }) {
           a.click();
           URL.revokeObjectURL(url);
         }}
-      >
-        Exportar relatório (CSV)
-      </Button>
+      >{tr("exportar_relatorio_csv")}</Button>
     </div>
   );
 }
@@ -132,43 +128,40 @@ export function TabelaInscritos({ eventoId }: { eventoId: string }) {
 export function Financeiro({ eventoId }: { eventoId: string }) {
   const r = resumoFinanceiro(eventoId);
   const itens: Array<[string, string]> = [
-    ["Inscritos ativos", String(r.inscritosAtivos)],
-    ["Valor bruto", formatarBRL(r.bruto)],
-    ["Descontos concedidos", formatarBRL(r.descontos)],
-    ["Ajustes", formatarBRL(r.ajustes)],
-    ["Estornos", formatarBRL(r.estornos)],
-    ["Total líquido", formatarBRL(r.liquido)],
-    ["Cortesias emitidas / resgatadas", `${r.cortesiasEmitidas} / ${r.cortesiasResgatadas}`],
-    ["Cupons utilizados", String(r.cuponsUtilizados)],
-    ["Integralmente descontadas", String(r.integralmenteDescontadas)],
-    ["Reservas aguardando pagamento", String(r.reservasAguardando)],
+    [tr("inscritos_ativos"), String(r.inscritosAtivos)],
+    [tr("valor_bruto"), formatarBRL(r.bruto)],
+    [tr("descontos_concedidos"), formatarBRL(r.descontos)],
+    [tr("ajustes"), formatarBRL(r.ajustes)],
+    [tr("estornos"), formatarBRL(r.estornos)],
+    [tr("total_liquido"), formatarBRL(r.liquido)],
+    [tr("cortesias_emitidas_resgatadas"), `${r.cortesiasEmitidas} / ${r.cortesiasResgatadas}`],
+    [tr("cupons_utilizados"), String(r.cuponsUtilizados)],
+    [tr("integralmente_descontadas"), String(r.integralmenteDescontadas)],
+    [tr("reservas_aguardando_pagamento"), String(r.reservasAguardando)],
     // Taxa vigente (definida pela administração); cada venda guarda a do momento em que foi feita.
-    ["Taxa da plataforma", `${taxaDaPlataforma(carregarBase()).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`],
+    [tr("taxa_da_plataforma"), `${taxaDaPlataforma(carregarBase()).toLocaleString(localeAtual(), { maximumFractionDigits: 2 })}%`],
   ];
   // Vendas pagas online: quanto foi cobrado, a taxa retida e para onde foi o dinheiro.
   const rep = resumoRepasse(carregarBase(), eventoId);
   if (rep.cobrado > 0) {
     itens.push(
-      ["Pago online (Stripe)", formatarBRL(rep.cobrado)],
-      ["Taxa da plataforma", formatarBRL(rep.taxas)],
-      ["Repassado à organização", formatarBRL(rep.repassado)],
+      [tr("pago_online_stripe"), formatarBRL(rep.cobrado)],
+      [tr("taxa_da_plataforma"), formatarBRL(rep.taxas)],
+      [tr("repassado_a_organizacao"), formatarBRL(rep.repassado)],
     );
-    if (rep.naPlataforma > 0) itens.push(["Com a plataforma (repasse à parte)", formatarBRL(rep.naPlataforma)]);
-    if (rep.taxasComprador > 0) itens.push(["Taxa de serviço paga pelos compradores (repassada à organização)", formatarBRL(rep.taxasComprador)]);
+    if (rep.naPlataforma > 0) itens.push([tr("com_a_plataforma_repasse_a_parte"), formatarBRL(rep.naPlataforma)]);
+    if (rep.taxasComprador > 0) itens.push([tr("taxa_de_servico_paga_pelos_compradores"), formatarBRL(rep.taxasComprador)]);
   }
   return (
     <div>
-      <p className="text-xs text-muted-foreground">
-        Valores derivados das inscrições confirmadas, descontos e estornos registrados. Pagamentos online são
-        processados pelo Stripe; reservas aguardando pagamento ainda não entram nos valores.
-      </p>
+      <p className="text-xs text-muted-foreground">{tr("valores_derivados_das_inscricoes_confirm")}</p>
       {r.reembolsosPendentes.length > 0 && (
         <div role="status" className="mt-3 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">
-          <p className="font-medium">{r.reembolsosPendentes.length} reembolso(s) em andamento no Stripe</p>
+          <p className="font-medium">{tr("length_reembolso_s_em_andamento_no", { length: r.reembolsosPendentes.length })}</p>
           <ul className="mt-1 space-y-0.5 text-xs">
             {r.reembolsosPendentes.map((i) => (
               <li key={i.id} className="break-words">
-                {i.codigo}: {i.pagamento?.erro ? `falha — ${i.pagamento.erro} (nova tentativa automática)` : "aguardando confirmação do Stripe"}
+                {i.codigo}: {i.pagamento?.erro ? tr("falha_erro_nova_tentativa_automatica", { erro: i.pagamento.erro }) : tr("aguardando_confirmacao_do_stripe")}
               </li>
             ))}
           </ul>
@@ -176,13 +169,12 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
       )}
       {r.disputas.length > 0 && (
         <div role="status" className={`mt-3 rounded-md border px-3 py-2 text-sm ${r.disputas.some((i) => disputaEmAberto(i.pagamento?.disputa)) ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-border bg-elevated"}`}>
-          <p className="font-medium">{r.disputas.length} pagamento(s) contestado(s) no banco do cartão</p>
-          <p className="mt-0.5 text-xs">A resposta à contestação é feita pela plataforma com o Stripe. Guarde comprovantes de participação, como o check-in.</p>
+          <p className="font-medium">{tr("length_pagamento_s_contestado_s_no", { length: r.disputas.length })}</p>
+          <p className="mt-0.5 text-xs">{tr("a_resposta_a_contestacao_e_feita")}</p>
           <ul className="mt-1 space-y-0.5 text-xs">
             {r.disputas.map((i) => (
               <li key={i.id} className="break-words">
-                {i.codigo}: {formatarBRL(i.pagamento!.disputa!.valorCentavos)} — {ROTULO_DISPUTA[i.pagamento!.disputa!.status]} (desde {formatarDataBR(i.pagamento!.disputa!.abertaEm)})
-              </li>
+                {tr("codigo_valorcentavos_valor_desde_abertae", { codigo: i.codigo, valorCentavos: formatarBRL(i.pagamento!.disputa!.valorCentavos), valor: ROTULO_DISPUTA[i.pagamento!.disputa!.status], abertaEm: formatarDataBR(i.pagamento!.disputa!.abertaEm) })}</li>
             ))}
           </ul>
         </div>
@@ -191,14 +183,14 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
         <div className="rounded-lg border border-border">
           <div className="flex items-end justify-between gap-3 border-b border-border p-5">
             <div>
-              <p className="rotulo-tecnico">Total líquido</p>
+              <p className="rotulo-tecnico">{tr("total_liquido")}</p>
               <p className="mt-1 font-display text-5xl font-bold leading-none tabular-nums">{formatarBRL(r.liquido)}</p>
             </div>
-            <p className="text-right text-xs text-muted-foreground">{r.inscritosAtivos} inscritos ativos<br />{r.reservasAguardando} reservas aguardando</p>
+            <p className="text-right text-xs text-muted-foreground">{tr("inscritosativos_inscritos_ativos", { inscritosAtivos: r.inscritosAtivos })}<br />{tr("reservasaguardando_reservas_aguardando", { reservasAguardando: r.reservasAguardando })}</p>
           </div>
           <dl className="divide-y divide-border/70 font-mono text-sm tabular-nums">
             {([
-              ["Valor bruto", r.bruto, ""], ["Descontos de cupom", -r.descontos, "−"], ["Estornos", -r.estornos, "−"], ["Ajustes", r.ajustes, r.ajustes < 0 ? "−" : "+"],
+              [tr("valor_bruto"), r.bruto, ""], [tr("descontos_de_cupom"), -r.descontos, "−"], [tr("estornos"), -r.estornos, "−"], [tr("ajustes"), r.ajustes, r.ajustes < 0 ? "−" : "+"],
             ] as const).map(([rot, v]) => (
               <div key={rot} className="flex justify-between gap-3 px-5 py-2.5">
                 <dt className="font-sans text-muted-foreground">{rot}</dt>
@@ -208,7 +200,7 @@ export function Financeiro({ eventoId }: { eventoId: string }) {
           </dl>
         </div>
         <dl className="grid content-start grid-cols-2 gap-x-6 gap-y-4 self-start">
-          {itens.filter(([rot]) => !["Inscritos ativos", "Valor bruto", "Descontos concedidos", "Ajustes", "Estornos", "Total líquido", "Reservas aguardando pagamento"].includes(rot)).map(([rotulo, valor]) => (
+          {itens.filter(([rot]) => ![tr("inscritos_ativos"), tr("valor_bruto"), tr("descontos_concedidos"), tr("ajustes"), tr("estornos"), tr("total_liquido"), tr("reservas_aguardando_pagamento")].includes(rot)).map(([rotulo, valor]) => (
             <div key={rotulo} className="min-w-0 border-t border-border pt-2">
               <dt className="text-xs leading-tight text-muted-foreground">{rotulo}</dt>
               <dd className="mt-1 break-words font-display text-2xl font-bold tabular-nums">{valor}</dd>
@@ -242,16 +234,16 @@ export function AvisoLotes({ evento, compacto = false, onConfigurar }: { evento:
     if (bloqueados.length === 0) return null;
     return (
       <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-warning">
-        {bloqueados.length === tipos.length ? "Inscrições indisponíveis" : `${bloqueados.length} ingresso(s) sem venda aberta`}
-        <Button variant="plain" size="none" type="button" onClick={onConfigurar} className="underline underline-offset-2 hover:text-foreground">Configurar lotes</Button>
+        {bloqueados.length === tipos.length ? tr("inscricoes_indisponiveis") : tr("length_ingresso_s_sem_venda_aberta", { length: bloqueados.length })}
+        <Button variant="plain" size="none" type="button" onClick={onConfigurar} className="underline underline-offset-2 hover:text-foreground">{tr("configurar_lotes")}</Button>
       </p>
     );
   }
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-display text-base font-semibold uppercase">Disponibilidade dos ingressos</h3>
-        <Button variant="outline" onClick={onConfigurar}>Configurar lotes</Button>
+        <h3 className="font-display text-base font-semibold uppercase">{tr("disponibilidade_dos_ingressos")}</h3>
+        <Button variant="outline" onClick={onConfigurar}>{tr("configurar_lotes")}</Button>
       </div>
       <ul className="space-y-1 text-sm">
         {tipos.map(({ t, d }) => (
@@ -259,14 +251,13 @@ export function AvisoLotes({ evento, compacto = false, onConfigurar }: { evento:
             <span>{t.nome}</span>
             {d.disponivel ? (
               <span className="flex items-center gap-2 text-muted-foreground">
-                {d.lote.nome} · <Preco centavos={d.precoCentavos} /> · {d.restantes} vagas
-                <Badge variant="success">disponível</Badge>
+                {d.lote.nome} · <Preco centavos={d.precoCentavos} />{" "}{tr("restantes_vagas", { restantes: d.restantes })}<Badge variant="success">{tr("disponivel")}</Badge>
               </span>
             ) : (
               <span className="flex items-center gap-2 text-muted-foreground">
                 {TEXTO_MOTIVO[d.motivo]}
-                {d.motivo === "agendado" && d.inicioVendas ? ` (a partir de ${formatarDataBR(d.inicioVendas)})` : ""}
-                <Badge variant="warning">indisponível</Badge>
+                {d.motivo === "agendado" && d.inicioVendas ? ` ${tr("a_partir_de_iniciovendas", { inicioVendas: formatarDataBR(d.inicioVendas) })}` : ""}
+                <Badge variant="warning">{tr("indisponivel")}</Badge>
               </span>
             )}
           </li>

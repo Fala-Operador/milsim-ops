@@ -5,7 +5,7 @@ export const tr = dicionario("components/OperacaoSelecionada", {
   "rascunho": { pt: "Rascunho", en: "Draft" },
   "publicado": { pt: "Publicado", en: "Published" },
   "inscricoes_encerradas": { pt: "Inscrições encerradas", en: "Registration closed" },
-  "cancelado": { pt: "Cancelado", en: "Canceled" },
+  "cancelado": { pt: "Cancelado", en: "Cancelled" },
   "concluido": { pt: "Concluído", en: "Completed" },
   "operacao_selecionada": { pt: "Operação selecionada", en: "Selected operation" },
   "sem_nome": { pt: "Sem nome", en: "Untitled" },
@@ -22,4 +22,5 @@ export const tr = dicionario("components/OperacaoSelecionada", {
   "eventos_autorizados": { pt: "Eventos autorizados", en: "Authorized events" },
   "atual": { pt: "Atual", en: "Current" },
   "nenhum_evento_encontrado_tente_outro_nom": { pt: "Nenhum evento encontrado. Tente outro nome ou status.", en: "No event found. Try another name or status." },
+  "arquivado": { pt: "Arquivado", en: "Archived" },
 });

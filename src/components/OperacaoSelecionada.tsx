@@ -13,7 +13,7 @@ import { tr } from "@/i18n/components/OperacaoSelecionada";
 
 export const ROTULO_STATUS_EVENTO: Record<string, string> = {
   get rascunho() { return tr("rascunho"); }, get publicado() { return tr("publicado"); }, get inscricoes_encerradas() { return tr("inscricoes_encerradas"); },
-  get cancelado() { return tr("cancelado"); }, get concluido() { return tr("concluido"); },
+  get cancelado() { return tr("cancelado"); }, get concluido() { return tr("concluido"); }, get arquivado() { return tr("arquivado"); },
 };
 const tomStatusEvento = (s: string) =>
   s === "publicado" ? "success" : s === "cancelado" ? "destructive" : s === "rascunho" ? "secondary" : "warning";

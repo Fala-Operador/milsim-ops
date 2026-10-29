@@ -10,6 +10,7 @@ import {
 } from "@/lib/recorteBanner";
 import { Ajuda, inval, MsgErro, type PropsEtapa } from "./comum";
 import { Slider } from "@/components/ui/slider";
+import { tr } from "@/i18n/components/editorEvento/EventImageStep";
 
 function EditorRecorte({ img, formato, recorte, onChange }: { img: HTMLImageElement; formato: FormatoRecorte; recorte: Recorte; onChange: (r: Recorte) => void }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -45,7 +46,7 @@ function EditorRecorte({ img, formato, recorte, onChange }: { img: HTMLImageElem
         height={H}
         tabIndex={0}
         role="img"
-        aria-label={`${rotulo}. Arraste ou use as setas do teclado para reposicionar.`}
+        aria-label={tr("rotulo_arraste_ou_use_as_setas", { rotulo })}
         className="w-full cursor-grab touch-none rounded-md border border-border bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing"
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId);
@@ -68,10 +69,10 @@ function EditorRecorte({ img, formato, recorte, onChange }: { img: HTMLImageElem
         }}
       />
       <div className="flex items-center gap-3">
-        <span id={`zoom-${formato}-rotulo`} className="text-xs text-muted-foreground">Zoom</span>
+        <span id={`zoom-${formato}-rotulo`} className="text-xs text-muted-foreground">{tr("zoom")}</span>
         <Slider id={`zoom-${formato}`} aria-labelledby={`zoom-${formato}-rotulo`} min={1} max={ZOOM_MAX} step={0.05} value={[recorte.zoom]} className="flex-1"
           onValueChange={([zoom]) => zoom !== undefined && onChange(normalizarRecorte({ ...recorte, zoom }))} />
-        <Button type="button" variant="ghost" onClick={() => onChange(RECORTE_INICIAL)}>Centralizar</Button>
+        <Button type="button" variant="ghost" onClick={() => onChange(RECORTE_INICIAL)}>{tr("centralizar")}</Button>
       </div>
     </figure>
   );
@@ -88,7 +89,7 @@ export function EtapaImagem({ ev, set, erros, onErro }: PropsEtapa & { onErro: (
     let vivo = true;
     setImg(null);
     if (!imagem?.originalUrl) return setImg(null);
-    carregarImagem(imagem.originalUrl).then((i) => vivo && setImg(i)).catch(() => vivo && onErro("Não foi possível carregar a imagem salva."));
+    carregarImagem(imagem.originalUrl).then((i) => vivo && setImg(i)).catch(() => vivo && onErro(tr("nao_foi_possivel_carregar_a_imagem")));
     return () => { vivo = false; };
   }, [imagem?.originalUrl, onErro]);
 
@@ -106,7 +107,7 @@ export function EtapaImagem({ ev, set, erros, onErro }: PropsEtapa & { onErro: (
       set("imagem", { originalUrl, alt: imagem?.alt ?? "", banner: RECORTE_INICIAL, card: RECORTE_INICIAL, bannerUrl });
       onErro("");
     } catch (e) {
-      onErro(e instanceof Error ? e.message : "Falha ao ler a imagem.");
+      onErro(e instanceof Error ? e.message : tr("falha_ao_ler_a_imagem"));
     } finally {
       setProcessando(false);
     }
@@ -120,7 +121,7 @@ export function EtapaImagem({ ev, set, erros, onErro }: PropsEtapa & { onErro: (
       if (f === "card") set("imagemUrl", url);
       set("imagem", { ...imagem, [f]: r, ...(f === "banner" ? { bannerUrl: url } : {}) });
     } catch {
-      onErro("Não foi possível gerar o recorte. Tente novamente.");
+      onErro(tr("nao_foi_possivel_gerar_o_recorte"));
     }
   };
 
@@ -132,37 +133,37 @@ export function EtapaImagem({ ev, set, erros, onErro }: PropsEtapa & { onErro: (
         onDrop={(e) => { e.preventDefault(); setArrastando(false); void escolher(e.dataTransfer.files[0]); }}
         className={`rounded-lg border-2 border-dashed p-5 text-center ${arrastando ? "border-primary bg-primary/10" : "border-border bg-elevated"}`}
       >
-        <p className="font-display text-sm font-semibold uppercase tracking-wide">{imagem ? "Substituir imagem principal" : "Imagem principal da operação"}</p>
-        <p className="mt-1 text-xs text-muted-foreground">Arraste e solte aqui ou selecione um arquivo · JPEG, PNG ou WebP · até 10 MB</p>
+        <p className="font-display text-sm font-semibold uppercase tracking-wide">{imagem ? tr("substituir_imagem_principal") : tr("imagem_principal_da_operacao")}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{tr("arraste_e_solte_aqui_ou_selecione")}</p>
         <div className="mt-3 flex flex-wrap justify-center gap-2">
           <input ref={inputRef} id="ev-img-arquivo" type="file" accept="image/jpeg,image/png,image/webp" className="sr-only"
             onChange={(e) => { const a = e.target.files?.[0]; e.target.value = ""; void escolher(a); }} />
           <Button type="button" variant="outline" disabled={processando} onClick={() => inputRef.current?.click()}>
-            {processando ? "Processando…" : imagem ? "Escolher outra imagem" : "Selecionar arquivo"}
+            {processando ? tr("processando") : imagem ? tr("escolher_outra_imagem") : tr("selecionar_arquivo")}
           </Button>
           {imagem && (
-            <Button type="button" variant="ghost" onClick={() => { set("imagem", undefined); set("imagemUrl", undefined); }}>Remover imagem</Button>
+            <Button type="button" variant="ghost" onClick={() => { set("imagem", undefined); set("imagemUrl", undefined); }}>{tr("remover_imagem")}</Button>
           )}
         </div>
         <MsgErro erros={erros} id="ev-img-arquivo" />
-        {!imagem && !ev.imagemUrl && <Ajuda>O rascunho pode ficar sem imagem; para publicar, ela é obrigatória.</Ajuda>}
+        {!imagem && !ev.imagemUrl && <Ajuda>{tr("o_rascunho_pode_ficar_sem_imagem")}</Ajuda>}
       </div>
 
       {!imagem && ev.imagemUrl && (
         <figure className="space-y-2">
-          <figcaption className="text-sm font-medium">Imagem atual do evento</figcaption>
-          <img src={ev.imagemUrl} alt={`Imagem de ${ev.nome}`} className="aspect-video w-full max-w-lg rounded-md object-cover" />
-          <Button type="button" variant="ghost" onClick={() => set("imagemUrl", undefined)}>Remover imagem</Button>
+          <figcaption className="text-sm font-medium">{tr("imagem_atual_do_evento")}</figcaption>
+          <img src={ev.imagemUrl} alt={tr("imagem_de_nome", { nome: ev.nome })} className="aspect-video w-full max-w-lg rounded-md object-cover" />
+          <Button type="button" variant="ghost" onClick={() => set("imagemUrl", undefined)}>{tr("remover_imagem")}</Button>
         </figure>
       )}
 
       {imagem && (
         <>
-          <Campo rotulo="Texto alternativo" htmlFor="ev-img-alt">
-            <Input id="ev-img-alt" maxLength={200} placeholder="Ex.: Operadores avançando em mata fechada ao amanhecer" value={imagem.alt}
+          <Campo rotulo={tr("texto_alternativo")} htmlFor="ev-img-alt">
+            <Input id="ev-img-alt" maxLength={200} placeholder={tr("ex_operadores_avancando_em_mata_fechada")} value={imagem.alt}
               onChange={(e) => set("imagem", { ...imagem, alt: e.target.value })} {...inval(erros, "ev-img-alt")} />
             <MsgErro erros={erros} id="ev-img-alt" />
-            <Ajuda>Descreve a imagem para quem usa leitor de tela.</Ajuda>
+            <Ajuda>{tr("descreve_a_imagem_para_quem_usa")}</Ajuda>
           </Campo>
           {img ? (
             <div className="grid gap-5 xl:grid-cols-[3fr_2fr]">
@@ -170,16 +171,16 @@ export function EtapaImagem({ ev, set, erros, onErro }: PropsEtapa & { onErro: (
               <EditorRecorte img={img} formato="card" recorte={imagem.card} onChange={(r) => recorte("card", r)} />
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">Carregando imagem…</p>
+            <p className="text-sm text-muted-foreground">{tr("carregando_imagem")}</p>
           )}
           {ev.imagemUrl && (
             <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Prévia do card</p>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{tr("previa_do_card")}</p>
               <div className="w-64 max-w-full overflow-hidden rounded-lg border border-border bg-card">
                 <img src={ev.imagemUrl} alt={imagem.alt} className="aspect-video w-full object-cover" />
                 <div className="p-3">
-                  <p className="truncate font-display text-sm font-semibold uppercase">{ev.nome || "Nome da operação"}</p>
-                  <p className="truncate text-xs text-muted-foreground">{ev.cidade || "Cidade"}/{ev.uf}</p>
+                  <p className="truncate font-display text-sm font-semibold uppercase">{ev.nome || tr("nome_da_operacao")}</p>
+                  <p className="truncate text-xs text-muted-foreground">{ev.cidade || tr("cidade")}/{ev.uf}</p>
                 </div>
               </div>
             </div>
