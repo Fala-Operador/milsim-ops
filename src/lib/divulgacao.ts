@@ -14,6 +14,7 @@ import type {
 import { campanhasNaPosicao } from "@/lib/impulsionamento";
 import { POSICAO_COMUNIDADE } from "@/lib/domain/types";
 import { ocupaVaga } from "@/lib/pagamentos";
+import { tr } from "@/i18n/lib/divulgacao";
 
 export const REGIOES: RegiaoBR[] = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
 
@@ -77,10 +78,10 @@ export function abrangenciaDoEvento(e: Evento): Abrangencia {
 }
 
 export function rotuloAbrangencia(a: Abrangencia): string {
-  if (a.escopo === "nacional") return "Todo o Brasil";
-  if (a.escopo === "regiao") return a.regiao ?? "Região";
-  if (a.escopo === "estado") return a.uf ?? "Estado";
-  return `${a.cidade ?? "Cidade"}/${a.uf ?? ""}`;
+  if (a.escopo === "nacional") return tr("todo_o_brasil");
+  if (a.escopo === "regiao") return a.regiao ?? tr("regiao");
+  if (a.escopo === "estado") return a.uf ?? tr("estado");
+  return `${a.cidade ?? tr("cidade")}/${a.uf ?? ""}`;
 }
 
 export function vigente(ag: Agendamento | undefined, agora: Date): boolean {
@@ -330,15 +331,15 @@ const PARECE_SITE = /\.(com|net|org|io|app|gov|edu)(\.[a-z]{2})?$|\.br$/i;
 
 function validarUsuarioInstagram(bruto: string): ResultadoInstagram {
   const usuario = bruto.toLowerCase();
-  if (!usuario) return { ok: false, erro: "Informe o nome do perfil depois do @." };
+  if (!usuario) return { ok: false, erro: tr("informe_o_nome_do_perfil_depois") };
   if (usuario.length > 30)
-    return { ok: false, erro: "O nome do perfil tem no máximo 30 caracteres." };
+    return { ok: false, erro: tr("o_nome_do_perfil_tem_no") };
   if (!/^[a-z0-9._]+$/.test(usuario))
-    return { ok: false, erro: "Use apenas letras, números, ponto e sublinhado no nome do perfil." };
+    return { ok: false, erro: tr("use_apenas_letras_numeros_ponto_e") };
   if (usuario.startsWith(".") || usuario.endsWith(".") || usuario.includes("..")) {
     return {
       ok: false,
-      erro: "O nome do perfil não pode começar ou terminar com ponto, nem ter dois pontos seguidos.",
+      erro: tr("o_nome_do_perfil_nao_pode"),
     };
   }
   return { ok: true, usuario, url: `https://www.instagram.com/${usuario}/` };
@@ -346,8 +347,8 @@ function validarUsuarioInstagram(bruto: string): ResultadoInstagram {
 
 export function analisarInstagram(entrada: string | undefined): ResultadoInstagram {
   const v = (entrada ?? "").trim();
-  if (!v) return { ok: false, erro: "Informe o @ do perfil ou o link do Instagram." };
-  if (/\s/.test(v)) return { ok: false, erro: "O perfil não pode ter espaços." };
+  if (!v) return { ok: false, erro: tr("informe_o_do_perfil_ou_o") };
+  if (/\s/.test(v)) return { ok: false, erro: tr("o_perfil_nao_pode_ter_espacos") };
   if (v.startsWith("@")) return validarUsuarioInstagram(v.slice(1));
 
   const pareceLink = TEM_ESQUEMA.test(v) || v.includes("/") || /instagram\.com/i.test(v);
@@ -355,7 +356,7 @@ export function analisarInstagram(entrada: string | undefined): ResultadoInstagr
     if (PARECE_SITE.test(v))
       return {
         ok: false,
-        erro: "Isso parece um site. Informe o @ do perfil ou um link do Instagram.",
+        erro: tr("isso_parece_um_site_informe_o"),
       };
     return validarUsuarioInstagram(v);
   }
@@ -363,17 +364,17 @@ export function analisarInstagram(entrada: string | undefined): ResultadoInstagr
   try {
     url = new URL(TEM_ESQUEMA.test(v) ? v : `https://${v}`);
   } catch {
-    return { ok: false, erro: "Link inválido." };
+    return { ok: false, erro: tr("link_invalido") };
   }
   if (url.protocol !== "https:" && url.protocol !== "http:")
-    return { ok: false, erro: "Link inválido." };
+    return { ok: false, erro: tr("link_invalido") };
   if (!HOSTS_INSTAGRAM.has(url.hostname.toLowerCase()))
-    return { ok: false, erro: "Use um link do Instagram (instagram.com)." };
+    return { ok: false, erro: tr("use_um_link_do_instagram_instagram") };
   // Parâmetros de compartilhamento (?igsh=…, ?hl=…) e âncoras são descartados.
   const partes = url.pathname.split("/").filter(Boolean);
-  if (partes.length === 0) return { ok: false, erro: "Falta o nome do perfil no link." };
+  if (partes.length === 0) return { ok: false, erro: tr("falta_o_nome_do_perfil_no") };
   if (partes.length > 1 || CAMINHOS_RESERVADOS.has(partes[0]!.toLowerCase())) {
-    return { ok: false, erro: "Use o link do perfil, não de uma publicação, reel ou story." };
+    return { ok: false, erro: tr("use_o_link_do_perfil_nao") };
   }
   return validarUsuarioInstagram(decodeURIComponent(partes[0]!));
 }
@@ -398,11 +399,11 @@ export function hrefDoLink(l: LinkParceiro): string | null {
 }
 
 export const ROTULO_LINK: Record<LinkParceiro["tipo"], string> = {
-  site: "Site",
-  instagram: "Instagram",
-  whatsapp: "WhatsApp",
-  externo: "Página externa",
-  outro: "Link",
+  get site() { return tr("site"); },
+  get instagram() { return tr("instagram"); },
+  get whatsapp() { return tr("whatsapp"); },
+  get externo() { return tr("pagina_externa"); },
+  get outro() { return tr("link"); },
 };
 
 export function rotuloDoLink(l: LinkParceiro): string {
@@ -411,15 +412,15 @@ export function rotuloDoLink(l: LinkParceiro): string {
 
 /** Mensagem de erro de um link (null = válido); usada no formulário, no serviço e nas pendências. */
 export function erroDoLink(l: LinkParceiro): string | null {
-  if (l.tipo === "outro" && !l.rotulo?.trim()) return "Informe o rótulo do link personalizado.";
+  if (l.tipo === "outro" && !l.rotulo?.trim()) return tr("informe_o_rotulo_do_link_personalizado");
   if (l.tipo === "instagram") {
     const r = analisarInstagram(l.url);
     return r.ok ? null : r.erro;
   }
   if (hrefDoLink(l)) return null;
   return l.tipo === "whatsapp"
-    ? "WhatsApp inválido: informe o telefone com código do país (ex.: +55 11 99999-0000)."
-    : "Endereço inválido: use um link http ou https.";
+    ? tr("whatsapp_invalido_informe_o_telefone_com")
+    : tr("endereco_invalido_use_um_link_http");
 }
 
 /** Links com o Instagram gravado na forma canônica (demais tipos inalterados). */

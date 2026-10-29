@@ -190,7 +190,7 @@ function PaginaInscricao() {
       : disp && !disp.disponivel
         ? tr("as_inscricoes_deste_ingresso_estao_indis", { valor: TEXTO_MOTIVO[disp.motivo] })
         : vaiPagar && !vendasAbertas
-          ? MSG_SEM_RECEBIMENTO
+          ? MSG_SEM_RECEBIMENTO()
           : "";
 
   const aoConfirmar = async () => {

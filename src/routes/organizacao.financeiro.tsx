@@ -18,6 +18,8 @@ import { definirTaxaComprador } from "@/api/repasses.functions";
 import { taxaDaPlataforma, taxaDoComprador, taxaPlataforma } from "@/lib/repasses";
 import { formatarBRL } from "@/lib/domain/money";
 import { AvisoLotes, Financeiro, useEventoSelecionado, useEventosOrg } from "@/components/organizacao";
+import { tr } from "@/i18n/routes/organizacao.financeiro";
+import { localeAtual } from "@/i18n/dicionario";
 
 export const Route = createFileRoute("/organizacao/financeiro")({
   // Volta do cadastro de recebimentos no Stripe: ?recebimento=retorno|renovar
@@ -26,8 +28,8 @@ export const Route = createFileRoute("/organizacao/financeiro")({
   }),
   head: () => ({
     meta: [
-      { title: "Financeiro — Minha organização — MilSim Ops" },
-      { name: "description", content: "Resumo financeiro, cupons e cortesias por evento." },
+      { title: tr("financeiro_minha_organizacao_milsim_ops") },
+      { name: "description", content: tr("resumo_financeiro_cupons_e_cortesias_por") },
     ],
   }),
   component: PaginaFinanceiro,
@@ -62,11 +64,11 @@ function PaginaFinanceiro() {
         tipoId: cortesiaForm.tipoId,
         validade: cortesiaForm.validade ? new Date(cortesiaForm.validade).toISOString() : new Date(Date.now() + 15 * 86400000).toISOString(),
       });
-      void avisar({ titulo: "Cortesia criada", descricao: `Link de uso único: /inscricao/${evento.id}?cortesia=${codigo}` });
+      void avisar({ titulo: tr("cortesia_criada"), descricao: tr("link_de_uso_unico_inscricao_id", { id: evento.id, codigo }) });
       setCortesiaForm({ nome: "", email: "", tipoId: "", validade: "" });
       setVersao((v) => v + 1);
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Falha ao criar cortesia.");
+      setErro(err instanceof Error ? err.message : tr("falha_ao_criar_cortesia"));
     }
   };
 
@@ -77,7 +79,7 @@ function PaginaFinanceiro() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="titulo-pagina">Financeiro</h2>
+        <h2 className="titulo-pagina">{tr("financeiro")}</h2>
       </div>
       <OperacaoSelecionada eventos={eventos} evento={eventos.find((e) => e.id === eventoId)} invalido={invalido} onSelecionar={setEventoId} />
 
@@ -85,11 +87,11 @@ function PaginaFinanceiro() {
 
       {/* Resumo e movimentações do evento primeiro; a conta de recebimento e os painéis do Stripe logo abaixo. */}
       {eventos.length === 0 ? (
-        <Card><p className="text-sm text-muted-foreground">Nenhum evento criado ainda. Crie um evento no Painel.</p></Card>
+        <Card><p className="text-sm text-muted-foreground">{tr("nenhum_evento_criado_ainda_crie_um")}</p></Card>
       ) : (
         evento && (
           <section className="pt-2">
-            <h3 className="text-lg font-semibold">Vendas do evento</h3>
+            <h3 className="text-lg font-semibold">{tr("vendas_do_evento")}</h3>
             <Financeiro eventoId={evento.id} />
           </section>
         )
@@ -107,11 +109,11 @@ function PaginaFinanceiro() {
       {organizacao && (
         <CardTaxa
           id="taxa-comprador"
-          titulo="Taxa de serviço (comprador)"
-          descricao="Percentual somado ao valor do ingresso e pago pelo comprador, que aparece como um item separado no pagamento. O valor é repassado à organização junto com a venda. Use 0% para não cobrar."
+          titulo={tr("taxa_de_servico_comprador")}
+          descricao={tr("percentual_somado_ao_valor_do_ingresso")}
           atual={taxaDoComprador(organizacao)}
           salvar={(p) => definirTaxaComprador(organizacao.id, p).then(() => setVersao((v) => v + 1))}
-          exemplo={(p) => `Exemplo: num ingresso de ${formatarBRL(15000)}, o comprador paga ${formatarBRL(15000 + taxaPlataforma(15000, p))} (${formatarBRL(taxaPlataforma(15000, p))} de taxa de serviço).`}
+          exemplo={(p) => tr("exemplo_num_ingresso_de_valor_o", { valor: formatarBRL(15000), valor2: formatarBRL(15000 + taxaPlataforma(15000, p)), valor3: formatarBRL(taxaPlataforma(15000, p)) })}
         />
       )}
       </div>
@@ -127,25 +129,25 @@ function PaginaFinanceiro() {
           </section>
 
           <section className="border-t border-border pt-6">
-            <h3 className="font-display text-base font-semibold uppercase">Cortesias</h3>
+            <h3 className="font-display text-base font-semibold uppercase">{tr("cortesias")}</h3>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <Campo rotulo="Nome do convidado" htmlFor="ct-nome">
+              <Campo rotulo={tr("nome_do_convidado")} htmlFor="ct-nome">
                 <Input id="ct-nome" value={cortesiaForm.nome} onChange={(e) => setCortesiaForm((p) => ({ ...p, nome: e.target.value }))} />
               </Campo>
-              <Campo rotulo="E-mail do convidado" htmlFor="ct-email">
+              <Campo rotulo={tr("e_mail_do_convidado")} htmlFor="ct-email">
                 <Input id="ct-email" type="email" value={cortesiaForm.email} onChange={(e) => setCortesiaForm((p) => ({ ...p, email: e.target.value }))} />
               </Campo>
-              <Campo rotulo="Tipo de ingresso" htmlFor="ct-tipo">
+              <Campo rotulo={tr("tipo_de_ingresso")} htmlFor="ct-tipo">
                 <NativeSelect id="ct-tipo" value={cortesiaForm.tipoId} onChange={(e) => setCortesiaForm((p) => ({ ...p, tipoId: e.target.value }))}>
-                  <option value="">Selecione</option>
+                  <option value="">{tr("selecione")}</option>
                   {evento.tipos.filter((t) => !t.arquivado).map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
                 </NativeSelect>
               </Campo>
-              <Campo rotulo="Validade do convite" htmlFor="ct-val">
+              <Campo rotulo={tr("validade_do_convite")} htmlFor="ct-val">
                 <Input id="ct-val" type="date" value={cortesiaForm.validade} onChange={(e) => setCortesiaForm((p) => ({ ...p, validade: e.target.value }))} />
               </Campo>
               <div className="sm:col-span-2 flex justify-end">
-                <Button onClick={aoCriarCortesia} disabled={!cortesiaForm.tipoId}>Emitir cortesia</Button>
+                <Button onClick={aoCriarCortesia} disabled={!cortesiaForm.tipoId}>{tr("emitir_cortesia")}</Button>
               </div>
             </div>
             <ul className="mt-3 space-y-1 text-sm">
@@ -153,13 +155,11 @@ function PaginaFinanceiro() {
                 <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-border/70 py-2">
                   <span>{c.nomeConvidado} — {c.emailConvidado}</span>
                   <span className="flex items-center gap-2">
-                    <Badge variant={c.status === "resgatada" ? "success" : c.status === "pendente" ? "warning" : "destructive"}>{c.status}</Badge>
+                    <Badge variant={c.status === "resgatada" ? "success" : c.status === "pendente" ? "warning" : "destructive"}>{({ pendente: tr("cortesia_pendente"), resgatada: tr("cortesia_resgatada"), expirada: tr("cortesia_expirada"), revogada: tr("cortesia_revogada") } as Record<string, string>)[c.status] ?? c.status}</Badge>
                     <Button
                       variant="ghost"
                       onClick={() => navigator.clipboard?.writeText(`${location.origin}/inscricao/${evento.id}?cortesia=${c.codigo}`)}
-                    >
-                      Copiar link
-                    </Button>
+                    >{tr("copiar_link")}</Button>
                   </span>
                 </li>
               ))}
@@ -180,34 +180,27 @@ function CardTaxaPlataforma({ percentual, taxaComprador }: { percentual: number;
   const exemplo = 15000;
   const taxa = taxaPlataforma(exemplo, percentual);
   const servico = taxaPlataforma(exemplo, taxaComprador);
-  const pct = (p: number) => `${p.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+  const pct = (p: number) => `${p.toLocaleString(localeAtual(), { maximumFractionDigits: 2 })}%`;
   return (
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="font-medium">Taxa da plataforma</h3>
-          <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-            Retida pela MilSim Ops em cada ingresso pago online. É calculada sobre o valor do ingresso, já com
-            descontos de cupom; cortesias e ingressos gratuitos não pagam taxa.
-          </p>
+          <h3 className="font-medium">{tr("taxa_da_plataforma")}</h3>
+          <p className="mt-1 max-w-prose text-sm text-muted-foreground">{tr("retida_pela_milsim_ops_em_cada")}</p>
         </div>
-        <p className="shrink-0 font-display text-3xl font-semibold" aria-label={`Taxa da plataforma: ${pct(percentual)}`}>{pct(percentual)}</p>
+        <p className="shrink-0 font-display text-3xl font-semibold" aria-label={tr("taxa_da_plataforma_percentual", { percentual: pct(percentual) })}>{pct(percentual)}</p>
       </div>
       <p className="mt-3 rounded-md border border-border bg-elevated px-3 py-2 text-sm">
         {percentual > 0 ? (
-          <>
-            Exemplo: num ingresso de {formatarBRL(exemplo)}, a plataforma retém {formatarBRL(taxa)} e a organização recebe{" "}
+          <>{tr("exemplo_num_ingresso_de_exemplo_a", { exemplo: formatarBRL(exemplo), taxa: formatarBRL(taxa) })}{" "}
             <strong>{formatarBRL(exemplo - taxa)}</strong>
-            {servico > 0 && <>, mais {formatarBRL(servico)} da taxa de serviço paga pelo comprador</>}.
+            {servico > 0 && <>{tr("mais_servico_da_taxa_de_servico", { servico: formatarBRL(servico) })}</>}.
           </>
         ) : (
-          <>No momento não há taxa: a organização recebe o valor integral dos ingressos.</>
+          <>{tr("no_momento_nao_ha_taxa_a")}</>
         )}
       </p>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Definida pela administração da plataforma. Uma mudança vale só para as vendas seguintes: cada venda guarda a taxa do
-        momento em que foi feita.
-      </p>
+      <p className="mt-2 text-xs text-muted-foreground">{tr("definida_pela_administracao_da_plataform")}</p>
     </Card>
   );
 }

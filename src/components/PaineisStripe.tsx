@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { useTheme } from "@/contexts/ThemeContext";
 import type { Tema } from "@/lib/localizacao";
+import { tr } from "@/i18n/components/PaineisStripe";
+import { localeAtual } from "@/i18n/dicionario";
 
 const SCRIPT_CONNECT = "https://connect-js.stripe.com/v1.0/connect.js";
 
@@ -49,7 +51,7 @@ function carregarConnect(): Promise<StripeConnectGlobal> {
     tag.onerror = () => {
       carregamento = null;
       tag.remove();
-      reject(new Error("Não foi possível carregar os painéis do Stripe."));
+      reject(new Error(tr("nao_foi_possivel_carregar_os_paineis")));
     };
     document.head.appendChild(tag);
   });
@@ -85,17 +87,17 @@ function instanciaDaOrganizacao(organizacaoId: string, tema: Tema): Promise<Inst
   if (existente) return existente;
   const buscarSessao = () => sessaoComponentesStripeOrg(organizacaoId);
   const nova = Promise.all([carregarConnect(), buscarSessao()]).then(([sc, primeira]) => {
-    if (!sc.init) throw new Error("Não foi possível carregar os painéis do Stripe.");
+    if (!sc.init) throw new Error(tr("nao_foi_possivel_carregar_os_paineis"));
     // Resposta vazia: em geral a página foi aberta antes de uma publicação nova do site e chama
     // uma função do servidor que não existe mais.
     if (!primeira?.chavePublicavel || !primeira.clientSecret) {
-      throw new Error("O servidor não devolveu a sessão do Stripe. Recarregue a página (o site pode ter sido atualizado) e tente de novo.");
+      throw new Error(tr("o_servidor_nao_devolveu_a_sessao"));
     }
     let usada = false;
     return sc.init({
       publishableKey: primeira.chavePublicavel,
       fetchClientSecret: async () => (usada ? (await buscarSessao()).clientSecret : ((usada = true), primeira.clientSecret)),
-      locale: "pt-BR",
+      locale: localeAtual(),
       appearance: aparencia(tema),
     });
   });
@@ -126,7 +128,7 @@ function useInstanciaStripe(organizacaoId: string, ligado: boolean) {
         if (ativo) setInstancia(i);
       })
       .catch((err) => {
-        if (ativo) setErro(err instanceof Error ? err.message : "Não foi possível abrir o Stripe.");
+        if (ativo) setErro(err instanceof Error ? err.message : tr("nao_foi_possivel_abrir_o_stripe"));
       });
     return () => {
       ativo = false;
@@ -169,9 +171,7 @@ function ElementoStripe({ instancia, componente, aoSair, className = "" }: {
   return (
     <>
       {falhou && (
-        <p role="alert" className="mt-2 text-sm text-destructive">
-          O Stripe não conseguiu abrir este painel. Se o navegador avisou que bloqueou uma janela, permita pop-ups para este site e tente de novo.
-        </p>
+        <p role="alert" className="mt-2 text-sm text-destructive">{tr("o_stripe_nao_conseguiu_abrir_este")}</p>
       )}
       <div ref={area} className={`w-full min-w-0 ${className}`} />
     </>
@@ -186,11 +186,9 @@ export function CadastroStripeEmbutido({ organizacaoId, aoSair }: { organizacaoI
   const { instancia, erro, carregando } = useInstanciaStripe(organizacaoId, true);
   return (
     <div className="mt-3 rounded-md border border-border p-3">
-      <p className="text-xs text-muted-foreground">
-        Preencha os dados da organização e a conta bancária. O Stripe pode abrir uma janela para confirmar seu e-mail ou celular.
-      </p>
+      <p className="text-xs text-muted-foreground">{tr("preencha_os_dados_da_organizacao_e")}</p>
       {erro && <p role="alert" className="mt-2 text-sm text-destructive">{erro}</p>}
-      {carregando && <p className="mt-2 text-sm text-muted-foreground">Carregando o cadastro do Stripe...</p>}
+      {carregando && <p className="mt-2 text-sm text-muted-foreground">{tr("carregando_o_cadastro_do_stripe")}</p>}
       {instancia && <ElementoStripe instancia={instancia} componente="account-onboarding" aoSair={aoSair} className="mt-3 min-h-24" />}
     </div>
   );
@@ -211,12 +209,10 @@ export function PaineisStripe({ organizacaoId }: { organizacaoId: string }) {
     <div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h3 className="flex items-center gap-2 font-medium"><LayoutDashboard className="h-4 w-4 shrink-0" aria-hidden="true" />Dados da conta</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Dados da organização e conta bancária cadastrados no Stripe, sem sair do site.
-          </p>
+          <h3 className="flex items-center gap-2 font-medium"><LayoutDashboard className="h-4 w-4 shrink-0" aria-hidden="true" />{tr("dados_da_conta")}</h3>
+          <p className="mt-1 text-sm text-muted-foreground">{tr("dados_da_organizacao_e_conta_bancaria")}</p>
         </div>
-        <Button type="button" variant="outline" className="w-full shrink-0 sm:w-auto" onClick={() => setAberto(true)}>Dados da conta</Button>
+        <Button type="button" variant="outline" className="w-full shrink-0 sm:w-auto" onClick={() => setAberto(true)}>{tr("dados_da_conta")}</Button>
       </div>
       {aberto && <div aria-hidden="true" className="fixed inset-0 z-50 bg-black/60" />}
       <Sheet open={aberto} onOpenChange={setAberto} modal={false}>
@@ -228,16 +224,13 @@ export function PaineisStripe({ organizacaoId }: { organizacaoId: string }) {
         >
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <SheetTitle>Dados da conta</SheetTitle>
-              <SheetDescription>
-                Empresa, responsável e conta bancária no Stripe. Em alguns casos o Stripe pede para confirmar seu e-mail ou
-                celular numa janela própria.
-              </SheetDescription>
+              <SheetTitle>{tr("dados_da_conta")}</SheetTitle>
+              <SheetDescription>{tr("empresa_responsavel_e_conta_bancaria_no")}</SheetDescription>
             </div>
-            <Button type="button" variant="ghost" onClick={() => setAberto(false)} aria-label="Fechar">✕</Button>
+            <Button type="button" variant="ghost" onClick={() => setAberto(false)} aria-label={tr("fechar")}>✕</Button>
           </div>
           {erro && <p role="alert" className="text-sm text-destructive">{erro}</p>}
-          {carregando && <p className="text-sm text-muted-foreground">Carregando o Stripe...</p>}
+          {carregando && <p className="text-sm text-muted-foreground">{tr("carregando_o_stripe")}</p>}
           {instancia && !erro && (
             <>
               <ElementoStripe instancia={instancia} componente="notification-banner" />
