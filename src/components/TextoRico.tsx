@@ -12,7 +12,7 @@ function Trechos({ itens }: { itens: Trecho[] }) {
         if (t.tipo === "negrito") return <strong key={i}><Trechos itens={t.filhos} /></strong>;
         const filhos = <Trechos itens={t.filhos} />;
         // Caminho do site: navegação do roteador. Âncora e e-mail: link comum. Fora do site: nova aba.
-        if (t.href.startsWith("/")) return <Link key={i} to={t.href}>{filhos}</Link>;
+        if (t.href.startsWith("/") && !t.href.includes("#")) return <Link key={i} to={t.href}>{filhos}</Link>;
         if (t.href.startsWith("https://")) return <a key={i} href={t.href} target="_blank" rel="noopener noreferrer">{filhos}</a>;
         return <a key={i} href={t.href}>{filhos}</a>;
       })}
