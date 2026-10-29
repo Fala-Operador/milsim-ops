@@ -2,9 +2,10 @@
 import { mutarBase, latencia, ErroDominio, gerarId } from "./db";
 import type { BaseDados, Parceiro, SecaoInicial, StatusSecao, Usuario } from "@/lib/domain/types";
 import { erroDoLink, normalizarLinks, rotuloDoLink, validarUrlExterna } from "@/lib/divulgacao";
+import { tr } from "@/i18n/services/divulgacao";
 
 function exigirAdmin(u: Usuario | null) {
-  if (!u || u.perfil !== "admin") throw new ErroDominio("permissao", "Somente administradores gerenciam a página inicial.");
+  if (!u || u.perfil !== "admin") throw new ErroDominio("permissao", tr("somente_administradores_gerenciam_a_pagi"));
 }
 
 function auditar(b: BaseDados, autorId: string, acao: string, entidade: string, entidadeId: string, justificativa?: string) {
@@ -14,18 +15,18 @@ function auditar(b: BaseDados, autorId: string, acao: string, entidade: string, 
 export type DadosSecao = Omit<SecaoInicial, "id" | "ordem" | "criadoEm" | "atualizadoEm"> & { id?: string };
 
 export function validarSecao(d: DadosSecao): void {
-  if (!d.titulo.trim()) throw new ErroDominio("titulo", "Informe o título da seção.");
+  if (!d.titulo.trim()) throw new ErroDominio("titulo", tr("informe_o_titulo_da_secao"));
   if (d.agendamento.inicioEm && d.agendamento.fimEm && d.agendamento.fimEm <= d.agendamento.inicioEm) {
-    throw new ErroDominio("agendamento", "O término deve ser depois do início.");
+    throw new ErroDominio("agendamento", tr("o_termino_deve_ser_depois_do"));
   }
   if (d.tipo === "banner") {
-    if (!d.banner?.textoAlt.trim() && d.banner?.imagemDesktop) throw new ErroDominio("banner", "Informe o texto alternativo da imagem.");
+    if (!d.banner?.textoAlt.trim() && d.banner?.imagemDesktop) throw new ErroDominio("banner", tr("informe_o_texto_alternativo_da_imagem"));
     if (d.banner?.destino?.tipo === "externo" && !validarUrlExterna(d.banner.destino.valor)) {
-      throw new ErroDominio("banner", "Link externo inválido: use um endereço http ou https.");
+      throw new ErroDominio("banner", tr("link_externo_invalido_use_um_endereco"));
     }
   }
   if (d.modo === "automatico" && d.automatica && d.automatica.maximo < 1) {
-    throw new ErroDominio("automatica", "Quantidade máxima deve ser pelo menos 1.");
+    throw new ErroDominio("automatica", tr("quantidade_maxima_deve_ser_pelo_menos"));
   }
 }
 
@@ -59,7 +60,7 @@ export async function alterarStatusSecao(admin: Usuario | null, id: string, stat
   await latencia(100);
   mutarBase((b) => {
     const s = b.secoesInicio.find((x) => x.id === id);
-    if (!s) throw new ErroDominio("secao", "Seção não encontrada.");
+    if (!s) throw new ErroDominio("secao", tr("secao_nao_encontrada"));
     s.status = status;
     s.atualizadoEm = new Date().toISOString();
     auditar(b, admin!.id, `secao_${status}`, "secao_inicio", id, s.titulo);
@@ -91,8 +92,8 @@ export function reordenarSecoes(admin: Usuario | null, idsNaOrdem: string[]) {
 export type DadosParceiro = Omit<Parceiro, "id" | "criadoEm" | "atualizadoEm"> & { id?: string };
 
 export function validarParceiro(d: DadosParceiro): void {
-  if (!d.nome.trim()) throw new ErroDominio("nome", "Informe o nome do parceiro.");
-  if (d.logoUrl && !d.textoAlt.trim()) throw new ErroDominio("textoAlt", "Informe o texto alternativo do logo.");
+  if (!d.nome.trim()) throw new ErroDominio("nome", tr("informe_o_nome_do_parceiro"));
+  if (d.logoUrl && !d.textoAlt.trim()) throw new ErroDominio("textoAlt", tr("informe_o_texto_alternativo_do_logo"));
   for (const l of d.links) {
     const erro = erroDoLink(l);
     if (erro) throw new ErroDominio("links", `${rotuloDoLink(l)}: ${erro}`);

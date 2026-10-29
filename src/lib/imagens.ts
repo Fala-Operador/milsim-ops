@@ -1,13 +1,14 @@
+import { tr } from "@/i18n/lib/imagens";
 // Converte uma imagem escolhida pelo usuário em data URL reduzida; o servidor a envia ao Storage.
 export async function arquivoParaDataUrl(arquivo: File, max = 1024, tipo: "image/jpeg" | "image/png" = "image/jpeg"): Promise<string> {
-  if (!arquivo.type.startsWith("image/")) throw new Error("Selecione um arquivo de imagem.");
-  if (arquivo.size > 10 * 1024 * 1024) throw new Error("Imagem muito grande (máx. 10 MB).");
+  if (!arquivo.type.startsWith("image/")) throw new Error(tr("selecione_um_arquivo_de_imagem"));
+  if (arquivo.size > 10 * 1024 * 1024) throw new Error(tr("imagem_muito_grande_max_10_mb"));
   const url = URL.createObjectURL(arquivo);
   try {
     const img = await new Promise<HTMLImageElement>((ok, erro) => {
       const i = new Image();
       i.onload = () => ok(i);
-      i.onerror = () => erro(new Error("Não foi possível ler a imagem."));
+      i.onerror = () => erro(new Error(tr("nao_foi_possivel_ler_a_imagem")));
       i.src = url;
     });
     const escala = Math.min(1, max / Math.max(img.width, img.height));
@@ -23,12 +24,12 @@ export async function arquivoParaDataUrl(arquivo: File, max = 1024, tipo: "image
 
 // Converte um PDF escolhido pelo usuário em data URL; o servidor o envia ao Storage.
 export async function pdfParaDataUrl(arquivo: File): Promise<string> {
-  if (arquivo.type !== "application/pdf") throw new Error("Selecione um arquivo PDF.");
-  if (arquivo.size > 5 * 1024 * 1024) throw new Error("PDF muito grande (máx. 5 MB).");
+  if (arquivo.type !== "application/pdf") throw new Error(tr("selecione_um_arquivo_pdf"));
+  if (arquivo.size > 5 * 1024 * 1024) throw new Error(tr("pdf_muito_grande_max_5_mb"));
   return new Promise((ok, erro) => {
     const leitor = new FileReader();
     leitor.onload = () => ok(String(leitor.result));
-    leitor.onerror = () => erro(new Error("Não foi possível ler o PDF."));
+    leitor.onerror = () => erro(new Error(tr("nao_foi_possivel_ler_o_pdf")));
     leitor.readAsDataURL(arquivo);
   });
 }

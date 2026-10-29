@@ -21,6 +21,7 @@ import { enviarMidia } from "@/server/midia";
 import { recalcularProgressao } from "@/services/progressao";
 import { supabaseAdmin, supabaseSessao } from "@/server/supabase.server";
 import type { BaseDados, Usuario } from "@/lib/domain/types";
+import { tr } from "@/i18n/server/unidade.server";
 
 const armazenamento = new AsyncLocalStorage<ContextoBase>();
 registrarProvedorContexto({ obter: () => armazenamento.getStore() });
@@ -163,9 +164,9 @@ export function tratarErro(e: unknown): never {
   const codigo = randomUUID().slice(0, 8).toUpperCase();
   console.error(`[erro ${codigo}]`, e);
   if (e instanceof ErroIndisponivel) {
-    throw new Error(`O servidor de dados não respondeu. Tente novamente em instantes. (código ${codigo})`);
+    throw new Error(tr("servidor_nao_respondeu", { codigo }));
   }
-  throw new Error(`Não foi possível concluir a operação. Tente novamente. (código ${codigo})`);
+  throw new Error(tr("erro_generico", { codigo }));
 }
 
 /**
@@ -229,7 +230,7 @@ export async function mutar<T>(
       const { base, versao, pendentes } = await lerBase();
       const usuario = usuarioAtivo(base, id);
       if (opcoes.exigirLogin !== false && !usuario) {
-        throw new ErroDominio("sem_sessao", "Entre na sua conta para continuar.");
+        throw new ErroDominio("sem_sessao", tr("entre_na_sua_conta_para_continuar"));
       }
       const antes = structuredClone(base);
       // Ciclo do evento: toda gravação também conclui eventos já terminados (mesma transação;
@@ -265,7 +266,7 @@ export async function mutar<T>(
       const versaoNova = Object.keys(lote).length > 0 ? versao + 1 : versao;
       return { resultado, visao: { base: visaoParaUsuario(base, depois), usuarioId: depois?.id ?? null, versao: versaoNova } };
     }
-    throw new ErroDominio("concorrencia", "Muitas alterações ao mesmo tempo. Tente novamente.");
+    throw new ErroDominio("concorrencia", tr("muitas_alteracoes_ao_mesmo_tempo_tente"));
   } catch (e) {
     tratarErro(e);
   }
@@ -274,12 +275,12 @@ export async function mutar<T>(
 /** Exige perfil admin (para operações administrativas). */
 export function exigirAdmin(usuario: Usuario | null): Usuario {
   if (!usuario || usuario.perfil !== "admin") {
-    throw new ErroDominio("sem_permissao", "Apenas administradores podem fazer isso.");
+    throw new ErroDominio("sem_permissao", tr("apenas_administradores_podem_fazer_isso"));
   }
   return usuario;
 }
 
 export function exigirUsuario(usuario: Usuario | null): Usuario {
-  if (!usuario) throw new ErroDominio("sem_sessao", "Entre na sua conta para continuar.");
+  if (!usuario) throw new ErroDominio("sem_sessao", tr("entre_na_sua_conta_para_continuar"));
   return usuario;
 }

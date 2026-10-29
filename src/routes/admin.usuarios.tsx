@@ -17,14 +17,22 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { EstadoVazio, ModalTexto } from "@/components/ui";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { tr } from "@/i18n/routes/admin.usuarios";
+import { localeAtual } from "@/i18n/dicionario";
+
+const ROTULO_PERFIL = {
+  participante: () => tr("perfil_participante"),
+  organizador: () => tr("perfil_organizador"),
+  admin: () => tr("perfil_admin"),
+} as const;
 
 export const Route = createFileRoute("/admin/usuarios")({
   head: () => ({
     meta: [
-      { title: "Usuários — Admin MilSim Ops" },
-      { name: "description", content: "Gestão de usuários da plataforma." },
-      { property: "og:title", content: "Usuários — Admin MilSim Ops" },
-      { property: "og:description", content: "Gestão de usuários." },
+      { title: tr("usuarios_admin_milsim_ops") },
+      { name: "description", content: tr("gestao_de_usuarios_da_plataforma") },
+      { property: "og:title", content: tr("usuarios_admin_milsim_ops") },
+      { property: "og:description", content: tr("gestao_de_usuarios") },
     ],
   }),
   component: Usuarios,
@@ -56,12 +64,12 @@ function Usuarios() {
 
   return (
     <section>
-      <h2 className="titulo-pagina">Usuários</h2>
+      <h2 className="titulo-pagina">{tr("usuarios")}</h2>
       <FaixaIndicadores className="mt-4 lg:grid-cols-4" itens={[
-        { rotulo: "Usuários ativos", valor: String(ativos.length), detalhe: `de ${base.usuarios.length} cadastrados` },
-        { rotulo: "Participantes", valor: String(porPerfil("participante")) },
-        { rotulo: "Organizadores", valor: String(porPerfil("organizador")) },
-        { rotulo: "Admins · inativos", valor: `${porPerfil("admin")} · ${base.usuarios.length - ativos.length}` },
+        { rotulo: tr("usuarios_ativos"), valor: String(ativos.length), detalhe: tr("de_length_cadastrados", { length: base.usuarios.length }) },
+        { rotulo: tr("participantes"), valor: String(porPerfil("participante")) },
+        { rotulo: tr("organizadores"), valor: String(porPerfil("organizador")) },
+        { rotulo: tr("admins_inativos"), valor: `${porPerfil("admin")} · ${base.usuarios.length - ativos.length}` },
       ]} />
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(240px,1fr)_180px_200px]">
@@ -69,28 +77,28 @@ function Usuarios() {
           <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden />
           <Input
             type="search"
-            aria-label="Buscar por nome, e-mail ou CPF"
-            placeholder="Buscar por nome, e-mail ou CPF"
+            aria-label={tr("buscar_por_nome_e_mail_ou")}
+            placeholder={tr("buscar_por_nome_e_mail_ou")}
             value={filtros.busca}
             onChange={(e) => mudarFiltros({ busca: e.target.value })}
             className="pl-9"
           />
         </div>
-        <NativeSelect aria-label="Filtrar por perfil" value={filtros.perfil} onChange={(e) => mudarFiltros({ perfil: e.target.value as FiltrosUsuarios["perfil"] })}>
-          <option value="">Todos os perfis</option>
-          <option value="participante">Participantes</option>
-          <option value="organizador">Organizadores</option>
-          <option value="admin">Admins</option>
+        <NativeSelect aria-label={tr("filtrar_por_perfil")} value={filtros.perfil} onChange={(e) => mudarFiltros({ perfil: e.target.value as FiltrosUsuarios["perfil"] })}>
+          <option value="">{tr("todos_os_perfis")}</option>
+          <option value="participante">{tr("participantes")}</option>
+          <option value="organizador">{tr("organizadores")}</option>
+          <option value="admin">{tr("admins")}</option>
         </NativeSelect>
-        <NativeSelect aria-label="Filtrar por status" value={filtros.status} onChange={(e) => mudarFiltros({ status: e.target.value as FiltrosUsuarios["status"] })}>
-          <option value="">Todos os status</option>
-          <option value="ativo">Ativos</option>
-          <option value="inativo">Inativos</option>
-          <option value="autorizacao_pendente">Autorização pendente</option>
+        <NativeSelect aria-label={tr("filtrar_por_status")} value={filtros.status} onChange={(e) => mudarFiltros({ status: e.target.value as FiltrosUsuarios["status"] })}>
+          <option value="">{tr("todos_os_status")}</option>
+          <option value="ativo">{tr("ativos")}</option>
+          <option value="inativo">{tr("inativos")}</option>
+          <option value="autorizacao_pendente">{tr("autorizacao_pendente")}</option>
         </NativeSelect>
         {/* Abaixo de lg a tabela vira cartões e o cabeçalho some: a ordem é escolhida aqui. */}
         <NativeSelect
-          aria-label="Ordenar por"
+          aria-label={tr("ordenar_por")}
           className="sm:col-span-2 lg:hidden"
           value={`${ordenacao.campo}:${ordenacao.direcao}`}
           onChange={(e) => {
@@ -98,35 +106,34 @@ function Usuarios() {
             ordenar({ campo, direcao });
           }}
         >
-          <option value="cadastro:desc">Cadastro mais recente</option>
-          <option value="cadastro:asc">Cadastro mais antigo</option>
-          <option value="nome:asc">Nome (A–Z)</option>
-          <option value="nome:desc">Nome (Z–A)</option>
-          <option value="email:asc">E-mail (A–Z)</option>
-          <option value="email:desc">E-mail (Z–A)</option>
-          <option value="perfil:asc">Perfil (A–Z)</option>
-          <option value="perfil:desc">Perfil (Z–A)</option>
-          <option value="status:asc">Ativos primeiro</option>
-          <option value="status:desc">Inativos primeiro</option>
+          <option value="cadastro:desc">{tr("cadastro_mais_recente")}</option>
+          <option value="cadastro:asc">{tr("cadastro_mais_antigo")}</option>
+          <option value="nome:asc">{tr("nome_a_z")}</option>
+          <option value="nome:desc">{tr("nome_z_a")}</option>
+          <option value="email:asc">{tr("e_mail_a_z")}</option>
+          <option value="email:desc">{tr("e_mail_z_a")}</option>
+          <option value="perfil:asc">{tr("perfil_a_z")}</option>
+          <option value="perfil:desc">{tr("perfil_z_a")}</option>
+          <option value="status:asc">{tr("ativos_primeiro")}</option>
+          <option value="status:desc">{tr("inativos_primeiro")}</option>
         </NativeSelect>
       </div>
       <div className="mt-2 flex min-h-9 flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
         <span aria-live="polite">
           {encontrados.length === 0
-            ? "Nenhum usuário encontrado"
-            : `${pag.inicio + 1}–${pag.fim} de ${encontrados.length} ${encontrados.length === 1 ? "usuário" : "usuários"}`}
+            ? tr("nenhum_usuario_encontrado")
+            : tr.plural(encontrados.length, "faixa_usuario", "faixa_usuarios", { inicio: pag.inicio + 1, fim: pag.fim })}
         </span>
         {filtrando && (
           <Button variant="ghost" size="sm" onClick={() => { setFiltros(FILTROS_USUARIOS_VAZIOS); setPagina(1); }}>
-            <X className="h-4 w-4" /> Limpar filtros
-          </Button>
+            <X className="h-4 w-4" />{" "}{tr("limpar_filtros")}</Button>
         )}
       </div>
 
       {erro && <p role="alert" className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
       {encontrados.length === 0 ? (
         <div className="mt-3">
-          <EstadoVazio titulo="Nenhum usuário encontrado" descricao="Ajuste a busca ou limpe os filtros." />
+          <EstadoVazio titulo={tr("nenhum_usuario_encontrado")} descricao={tr("ajuste_a_busca_ou_limpe_os")} />
         </div>
       ) : (
         <div className="mt-3 overflow-x-auto">
@@ -135,33 +142,31 @@ function Usuarios() {
               <TableRow className="border-b border-border text-left text-xs uppercase text-muted-foreground">
                 {cabecalho("nome")}
                 {cabecalho("email")}
-                <TableHead className="py-2 pr-3">CPF</TableHead>
+                <TableHead className="py-2 pr-3">{tr("cpf")}</TableHead>
                 {cabecalho("perfil")}
                 {cabecalho("status")}
                 {cabecalho("cadastro")}
-                <TableHead className="py-2">Ações</TableHead>
+                <TableHead className="py-2">{tr("acoes")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pag.itens.map((u) => (
                 <TableRow key={u.id} className="border-b border-border/50">
                   <TableCell className="py-2 pr-3 font-medium lg:font-normal">{u.nomeCompleto}</TableCell>
-                  <TableCell data-rotulo="E-mail" className="py-2 pr-3 break-all">{u.email}</TableCell>
+                  <TableCell data-rotulo={tr("e_mail")} className="py-2 pr-3 break-all">{u.email}</TableCell>
                   <TableCell data-rotulo="CPF" className="py-2 pr-3 font-mono text-xs">{mascararCpf(u.cpf)}</TableCell>
-                  <TableCell data-rotulo="Perfil" className="py-2 pr-3 capitalize text-muted-foreground">{u.perfil}</TableCell>
-                  <TableCell data-rotulo="Status" className="py-2 pr-3">
-                    <Badge variant={u.ativo ? "success" : "destructive"}>{u.ativo ? "Ativo" : "Inativo"}</Badge>
-                    {u.autorizacaoResponsavel === "pendente" && <Badge variant="warning">Autorização pendente</Badge>}
+                  <TableCell data-rotulo={tr("perfil")} className="py-2 pr-3 text-muted-foreground">{ROTULO_PERFIL[u.perfil]()}</TableCell>
+                  <TableCell data-rotulo={tr("status")} className="py-2 pr-3">
+                    <Badge variant={u.ativo ? "success" : "destructive"}>{u.ativo ? tr("ativo") : tr("inativo")}</Badge>
+                    {u.autorizacaoResponsavel === "pendente" && <Badge variant="warning">{tr("autorizacao_pendente")}</Badge>}
                   </TableCell>
-                  <TableCell data-rotulo="Cadastro" className="py-2 pr-3 whitespace-nowrap text-muted-foreground">
-                    {new Date(u.criadoEm).toLocaleDateString("pt-BR")}
+                  <TableCell data-rotulo={tr("cadastro")} className="py-2 pr-3 whitespace-nowrap text-muted-foreground">
+                    {new Date(u.criadoEm).toLocaleDateString(localeAtual())}
                   </TableCell>
                   <TableCell className="celula-acoes py-2">
                     <div className="flex flex-wrap gap-1">
                       {u.autorizacaoResponsavel === "pendente" && (
-                        <Button variant="outline" onClick={() => aprovarAutorizacaoResponsavel(u.id).then(() => setVersao((v) => v + 1))}>
-                          Aprovar autorização
-                        </Button>
+                        <Button variant="outline" onClick={() => aprovarAutorizacaoResponsavel(u.id).then(() => setVersao((v) => v + 1))}>{tr("aprovar_autorizacao")}</Button>
                       )}
                       {u.ativo && u.id !== usuario.id && (
                         <Button
@@ -170,9 +175,7 @@ function Usuarios() {
                             setErro("");
                             setDesativando({ id: u.id, nome: u.nomeCompleto });
                           }}
-                        >
-                          Desativar
-                        </Button>
+                        >{tr("desativar")}</Button>
                       )}
                     </div>
                   </TableCell>
@@ -183,18 +186,18 @@ function Usuarios() {
         </div>
       )}
       {pag.totalPaginas > 1 && (
-        <nav aria-label="Paginação de usuários" className="mt-3 flex items-center justify-between gap-2 text-sm">
-          <Button variant="outline" disabled={pag.pagina === 1} onClick={() => setPagina(pag.pagina - 1)}>Anterior</Button>
-          <span className="text-muted-foreground">Página {pag.pagina} de {pag.totalPaginas}</span>
-          <Button variant="outline" disabled={pag.pagina === pag.totalPaginas} onClick={() => setPagina(pag.pagina + 1)}>Próxima</Button>
+        <nav aria-label={tr("paginacao_de_usuarios")} className="mt-3 flex items-center justify-between gap-2 text-sm">
+          <Button variant="outline" disabled={pag.pagina === 1} onClick={() => setPagina(pag.pagina - 1)}>{tr("anterior")}</Button>
+          <span className="text-muted-foreground">{tr("pagina_pagina_de_totalpaginas", { pagina: pag.pagina, totalPaginas: pag.totalPaginas })}</span>
+          <Button variant="outline" disabled={pag.pagina === pag.totalPaginas} onClick={() => setPagina(pag.pagina + 1)}>{tr("proxima")}</Button>
         </nav>
       )}
       <ModalTexto
         aberto={!!desativando}
-        titulo="Desativar usuário"
-        rotulo="Justificativa (obrigatória)"
-        descricao={desativando ? `A conta de ${desativando.nome} será desativada e perderá o acesso à plataforma.` : undefined}
-        confirmar="Desativar"
+        titulo={tr("desativar_usuario")}
+        rotulo={tr("justificativa_obrigatoria")}
+        descricao={desativando ? tr("a_conta_de_nome_sera_desativada", { nome: desativando.nome }) : undefined}
+        confirmar={tr("desativar")}
         destrutivo
         maximo={1000}
         onFechar={() => setDesativando(null)}

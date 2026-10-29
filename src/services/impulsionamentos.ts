@@ -3,9 +3,10 @@
 import { mutarBase, ErroDominio, gerarId } from "./db";
 import type { BaseDados, Impulsionamento, Usuario } from "@/lib/domain/types";
 import { pendenciasAtivacao, statusExibido } from "@/lib/impulsionamento";
+import { tr } from "@/i18n/services/impulsionamentos";
 
 function exigirAdmin(u: Usuario | null) {
-  if (!u || u.perfil !== "admin") throw new ErroDominio("permissao", "Somente a administração gerencia impulsionamentos.");
+  if (!u || u.perfil !== "admin") throw new ErroDominio("permissao", tr("somente_a_administracao_gerencia_impulsi"));
 }
 
 function auditar(b: BaseDados, autorId: string, acao: string, id: string, detalhe?: string) {
@@ -19,8 +20,8 @@ export type DadosImpulsionamento = Omit<Impulsionamento, "id" | "status" | "cria
 };
 
 function validarBasico(d: DadosImpulsionamento) {
-  if (!d.nome.trim()) throw new ErroDominio("nome", "Informe o nome interno da campanha.");
-  if ((d.chamada ?? "").length > 120) throw new ErroDominio("chamada", "A chamada tem no máximo 120 caracteres.");
+  if (!d.nome.trim()) throw new ErroDominio("nome", tr("informe_o_nome_interno_da_campanha"));
+  if ((d.chamada ?? "").length > 120) throw new ErroDominio("chamada", tr("a_chamada_tem_no_maximo_120"));
 }
 
 export function salvarImpulsionamento(admin: Usuario | null, d: DadosImpulsionamento): Impulsionamento {
@@ -36,7 +37,7 @@ export function salvarImpulsionamento(admin: Usuario | null, d: DadosImpulsionam
     const existente = d.id ? b.impulsionamentos.find((x) => x.id === d.id) : undefined;
     const iso = agora.toISOString();
     if (existente) {
-      if (existente.status === "encerrado") throw new ErroDominio("status", "Campanha encerrada não pode ser editada.");
+      if (existente.status === "encerrado") throw new ErroDominio("status", tr("campanha_encerrada_nao_pode_ser_editada"));
       Object.assign(existente, { ...campos, nome: campos.nome.trim(), status: ativar ? "ativo" : existente.status, atualizadoEm: iso });
       auditar(b, admin!.id, "impulsionamento_editado", existente.id, existente.nome);
       return existente;
@@ -57,8 +58,8 @@ export function alterarImpulsionamento(admin: Usuario | null, id: string, acao: 
   exigirAdmin(admin);
   mutarBase((b) => {
     const c = b.impulsionamentos.find((x) => x.id === id);
-    if (!c) throw new ErroDominio("impulsionamento", "Campanha não encontrada.");
-    if (c.status === "encerrado") throw new ErroDominio("status", "Campanha já encerrada.");
+    if (!c) throw new ErroDominio("impulsionamento", tr("campanha_nao_encontrada"));
+    if (c.status === "encerrado") throw new ErroDominio("status", tr("campanha_ja_encerrada"));
     const agora = new Date();
     if (acao === "retomar") {
       // Retomar exige nova validação de elegibilidade.
@@ -66,7 +67,7 @@ export function alterarImpulsionamento(admin: Usuario | null, id: string, acao: 
       if (erros.length) throw new ErroDominio("elegibilidade", erros.join(" "));
       c.status = "ativo";
     } else if (acao === "pausar") {
-      if (statusExibido(b, c, agora) === "rascunho") throw new ErroDominio("status", "Rascunhos não podem ser pausados.");
+      if (statusExibido(b, c, agora) === "rascunho") throw new ErroDominio("status", tr("rascunhos_nao_podem_ser_pausados"));
       c.status = "pausado";
     } else {
       c.status = "encerrado";

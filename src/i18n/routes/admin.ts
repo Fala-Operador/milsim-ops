@@ -1,0 +1,30 @@
+// Textos de src/routes/admin.tsx.
+import { dicionario } from "@/i18n/dicionario";
+
+export const tr = dicionario("routes/admin", {
+  "administracao_milsim_ops": { pt: "Administração — MilSim Ops", en: "Administration — MilSim Ops" },
+  "administracao_global_dashboard_suporte_c": { pt: "Administração global: dashboard, suporte, comunidade, solicitações, usuários, privacidade e auditoria.", en: "Global administration: dashboard, support, community, requests, users, privacy and audit log." },
+  "administracao_global": { pt: "Administração global.", en: "Global administration." },
+  "visao_geral": { pt: "Visão geral", en: "Overview" },
+  "dashboard": { pt: "Dashboard", en: "Dashboard" },
+  "metricas": { pt: "Métricas", en: "Metrics" },
+  "atendimento": { pt: "Atendimento", en: "Help desk" },
+  "suporte": { pt: "Suporte", en: "Support" },
+  "atencaoequipe_chamados_exigem_atencao": { pt: "{atencaoEquipe} chamados exigem atenção", en: "{atencaoEquipe} tickets need attention" },
+  "comunidade": { pt: "Comunidade", en: "Community" },
+  "ndenuncias_denuncias_pendentes": { pt: "{nDenuncias} denúncias pendentes", en: "{nDenuncias} pending reports" },
+  "solicitacoes": { pt: "Solicitações", en: "Requests" },
+  "conteudo": { pt: "Conteúdo", en: "Content" },
+  "pagina_inicial_e_divulgacao": { pt: "Página inicial e divulgação", en: "Home page and promotion" },
+  "gamificacao_e_recompensas": { pt: "Gamificação e recompensas", en: "Gamification and rewards" },
+  "notificacoes": { pt: "Notificações", en: "Notifications" },
+  "financeiro": { pt: "Financeiro", en: "Finance" },
+  "pagamentos": { pt: "Pagamentos", en: "Payments" },
+  "loja_da_plataforma": { pt: "Loja da plataforma", en: "Platform store" },
+  "contas_e_seguranca": { pt: "Contas e segurança", en: "Accounts and security" },
+  "usuarios": { pt: "Usuários", en: "Users" },
+  "privacidade": { pt: "Privacidade", en: "Privacy" },
+  "auditoria": { pt: "Auditoria", en: "Audit log" },
+  "administracao": { pt: "Administração", en: "Administration" },
+  "secoes_da_administracao": { pt: "Seções da administração", en: "Administration sections" },
+});

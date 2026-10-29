@@ -22,7 +22,7 @@ export const tr = dicionario("services/perfilOperador", {
   "informe_a_cidade": { pt: "Informe a cidade.", en: "Enter the city." },
   "cidade_no_maximo_80_caracteres": { pt: "Cidade: no máximo 80 caracteres.", en: "City: at most 80 characters." },
   "escolha_o_estado_uf": { pt: "Escolha o estado (UF).", en: "Choose the state." },
-  "modalidade_invalida": { pt: "Modalidade inválida.", en: "Invalid game type." },
+  "modalidade_invalida": { pt: "Modalidade inválida.", en: "Invalid game mode." },
   "adicione_uma_foto_da_operacao": { pt: "Adicione uma foto da operação.", en: "Add a photo of the operation." },
   "operacao_nao_encontrada": { pt: "Operação não encontrada.", en: "Operation not found." },
   "limite_de_max_operacoes_externas_operaco": { pt: "Limite de {MAX_OPERACOES_EXTERNAS} operações registradas.", en: "Limit of {MAX_OPERACOES_EXTERNAS} logged operations." },

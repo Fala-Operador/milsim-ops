@@ -6,17 +6,18 @@ import { configuracaoRepasse, definirTaxaPlataforma } from "@/api/repasses.funct
 import { useAuth } from "@/contexts/AuthContext";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { ROTULO_RECEBIMENTO, taxaDaPlataforma, taxaPlataforma } from "@/lib/repasses";
-import { formatarBRL } from "@/lib/domain/money";
+import { formatarBRL, formatarDataHoraBR } from "@/lib/domain/money";
 import { FaixaIndicadores } from "@/components/FaixaIndicadores";
 import { Badge } from "@/components/ui/badge";
 import { CardTaxa } from "@/components/CardTaxa";
 import type { StatusRecebimento } from "@/lib/domain/types";
+import { tr } from "@/i18n/routes/admin.pagamentos";
 
 export const Route = createFileRoute("/admin/pagamentos")({
   head: () => ({
     meta: [
-      { title: "Pagamentos — Admin MilSim Ops" },
-      { name: "description", content: "Taxa da plataforma e contas de recebimento das organizações." },
+      { title: tr("pagamentos_admin_milsim_ops") },
+      { name: "description", content: tr("taxa_da_plataforma_e_contas_de") },
     ],
   }),
   component: Pagamentos,
@@ -47,37 +48,33 @@ function Pagamentos() {
   return (
     <section className="space-y-6">
       <div>
-        <h2 className="titulo-pagina">Pagamentos</h2>
-        <p className="subtitulo-pagina">Taxa da plataforma e situação das contas de recebimento das organizações no Stripe Connect.</p>
+        <h2 className="titulo-pagina">{tr("pagamentos")}</h2>
+        <p className="subtitulo-pagina">{tr("taxa_da_plataforma_e_situacao_das")}</p>
       </div>
       <FaixaIndicadores className="lg:grid-cols-3" itens={[
-        { rotulo: "Taxa da plataforma", valor: `${String(taxaDaPlataforma(base)).replace(".", ",")}%` },
-        { rotulo: "Contas ativas", valor: `${organizacoes.filter((o) => o.recebimento?.status === "ativa").length} de ${organizacoes.length}` },
-        { rotulo: "Pagamentos online", valor: pagamentoOnline === null ? "—" : pagamentoOnline ? "Ligados" : "Desligados" },
+        { rotulo: tr("taxa_da_plataforma"), valor: `${String(taxaDaPlataforma(base)).replace(".", ",")}%` },
+        { rotulo: tr("contas_ativas"), valor: tr("x_de_y", { x: organizacoes.filter((o) => o.recebimento?.status === "ativa").length, y: organizacoes.length }) },
+        { rotulo: tr("pagamentos_online"), valor: pagamentoOnline === null ? "—" : pagamentoOnline ? tr("ligados") : tr("desligados") },
       ]} />
       {pagamentoOnline === false && (
-        <p role="status" className="border-l-2 border-warning bg-warning/10 px-4 py-3 text-sm">
-          Os pagamentos online estão desligados: falta configurar a chave secreta do Stripe no servidor. A taxa pode ser definida mesmo assim.
-        </p>
+        <p role="status" className="border-l-2 border-warning bg-warning/10 px-4 py-3 text-sm">{tr("os_pagamentos_online_estao_desligados_fa")}</p>
       )}
       {avisoChaves && (
-        <p role="alert" className="border-l-2 border-destructive bg-destructive/10 px-4 py-3 text-sm">
-          Os painéis do Stripe dentro do site estão desligados: {avisoChaves} Enquanto isso, o cadastro de recebimentos abre no site do Stripe.
-        </p>
+        <p role="alert" className="border-l-2 border-destructive bg-destructive/10 px-4 py-3 text-sm">{tr("os_paineis_do_stripe_dentro_do", { avisoChaves })}</p>
       )}
 
       <CardTaxa
         id="taxa"
-        titulo="Taxa da plataforma (organização)"
-        descricao="Percentual retido em cada ingresso vendido online e repassado à organização pelo Stripe Connect. Organizações sem conta de recebimento ativa não vendem ingressos pagos."
+        titulo={tr("taxa_da_plataforma_organizacao")}
+        descricao={tr("percentual_retido_em_cada_ingresso_vendi")}
         atual={taxaDaPlataforma(base)}
         salvar={definirTaxaPlataforma}
-        exemplo={(p) => `Exemplo: num ingresso de ${formatarBRL(15000)}, a plataforma retém ${formatarBRL(taxaPlataforma(15000, p))} e a organização recebe ${formatarBRL(15000 - taxaPlataforma(15000, p))}.`}
+        exemplo={(p) => tr("exemplo_num_ingresso_de_valor_a", { valor: formatarBRL(15000), valor2: formatarBRL(taxaPlataforma(15000, p)), valor3: formatarBRL(15000 - taxaPlataforma(15000, p)) })}
       />
-      {config && <p className="text-xs text-muted-foreground">Última alteração da taxa: {new Date(config.atualizadoEm).toLocaleString("pt-BR")}. A taxa de serviço do comprador é definida por cada organização no Financeiro dela.</p>}
+      {config && <p className="text-xs text-muted-foreground">{tr("ultima_alteracao_da_taxa")}{" "}{formatarDataHoraBR(config.atualizadoEm)}{tr("a_taxa_de_servico_do_comprador")}</p>}
 
       <section aria-labelledby="t-contas" className="border-t border-border pt-6">
-        <h3 id="t-contas" className="text-lg font-semibold">Contas de recebimento das organizações</h3>
+        <h3 id="t-contas" className="text-lg font-semibold">{tr("contas_de_recebimento_das_organizacoes")}</h3>
         <ul className="mt-3 divide-y divide-border border-y border-border">
           {organizacoes.map((o) => {
             const r = o.recebimento;
@@ -89,14 +86,14 @@ function Pagamentos() {
                   {r && <span className="block font-mono text-xs font-normal text-muted-foreground">{r.contaId}</span>}
                 </span>
                 {r ? (
-                  <Badge variant={TOM[r.status]} aria-label={`Recebimentos: ${ROTULO_RECEBIMENTO[r.status]}`}><Icone aria-hidden="true" />{ROTULO_RECEBIMENTO[r.status]}</Badge>
+                  <Badge variant={TOM[r.status]} aria-label={tr("recebimentos_valor", { valor: ROTULO_RECEBIMENTO[r.status] })}><Icone aria-hidden="true" />{ROTULO_RECEBIMENTO[r.status]}</Badge>
                 ) : (
-                  <Badge aria-label="Recebimentos: não configurado"><Icone aria-hidden="true" />Não configurado</Badge>
+                  <Badge aria-label={tr("recebimentos_nao_configurado")}><Icone aria-hidden="true" />{tr("nao_configurado")}</Badge>
                 )}
               </li>
             );
           })}
-          {organizacoes.length === 0 && <li className="py-3 text-sm text-muted-foreground">Nenhuma organização cadastrada.</li>}
+          {organizacoes.length === 0 && <li className="py-3 text-sm text-muted-foreground">{tr("nenhuma_organizacao_cadastrada")}</li>}
         </ul>
       </section>
     </section>

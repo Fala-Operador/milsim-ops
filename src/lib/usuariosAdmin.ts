@@ -1,5 +1,6 @@
 // Regras puras da lista de usuários do admin: busca, filtros, ordenação e paginação.
 import type { Perfil, Usuario } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/usuariosAdmin";
 
 export type CampoOrdenacaoUsuarios = "nome" | "email" | "perfil" | "status" | "cadastro";
 export type DirecaoOrdenacao = "asc" | "desc";
@@ -23,11 +24,11 @@ export const ORDENACAO_USUARIOS_PADRAO: OrdenacaoUsuarios = { campo: "cadastro",
 export const USUARIOS_POR_PAGINA = 20;
 
 export const ROTULO_ORDENACAO_USUARIOS: Record<CampoOrdenacaoUsuarios, string> = {
-  nome: "Nome",
-  email: "E-mail",
-  perfil: "Perfil",
-  status: "Status",
-  cadastro: "Cadastro",
+  get nome() { return tr("nome"); },
+  get email() { return tr("e_mail"); },
+  get perfil() { return tr("perfil"); },
+  get status() { return tr("status"); },
+  get cadastro() { return tr("cadastro"); },
 };
 
 /** Minúsculas e sem acentos, para "joao" achar "João". */

@@ -5,6 +5,7 @@
 import "@tanstack/react-start/server-only";
 import { codificarFormulario, problemaDasChaves, type CobrancaStripe, type SessaoCheckout } from "@/lib/stripe";
 import type { ContaStripe, PerfilComercial, SaldoStripe, SaqueStripe } from "@/lib/repasses";
+import { tr } from "@/i18n/server/stripe.server";
 
 const API = "https://api.stripe.com/v1";
 
@@ -50,14 +51,14 @@ async function chamarStripe<T>(
   contaConectada?: string,
 ): Promise<T> {
   const chave = chaveApi();
-  if (!chave) throw new ErroStripe(0, "nao_configurado", "Stripe não configurado.");
+  if (!chave) throw new ErroStripe(0, "nao_configurado", tr("stripe_nao_configurado"));
   const cabecalhos: Record<string, string> = { Authorization: `Bearer ${chave}` };
   if (dados) cabecalhos["Content-Type"] = "application/x-www-form-urlencoded";
   if (idempotencia) cabecalhos["Idempotency-Key"] = idempotencia;
   if (contaConectada) cabecalhos["Stripe-Account"] = contaConectada;
   const r = await fetch(`${API}${caminho}`, { method: metodo, headers: cabecalhos, body: dados ? codificarFormulario(dados) : null });
   const corpo = (await r.json().catch(() => ({}))) as { error?: { code?: string; message?: string } } & T;
-  if (!r.ok) throw new ErroStripe(r.status, corpo.error?.code, corpo.error?.message ?? `Stripe respondeu ${r.status}.`);
+  if (!r.ok) throw new ErroStripe(r.status, corpo.error?.code, corpo.error?.message ?? tr("stripe_respondeu_status", { status: r.status }));
   return corpo;
 }
 
@@ -247,7 +248,7 @@ const VERSAO_API_V2 = "2026-09-30.endive";
 /** Chamada à API v2 do Stripe (corpo JSON). */
 async function chamarStripeV2<T>(caminho: string, corpo: unknown, idempotencia?: string): Promise<T> {
   const chave = chaveApi();
-  if (!chave) throw new ErroStripe(0, "nao_configurado", "Stripe não configurado.");
+  if (!chave) throw new ErroStripe(0, "nao_configurado", tr("stripe_nao_configurado"));
   const cabecalhos: Record<string, string> = {
     Authorization: `Bearer ${chave}`,
     "Stripe-Version": VERSAO_API_V2,
@@ -256,7 +257,7 @@ async function chamarStripeV2<T>(caminho: string, corpo: unknown, idempotencia?:
   if (idempotencia) cabecalhos["Idempotency-Key"] = idempotencia;
   const r = await fetch(`https://api.stripe.com/v2${caminho}`, { method: "POST", headers: cabecalhos, body: JSON.stringify(corpo) });
   const resposta = (await r.json().catch(() => ({}))) as { error?: { code?: string; message?: string } } & T;
-  if (!r.ok) throw new ErroStripe(r.status, resposta.error?.code, resposta.error?.message ?? `Stripe respondeu ${r.status}.`);
+  if (!r.ok) throw new ErroStripe(r.status, resposta.error?.code, resposta.error?.message ?? tr("stripe_respondeu_status", { status: r.status }));
   return resposta;
 }
 

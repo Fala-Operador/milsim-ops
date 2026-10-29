@@ -8,14 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { tr } from "@/i18n/routes/admin.solicitacoes";
 
 export const Route = createFileRoute("/admin/solicitacoes")({
   head: () => ({
     meta: [
-      { title: "Solicitações de organizador — MilSim Ops" },
-      { name: "description", content: "Análise de solicitações para se tornar organizador." },
-      { property: "og:title", content: "Solicitações de organizador — MilSim Ops" },
-      { property: "og:description", content: "Análise de solicitações de organizador." },
+      { title: tr("solicitacoes_de_organizador_milsim_ops") },
+      { name: "description", content: tr("analise_de_solicitacoes_para_se_tornar") },
+      { property: "og:title", content: tr("solicitacoes_de_organizador_milsim_ops") },
+      { property: "og:description", content: tr("analise_de_solicitacoes_de_organizador") },
     ],
   }),
   component: Solicitacoes,
@@ -39,16 +40,16 @@ function Solicitacoes() {
       await analisarSolicitacao(id, acao, justificativa[id]);
       setVersao((v) => v + 1);
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Falha na ação.");
+      setErro(err instanceof Error ? err.message : tr("falha_na_acao"));
     }
   };
 
   return (
     <section>
-      <h2 className="titulo-pagina">Solicitações de organizador</h2>
+      <h2 className="titulo-pagina">{tr("solicitacoes_de_organizador")}</h2>
       {erro && <p role="alert" className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
       {pendentes.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">Nenhuma solicitação aguardando.</p>
+        <p className="mt-2 text-sm text-muted-foreground">{tr("nenhuma_solicitacao_aguardando")}</p>
       ) : (
         <div className="mt-3 space-y-3">
           {pendentes.map((s) => {
@@ -62,22 +63,22 @@ function Solicitacoes() {
                   </div>
                   <p className="mt-2 font-display text-3xl font-bold uppercase leading-none">{s.nomeOrganizacao}</p>
                   <dl className="mt-4 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-                    <div><dt className="rotulo-tecnico">Solicitante</dt><dd className="mt-0.5">{u?.nomeCompleto}</dd></div>
-                    <div><dt className="rotulo-tecnico">E-mail</dt><dd className="mt-0.5 break-all">{u?.email}</dd></div>
-                    <div><dt className="rotulo-tecnico">CNPJ</dt><dd className="mt-0.5 font-mono">{s.possuiCnpj ? s.cnpj : "Não possui"}</dd></div>
-                    <div><dt className="rotulo-tecnico">Cidade</dt><dd className="mt-0.5">{u?.endereco?.cidade ? `${u.endereco.cidade}/${u.endereco.uf}` : "—"}</dd></div>
+                    <div><dt className="rotulo-tecnico">{tr("solicitante")}</dt><dd className="mt-0.5">{u?.nomeCompleto}</dd></div>
+                    <div><dt className="rotulo-tecnico">{tr("e_mail")}</dt><dd className="mt-0.5 break-all">{u?.email}</dd></div>
+                    <div><dt className="rotulo-tecnico">{tr("cnpj")}</dt><dd className="mt-0.5 font-mono">{s.possuiCnpj ? s.cnpj : tr("nao_possui")}</dd></div>
+                    <div><dt className="rotulo-tecnico">{tr("cidade")}</dt><dd className="mt-0.5">{u?.endereco?.cidade ? `${u.endereco.cidade}/${u.endereco.uf}` : "—"}</dd></div>
                   </dl>
                 </div>
                 <div className="space-y-2 border-t border-border bg-card/50 p-5 lg:border-l lg:border-t-0">
-                  <p className="rotulo-tecnico">Decisão</p>
-                  <Textarea rows={3} placeholder="Justificativa (obrigatória para ajustes ou rejeição)"
+                  <p className="rotulo-tecnico">{tr("decisao")}</p>
+                  <Textarea rows={3} placeholder={tr("justificativa_obrigatoria_para_ajustes_o")}
                     value={justificativa[s.id] ?? ""} onChange={(e) => setJustificativa((p) => ({ ...p, [s.id]: e.target.value }))} />
-                  <Button className="w-full" onClick={() => agir(s.id, "aprovar")}>Aprovar organização</Button>
+                  <Button className="w-full" onClick={() => agir(s.id, "aprovar")}>{tr("aprovar_organizacao")}</Button>
                   <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" onClick={() => agir(s.id, "ajustes")}>Pedir ajustes</Button>
-                    <Button variant="destructive" onClick={() => agir(s.id, "rejeitar")}>Rejeitar</Button>
+                    <Button variant="outline" onClick={() => agir(s.id, "ajustes")}>{tr("pedir_ajustes")}</Button>
+                    <Button variant="destructive" onClick={() => agir(s.id, "rejeitar")}>{tr("rejeitar")}</Button>
                   </div>
-                  {s.status === "pendente" && <Button variant="link" size="none" className="text-xs" onClick={() => agir(s.id, "iniciar")}>Marcar como em análise</Button>}
+                  {s.status === "pendente" && <Button variant="link" size="none" className="text-xs" onClick={() => agir(s.id, "iniciar")}>{tr("marcar_como_em_analise")}</Button>}
                 </div>
               </article>
             );

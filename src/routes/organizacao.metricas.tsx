@@ -3,14 +3,15 @@ import { useEffect, useState } from "react";
 import { useEventosOrg } from "@/components/organizacao";
 import { PainelMetricas } from "@/components/metricas";
 import { SkeletonPagina } from "@/components/ui";
+import { tr } from "@/i18n/routes/organizacao.metricas";
 
 export const Route = createFileRoute("/organizacao/metricas")({
   head: () => ({
     meta: [
-      { title: "Métricas dos eventos — Minha organização — MilSim Ops" },
-      { name: "description", content: "Exibições, cliques, visitas, funil de inscrição e campanhas dos seus eventos." },
-      { property: "og:title", content: "Métricas dos eventos — MilSim Ops" },
-      { property: "og:description", content: "Desempenho de divulgação e inscrições por evento." },
+      { title: tr("metricas_dos_eventos_minha_organizacao_m") },
+      { name: "description", content: tr("exibicoes_cliques_visitas_funil_de_inscr") },
+      { property: "og:title", content: tr("metricas_dos_eventos_milsim_ops") },
+      { property: "og:description", content: tr("desempenho_de_divulgacao_e_inscricoes_po") },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -25,8 +26,8 @@ function PaginaMetricasOrg() {
   if (!montado) return <SkeletonPagina />;
   return (
     <div>
-      <h2 className="titulo-pagina">Métricas</h2>
-      <p className="subtitulo-pagina">Visitas, inscrições e receita das operações da sua organização.</p>
+      <h2 className="titulo-pagina">{tr("metricas")}</h2>
+      <p className="subtitulo-pagina">{tr("visitas_inscricoes_e_receita_das_operaco")}</p>
       <PainelMetricas base={base} eventos={eventos} modo="organizador" />
     </div>
   );

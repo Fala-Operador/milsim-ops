@@ -8,6 +8,7 @@ import { gravarAnexo, urlDoAnexo } from "@/server/anexosSuporte.server";
 import { podeVer, podeAbrirAnexo, LIMITE_MENSAGEM, type AcaoStatus } from "@/lib/suporte";
 import { chamar } from "@/api/cliente";
 import { recarregarVisao } from "@/api/sessao.functions";
+import { tr } from "@/i18n/api/suporte.functions";
 
 const id = z.string().min(1).max(100);
 const clienteId = z.string().regex(/^[a-z0-9-]{8,64}$/i);
@@ -20,11 +21,11 @@ async function enviarAnexo(chamadoId: string, cid: string, a: z.infer<typeof ane
     const u = exigirUsuario(usuario);
     if (!novoChamado) {
       const c = base.chamados.find((x) => x.id === chamadoId);
-      if (!c || !podeVer(base, u, c)) throw new ErroDominio("chamado", "Chamado não encontrado.");
-      if (c.status === "fechado") throw new ErroDominio("status", "Chamado fechado: somente leitura.");
+      if (!c || !podeVer(base, u, c)) throw new ErroDominio("chamado", tr("chamado_nao_encontrado"));
+      if (c.status === "fechado") throw new ErroDominio("status", tr("chamado_fechado_somente_leitura"));
     } else {
       const c = base.chamados.find((x) => x.id === chamadoId);
-      if (c && c.solicitanteId !== u.id) throw new ErroDominio("cliente", "Identificador inválido.");
+      if (c && c.solicitanteId !== u.id) throw new ErroDominio("cliente", tr("identificador_invalido"));
     }
     return await gravarAnexo(chamadoId, cid, a.nome, a.dataUrl);
   } catch (e) { tratarErro(e); }
@@ -74,9 +75,9 @@ export const linkAnexoFn = createServerFn({ method: "POST" })
       const { base, usuario } = await contextoSomenteLeitura();
       const u = exigirUsuario(usuario);
       const c = base.chamados.find((x) => x.id === data.chamadoId);
-      if (!c || !podeVer(base, u, c) || !podeAbrirAnexo(base, u, c, data.mensagemId)) throw new ErroDominio("chamado", "Chamado não encontrado.");
+      if (!c || !podeVer(base, u, c) || !podeAbrirAnexo(base, u, c, data.mensagemId)) throw new ErroDominio("chamado", tr("chamado_nao_encontrado"));
       const m = c.mensagens.find((x) => x.id === data.mensagemId);
-      if (!m?.anexo) throw new ErroDominio("anexo", "Anexo não encontrado.");
+      if (!m?.anexo) throw new ErroDominio("anexo", tr("anexo_nao_encontrado"));
       return await urlDoAnexo(m.anexo, data.baixar);
     } catch (e) { tratarErro(e); }
   });

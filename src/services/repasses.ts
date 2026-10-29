@@ -4,6 +4,7 @@ import { gerarId } from "./db";
 import { ErroDominio } from "./db";
 import { erroTaxa, gereRecebimento, recebimentoDaConta, taxaDaPlataforma, taxaDoComprador, type ContaStripe } from "@/lib/repasses";
 import type { BaseDados, Usuario } from "@/lib/domain/types";
+import { tr } from "@/i18n/services/repasses";
 
 /**
  * Atualiza a situação da conta da organização. Ignora uma conta diferente da registrada
@@ -65,9 +66,9 @@ export function definirTaxaPlataformaNaBase(base: BaseDados, percentual: number,
  * e repassada a ela (padrão 0%). Vale para as reservas feitas daqui em diante; fica na auditoria.
  */
 export function definirTaxaCompradorNaBase(base: BaseDados, organizacaoId: string, percentual: number, usuario: Usuario | null, agora = new Date()): void {
-  if (!usuario || !gereRecebimento(usuario, organizacaoId)) throw new ErroDominio("permissao", "Apenas a organização pode alterar a sua taxa de serviço.");
+  if (!usuario || !gereRecebimento(usuario, organizacaoId)) throw new ErroDominio("permissao", tr("apenas_a_organizacao_pode_alterar_a"));
   const org = base.organizacoes.find((o) => o.id === organizacaoId);
-  if (!org) throw new ErroDominio("organizacao", "Organização não encontrada.");
+  if (!org) throw new ErroDominio("organizacao", tr("organizacao_nao_encontrada"));
   const erro = erroTaxa(percentual);
   if (erro) throw new ErroDominio("taxa", erro);
   const anterior = taxaDoComprador(org);
