@@ -3,6 +3,7 @@
 // privado, seguidores aprovados, bloqueios) é aplicada no banco por social_posts_page()
 // e espelhada aqui em `podeVerAutor` para os testes e para as checagens do servidor.
 import { moderarTexto } from "@/lib/moderacao";
+import { tr } from "@/i18n/lib/comunidadeGeral";
 
 export const LIMITE_POST = 220;
 export const MAX_FOTOS = 4;
@@ -16,13 +17,13 @@ export const POSTS_POR_HORA = 30;
 export const TIPOS_FOTO = ["image/jpeg", "image/png", "image/webp"] as const;
 
 export const MOTIVOS_DENUNCIA = {
-  adulto: "Conteúdo sexual ou adulto",
-  violencia: "Morte ou violência real",
-  drogas: "Drogas ilícitas",
-  ofensa: "Ofensa, ódio ou assédio",
-  spam: "Spam ou golpe",
-  dados_pessoais: "Expõe dados pessoais",
-  outro: "Outro motivo",
+  get adulto() { return tr("conteudo_sexual_ou_adulto"); },
+  get violencia() { return tr("morte_ou_violencia_real"); },
+  get drogas() { return tr("drogas_ilicitas"); },
+  get ofensa() { return tr("ofensa_odio_ou_assedio"); },
+  get spam() { return tr("spam_ou_golpe"); },
+  get dados_pessoais() { return tr("expoe_dados_pessoais"); },
+  get outro() { return tr("outro_motivo"); },
 } as const;
 export type MotivoDenunciaSocial = keyof typeof MOTIVOS_DENUNCIA;
 export const ehMotivoDenuncia = (v: unknown): v is MotivoDenunciaSocial => typeof v === "string" && v in MOTIVOS_DENUNCIA;
@@ -85,13 +86,13 @@ export function tamanhoDataUrl(dados: string): number {
 /** Primeiro problema do post (vazio = pode publicar). Inclui a moderação do texto. */
 export function erroPost(texto: string, fotos: FotoEnviada[]): string {
   const t = texto.trim();
-  if (!t && fotos.length === 0) return "Escreva algo ou adicione uma foto.";
-  if ([...t].length > LIMITE_POST) return `Use no máximo ${LIMITE_POST} caracteres.`;
-  if (fotos.length > MAX_FOTOS) return `Adicione no máximo ${MAX_FOTOS} fotos.`;
+  if (!t && fotos.length === 0) return tr("escreva_algo_ou_adicione_uma_foto");
+  if ([...t].length > LIMITE_POST) return tr("use_no_maximo_limite_post_caracteres", { LIMITE_POST });
+  if (fotos.length > MAX_FOTOS) return tr("adicione_no_maximo_max_fotos_fotos", { MAX_FOTOS });
   for (const f of fotos) {
-    if (!DATA_URL.test(f.dados)) return "Formato de foto inválido. Use JPG, PNG ou WebP.";
-    if (tamanhoDataUrl(f.dados) > TAMANHO_MAXIMO_FOTO) return "Cada foto pode ter no máximo 5 MB.";
-    if ((f.alt ?? "").length > LIMITE_ALT) return `A descrição da foto pode ter até ${LIMITE_ALT} caracteres.`;
+    if (!DATA_URL.test(f.dados)) return tr("formato_de_foto_invalido_use_jpg");
+    if (tamanhoDataUrl(f.dados) > TAMANHO_MAXIMO_FOTO) return tr("cada_foto_pode_ter_no_maximo");
+    if ((f.alt ?? "").length > LIMITE_ALT) return tr("a_descricao_da_foto_pode_ter", { LIMITE_ALT });
   }
   const m = moderarTexto(t);
   if (!m.aprovado) return m.motivo;
@@ -102,8 +103,8 @@ export function erroPost(texto: string, fotos: FotoEnviada[]): string {
 export function erroRitmo(recentes: string[], agora: Date = new Date()): string {
   const t = agora.getTime();
   const tempos = recentes.map((r) => new Date(r).getTime()).filter((x) => Number.isFinite(x));
-  if (tempos.some((x) => t - x < INTERVALO_MINIMO_MS)) return "Espere alguns segundos antes de publicar de novo.";
-  if (tempos.filter((x) => t - x < 3_600_000).length >= POSTS_POR_HORA) return "Você atingiu o limite de publicações por hora. Tente mais tarde.";
+  if (tempos.some((x) => t - x < INTERVALO_MINIMO_MS)) return tr("espere_alguns_segundos_antes_de_publicar");
+  if (tempos.filter((x) => t - x < 3_600_000).length >= POSTS_POR_HORA) return tr("voce_atingiu_o_limite_de_publicacoes");
   return "";
 }
 
@@ -174,10 +175,10 @@ export const ehVisibilidadeForum = (v: unknown): v is VisibilidadeForum => v ===
 /** Primeiro problema do formulário do fórum (vazio = válido), com a moderação de texto. */
 export function erroForum(nome: string, descricao: string | undefined, visibilidade: string): string {
   const n = nome.trim();
-  if ([...n].length < NOME_FORUM_MIN) return `Dê um nome com pelo menos ${NOME_FORUM_MIN} caracteres.`;
-  if ([...n].length > NOME_FORUM_MAX) return `O nome pode ter até ${NOME_FORUM_MAX} caracteres.`;
-  if ([...(descricao ?? "").trim()].length > DESCRICAO_FORUM_MAX) return `A descrição pode ter até ${DESCRICAO_FORUM_MAX} caracteres.`;
-  if (!ehVisibilidadeForum(visibilidade)) return "Escolha se o fórum é público ou privado.";
+  if ([...n].length < NOME_FORUM_MIN) return tr("de_um_nome_com_pelo_menos", { NOME_FORUM_MIN });
+  if ([...n].length > NOME_FORUM_MAX) return tr("o_nome_pode_ter_ate_nome", { NOME_FORUM_MAX });
+  if ([...(descricao ?? "").trim()].length > DESCRICAO_FORUM_MAX) return tr("a_descricao_pode_ter_ate_descricao", { DESCRICAO_FORUM_MAX });
+  if (!ehVisibilidadeForum(visibilidade)) return tr("escolha_se_o_forum_e_publico");
   const m = moderarTexto(`${n} ${descricao ?? ""}`);
   if (!m.aprovado) return m.motivo;
   return "";
@@ -185,8 +186,8 @@ export function erroForum(nome: string, descricao: string | undefined, visibilid
 
 /** Foto do fórum enviada pelo navegador (data URL JPG/PNG/WebP de até 5 MB); vazio = válida. */
 export function erroFotoForum(dados: string): string {
-  if (!DATA_URL.test(dados)) return "Formato de foto inválido. Use JPG, PNG ou WebP.";
-  if (tamanhoDataUrl(dados) > TAMANHO_MAXIMO_FOTO) return "A foto pode ter no máximo 5 MB.";
+  if (!DATA_URL.test(dados)) return tr("formato_de_foto_invalido_use_jpg");
+  if (tamanhoDataUrl(dados) > TAMANHO_MAXIMO_FOTO) return tr("a_foto_pode_ter_no_maximo");
   return "";
 }
 

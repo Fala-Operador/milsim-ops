@@ -27,9 +27,10 @@ export function escolherIdioma(p: { pedido?: unknown; cookie?: unknown; acceptLa
 }
 
 /** Troca {nome} pelos valores dados; marcas sem valor ficam como estão. */
-export function interpolar(texto: string, vars?: Record<string, string | number>): string {
+export function interpolar(texto: string, vars?: Vars): string {
   if (!vars) return texto;
-  return texto.replace(/\{(\w+)\}/g, (m, nome: string) => (nome in vars ? String(vars[nome]) : m));
+  // Valor ausente (undefined/null) sai vazio, como em {valor} no JSX.
+  return texto.replace(/\{(\w+)\}/g, (m, nome: string) => (nome in vars ? String(vars[nome] ?? "") : m));
 }
 
 export type Traduzir = (chave: string, vars?: Record<string, string | number>) => string;
@@ -68,7 +69,7 @@ export interface Par {
   en: string;
 }
 export type Dicionario = Record<string, Par>;
-export type Vars = Record<string, string | number>;
+export type Vars = Record<string, string | number | null | undefined>;
 
 /** Inglês vazio (ou ausente) cai no português; chave ausente aparece como a própria chave. */
 export function textoDoPar(par: Par | undefined, idioma: Idioma, chave: string, vars?: Vars): string {

@@ -10,14 +10,15 @@ import { Card } from "@/components/ui/card";
 import { EstadoVazio } from "@/components/ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { tr } from "@/i18n/routes/app.comunidades";
 
 export const Route = createFileRoute("/app/comunidades")({
   head: () => ({
     meta: [
-      { title: "Minhas comunidades — MilSim Ops" },
-      { name: "description", content: "Lista das comunidades de eventos das quais você participa, com busca e filtros." },
-      { property: "og:title", content: "Minhas comunidades — MilSim Ops" },
-      { property: "og:description", content: "Comunidades de eventos das quais você participa." },
+      { title: tr("minhas_comunidades_milsim_ops") },
+      { name: "description", content: tr("lista_das_comunidades_de_eventos_das") },
+      { property: "og:title", content: tr("minhas_comunidades_milsim_ops") },
+      { property: "og:description", content: tr("comunidades_de_eventos_das_quais_voce") },
     ],
   }),
   component: MinhasComunidades,
@@ -72,29 +73,27 @@ function MinhasComunidades() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="titulo-pagina">Minhas comunidades</h1>
-        <p className="subtitulo-pagina">
-          Comunidades dos eventos em que você participa ou gerencia.
-        </p>
+        <h1 className="titulo-pagina">{tr("minhas_comunidades")}</h1>
+        <p className="subtitulo-pagina">{tr("comunidades_dos_eventos_em_que_voce")}</p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Label className="flex-1 text-[length:inherit] font-normal text-inherit">
-          <span className="sr-only">Buscar comunidade</span>
+          <span className="sr-only">{tr("buscar_comunidade")}</span>
           <Input
             type="search"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar por nome do evento, cidade ou exército…"
+            placeholder={tr("buscar_por_nome_do_evento_cidade")}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground"
           />
         </Label>
-        <div className="flex gap-1" role="group" aria-label="Filtrar por período">
+        <div className="flex gap-1" role="group" aria-label={tr("filtrar_por_periodo")}>
           {(
             [
-              ["todas", "Todas"],
-              ["proximos", "Próximos"],
-              ["encerrados", "Encerrados"],
+              ["todas", tr("todas")],
+              ["proximos", tr("proximos")],
+              ["encerrados", tr("encerrados")],
             ] as const
           ).map(([valor, rotulo]) => (
             <Button
@@ -111,11 +110,11 @@ function MinhasComunidades() {
 
       {filtradas.length === 0 ? (
         <EstadoVazio
-          titulo={comunidades.length === 0 ? "Você ainda não participa de nenhuma comunidade" : "Nenhuma comunidade encontrada"}
+          titulo={comunidades.length === 0 ? tr("voce_ainda_nao_participa_de_nenhuma") : tr("nenhuma_comunidade_encontrada")}
           descricao={
             comunidades.length === 0
-              ? "Inscreva-se em um evento para acessar a comunidade dele."
-              : "Ajuste a busca ou os filtros para encontrar sua comunidade."
+              ? tr("inscreva_se_em_um_evento_para")
+              : tr("ajuste_a_busca_ou_os_filtros")
           }
         />
       ) : (
@@ -125,24 +124,21 @@ function MinhasComunidades() {
               <div className="flex items-start justify-between gap-2">
                 <h2 className="font-medium">{evento.nome}</h2>
                 <div className="flex shrink-0 gap-1">
-                  {papel === "gestao" && <Badge variant="warning">Gestão</Badge>}
-                  <Badge variant={futuro ? "success" : "secondary"}>{futuro ? "Próximo" : "Encerrado"}</Badge>
+                  {papel === "gestao" && <Badge variant="warning">{tr("gestao")}</Badge>}
+                  <Badge variant={futuro ? "success" : "secondary"}>{futuro ? tr("proximo") : tr("encerrado")}</Badge>
                 </div>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
                 {formatarDataBR(evento.inicioEm)} · {evento.cidade}/{evento.uf}
               </p>
-              {exercito && <p className="text-sm text-muted-foreground">Seu exército: {exercito.nome}</p>}
+              {exercito && <p className="text-sm text-muted-foreground">{tr("seu_exercito_nome", { nome: exercito.nome })}</p>}
               <p className="mt-1 text-xs text-muted-foreground">
-                {totalForuns} fóruns · {totalPublicacoes} publicações
-              </p>
+                {tr("totalforuns_foruns_totalpublicacoes_publ", { totalForuns, totalPublicacoes })}</p>
               <Link
                 to="/comunidade/$eventoId"
                 params={{ eventoId: evento.id }}
                 className="mt-2 inline-block text-sm text-accent hover:underline"
-              >
-                Acessar comunidade →
-              </Link>
+              >{tr("acessar_comunidade")}</Link>
             </Card>
           ))}
         </div>

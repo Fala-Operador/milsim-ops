@@ -23,6 +23,7 @@ import { EstadoVazio, SkeletonPagina, TextoLivre } from "@/components/ui";
 import { formatarDataBR } from "@/lib/domain/money";
 import { dataUrlParaBlobUrl } from "@/lib/imagens";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { tr } from "@/i18n/routes/comunidade.$eventoId.index";
 
 export const Route = createFileRoute("/comunidade/$eventoId/")({
   validateSearch: (s: Record<string, unknown>): { forum?: string | undefined; q?: string | undefined } => ({
@@ -91,28 +92,26 @@ function ComunidadeInicio() {
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/90 via-black/60 to-black/20" aria-hidden />
         <div className="flex flex-wrap items-end justify-between gap-4 p-5 sm:p-7">
           <div className="min-w-0">
-            <nav aria-label="Breadcrumb" className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/70">
-              <Link to="/app" className="hover:text-white">Minha área</Link> /{" "}
-              <Link to="/comunidade/$eventoId" params={{ eventoId }} search={{}} className="hover:text-white">Comunidade</Link>
+            <nav aria-label={tr("breadcrumb")} className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/70">
+              <Link to="/app" className="hover:text-white">{tr("minha_area")}</Link> /{" "}
+              <Link to="/comunidade/$eventoId" params={{ eventoId }} search={{}} className="hover:text-white">{tr("comunidade")}</Link>
               {forumAtual && <> / {forumAtual.nome}</>}
             </nav>
             <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none sm:text-5xl">{evento.nome}</h1>
             <p className="mt-3 font-mono text-xs uppercase tracking-wider text-white/80">
-              {formatarDataBR(evento.inicioEm)} · {evento.cidade}/{evento.uf} · {foruns.length} fóruns
-            </p>
+              {tr("inicioem_cidade_uf_length_foruns", { inicioEm: formatarDataBR(evento.inicioEm), cidade: evento.cidade, uf: evento.uf, length: foruns.length })}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {totalNovidades > 0 && (
               <span className="inline-flex items-center gap-2 rounded-md border border-white/25 bg-black/40 px-3 py-1.5 text-sm">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />{totalNovidades} {totalNovidades === 1 ? "novidade" : "novidades"} desde a sua última visita
-              </span>
+                <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />{totalNovidades} {totalNovidades === 1 ? "novidade" : "novidades"}{" "}{tr("desde_a_sua_ultima_visita")}</span>
             )}
             <Button asChild variant="outline" className="border-white/40 bg-black/30 text-white hover:bg-black/50">
-              <Link to="/eventos/$eventoId" params={{ eventoId }}>Página da operação</Link>
+              <Link to="/eventos/$eventoId" params={{ eventoId }}>{tr("pagina_da_operacao")}</Link>
             </Button>
             {gestao && (
               <Button asChild variant="outline" className="border-white/40 bg-black/30 text-white hover:bg-black/50">
-                <Link to="/comunidade/$eventoId/gerenciar" params={{ eventoId }}>Gerenciar</Link>
+                <Link to="/comunidade/$eventoId/gerenciar" params={{ eventoId }}>{tr("gerenciar")}</Link>
               </Button>
             )}
           </div>
@@ -120,18 +119,16 @@ function ComunidadeInicio() {
       </header>
 
       {suspenso && (
-        <p role="alert" className="mt-4 rounded-md border border-destructive p-3 text-sm text-destructive">
-          Sua participação na comunidade está suspensa. Você pode ler os conteúdos, mas não pode publicar, responder ou curtir.
-        </p>
+        <p role="alert" className="mt-4 rounded-md border border-destructive p-3 text-sm text-destructive">{tr("sua_participacao_na_comunidade_esta_susp")}</p>
       )}
 
       {/* Seletor de fóruns no celular */}
       <div className="mt-4 lg:hidden">
-        <NativeSelect aria-label="Escolher fórum" value={forumAtual?.id ?? ""} onChange={(e) => irPara(e.target.value || undefined)}>
-          <option value="">Todos os fóruns</option>
+        <NativeSelect aria-label={tr("escolher_forum")} value={forumAtual?.id ?? ""} onChange={(e) => irPara(e.target.value || undefined)}>
+          <option value="">{tr("todos_os_foruns")}</option>
           {foruns.map((f) => (
             <option key={f.id} value={f.id}>
-              {f.nome}{f.status === "arquivado" ? " (arquivado)" : ""}{novidades[f.id] ? ` • ${novidades[f.id]} novas` : ""}
+              {f.nome}{f.status === "arquivado" ? ` ${tr("arquivado")}` : ""}{novidades[f.id] ? ` ${tr("valor_novas", { valor: novidades[f.id] })}` : ""}
             </option>
           ))}
         </NativeSelect>
@@ -139,10 +136,10 @@ function ComunidadeInicio() {
 
       <div className="mt-4 grid gap-6 lg:grid-cols-[250px_minmax(0,1fr)_240px]">
         {/* Navegação lateral */}
-        <aside className="hidden lg:block" aria-label="Fóruns">
-          <p className="rotulo-tecnico mb-2 px-2">Fóruns</p>
+        <aside className="hidden lg:block" aria-label={tr("foruns")}>
+          <p className="rotulo-tecnico mb-2 px-2">{tr("foruns")}</p>
           <ul className="sticky top-20 space-y-0.5">
-            <ItemForum ativo={!forumAtual} onClick={() => irPara()} rotulo="Todos os fóruns" />
+            <ItemForum ativo={!forumAtual} onClick={() => irPara()} rotulo={tr("todos_os_foruns")} />
             {foruns.map((f) => (
               <ItemForum
                 key={f.id}
@@ -167,8 +164,8 @@ function ComunidadeInicio() {
             }}
             className="flex gap-2"
           >
-            <Input aria-label="Buscar fóruns e publicações" placeholder="Buscar fóruns e publicações…" value={busca} onChange={(e) => setBusca(e.target.value)} />
-            <Button type="submit" variant="outline">Buscar</Button>
+            <Input aria-label={tr("buscar_foruns_e_publicacoes")} placeholder={tr("buscar_foruns_e_publicacoes_2")} value={busca} onChange={(e) => setBusca(e.target.value)} />
+            <Button type="submit" variant="outline">{tr("buscar")}</Button>
           </form>
 
           {forumAtual && (
@@ -183,27 +180,27 @@ function ComunidadeInicio() {
                 </div>
                 <div className="w-44">
                   <NativeSelect
-                    aria-label="Notificações deste fórum"
+                    aria-label={tr("notificacoes_deste_forum")}
                     value={pref}
                     onChange={async (e) => { await definirPreferenciaForum(forumAtual.id, e.target.value as "seguir" | "silenciar" | "padrao"); atualizar(); }}
                   >
-                    <option value="padrao">Notificações: padrão</option>
-                    <option value="seguir">Seguir novas publicações</option>
-                    <option value="silenciar">Silenciar</option>
+                    <option value="padrao">{tr("notificacoes_padrao")}</option>
+                    <option value="seguir">{tr("seguir_novas_publicacoes")}</option>
+                    <option value="silenciar">{tr("silenciar")}</option>
                   </NativeSelect>
                 </div>
               </div>
-              {forumAtual.regras && <p className="mt-2 rounded-md bg-secondary p-2 text-xs"><strong>Regras do fórum:</strong> {forumAtual.regras}</p>}
-              {forumAtual.status === "arquivado" && <p className="mt-2 text-sm text-warning">Fórum arquivado: somente leitura.</p>}
+              {forumAtual.regras && <p className="mt-2 rounded-md bg-secondary p-2 text-xs"><strong>{tr("regras_do_forum")}</strong> {forumAtual.regras}</p>}
+              {forumAtual.status === "arquivado" && <p className="mt-2 text-sm text-warning">{tr("forum_arquivado_somente_leitura")}</p>}
               {forumAtual.publicacao === "gestao" && forumAtual.status === "ativo" && (
-                <p className="mt-2 text-xs text-muted-foreground">Publicações oficiais da organização{forumAtual.respostas === "membros" ? " · respostas abertas aos participantes" : ""}.</p>
+                <p className="mt-2 text-xs text-muted-foreground">{tr("publicacoes_oficiais_da_organizacao")}{forumAtual.respostas === "membros" ? ` ${tr("respostas_abertas_aos_participantes")}` : ""}.</p>
               )}
             </div>
           )}
 
           {q && (
             <Card>
-              <p className="text-sm">Resultados para <strong>“{q}”</strong> · <Link to="/comunidade/$eventoId" params={{ eventoId }} search={{ forum: forumSel }} className="text-accent hover:underline">limpar busca</Link></p>
+              <p className="text-sm">{tr("resultados_para")}{" "}<strong>“{q}”</strong> · <Link to="/comunidade/$eventoId" params={{ eventoId }} search={{ forum: forumSel }} className="text-accent hover:underline">{tr("limpar_busca")}</Link></p>
               {forunsEncontrados.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {forunsEncontrados.map((f) => (
@@ -219,9 +216,9 @@ function ComunidadeInicio() {
           )}
 
           {fixadas.length > 0 && (
-            <section aria-label="Publicações fixadas">
+            <section aria-label={tr("publicacoes_fixadas")}>
               <div className="space-y-0">
-              <h2 className="rotulo-tecnico !text-accent">Fixadas e avisos importantes</h2>
+              <h2 className="rotulo-tecnico !text-accent">{tr("fixadas_e_avisos_importantes")}</h2>
               {fixadas.map((p) => (
                 <CartaoPublicacao key={p.id} base={base} pub={p} usuario={usuario} gestao={gestao} foruns={foruns} mostrarForum={!forumAtual} onMudou={atualizar} onAbrir={salvarPosicao} />
               ))}
@@ -229,22 +226,22 @@ function ComunidadeInicio() {
             </section>
           )}
 
-          <section aria-label="Feed">
-            {feed.length === 0 && fixadas.length === 0 && <EstadoVazio titulo="Nenhuma publicação por aqui" descricao="Seja o primeiro a compartilhar algo." />}
+          <section aria-label={tr("feed")}>
+            {feed.length === 0 && fixadas.length === 0 && <EstadoVazio titulo={tr("nenhuma_publicacao_por_aqui")} descricao={tr("seja_o_primeiro_a_compartilhar_algo")} />}
             {feed.slice(0, limite).map((p) => (
               <CartaoPublicacao key={p.id} base={base} pub={p} usuario={usuario} gestao={gestao} foruns={foruns} mostrarForum={!forumAtual} onMudou={atualizar} onAbrir={salvarPosicao} />
             ))}
             {feed.length > limite && (
               <div className="text-center">
-                <Button variant="outline" onClick={() => setLimite((l) => l + TAMANHO_PAGINA)}>Carregar mais</Button>
+                <Button variant="outline" onClick={() => setLimite((l) => l + TAMANHO_PAGINA)}>{tr("carregar_mais")}</Button>
               </div>
             )}
           </section>
         </main>
 
-        <aside className="space-y-6 lg:border-l lg:border-border lg:pl-6" aria-label="Atalhos do evento">
+        <aside className="space-y-6 lg:border-l lg:border-border lg:pl-6" aria-label={tr("atalhos_do_evento")}>
           <section>
-            <h2 className="rotulo-tecnico">Cronograma</h2>
+            <h2 className="rotulo-tecnico">{tr("cronograma")}</h2>
             <ol className="mt-3 space-y-3 border-l border-border pl-4 text-sm">
               {evento.cronograma.slice().sort((a, b) => a.ordem - b.ordem).map((at) => (
                 <li key={at.id} className="relative">
@@ -257,8 +254,7 @@ function ComunidadeInicio() {
           </section>
           {evento.regras && (
             <Collapsible className="border-t border-border pt-4 text-sm">
-              <CollapsibleTrigger className="group flex w-full cursor-pointer items-center justify-between gap-1 text-left font-semibold">
-                Caderno de regras<ChevronRight aria-hidden="true" className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+              <CollapsibleTrigger className="group flex w-full cursor-pointer items-center justify-between gap-1 text-left font-semibold">{tr("caderno_de_regras")}<ChevronRight aria-hidden="true" className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
               </CollapsibleTrigger>
               <CollapsibleContent>
                 {evento.regras.pdfDataUrl ? (
@@ -269,11 +265,11 @@ function ComunidadeInicio() {
               </CollapsibleContent>
             </Collapsible>
           )}
-          <nav aria-label="Atalhos" className="border-t border-border pt-4">
+          <nav aria-label={tr("atalhos")} className="border-t border-border pt-4">
             <ul className="space-y-1 text-sm">
-              <li><Link to="/app/missoes" className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-secondary"><Target className="h-4 w-4 text-accent" aria-hidden />Missões</Link></li>
-              <li><Link to="/app/suporte" search={{ evento: eventoId }} className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-secondary"><LifeBuoy className="h-4 w-4 text-accent" aria-hidden />Suporte privado</Link></li>
-              {evento.whatsappGrupoUrl && <li><a href={evento.whatsappGrupoUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-secondary"><MessageCircle className="h-4 w-4 text-accent" aria-hidden />Grupo do WhatsApp<ExternalLink className="ml-auto h-3.5 w-3.5 text-muted-foreground" aria-hidden /></a></li>}
+              <li><Link to="/app/missoes" className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-secondary"><Target className="h-4 w-4 text-accent" aria-hidden />{tr("missoes")}</Link></li>
+              <li><Link to="/app/suporte" search={{ evento: eventoId }} className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-secondary"><LifeBuoy className="h-4 w-4 text-accent" aria-hidden />{tr("suporte_privado")}</Link></li>
+              {evento.whatsappGrupoUrl && <li><a href={evento.whatsappGrupoUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-secondary"><MessageCircle className="h-4 w-4 text-accent" aria-hidden />{tr("grupo_do_whatsapp")}<ExternalLink className="ml-auto h-3.5 w-3.5 text-muted-foreground" aria-hidden /></a></li>}
             </ul>
           </nav>
         </aside>
@@ -296,7 +292,7 @@ function ItemForum({ ativo, onClick, rotulo, forum, descricao, novas, arquivado 
           {descricao && <span className="block truncate text-xs font-normal text-muted-foreground">{descricao}</span>}
         </span>
         {!!novas && <span className="min-w-5 rounded-sm bg-accent px-1 text-center font-mono text-[11px] font-semibold text-accent-foreground">{novas}</span>}
-        {arquivado && <Badge>Arquivado</Badge>}
+        {arquivado && <Badge>{tr("arquivado_2")}</Badge>}
       </Button>
     </li>
   );
@@ -309,6 +305,6 @@ function LeitorPdf({ titulo, dataUrl }: { titulo: string; dataUrl: string }) {
     setUrl(u);
     return () => URL.revokeObjectURL(u);
   }, [dataUrl]);
-  if (!url) return <p className="mt-2 text-xs text-muted-foreground">Carregando PDF…</p>;
+  if (!url) return <p className="mt-2 text-xs text-muted-foreground">{tr("carregando_pdf")}</p>;
   return <iframe title={titulo} src={url} className="mt-2 h-96 w-full rounded-md border border-border bg-background" />;
 }

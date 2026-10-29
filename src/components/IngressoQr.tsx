@@ -12,6 +12,8 @@ import { guardarArquivosApp } from "@/lib/sw";
 import { storage } from "@/lib/storage";
 import { formatarDataBR } from "@/lib/domain/money";
 import type { Evento, Inscricao } from "@/lib/domain/types";
+import { tr } from "@/i18n/components/IngressoQr";
+import { localeAtual } from "@/i18n/dicionario";
 
 /**
  * A cada quantos ms o modal pergunta se a portaria já confirmou a entrada. O tempo real
@@ -67,7 +69,7 @@ function useEntradaConfirmada(inscricaoId: string): string | null {
 }
 
 function EntradaConfirmada({ em, restante }: { em: string; restante: number }) {
-  const hora = new Date(em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const hora = new Date(em).toLocaleTimeString(localeAtual(), { hour: "2-digit", minute: "2-digit" });
   return (
     <div className="space-y-3 py-4 text-center" role="status" aria-live="assertive">
       <div className="entrada-confirmada mx-auto flex h-40 w-40 items-center justify-center rounded-full bg-success/10 text-success animate-in zoom-in-50 duration-300">
@@ -76,9 +78,9 @@ function EntradaConfirmada({ em, restante }: { em: string; restante: number }) {
           <path className="check" d="M16 29l8 8 16-17" />
         </svg>
       </div>
-      <p className="font-display text-2xl font-semibold uppercase text-success">Entrada confirmada</p>
-      <p className="text-sm text-muted-foreground">Check-in registrado às {hora}. Boa operação!</p>
-      <p className="text-xs text-muted-foreground">Esta janela fecha em {restante}s.</p>
+      <p className="font-display text-2xl font-semibold uppercase text-success">{tr("entrada_confirmada")}</p>
+      <p className="text-sm text-muted-foreground">{tr("check_in_registrado_as_hora_boa", { hora })}</p>
+      <p className="text-xs text-muted-foreground">{tr("esta_janela_fecha_em_restantes", { restante })}</p>
     </div>
   );
 }
@@ -108,7 +110,7 @@ export function IngressoQr({ inscricao, evento, usuarioId, onFechar }: {
     try {
       const token = tokenDaInscricao(inscricao.id, usuarioId); // reaproveita o token existente
       QRCode.toDataURL(conteudoQr(token), { width: 360, margin: 2, errorCorrectionLevel: "M" }).then(setQr);
-    } catch (e) { setErro(e instanceof Error ? e.message : "Falha ao gerar o QR Code."); }
+    } catch (e) { setErro(e instanceof Error ? e.message : tr("falha_ao_gerar_o_qr_code")); }
   }, [inscricao.id, usuarioId]);
 
   const salvar = async () => {
@@ -116,7 +118,7 @@ export function IngressoQr({ inscricao, evento, usuarioId, onFechar }: {
     salvos[inscricao.id] = { qr, codigo: inscricao.codigo, evento: evento?.nome, data: evento?.inicioEm, salvoEm: new Date().toISOString() };
     storage.gravar("ingressos-salvos", salvos);
     const r = await guardarArquivosApp(["/app/ingressos"]);
-    setMsg(r.ok ? "Ingresso salvo neste aparelho. Você poderá abrir Meus ingressos sem internet." : "Ingresso salvo nos dados do aparelho, mas este navegador não permitiu guardar a página para uso sem internet. Baixe a imagem por garantia.");
+    setMsg(r.ok ? tr("ingresso_salvo_neste_aparelho_voce_poder") : tr("ingresso_salvo_nos_dados_do_aparelho"));
   };
 
   const baixar = async () => {
@@ -125,17 +127,17 @@ export function IngressoQr({ inscricao, evento, usuarioId, onFechar }: {
     const ctx = c.getContext("2d")!;
     ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
     ctx.fillStyle = "#1f2a14"; ctx.textAlign = "center";
-    ctx.font = "bold 30px sans-serif"; ctx.fillText("MILSIM OPS — INGRESSO", 300, 60);
-    ctx.font = "bold 26px sans-serif"; ctx.fillText((evento?.nome ?? "Evento").slice(0, 34), 300, 110);
+    ctx.font = "bold 30px sans-serif"; ctx.fillText(tr("milsim_ops_ingresso"), 300, 60);
+    ctx.font = "bold 26px sans-serif"; ctx.fillText((evento?.nome ?? tr("evento")).slice(0, 34), 300, 110);
     ctx.font = "20px sans-serif";
     if (evento) ctx.fillText(`${formatarDataBR(evento.inicioEm)} · ${evento.cidade}/${evento.uf}`, 300, 145);
     const img = new Image();
     img.src = qr;
     await img.decode();
     ctx.drawImage(img, 120, 180, 360, 360);
-    ctx.font = "18px sans-serif"; ctx.fillText("Código alternativo", 300, 590);
+    ctx.font = "18px sans-serif"; ctx.fillText(tr("codigo_alternativo"), 300, 590);
     ctx.font = "bold 40px monospace"; ctx.fillText(inscricao.codigo, 300, 640);
-    ctx.font = "16px sans-serif"; ctx.fillText("Apresente na portaria. Não contém dados pessoais.", 300, 700);
+    ctx.font = "16px sans-serif"; ctx.fillText(tr("apresente_na_portaria_nao_contem_dados"), 300, 700);
     const a = document.createElement("a");
     a.href = c.toDataURL("image/png");
     a.download = `ingresso-${inscricao.codigo}.png`;
@@ -143,7 +145,7 @@ export function IngressoQr({ inscricao, evento, usuarioId, onFechar }: {
   };
 
   return (
-    <Modal aberto titulo="QR Code de entrada" onFechar={onFechar}>
+    <Modal aberto titulo={tr("qr_code_de_entrada")} onFechar={onFechar}>
       {confirmadaEm ? (
         <div className="space-y-3 text-center">
           <p className="font-medium">{evento?.nome}</p>
@@ -154,14 +156,14 @@ export function IngressoQr({ inscricao, evento, usuarioId, onFechar }: {
         <div className="space-y-3 text-center">
           <p className="font-medium">{evento?.nome}</p>
           <div className="mx-auto w-fit rounded-lg bg-white p-2">
-            {qr ? <img src={qr} alt={`QR Code de entrada do ingresso ${inscricao.codigo}`} className="h-64 w-64" /> : <div className="h-64 w-64 animate-pulse bg-muted" />}
+            {qr ? <img src={qr} alt={tr("qr_code_de_entrada_do_ingresso", { codigo: inscricao.codigo })} className="h-64 w-64" /> : <div className="h-64 w-64 animate-pulse bg-muted" />}
           </div>
-          <p className="text-sm text-muted-foreground">Código alternativo</p>
+          <p className="text-sm text-muted-foreground">{tr("codigo_alternativo")}</p>
           <p className="font-mono text-2xl font-bold">{inscricao.codigo}</p>
-          <p className="rounded-md border border-warning/60 bg-warning/10 p-3 text-left text-sm">Salve o ingresso ou baixe a imagem <strong>antes de ficar sem internet</strong> — no local do evento pode não haver sinal.</p>
+          <p className="rounded-md border border-warning/60 bg-warning/10 p-3 text-left text-sm">{tr("salve_o_ingresso_ou_baixe_a")}{" "}<strong>{tr("antes_de_ficar_sem_internet")}</strong>{" "}{tr("no_local_do_evento_pode_nao")}</p>
           <div className="grid gap-2 sm:grid-cols-2">
-            <Button variant="outline" onClick={salvar} disabled={!qr}><Save className="h-4 w-4" />Salvar no aparelho</Button>
-            <Button onClick={baixar} disabled={!qr}><Download className="h-4 w-4" />Baixar imagem</Button>
+            <Button variant="outline" onClick={salvar} disabled={!qr}><Save className="h-4 w-4" />{tr("salvar_no_aparelho")}</Button>
+            <Button onClick={baixar} disabled={!qr}><Download className="h-4 w-4" />{tr("baixar_imagem")}</Button>
           </div>
           {msg && <p role="status" className="text-sm">{msg}</p>}
         </div>

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal, SkeletonPagina, TextoLivre } from "@/components/ui";
 import { ContatoWhatsapp } from "@/components/ContatoWhatsapp";
+import { tr } from "@/i18n/routes/eventos.$eventoId";
 
 export const Route = createFileRoute("/eventos/$eventoId")({
   loader: async ({ params }) => {
@@ -25,9 +26,9 @@ export const Route = createFileRoute("/eventos/$eventoId")({
   head: ({ loaderData }) => ({
     meta: loaderData
       ? [
-          { title: `${loaderData.evento.nome} — MilSim Ops` },
+          { title: tr("nome_milsim_ops", { nome: loaderData.evento.nome }) },
           { name: "description", content: loaderData.evento.descricaoResumida },
-          { property: "og:title", content: `${loaderData.evento.nome} — MilSim Ops` },
+          { property: "og:title", content: tr("nome_milsim_ops", { nome: loaderData.evento.nome }) },
           { property: "og:description", content: loaderData.evento.descricaoResumida },
           { property: "og:type", content: "website" },
           { name: "twitter:card", content: "summary_large_image" },
@@ -37,10 +38,10 @@ export const Route = createFileRoute("/eventos/$eventoId")({
           ] : []),
         ]
       : [
-          { title: "Evento — MilSim Ops" },
-          { name: "description", content: "Operações de airsoft e simulação militar no MilSim Ops." },
-          { property: "og:title", content: "Evento — MilSim Ops" },
-          { property: "og:description", content: "Operações de airsoft e simulação militar no MilSim Ops." },
+          { title: tr("evento_milsim_ops") },
+          { name: "description", content: tr("operacoes_de_airsoft_e_simulacao_militar") },
+          { property: "og:title", content: tr("evento_milsim_ops") },
+          { property: "og:description", content: tr("operacoes_de_airsoft_e_simulacao_militar") },
           { property: "og:type", content: "website" },
           { name: "twitter:card", content: "summary" },
         ],
@@ -49,8 +50,8 @@ export const Route = createFileRoute("/eventos/$eventoId")({
   component: PaginaEvento,
   notFoundComponent: () => (
     <div className="mx-auto max-w-xl px-4 py-16 text-center">
-      <h1 className="font-display text-2xl font-semibold">Evento não encontrado</h1>
-      <p className="mt-2 text-muted-foreground">Este evento não existe ou não está público.</p>
+      <h1 className="font-display text-2xl font-semibold">{tr("evento_nao_encontrado")}</h1>
+      <p className="mt-2 text-muted-foreground">{tr("este_evento_nao_existe_ou_nao")}</p>
     </div>
   ),
 });
@@ -80,7 +81,7 @@ function PaginaEvento() {
   const aPartirDe = precos.length ? Math.min(...precos) : null;
   const linkInscricao = (
     <Link to="/inscricao/$eventoId" params={{ eventoId: evento.id }} search={{ cortesia: undefined, voucher: undefined }} onClick={() => registrarCliqueInscrever(evento.id)} className="block">
-      <Button size="lg" className="w-full text-[15px]">Garantir vaga</Button>
+      <Button size="lg" className="w-full text-[15px]">{tr("garantir_vaga")}</Button>
     </Link>
   );
 
@@ -99,29 +100,29 @@ function PaginaEvento() {
         {imagem && <img src={imagem} alt={evento.imagem?.alt ?? ""} className="absolute inset-0 -z-10 hidden h-full w-full object-cover sm:block" />}
         <div className="absolute inset-0 -z-10 hidden bg-[linear-gradient(0deg,var(--background)_0%,color-mix(in_oklch,var(--background)_70%,transparent)_45%,color-mix(in_oklch,var(--background)_10%,transparent)_100%)] sm:block" aria-hidden="true" />
         <div className={`mx-auto flex max-w-6xl flex-col justify-end px-4 pb-8 pt-6 sm:min-h-[420px] ${imagem ? "" : "min-h-[340px]"}`}>
-          <nav aria-label="Breadcrumb" className="mb-6 self-start sm:mb-auto rounded-sm bg-background/80 px-2 py-1 text-xs text-muted-foreground backdrop-blur">
-            <Link to="/" className="hover:text-foreground">Eventos</Link> <span aria-hidden>›</span> <span>{evento.nome}</span>
+          <nav aria-label={tr("breadcrumb")} className="mb-6 self-start sm:mb-auto rounded-sm bg-background/80 px-2 py-1 text-xs text-muted-foreground backdrop-blur">
+            <Link to="/" className="hover:text-foreground">{tr("eventos")}</Link> <span aria-hidden>›</span> <span>{evento.nome}</span>
           </nav>
           <p className="rotulo-tecnico text-accent">{nomeModalidade(evento.modalidade)} · {evento.cidade}/{evento.uf}</p>
           <h1 className="mt-2 max-w-3xl font-display text-4xl font-bold uppercase leading-[0.95] sm:text-6xl">{evento.nome}</h1>
-          <p className="mt-3 text-[15px] text-muted-foreground">Organização: <span className="font-medium text-foreground">{organizacao?.nome}</span></p>
+          <p className="mt-3 text-[15px] text-muted-foreground">{tr("organizacao")}{" "}<span className="font-medium text-foreground">{organizacao?.nome}</span></p>
         </div>
       </section>
 
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-10">
           <section>
-            <h2 className="rotulo-tecnico">Briefing</h2>
+            <h2 className="rotulo-tecnico">{tr("briefing")}</h2>
             <TextoLivre texto={evento.enredo} className="mt-3 max-w-prose text-[17px] leading-relaxed" />
             <TextoLivre texto={evento.descricaoResumida} className="mt-3 max-w-prose text-muted-foreground" />
           </section>
 
           <section className="border-t border-border pt-8">
-            <h2 className="rotulo-tecnico">Exércitos</h2>
+            <h2 className="rotulo-tecnico">{tr("exercitos")}</h2>
             <div className="mt-4 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
               {evento.exercitos.map((ex, i) => (
                 <div key={ex.id} className="bg-background p-4">
-                  <p className="font-mono text-[11px] text-muted-foreground">{String.fromCharCode(65 + i)} · {ex.capacidade} vagas</p>
+                  <p className="font-mono text-[11px] text-muted-foreground">{tr("valor_capacidade_vagas", { valor: String.fromCharCode(65 + i), capacidade: ex.capacidade })}</p>
                   <p className="mt-1 font-display text-2xl font-bold uppercase">{ex.nome}</p>
                   <TextoLivre texto={ex.descricao} className="mt-1 text-sm text-muted-foreground" />
                 </div>
@@ -130,7 +131,7 @@ function PaginaEvento() {
           </section>
 
           <section className="border-t border-border pt-8">
-            <h2 className="rotulo-tecnico">Cronograma</h2>
+            <h2 className="rotulo-tecnico">{tr("cronograma")}</h2>
             <ol className="relative mt-4 space-y-6 border-l border-border pl-6">
               {evento.cronograma.slice().sort((a, b) => a.ordem - b.ordem).map((at) => (
                 <li key={at.id} className="relative">
@@ -138,7 +139,7 @@ function PaginaEvento() {
                   <p className="font-mono text-xs text-accent">{formatarDataBR(at.data)} · {at.horario}</p>
                   <p className="mt-0.5 font-semibold">{at.titulo}</p>
                   <TextoLivre texto={at.descricao} className="text-sm text-muted-foreground" />
-                  {at.local && <p className="text-sm text-muted-foreground">Local: {at.local}.</p>}
+                  {at.local && <p className="text-sm text-muted-foreground">{tr("local_local", { local: at.local })}</p>}
                 </li>
               ))}
             </ol>
@@ -148,9 +149,9 @@ function PaginaEvento() {
             <section className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-4">
               <div>
                 <p className="font-semibold">{evento.regras.titulo}</p>
-                <p className="text-sm text-muted-foreground">Versão {evento.regras.versao} · atualizado em {formatarDataBR(evento.regras.atualizadoEm)}</p>
+                <p className="text-sm text-muted-foreground">{tr("versao_versao_atualizado_em_atualizadoem", { versao: evento.regras.versao, atualizadoEm: formatarDataBR(evento.regras.atualizadoEm) })}</p>
               </div>
-              <Button variant="outline" onClick={() => setRegrasAbertas(true)}>Ler o caderno de regras</Button>
+              <Button variant="outline" onClick={() => setRegrasAbertas(true)}>{tr("ler_o_caderno_de_regras")}</Button>
             </section>
           )}
         </div>
@@ -159,12 +160,12 @@ function PaginaEvento() {
           <div className="overflow-hidden rounded-lg border border-border bg-card">
             <div className="grid grid-cols-2 divide-x divide-border border-b border-border">
               <div className="p-4">
-                <p className="rotulo-tecnico">Início</p>
+                <p className="rotulo-tecnico">{tr("inicio")}</p>
                 <p className="mt-1 font-display text-2xl font-bold">{formatarDataBR(evento.inicioEm).slice(0, 5)}</p>
                 <p className="text-xs text-muted-foreground">{formatarDataHoraBR(evento.inicioEm).slice(-5)}</p>
               </div>
               <div className="p-4">
-                <p className="rotulo-tecnico">Fim</p>
+                <p className="rotulo-tecnico">{tr("fim")}</p>
                 <p className="mt-1 font-display text-2xl font-bold">{formatarDataBR(evento.fimEm).slice(0, 5)}</p>
                 <p className="text-xs text-muted-foreground">{formatarDataHoraBR(evento.fimEm).slice(-5)}</p>
               </div>
@@ -192,21 +193,21 @@ function PaginaEvento() {
             <div className="p-4">
               {inscricoesAbertas ? (
                 <>
-                  <div className="flex justify-between text-xs text-muted-foreground"><span>{ocupadas} inscritos</span><span>{restantes} vagas livres</span></div>
+                  <div className="flex justify-between text-xs text-muted-foreground"><span>{tr("ocupadas_inscritos", { ocupadas })}</span><span>{tr("restantes_vagas_livres", { restantes })}</span></div>
                   <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary"><div className="h-full bg-primary" style={{ width: `${Math.max(3, (ocupadas / evento.capacidadeTotal) * 100)}%` }} /></div>
                   <div className="mt-4 hidden md:block">{linkInscricao}</div>
                 </>
               ) : (
-                <Badge variant="destructive">{evento.status === "cancelado" ? "Evento cancelado" : restantes <= 0 ? "Esgotado" : "Inscrições encerradas"}</Badge>
+                <Badge variant="destructive">{evento.status === "cancelado" ? tr("evento_cancelado") : restantes <= 0 ? tr("esgotado") : tr("inscricoes_encerradas")}</Badge>
               )}
-              <Link to="/app/suporte" search={{ evento: evento.id }} className="mt-3 block text-center text-sm text-muted-foreground hover:text-foreground">Dúvidas? Fale com a organização</Link>
+              <Link to="/app/suporte" search={{ evento: evento.id }} className="mt-3 block text-center text-sm text-muted-foreground hover:text-foreground">{tr("duvidas_fale_com_a_organizacao")}</Link>
               {evento.status !== "cancelado" && <ContatoWhatsapp evento={evento} className="mt-3 justify-center" />}
             </div>
           </div>
         </aside>
       </div>
 
-      <Modal aberto={regrasAbertas} titulo={evento.regras?.titulo ?? "Regras"} onFechar={() => setRegrasAbertas(false)}>
+      <Modal aberto={regrasAbertas} titulo={evento.regras?.titulo ?? tr("regras")} onFechar={() => setRegrasAbertas(false)}>
         {evento.regras?.pdfDataUrl ? (
           pdfUrl ? (
             <iframe
@@ -215,7 +216,7 @@ function PaginaEvento() {
               className="h-[70vh] w-full rounded-md border border-border bg-background"
             />
           ) : (
-            <p className="text-sm text-muted-foreground">Carregando PDF…</p>
+            <p className="text-sm text-muted-foreground">{tr("carregando_pdf")}</p>
           )
         ) : evento.regras?.conteudoHtml ? (
           <div
@@ -223,9 +224,8 @@ function PaginaEvento() {
             dangerouslySetInnerHTML={{ __html: evento.regras.conteudoHtml }}
           />
         ) : (
-          <p className="text-sm text-muted-foreground">
-            Este arquivo não pode ser exibido no leitor interno.{" "}
-            {evento.regras?.arquivoUrl && <a className="underline" href={evento.regras.arquivoUrl} download={evento.regras.nomeArquivo}>Baixar {evento.regras.nomeArquivo ?? "arquivo"}</a>}
+          <p className="text-sm text-muted-foreground">{tr("este_arquivo_nao_pode_ser_exibido")}{" "}
+            {evento.regras?.arquivoUrl && <a className="underline" href={evento.regras.arquivoUrl} download={evento.regras.nomeArquivo}>{tr("baixar_valor", { valor: evento.regras.nomeArquivo ?? "arquivo" })}</a>}
           </p>
         )}
       </Modal>
@@ -234,8 +234,8 @@ function PaginaEvento() {
         <div className="sticky bottom-[var(--menu-inferior,0px)] z-30 mt-8 border-t border-border bg-background/95 px-4 pt-3 pb-[var(--folga-inferior,max(0.75rem,env(safe-area-inset-bottom)))] backdrop-blur md:hidden">
           <div className="mx-auto flex max-w-6xl items-center gap-3">
             <div className="min-w-0 flex-1 text-sm">
-              {aPartirDe !== null && <p className="text-xs text-muted-foreground">A partir de</p>}
-              <p className="truncate font-mono font-semibold text-accent">{aPartirDe !== null ? <Preco centavos={aPartirDe} /> : `${restantes} vagas`}</p>
+              {aPartirDe !== null && <p className="text-xs text-muted-foreground">{tr("a_partir_de")}</p>}
+              <p className="truncate font-mono font-semibold text-accent">{aPartirDe !== null ? <Preco centavos={aPartirDe} /> : tr("restantes_vagas", { restantes })}</p>
             </div>
             <div className="w-40 shrink-0">{linkInscricao}</div>
           </div>

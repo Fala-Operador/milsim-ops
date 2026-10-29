@@ -3,6 +3,7 @@
 // Chamadas HTTP ficam em src/server/stripe.server.ts.
 
 import type { DisputaPagamento, StatusDisputa } from "@/lib/domain/types";
+import { tr } from "@/i18n/lib/stripe";
 
 type Valor = string | number | boolean | undefined | null | Valor[] | { [k: string]: Valor };
 
@@ -145,11 +146,11 @@ export function disputaDoStripe(d: DisputaStripe, agora = new Date()): DisputaPa
 }
 
 export const ROTULO_DISPUTA: Record<StatusDisputa, string> = {
-  aberta: "Aguardando resposta",
-  em_analise: "Em análise pelo banco",
-  ganha: "Ganha",
-  perdida: "Perdida",
-  encerrada: "Encerrada",
+  get aberta() { return tr("aguardando_resposta"); },
+  get em_analise() { return tr("em_analise_pelo_banco"); },
+  get ganha() { return tr("ganha"); },
+  get perdida() { return tr("perdida"); },
+  get encerrada() { return tr("encerrada"); },
 };
 
 /** Contestação ainda sem decisão. */
@@ -183,7 +184,7 @@ export function acaoDaSessao(s: SessaoCheckout): AcaoSessao {
 
 const CHAVE_SECRETA = /^(sk|rk)_(test|live)_(.+)$/;
 const CHAVE_PUBLICAVEL = /^pk_(test|live)_(.+)$/;
-const MODO = { test: "de teste", live: "de produção" } as const;
+const MODO = { get test() { return tr("de_teste"); }, get live() { return tr("de_producao"); } } as const;
 
 /**
  * Confere se a chave publicável combina com a secreta (mesmo modo e mesma conta Stripe). Uma
@@ -195,13 +196,13 @@ export function problemaDasChaves(secreta: string | undefined, publicavel: strin
   if (!secreta || !publicavel) return "";
   const s = CHAVE_SECRETA.exec(secreta.trim());
   const p = CHAVE_PUBLICAVEL.exec(publicavel.trim());
-  if (!p) return "STRIPE_BROWSER_PUBLIC_KEY não é uma chave publicável do Stripe (deve começar com pk_test_ ou pk_live_).";
-  if (!s) return "STRIPE_SERVER_API_KEY não é uma chave secreta do Stripe (deve começar com sk_test_, sk_live_ ou rk_).";
+  if (!p) return tr("stripe_browser_public_key_nao_e");
+  if (!s) return tr("stripe_server_api_key_nao_e");
   const modoS = s[2] as keyof typeof MODO, corpoS = s[3]!;
   const modoP = p[1] as keyof typeof MODO, corpoP = p[2]!;
-  if (modoS !== modoP) return `A chave secreta é ${MODO[modoS]} e a publicável é ${MODO[modoP]}: use as duas do mesmo modo.`;
+  if (modoS !== modoP) return tr("a_chave_secreta_e_valor_e", { valor: MODO[modoS], valor2: MODO[modoP] });
   if (corpoS.slice(0, 12) !== corpoP.slice(0, 12)) {
-    return "STRIPE_SERVER_API_KEY e STRIPE_BROWSER_PUBLIC_KEY são de contas Stripe diferentes (por exemplo, uma de uma sandbox e outra do modo de teste). Copie as duas da mesma tela de chaves de API.";
+    return tr("stripe_server_api_key_e_stripe");
   }
   return "";
 }
@@ -230,7 +231,7 @@ export function ocultarChaves(mensagem: string): string {
   return mensagem.replace(/'?\b(?:sk|rk|pk)_(?:test|live)_[\w*.…]+'?/g, "[chave oculta]");
 }
 
-export const MSG_FALHA_STRIPE = "Não foi possível falar com o Stripe agora. Tente novamente em instantes.";
+export const MSG_FALHA_STRIPE = () => tr("nao_foi_possivel_falar_com_o_stripe");
 
 /**
  * Mensagem para quem gere a organização quando uma chamada de Connect falha. Erros de
@@ -239,14 +240,14 @@ export const MSG_FALHA_STRIPE = "Não foi possível falar com o Stripe agora. Te
  */
 export function mensagemDeFalhaStripe(status: number, original: string): string {
   const mensagem = ocultarChaves(original);
-  const doStripe = mensagem ? ` (Stripe: ${mensagem})` : "";
-  if (/accounts v1/i.test(mensagem)) return `O Stripe não libera a criação de contas conectadas pela API Accounts v1 nesta conta. No painel do Stripe (modo de produção), ative "Accounts v1 support" nas configurações do Connect e tente de novo.${doStripe}`;
-  if (status === 401) return `O Stripe recusou a chave secreta da plataforma (STRIPE_SERVER_API_KEY). Confira se ela foi copiada inteira e se o site foi publicado de novo depois da troca.${doStripe}`;
-  if (status === 403) return `O Stripe recusou esta operação de contas conectadas.${doStripe}`;
-  if (/must be activated in order to create accounts/i.test(mensagem)) return `A conta Stripe da plataforma ainda não está ativada em produção, e o Stripe só deixa criar contas conectadas depois disso. Quem administra o Stripe da plataforma precisa concluir a ativação em https://dashboard.stripe.com/account/onboarding e tentar de novo.${doStripe}`;
-  if (status === 400 && /signed up for connect/i.test(mensagem)) return "O Stripe Connect ainda não está ativado na conta da plataforma neste modo. Ative o Connect no painel do Stripe (modo de produção) e tente de novo.";
-  if (status === 400 || status === 404) return `Stripe: ${mensagem}`;
-  return MSG_FALHA_STRIPE;
+  const doStripe = mensagem ? ` ${tr("stripe_mensagem", { mensagem })}` : "";
+  if (/accounts v1/i.test(mensagem)) return tr("o_stripe_nao_libera_a_criacao", { doStripe });
+  if (status === 401) return tr("o_stripe_recusou_a_chave_secreta", { doStripe });
+  if (status === 403) return tr("o_stripe_recusou_esta_operacao_de", { doStripe });
+  if (/must be activated in order to create accounts/i.test(mensagem)) return tr("a_conta_stripe_da_plataforma_ainda", { doStripe });
+  if (status === 400 && /signed up for connect/i.test(mensagem)) return tr("o_stripe_connect_ainda_nao_esta");
+  if (status === 400 || status === 404) return tr("stripe_mensagem_2", { mensagem });
+  return MSG_FALHA_STRIPE();
 }
 
 /** Checkout recusado porque a conta de destino não existe neste modo do Stripe ou não é desta plataforma. */
