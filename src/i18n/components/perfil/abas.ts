@@ -98,4 +98,5 @@ export const tr = dicionario("components/perfil/abas", {
   "codigo_codigo": { pt: "Código: {codigo}", en: "Code: {codigo}" },
   "eventos_elegiveis": { pt: "Eventos elegíveis", en: "Eligible events" },
   "usar_beneficio": { pt: "Usar benefício", en: "Use benefit" },
+  "foto_valor": { pt: "foto {valor}", en: "photo {valor}" },
 });

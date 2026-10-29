@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="{{ if and .Data.idioma (eq .Data.idioma "en") }}en{{ else }}pt-BR{{ end }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark light">
-<title>Confirme seu e-mail — MilSim Ops</title>
+<title>{{ if and .Data.idioma (eq .Data.idioma "en") }}Confirm your e-mail{{ else }}Confirme seu e-mail{{ end }} — MilSim Ops</title>
 </head>
 <!--
   Template do Supabase Auth: "Confirm signup" (confirmation). Publicado por `supabase config push`
@@ -13,9 +13,10 @@
   em qualquer aparelho. Usa {{ .SiteURL }} (site_url do config.toml), e não {{ .RedirectTo }}: atrás
   do proxy de produção o servidor pode se ver como http://, endereço fora da lista permitida, e o
   Supabase trocaria o destino pela página inicial.
+  Idioma: user_metadata.idioma ("pt" ou "en", gravado no cadastro); sem ele, o e-mail sai em PT.
 -->
 <body style="margin:0;padding:0;background-color:#121a13;">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Confirme seu e-mail para ativar sua conta no MilSim Ops. O link vale por 1 hora.</div>
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">{{ if and .Data.idioma (eq .Data.idioma "en") }}Confirm your e-mail to activate your MilSim Ops account. The link is valid for 1 hour.{{ else }}Confirme seu e-mail para ativar sua conta no MilSim Ops. O link vale por 1 hora.{{ end }}</div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#121a13;">
     <tr>
       <td align="center" style="padding:32px 16px;">
@@ -27,38 +28,39 @@
           </tr>
           <tr>
             <td style="background-color:#1d261c;border:1px solid #3e4a37;border-radius:10px;padding:32px 28px;font-family:Inter,Arial,Helvetica,sans-serif;color:#eef1e6;">
-              <h1 style="margin:0 0 12px 0;font-family:'Barlow Condensed',Arial,Helvetica,sans-serif;font-size:26px;line-height:1.2;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#eef1e6;">Confirme seu e-mail</h1>
+              <h1 style="margin:0 0 12px 0;font-family:'Barlow Condensed',Arial,Helvetica,sans-serif;font-size:26px;line-height:1.2;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#eef1e6;">{{ if and .Data.idioma (eq .Data.idioma "en") }}Confirm your e-mail{{ else }}Confirme seu e-mail{{ end }}</h1>
               <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#d6dccb;">
-                Bem-vindo ao MilSim Ops! Para ativar a conta <strong style="color:#eef1e6;">{{ .Email }}</strong>,
-                confirme que este e-mail é seu clicando no botão abaixo.
+                {{ if and .Data.idioma (eq .Data.idioma "en") }}Welcome to MilSim Ops! To activate the account <strong style="color:#eef1e6;">{{ .Email }}</strong>,
+                confirm this e-mail is yours by clicking the button below.{{ else }}Bem-vindo ao MilSim Ops! Para ativar a conta <strong style="color:#eef1e6;">{{ .Email }}</strong>,
+                confirme que este e-mail é seu clicando no botão abaixo.{{ end }}
               </p>
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px 0;">
                 <tr>
                   <td style="border-radius:8px;background-color:#a3b86a;">
                     <a href="{{ .SiteURL }}/confirmar-email?token_hash={{ .TokenHash }}&amp;type=email" target="_blank"
                        style="display:inline-block;padding:13px 26px;font-family:Inter,Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;color:#121a13;text-decoration:none;border-radius:8px;">
-                      Confirmar e-mail
+                      {{ if and .Data.idioma (eq .Data.idioma "en") }}Confirm e-mail{{ else }}Confirmar e-mail{{ end }}
                     </a>
                   </td>
                 </tr>
               </table>
               <p style="margin:0 0 8px 0;font-size:13px;line-height:1.6;color:#b5bda6;">
-                O link vale por <strong style="color:#d6dccb;">1 hora</strong> e só pode ser usado uma vez.
-                Se ele expirar, entre com seu e-mail e senha e peça um novo link.
+                {{ if and .Data.idioma (eq .Data.idioma "en") }}The link is valid for <strong style="color:#d6dccb;">1 hour</strong> and can only be used once.{{ else }}O link vale por <strong style="color:#d6dccb;">1 hora</strong> e só pode ser usado uma vez.{{ end }}
+                {{ if and .Data.idioma (eq .Data.idioma "en") }}If it expires, sign in with your e-mail and password and request a new link.{{ else }}Se ele expirar, entre com seu e-mail e senha e peça um novo link.{{ end }}
               </p>
               <p style="margin:0 0 20px 0;font-size:13px;line-height:1.6;color:#b5bda6;">
-                Se o botão não funcionar, copie e cole este endereço no navegador:<br>
+                {{ if and .Data.idioma (eq .Data.idioma "en") }}If the button does not work, copy and paste this address into your browser:{{ else }}Se o botão não funcionar, copie e cole este endereço no navegador:{{ end }}<br>
                 <a href="{{ .SiteURL }}/confirmar-email?token_hash={{ .TokenHash }}&amp;type=email" style="color:#d9c27a;word-break:break-all;">{{ .SiteURL }}/confirmar-email?token_hash={{ .TokenHash }}&amp;type=email</a>
               </p>
               <p style="margin:0;padding-top:16px;border-top:1px solid #3e4a37;font-size:13px;line-height:1.6;color:#b5bda6;">
-                Não criou uma conta no MilSim Ops? Pode ignorar este e-mail: nenhuma conta será ativada.
+                {{ if and .Data.idioma (eq .Data.idioma "en") }}Did not create a MilSim Ops account? You can ignore this e-mail: no account will be activated.{{ else }}Não criou uma conta no MilSim Ops? Pode ignorar este e-mail: nenhuma conta será ativada.{{ end }}
               </p>
             </td>
           </tr>
           <tr>
             <td style="padding:20px 4px 0 4px;font-family:Inter,Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#8e977f;">
-              Você recebeu este e-mail porque este endereço foi usado para criar uma conta no MilSim Ops.
-              Nunca pedimos sua senha por e-mail ou WhatsApp.
+              {{ if and .Data.idioma (eq .Data.idioma "en") }}You received this e-mail because this address was used to create a MilSim Ops account.{{ else }}Você recebeu este e-mail porque este endereço foi usado para criar uma conta no MilSim Ops.{{ end }}
+              {{ if and .Data.idioma (eq .Data.idioma "en") }}We never ask for your password by e-mail or WhatsApp.{{ else }}Nunca pedimos sua senha por e-mail ou WhatsApp.{{ end }}
             </td>
           </tr>
         </table>

@@ -7,6 +7,7 @@ import { usuarioIdDaVisao } from "@/api/cliente";
 import { cadastrar, entrar, recarregarVisao, sair } from "@/api/sessao.functions";
 import { encerrarStripeConnect } from "@/components/PaineisStripe";
 import { iniciarTempoReal } from "@/services/tempoReal";
+import { tr } from "@/i18n/contexts/AuthContext";
 
 /** Estado da carga inicial da visão (dados do servidor). */
 export type EstadoCarga = "carregando" | "pronto" | "erro";
@@ -85,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, senha: string, captcha?: string) => {
     await entrar(email, senha, captcha);
     const u = usuarioDaVisao();
-    if (!u) throw new Error("Não foi possível carregar a conta.");
+    if (!u) throw new Error(tr("nao_foi_possivel_carregar_a_conta"));
     return u;
   }, []);
 
@@ -98,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const r = await cadastrar(dados, captcha);
     if (r.precisaConfirmar) return null;
     const u = usuarioDaVisao();
-    if (!u) throw new Error("Não foi possível carregar a conta.");
+    if (!u) throw new Error(tr("nao_foi_possivel_carregar_a_conta"));
     return u;
   }, []);
 
