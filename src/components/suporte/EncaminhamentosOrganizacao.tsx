@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Conversa } from "./Conversa";
 import { Indisponivel } from "./CentralSuporte";
 import { SituacaoEncaminhamento } from "./PainelEncaminhamento";
+import { tr } from "@/i18n/components/suporte/EncaminhamentosOrganizacao";
 
 function AnexoCompartilhadoBotao({ chamadoId, a }: { chamadoId: string; a: AnexoCompartilhado }) {
   const [abrindo, setAbrindo] = useState(false);
@@ -23,7 +24,7 @@ function AnexoCompartilhadoBotao({ chamadoId, a }: { chamadoId: string; a: Anexo
     try {
       const url = await linkAnexo(chamadoId, a.mensagemId);
       if (janela) { janela.opener = null; janela.location.href = url; } else window.location.assign(url);
-    } catch (e) { janela?.close(); setErro(e instanceof Error ? e.message : "Falha ao abrir."); } finally { setAbrindo(false); }
+    } catch (e) { janela?.close(); setErro(e instanceof Error ? e.message : tr("falha_ao_abrir")); } finally { setAbrindo(false); }
   };
   return (
     <span className="inline-flex flex-col">
@@ -38,14 +39,14 @@ function AnexoCompartilhadoBotao({ chamadoId, a }: { chamadoId: string; a: Anexo
 /** Sem demanda aberta: o papel da organização no atendimento, em três passos. */
 function ComoFuncionamDemandas() {
   const passos = [
-    { icone: Inbox, titulo: "A administração encaminha", texto: "Quando um chamado depende da organização, chega aqui com a orientação do que é preciso." },
-    { icone: MessageSquareReply, titulo: "Você responde à administração", texto: "A conversa é interna: o participante não vê estas mensagens." },
-    { icone: Send, titulo: "Marque o retorno enviado", texto: "A administração dá a devolutiva ao participante e encerra o chamado." },
+    { icone: Inbox, titulo: tr("a_administracao_encaminha"), texto: tr("quando_um_chamado_depende_da_organizacao") },
+    { icone: MessageSquareReply, titulo: tr("voce_responde_a_administracao"), texto: tr("a_conversa_e_interna_o_participante") },
+    { icone: Send, titulo: tr("marque_o_retorno_enviado"), texto: tr("a_administracao_da_a_devolutiva_ao") },
   ];
   return (
     <div className="w-full max-w-md text-left">
-      <p className="rotulo-tecnico">Demandas</p>
-      <h2 className="mt-1 font-display text-2xl font-bold uppercase leading-tight">Como funciona para a organização</h2>
+      <p className="rotulo-tecnico">{tr("demandas")}</p>
+      <h2 className="mt-1 font-display text-2xl font-bold uppercase leading-tight">{tr("como_funciona_para_a_organizacao")}</h2>
       <ol className="mt-5 space-y-4">
         {passos.map(({ icone: Icone, titulo, texto }, i) => (
           <li key={titulo} className="flex gap-3">
@@ -81,19 +82,19 @@ export function EncaminhamentosOrganizacao({ usuario, selecionado, onSelecionar 
   const marcar = async () => {
     if (!atual || ocupado) return;
     setOcupado(true); setErro("");
-    try { await marcarRetornoEnviado(atual.c.id, atual.e.id); sinalizar(atual.c.id); } catch (e) { setErro(e instanceof Error ? e.message : "Falha."); } finally { setOcupado(false); }
+    try { await marcarRetornoEnviado(atual.c.id, atual.e.id); sinalizar(atual.c.id); } catch (e) { setErro(e instanceof Error ? e.message : tr("falha")); } finally { setOcupado(false); }
   };
 
   return (
     // No celular, a lista sozinha flui com a página; a altura fixa vale para a conversa e para lista + conversa lado a lado.
     <div className={`flex overflow-hidden rounded-lg border border-border bg-card ${selecionado ? "h-[calc(100dvh-12rem)] min-h-[520px]" : "md:h-[calc(100dvh-12rem)] md:min-h-[520px]"}`}>
-      <section aria-label="Demandas encaminhadas" className={`${selecionado ? "hidden md:flex" : "flex"} w-full flex-col border-border md:w-80 md:shrink-0 md:border-r`}>
+      <section aria-label={tr("demandas_encaminhadas")} className={`${selecionado ? "hidden md:flex" : "flex"} w-full flex-col border-border md:w-80 md:shrink-0 md:border-r`}>
         <ul className="min-h-0 flex-1 overflow-y-auto">
           {itens.length === 0 && (
             <li className="flex flex-col items-center px-6 py-10 text-center">
               <span className="grid h-11 w-11 place-items-center rounded-full border border-border text-muted-foreground" aria-hidden="true"><Inbox className="h-5 w-5" /></span>
-              <p className="mt-3 text-sm font-medium">Nenhuma demanda por aqui</p>
-              <p className="mt-1 text-xs text-muted-foreground">Quando a administração precisar da organização, a demanda aparece nesta lista.</p>
+              <p className="mt-3 text-sm font-medium">{tr("nenhuma_demanda_por_aqui")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{tr("quando_a_administracao_precisar_da_organ")}</p>
             </li>
           )}
           {itens.map(({ c, e }) => {
@@ -105,12 +106,12 @@ export function EncaminhamentosOrganizacao({ usuario, selecionado, onSelecionar 
                   className={`relative block w-full border-b border-border px-4 py-3 text-left hover:bg-secondary/50 ${e.id === selecionado ? "bg-secondary before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-accent" : ""}`}>
                   <div className="flex items-baseline justify-between gap-3">
                     <p className={`truncate text-sm ${n > 0 ? "font-semibold" : "font-medium"}`}>
-                      {n > 0 && <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-accent align-middle" aria-label={`${n} não lidas`} />}
+                      {n > 0 && <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-accent align-middle" aria-label={tr("n_nao_lidas", { n })} />}
                       {c.assunto}
                     </p>
                     <span className="shrink-0 font-mono text-[11px] text-muted-foreground">{formatarDataHoraBR(e.criadoEm).slice(0, 5)}</span>
                   </div>
-                  <p className="mt-1 truncate text-xs text-muted-foreground">{ev?.nome ?? "Evento"}</p>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">{ev?.nome ?? tr("evento")}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <SituacaoEncaminhamento e={e} />
                     <span className="ml-auto font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{protocolo(c)}</span>
@@ -121,29 +122,29 @@ export function EncaminhamentosOrganizacao({ usuario, selecionado, onSelecionar 
           })}
         </ul>
       </section>
-      <section aria-label="Demanda" className={`${selecionado ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col`}>
+      <section aria-label={tr("demanda")} className={`${selecionado ? "flex" : "hidden md:flex"} min-w-0 flex-1 flex-col`}>
         {atual ? (
           <>
             <header className="space-y-2 border-b border-border px-4 py-3 text-sm">
               <div className="flex items-start gap-2">
-                <Button type="button" variant="ghost" className="!px-2 !py-1 md:hidden" onClick={() => onSelecionar(undefined)} aria-label="Voltar para a lista"><ArrowLeft className="h-4 w-4" /></Button>
+                <Button type="button" variant="ghost" className="!px-2 !py-1 md:hidden" onClick={() => onSelecionar(undefined)} aria-label={tr("voltar_para_a_lista")}><ArrowLeft className="h-4 w-4" /></Button>
                 <div className="min-w-0 flex-1">
                   <h2 className="truncate font-display text-lg font-bold uppercase leading-tight">{atual.c.assunto}</h2>
-                  <p className="text-xs text-muted-foreground">{protocolo(atual.c)} · {base.eventos.find((x) => x.id === atual.c.eventoId)?.nome ?? "Evento"} · Chamado: {ROTULO_STATUS[atual.c.status]}</p>
+                  <p className="text-xs text-muted-foreground">{protocolo(atual.c)} · {base.eventos.find((x) => x.id === atual.c.eventoId)?.nome ?? tr("evento")}{" "}{tr("chamado_valor", { valor: ROTULO_STATUS[atual.c.status] })}</p>
                 </div>
                 <SituacaoEncaminhamento e={atual.e} />
               </div>
-              <p className="text-xs text-muted-foreground">Orientação da administração</p>
+              <p className="text-xs text-muted-foreground">{tr("orientacao_da_administracao")}</p>
               <p className="whitespace-pre-wrap rounded-md border border-border bg-background/60 px-3 py-2">{atual.e.orientacao}</p>
               {atual.e.anexos.length > 0 && <div className="flex flex-wrap gap-2">{atual.e.anexos.map((a) => <AnexoCompartilhadoBotao key={a.mensagemId} chamadoId={atual.c.id} a={a} />)}</div>}
               {atual.c.status !== "fechado" && atual.e.situacao !== "retorno_enviado" && (
-                <Button type="button" variant="outline" className="!py-1 text-xs" disabled={ocupado} onClick={marcar}>Marcar retorno enviado à administração</Button>
+                <Button type="button" variant="outline" className="!py-1 text-xs" disabled={ocupado} onClick={marcar}>{tr("marcar_retorno_enviado_a_administracao")}</Button>
               )}
               {erro && <p role="alert" className="text-xs text-destructive">{erro}</p>}
-              <p className="text-[11px] text-muted-foreground"><Badge>Interno</Badge> Suas mensagens vão para a administração, que dá a devolutiva ao participante.</p>
+              <p className="text-[11px] text-muted-foreground"><Badge>{tr("interno")}</Badge>{" "}{tr("suas_mensagens_vao_para_a_administracao")}</p>
             </header>
             <Conversa key={atual.e.id} base={base} chamado={atual.c} usuarioId={usuario.id} somenteLeitura={atual.c.status === "fechado"} encaminhamentoId={atual.e.id}
-              rotuloEnviar="Enviar à administração" aviso="Destino: administração." textoVazio="Responda à administração com as informações solicitadas." />
+              rotuloEnviar={tr("enviar_a_administracao")} aviso={tr("destino_administracao")} textoVazio={tr("responda_a_administracao_com_as_informac")} />
           </>
         ) : (
           <div className="flex flex-1 items-center justify-center p-6 text-center">

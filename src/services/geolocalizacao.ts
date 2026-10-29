@@ -4,6 +4,7 @@
 // Para produção, trocar por um provedor contratado ou instância própria.
 // Coordenadas nunca são salvas, exibidas ou enviadas para métricas.
 import { CIDADES_BASE, casarLocalidade, type Localidade } from "@/lib/localizacao";
+import { tr } from "@/i18n/services/geolocalizacao";
 
 export type EstadoPermissao = "concedida" | "negada" | "perguntar" | "desconhecida";
 export type FalhaLocal = "negada" | "indisponivel" | "tempo" | "sem_suporte" | "cidade_nao_resolvida";
@@ -68,7 +69,7 @@ export type FalhaCep = "invalido" | "nao_encontrado" | "indisponivel";
 
 export class ErroCep extends Error {
   constructor(public motivo: FalhaCep) {
-    super(motivo === "invalido" ? "CEP inválido." : motivo === "nao_encontrado" ? "CEP não encontrado." : "Não foi possível consultar o CEP agora.");
+    super(motivo === "invalido" ? tr("cep_invalido") : motivo === "nao_encontrado" ? tr("cep_nao_encontrado") : tr("nao_foi_possivel_consultar_o_cep"));
   }
 }
 
