@@ -5,7 +5,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, Search, X } from "lucide-react";
 import { carregarBase } from "@/services/db";
 import { aprovarAutorizacaoResponsavel, desativarUsuario } from "@/api/admin.functions";
 import { useAuth } from "@/contexts/AuthContext";
-import { mascararCpf } from "@/lib/domain/validators";
+import { mascaraCpf } from "@/lib/domain/validators";
 import {
   alternarOrdenacao, filtrarUsuarios, FILTROS_USUARIOS_VAZIOS, ORDENACAO_USUARIOS_PADRAO, ordenarUsuarios, paginar,
   ROTULO_ORDENACAO_USUARIOS, type CampoOrdenacaoUsuarios, type FiltrosUsuarios, type OrdenacaoUsuarios,
@@ -180,7 +180,7 @@ function Usuarios() {
                     >{u.nomeCompleto}</Button>
                   </TableCell>
                   <TableCell data-rotulo={tr("e_mail")} className="py-2 pr-3 break-all">{u.email}</TableCell>
-                  <TableCell data-rotulo="CPF" className="py-2 pr-3 font-mono text-xs">{mascararCpf(u.cpf)}</TableCell>
+                  <TableCell data-rotulo="CPF" className="py-2 pr-3 font-mono text-xs">{mascaraCpf(u.cpf)}</TableCell>
                   <TableCell data-rotulo={tr("perfil")} className="py-2 pr-3 text-muted-foreground">{ROTULO_PERFIL[u.perfil]()}</TableCell>
                   <TableCell data-rotulo={tr("status")} className="py-2 pr-3">
                     <Badge variant={u.ativo ? "success" : "destructive"}>{u.ativo ? tr("ativo") : tr("inativo")}</Badge>
