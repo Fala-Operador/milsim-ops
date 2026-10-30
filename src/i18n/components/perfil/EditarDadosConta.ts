@@ -4,6 +4,8 @@ import { dicionario } from "@/i18n/dicionario";
 export const tr = dicionario("components/perfil/EditarDadosConta", {
   "nao_foi_possivel_salvar": { pt: "Não foi possível salvar.", en: "Could not save." },
   "editar_meus_dados": { pt: "Editar meus dados", en: "Edit my details" },
+  "editar_dados_de_nome": { pt: "Editar dados de {nome}", en: "Edit details of {nome}" },
+  "o_e_mail_e_o_login": { pt: "O e-mail é o login da conta e não muda por aqui. As alterações ficam registradas na auditoria.", en: "The e-mail is the account login and cannot be changed here. Changes are recorded in the audit log." },
   "e_mail": { pt: "E-mail", en: "Email" },
   "cpf_e_e_mail_identificam_a": { pt: "CPF e e-mail identificam a sua conta e não podem ser alterados aqui. Para corrigi-los, abra um chamado no suporte.", en: "CPF and e-mail identify your account and cannot be changed here. To correct them, open a support ticket." },
   "nome_completo": { pt: "Nome completo", en: "Full name" },

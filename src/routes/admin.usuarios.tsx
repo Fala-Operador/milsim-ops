@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { EstadoVazio, ModalTexto } from "@/components/ui";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
+import { DetalheUsuarioAdmin } from "@/components/DetalheUsuarioAdmin";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { tr } from "@/i18n/routes/admin.usuarios";
 import { localeAtual } from "@/i18n/dicionario";
@@ -47,6 +48,7 @@ function Usuarios() {
   const [filtros, setFiltros] = useState<FiltrosUsuarios>(FILTROS_USUARIOS_VAZIOS);
   const [ordenacao, setOrdenacao] = useState<OrdenacaoUsuarios>(ORDENACAO_USUARIOS_PADRAO);
   const [pagina, setPagina] = useState(1);
+  const [abertoId, setAbertoId] = useState<string | null>(null);
   if (!usuario) return null;
   const base = carregarBase();
   const ativos = base.usuarios.filter((u) => u.ativo);
@@ -58,6 +60,24 @@ function Usuarios() {
   // Qualquer mudança de busca, filtro ou ordem volta para a primeira página.
   const mudarFiltros = (p: Partial<FiltrosUsuarios>) => { setFiltros((f) => ({ ...f, ...p })); setPagina(1); };
   const ordenar = (o: OrdenacaoUsuarios) => { setOrdenacao(o); setPagina(1); };
+  // O painel lê o usuário da base a cada render: mostra o dado salvo logo após editar.
+  const aberto = abertoId ? base.usuarios.find((u) => u.id === abertoId) : undefined;
+  const acoesDe = (u: (typeof base.usuarios)[number]) => (
+    <>
+      {u.autorizacaoResponsavel === "pendente" && (
+        <Button variant="outline" size="sm" onClick={() => aprovarAutorizacaoResponsavel(u.id).then(() => setVersao((v) => v + 1))}>{tr("aprovar_autorizacao")}</Button>
+      )}
+      {u.ativo && u.id !== usuario.id && (
+        <Button
+          variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive"
+          onClick={() => {
+            setErro("");
+            setDesativando({ id: u.id, nome: u.nomeCompleto });
+          }}
+        >{tr("desativar")}</Button>
+      )}
+    </>
+  );
   const cabecalho = (campo: CampoOrdenacaoUsuarios) => (
     <CabecalhoOrdenavel campo={campo} ordenacao={ordenacao} onOrdenar={(c) => ordenar(alternarOrdenacao(ordenacao, c))} />
   );
@@ -151,8 +171,14 @@ function Usuarios() {
             </TableHeader>
             <TableBody>
               {pag.itens.map((u) => (
-                <TableRow key={u.id} className="border-b border-border/50">
-                  <TableCell className="py-2 pr-3 font-medium lg:font-normal">{u.nomeCompleto}</TableCell>
+                <TableRow key={u.id} className="cursor-pointer border-b border-border/50 hover:bg-secondary/40" onClick={() => setAbertoId(u.id)}>
+                  <TableCell className="py-2 pr-3 font-medium lg:font-normal">
+                    <Button
+                      variant="plain" size="none" className="text-left underline-offset-4 hover:underline"
+                      aria-label={tr("ver_dados_de_nome", { nome: u.nomeCompleto })}
+                      onClick={(e) => { e.stopPropagation(); setAbertoId(u.id); }}
+                    >{u.nomeCompleto}</Button>
+                  </TableCell>
                   <TableCell data-rotulo={tr("e_mail")} className="py-2 pr-3 break-all">{u.email}</TableCell>
                   <TableCell data-rotulo="CPF" className="py-2 pr-3 font-mono text-xs">{mascararCpf(u.cpf)}</TableCell>
                   <TableCell data-rotulo={tr("perfil")} className="py-2 pr-3 text-muted-foreground">{ROTULO_PERFIL[u.perfil]()}</TableCell>
@@ -163,21 +189,9 @@ function Usuarios() {
                   <TableCell data-rotulo={tr("cadastro")} className="py-2 pr-3 whitespace-nowrap text-muted-foreground">
                     {new Date(u.criadoEm).toLocaleDateString(localeAtual())}
                   </TableCell>
-                  <TableCell className="celula-acoes py-2">
-                    <div className="flex flex-wrap gap-1">
-                      {u.autorizacaoResponsavel === "pendente" && (
-                        <Button variant="outline" onClick={() => aprovarAutorizacaoResponsavel(u.id).then(() => setVersao((v) => v + 1))}>{tr("aprovar_autorizacao")}</Button>
-                      )}
-                      {u.ativo && u.id !== usuario.id && (
-                        <Button
-                          variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive"
-                          onClick={() => {
-                            setErro("");
-                            setDesativando({ id: u.id, nome: u.nomeCompleto });
-                          }}
-                        >{tr("desativar")}</Button>
-                      )}
-                    </div>
+                  {/* Os botões da linha não abrem o painel. */}
+                  <TableCell className="celula-acoes py-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex flex-wrap gap-1">{acoesDe(u)}</div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -191,6 +205,14 @@ function Usuarios() {
           <span className="text-muted-foreground">{tr("pagina_pagina_de_totalpaginas", { pagina: pag.pagina, totalPaginas: pag.totalPaginas })}</span>
           <Button variant="outline" disabled={pag.pagina === pag.totalPaginas} onClick={() => setPagina(pag.pagina + 1)}>{tr("proxima")}</Button>
         </nav>
+      )}
+      {aberto && (
+        <DetalheUsuarioAdmin
+          usuario={aberto}
+          organizacao={base.organizacoes.find((o) => o.id === aberto.organizacaoId)}
+          onFechar={() => setAbertoId(null)}
+          acoes={acoesDe(aberto)}
+        />
       )}
       <ModalTexto
         aberto={!!desativando}

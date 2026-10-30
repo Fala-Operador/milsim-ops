@@ -25,6 +25,20 @@ export const aprovarAutorizacaoFn = createServerFn({ method: "POST" })
   .validator(z.object({ usuarioId: id }).parse)
   .handler(({ data }) => mutar(({ usuario }) => admin.aprovarAutorizacaoResponsavel(data.usuarioId, exigirAdmin(usuario).id)));
 
+/** Correção do cadastro de outra pessoa (o e-mail, login da conta, não muda por aqui). */
+const texto = (max: number) => z.string().max(max);
+export const editarDadosUsuarioFn = createServerFn({ method: "POST" })
+  .validator(z.object({
+    usuarioId: id,
+    dados: z.object({
+      cpf: texto(14), nomeCompleto: texto(150), dataNascimento: texto(10), whatsapp: texto(20),
+      cep: texto(9), logradouro: texto(150), numero: texto(20), complemento: texto(100).optional(),
+      bairro: texto(100), cidade: texto(100), uf: texto(2),
+      instagram: texto(60).optional(), squad: texto(80).optional(),
+    }).strict(),
+  }).parse)
+  .handler(({ data }) => mutar(({ usuario }) => admin.editarDadosUsuario(data.usuarioId, exigirAdmin(usuario).id, data.dados)));
+
 export const responderPrivacidadeFn = createServerFn({ method: "POST" })
   .validator(z.object({ solicitacaoId: id, resposta: z.string().max(2000) }).parse)
   .handler(({ data }) =>
@@ -38,5 +52,7 @@ export const analisarSolicitacao = (
 export const desativarUsuario = (usuarioId: string, justificativa: string) =>
   chamar(desativarUsuarioFn({ data: { usuarioId, justificativa } }));
 export const aprovarAutorizacaoResponsavel = (usuarioId: string) => chamar(aprovarAutorizacaoFn({ data: { usuarioId } }));
+export const editarDadosUsuario = (usuarioId: string, dados: admin.DadosUsuarioAdmin) =>
+  chamar(editarDadosUsuarioFn({ data: { usuarioId, dados } }));
 export const responderPrivacidade = (solicitacaoId: string, resposta: string) =>
   chamar(responderPrivacidadeFn({ data: { solicitacaoId, resposta } }));
