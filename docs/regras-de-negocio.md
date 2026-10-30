@@ -47,6 +47,10 @@ escrita. As telas só refletem o resultado. Valores entre parênteses são os li
   Dados que ela não pode ver nem chegam ao navegador (ver [seção 18](#18-privacidade-e-dados-pessoais)).
 - Conta **desativada** (`ativo = false`) é tratada como visitante em tudo. O último admin ativo não
   pode ser desativado. → [`desativarUsuario`](api/admin/desativarUsuario.md)
+- Em Administração › Usuários, clicar no usuário abre um painel com o cadastro completo (sem a ficha
+  de emergência). O admin corrige os mesmos dados de "Meu perfil" e também o CPF (válido e único);
+  o e-mail não muda (é o login). A auditoria guarda só os nomes dos campos alterados, nunca os
+  valores. → [`editarDadosUsuario`](api/admin/editarDadosUsuario.md)
 
 ## 2. Conta e cadastro
 
