@@ -144,6 +144,7 @@ Solicitações de organizador, usuários, menores e privacidade. Arquivo: [`src/
 |---|---|---|---|
 | [`analisarSolicitacao`](admin/analisarSolicitacao.md) | POST | Somente admin | Analisa uma solicitação para virar organizador: inicia a análise, aprova, pede ajustes ou rejeita. |
 | [`desativarUsuario`](admin/desativarUsuario.md) | POST | Somente admin | Desativa uma conta. |
+| [`editarDadosUsuario`](admin/editarDadosUsuario.md) | POST | Somente admin | Corrige o cadastro de outra pessoa (dados da conta e CPF; o e-mail não muda). |
 | [`aprovarAutorizacaoResponsavel`](admin/aprovarAutorizacaoResponsavel.md) | POST | Somente admin | Aprova a autorização do responsável de um participante de 15 a 17 anos, liberando inscrições. |
 | [`responderPrivacidade`](admin/responderPrivacidade.md) | POST | Somente admin | Responde e conclui uma solicitação de privacidade (LGPD). |
 

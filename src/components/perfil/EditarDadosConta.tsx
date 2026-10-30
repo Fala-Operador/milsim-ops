@@ -1,11 +1,14 @@
 // Edição dos dados da própria conta (Meu perfil). CPF e e-mail aparecem bloqueados: são a
 // identidade da conta. Regras no servidor (atualizarDadosConta, src/services/conta.ts).
+// Com `admin`, a administração corrige o cadastro de outra pessoa e também o CPF
+// (editarDadosUsuario, src/services/admin.ts); o e-mail continua bloqueado.
 import { useState } from "react";
 import { Lock } from "lucide-react";
 import { atualizarDadosConta } from "@/api/conta.functions";
+import { editarDadosUsuario } from "@/api/admin.functions";
 import { textoBuscaCep, useBuscaCep } from "@/hooks/useBuscaCep";
 import { NOMES_UF } from "@/lib/localizacao";
-import { mascaraCep, mascaraTelefone, mascararCpf } from "@/lib/domain/validators";
+import { mascaraCep, mascaraCpf, mascaraTelefone, mascararCpf } from "@/lib/domain/validators";
 import type { Usuario } from "@/lib/domain/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +19,7 @@ import { tr } from "@/i18n/components/perfil/EditarDadosConta";
 const UFS = Object.keys(NOMES_UF).sort((a, b) => NOMES_UF[a]!.localeCompare(NOMES_UF[b]!));
 
 const inicial = (u: Usuario) => ({
+  cpf: mascaraCpf(u.cpf),
   nomeCompleto: u.nomeCompleto,
   dataNascimento: u.dataNascimento,
   whatsapp: mascaraTelefone(u.whatsapp),
@@ -42,7 +46,13 @@ function Bloqueado({ rotulo, valor }: { rotulo: string; valor: string }) {
   );
 }
 
-export function EditarDadosConta({ usuario, aberto, onFechar }: { usuario: Usuario; aberto: boolean; onFechar: () => void }) {
+export function EditarDadosConta({ usuario, aberto, onFechar, admin = false }: {
+  usuario: Usuario;
+  aberto: boolean;
+  onFechar: () => void;
+  /** Edição pela administração: título com o nome da pessoa e CPF editável. */
+  admin?: boolean;
+}) {
   const [f, setF] = useState(() => inicial(usuario));
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -58,7 +68,8 @@ export function EditarDadosConta({ usuario, aberto, onFechar }: { usuario: Usuar
     setErro("");
     setSalvando(true);
     try {
-      await atualizarDadosConta({ ...f, complemento: f.complemento || undefined, instagram: f.instagram || undefined, squad: f.squad || undefined });
+      const { cpf, ...conta } = { ...f, complemento: f.complemento || undefined, instagram: f.instagram || undefined, squad: f.squad || undefined };
+      await (admin ? editarDadosUsuario(usuario.id, { ...conta, cpf }) : atualizarDadosConta(conta));
       onFechar();
     } catch (er) {
       setErro(er instanceof Error ? er.message : tr("nao_foi_possivel_salvar"));
@@ -68,12 +79,18 @@ export function EditarDadosConta({ usuario, aberto, onFechar }: { usuario: Usuar
   };
 
   return (
-    <Modal aberto={aberto} titulo={tr("editar_meus_dados")} onFechar={onFechar}>
+    <Modal aberto={aberto} titulo={admin ? tr("editar_dados_de_nome", { nome: usuario.nomeCompleto }) : tr("editar_meus_dados")} onFechar={onFechar}>
       <form onSubmit={salvar} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Bloqueado rotulo="CPF" valor={mascararCpf(usuario.cpf)} />
+          {admin ? (
+            <Campo rotulo="CPF" htmlFor="conta-cpf">
+              <Input id="conta-cpf" inputMode="numeric" value={f.cpf} onChange={(e) => setF((p) => ({ ...p, cpf: mascaraCpf(e.target.value) }))} placeholder="000.000.000-00" required />
+            </Campo>
+          ) : (
+            <Bloqueado rotulo="CPF" valor={mascararCpf(usuario.cpf)} />
+          )}
           <Bloqueado rotulo={tr("e_mail")} valor={usuario.email} />
-          <p className="-mt-2 text-xs text-muted-foreground sm:col-span-2">{tr("cpf_e_e_mail_identificam_a")}</p>
+          <p className="-mt-2 text-xs text-muted-foreground sm:col-span-2">{admin ? tr("o_e_mail_e_o_login") : tr("cpf_e_e_mail_identificam_a")}</p>
           <div className="sm:col-span-2">
             <Campo rotulo={tr("nome_completo")} htmlFor="conta-nome">
               <Input id="conta-nome" autoComplete="name" value={f.nomeCompleto} onChange={set("nomeCompleto")} required />

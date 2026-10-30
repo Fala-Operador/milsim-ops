@@ -2,7 +2,9 @@
 import { mutarBase, latencia, ErroDominio, gerarId } from "./db";
 import { carregarBase } from "./db";
 import { silenciado } from "./notificacoes";
-import type { StatusSolicitacao } from "@/lib/domain/types";
+import { atualizarDadosConta, type DadosConta } from "./conta";
+import { cpfValido, somenteDigitos } from "@/lib/domain/validators";
+import type { StatusSolicitacao, Usuario } from "@/lib/domain/types";
 import { tr } from "@/i18n/services/admin";
 
 function auditar(autorId: string, acao: string, entidade: string, entidadeId: string, justificativa?: string) {
@@ -103,6 +105,46 @@ export async function desativarUsuario(usuarioId: string, adminId: string, justi
     }
     alvo.ativo = false;
     base.auditoria.push(auditar(adminId, "desativar_usuario", "usuario", usuarioId, justificativa));
+  });
+}
+
+/** O que o admin pode corrigir no cadastro de outra pessoa: os dados da conta e o CPF. */
+export interface DadosUsuarioAdmin extends DadosConta {
+  cpf: string;
+}
+
+/** Nomes (não valores) dos campos alterados: a auditoria não guarda dado pessoal. */
+const CAMPOS_AUDITADOS: [string, (u: Usuario) => unknown][] = [
+  ["nome", (u) => u.nomeCompleto],
+  ["cpf", (u) => u.cpf],
+  ["nascimento", (u) => u.dataNascimento],
+  ["whatsapp", (u) => u.whatsapp],
+  ["endereco", (u) => JSON.stringify(u.endereco)],
+  ["instagram", (u) => u.instagram],
+  ["squad", (u) => u.squad],
+];
+
+/**
+ * Edição do cadastro de um usuário pela administração. Mesmas regras de "Meu perfil"
+ * (atualizarDadosConta), mais o CPF (válido e único). O e-mail não muda: é o login da conta.
+ */
+export async function editarDadosUsuario(usuarioId: string, adminId: string, dados: DadosUsuarioAdmin): Promise<void> {
+  await latencia();
+  const cpf = somenteDigitos(dados.cpf);
+  if (!cpfValido(cpf)) throw new ErroDominio("cpf", tr("cpf_invalido"));
+  mutarBase((base) => {
+    const alvo = base.usuarios.find((u) => u.id === usuarioId);
+    if (!alvo) throw new ErroDominio("usuario", tr("usuario_nao_encontrado"));
+    if (base.usuarios.some((u) => u.id !== alvo.id && u.cpf === cpf)) {
+      throw new ErroDominio("cpf_duplicado", tr("ja_existe_um_cadastro_com_este_cpf"));
+    }
+    const antes = CAMPOS_AUDITADOS.map(([, ler]) => ler(alvo));
+    const { cpf: _cpf, ...conta } = dados;
+    atualizarDadosConta(alvo, conta);
+    alvo.cpf = cpf;
+    const alterados = CAMPOS_AUDITADOS.filter(([, ler], i) => ler(alvo) !== antes[i]).map(([nome]) => nome);
+    if (alterados.length === 0) return;
+    base.auditoria.push(auditar(adminId, "editar_usuario", "usuario", usuarioId, `Campos alterados: ${alterados.join(", ")}`));
   });
 }
 

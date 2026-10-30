@@ -48,6 +48,7 @@ export const tr = dicionario("routes/admin.usuarios", {
   "anterior": { pt: "Anterior", en: "Previous" },
   "pagina_pagina_de_totalpaginas": { pt: "Página {pagina} de {totalPaginas}", en: "Page {pagina} of {totalPaginas}" },
   "proxima": { pt: "Próxima", en: "Next" },
+  "ver_dados_de_nome": { pt: "Ver dados de {nome}", en: "View details of {nome}" },
   "desativar_usuario": { pt: "Desativar usuário", en: "Deactivate user" },
   "justificativa_obrigatoria": { pt: "Justificativa (obrigatória)", en: "Reason (required)" },
   "a_conta_de_nome_sera_desativada": { pt: "A conta de {nome} será desativada e perderá o acesso à plataforma.", en: "{nome}'s account will be deactivated and lose access to the platform." },
