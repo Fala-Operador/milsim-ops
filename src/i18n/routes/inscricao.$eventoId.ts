@@ -32,6 +32,7 @@ export const tr = dicionario("routes/inscricao.$eventoId", {
   "ou_faca_uma_nova_inscricao_abaixo": { pt: "ou faça uma nova inscrição abaixo (a reserva anterior é substituída).", en: "or register again below (the previous reservation is replaced)." },
   "inscricoes_indisponiveis_no_momento": { pt: "Inscrições indisponíveis no momento", en: "Registration unavailable right now" },
   "as_vendas_abrem_em_proximaabertura": { pt: "As vendas abrem em {proximaAbertura}.", en: "Sales open on {proximaAbertura}." },
+  "os_ingressos_desta_operacao_esgotaram": { pt: "Os ingressos desta operação esgotaram.", en: "Tickets for this operation have sold out." },
   "a_organizacao_ainda_nao_abriu_um": { pt: "A organização ainda não abriu um lote de venda para esta operação.", en: "The organization has not opened a sales batch for this operation yet." },
   "ingresso": { pt: "Ingresso", en: "Ticket" },
   "tipo_de_ingresso": { pt: "Tipo de ingresso", en: "Ticket type" },

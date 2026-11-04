@@ -4,6 +4,8 @@ import { nomeModalidade } from "@/lib/modalidades";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { registrarClique, registrarExibicao } from "@/services/analytics";
+import { carregarBase } from "@/services/db";
+import { precoAPartirDeNaBase } from "@/services/inscricoes";
 import type { OrigemAcesso } from "@/lib/analytics";
 import { ExternalLink, Globe, ImageOff, Instagram, MessageCircle } from "lucide-react";
 import type { Abrangencia, BaseDados, LinkParceiro, Parceiro, SecaoInicial } from "@/lib/domain/types";
@@ -122,14 +124,9 @@ export function CardRastreado({
   );
 }
 
-function precoInicial(e: CartaoEventoResolvido["evento"]): number {
-  const precos = e.lotes.filter((l) => l.status === "ativo").flatMap((l) => l.itens.map((i) => i.precoCentavos));
-  return precos.length ? Math.min(...precos) : Math.min(...e.tipos.map((t) => t.precoBaseCentavos));
-}
-
 export function CartaoEvento({ c }: { c: CartaoEventoResolvido }) {
   const e = c.evento;
-  return <CartaoOperacao evento={{ ...e, imagemUrl: c.imagem }} preco={precoInicial(e)} restantes={c.esgotado ? 0 : e.capacidadeTotal} selo={c.selo} chamada={c.chamada} />;
+  return <CartaoOperacao evento={{ ...e, imagemUrl: c.imagem }} preco={precoAPartirDeNaBase(carregarBase(), e)} restantes={c.esgotado ? 0 : e.capacidadeTotal} selo={c.selo} chamada={c.chamada} />;
 }
 
 const TAM_LOGO = { p: "h-14", m: "h-20", g: "h-28" } as const;

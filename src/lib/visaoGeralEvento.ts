@@ -100,7 +100,8 @@ export function visaoGeralEvento(base: BaseDados, eventoId: string, agora: Date 
       id: t.id,
       nome: t.nome,
       vendidos: confirmadas.filter((i) => i.tipoId === t.id).length,
-      limite: t.quantidadeMaxima,
+      // Quem limita as vagas são os lotes ativos.
+      limite: evento.lotes.filter((l) => l.status === "ativo").flatMap((l) => l.itens).filter((it) => it.tipoId === t.id).reduce((soma, it) => soma + it.quantidade, 0),
       arquivado: !!t.arquivado,
     })),
     porExercito: evento.exercitos.map((x) => {

@@ -5,7 +5,7 @@ import { carregarBase } from "@/services/db";
 import { POSICAO_LISTAGEM, type BaseDados, type Evento } from "@/lib/domain/types";
 import { campanhasNaPosicao } from "@/lib/impulsionamento";
 import { idDoVisitante } from "@/services/analytics";
-import { vagasRestantes } from "@/services/inscricoes";
+import { precoAPartirDeNaBase, vagasRestantes } from "@/services/inscricoes";
 import { formatarDataBR } from "@/lib/domain/money";
 import { CartaoOperacao } from "@/components/CartaoOperacao";
 import { Badge } from "@/components/ui/badge";
@@ -72,14 +72,6 @@ export const Route = createFileRoute("/")({
   }),
   component: PaginaInicial,
 });
-
-function precoInicial(evento: Evento): number {
-  const precos = evento.lotes
-    .filter((l) => l.status === "ativo")
-    .flatMap((l) => l.itens.map((i) => i.precoCentavos));
-  if (precos.length) return Math.min(...precos);
-  return Math.min(...evento.tipos.map((t) => t.precoBaseCentavos));
-}
 
 function PaginaInicial() {
   const [base, setBase] = useState<BaseDados | null>(null);
@@ -339,5 +331,5 @@ function PaginaInicial() {
 }
 
 function CartaoEvento({ evento: e, base, organizacao }: { evento: Evento; base: BaseDados; organizacao: string }) {
-  return <CartaoOperacao evento={e} organizacao={organizacao} preco={precoInicial(e)} restantes={vagasRestantes(base, e)} />;
+  return <CartaoOperacao evento={e} organizacao={organizacao} preco={precoAPartirDeNaBase(base, e)} restantes={vagasRestantes(base, e)} />;
 }
