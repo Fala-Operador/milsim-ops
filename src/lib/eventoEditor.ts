@@ -3,7 +3,7 @@
 import { z } from "zod";
 import type { Evento } from "@/lib/domain/types";
 import { ehModalidade } from "@/lib/modalidades";
-import { disponibilidadeTipo, type OcupacaoLote } from "@/lib/vendas";
+import { disponibilidadeTipo, primeiroLoteAtivo, type OcupacaoLote } from "@/lib/vendas";
 import { validarParaPublicacao } from "@/services/organizador";
 import { errosContatoEvento } from "@/lib/contatoEvento";
 import { atividadeNoPeriodo, formatarNoFuso, formatarPeriodoNoFuso, instanteDaAtividade } from "@/lib/fusoHorario";
@@ -92,11 +92,12 @@ function schemaEtapa(i: number, oc: Ocupacao) {
         ev.tipos.forEach((t) => {
           if (vazio(t.nome)) erro(ctx, `tp-nome-${t.id}`, tr("de_um_nome_ao_ingresso"));
           if (!(t.precoBaseCentavos >= 0)) erro(ctx, `tp-preco-${t.id}`, tr("preco_invalido"));
-          if (!(t.quantidadeMaxima >= 1)) erro(ctx, `tp-qt-${t.id}`, tr("quantidade_minima_de_1"));
         });
         ev.lotes.forEach((l) => {
           if (vazio(l.nome)) erro(ctx, `lt-nome-${l.id}`, tr("de_um_nome_ao_lote"));
-          if (!dataValida(l.inicioVendas) || !dataValida(l.fimVendas) || new Date(l.fimVendas) <= new Date(l.inicioVendas)) {
+          // Só o primeiro lote ativo tem data de início na tela; os outros abrem quando o anterior acaba.
+          const temInicio = l.id === primeiroLoteAtivo(ev)?.id;
+          if (!dataValida(l.fimVendas) || (temInicio && (!dataValida(l.inicioVendas) || new Date(l.fimVendas) <= new Date(l.inicioVendas)))) {
             erro(ctx, `lt-fim-${l.id}`, tr("o_fim_das_vendas_deve_ser"));
           } else if (l.status !== "arquivado" && dataValida(ev.fimEm) && new Date(l.fimVendas) > new Date(ev.fimEm)) {
             erro(ctx, `lt-fim-${l.id}`, tr("as_vendas_devem_terminar_ate_o", { fimEm: formatarNoFuso(ev.fimEm, ev.fuso) }));
@@ -180,7 +181,7 @@ export function situacaoIngresso(ev: Evento, tipoId: string, ocupacao: OcupacaoL
   if (d.disponivel) return "disponivel";
   if (d.motivo === "agendado") return "agendado";
   if (d.motivo === "nao_configurado") return "sem_lote";
-  if (d.motivo === "esgotado" || d.motivo === "tipo_esgotado") return "esgotado";
+  if (d.motivo === "esgotado") return "esgotado";
   return "encerrado";
 }
 
@@ -203,9 +204,7 @@ export function revisarEvento(ev: Evento, oc: Ocupacao = SEM_OCUPACAO, agora = n
   }
   for (const { t, s } of situacoes) {
     if (s === "agendado") {
-      const prox = ev.lotes
-        .filter((l) => l.status === "ativo" && l.itens.some((it) => it.tipoId === t.id) && new Date(l.inicioVendas) > agora)
-        .sort((a, b) => a.inicioVendas.localeCompare(b.inicioVendas))[0];
+      const prox = primeiroLoteAtivo(ev);
       avisos.push({ etapa: 4, campo: `tp-nome-${t.id}`, mensagem: tr("nome_vendas_comecam_em", { nome: t.nome || tr("ingresso"), data: prox ? new Date(prox.inicioVendas).toLocaleString(localeAtual(), { dateStyle: "short", timeStyle: "short" }) : tr("data_futura") }) });
     } else if (s !== "disponivel") {
       avisos.push({ etapa: 4, campo: `tp-nome-${t.id}`, mensagem: `${t.nome || tr("ingresso")}: ${TEXTO_SITUACAO[s].toLowerCase()}.` });

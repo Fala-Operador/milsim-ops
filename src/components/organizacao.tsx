@@ -236,6 +236,7 @@ export function AvisoLotes({ evento, compacto = false, onConfigurar }: { evento:
     return (
       <p className="mt-1 flex flex-wrap items-center gap-1 text-xs text-warning">
         {bloqueados.length === tipos.length ? tr("inscricoes_indisponiveis") : tr("length_ingresso_s_sem_venda_aberta", { length: bloqueados.length })}
+        {bloqueados[0] && !bloqueados[0].d.disponivel && `: ${TEXTO_MOTIVO[bloqueados[0].d.motivo]}`}
         <Button variant="plain" size="none" type="button" onClick={onConfigurar} className="underline underline-offset-2 hover:text-foreground">{tr("configurar_lotes")}</Button>
       </p>
     );

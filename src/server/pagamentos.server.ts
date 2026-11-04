@@ -99,11 +99,12 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
     }
     const evento = base.eventos.find((e) => e.id === ins.eventoId);
     const tipo = evento?.tipos.find((t) => t.id === ins.tipoId);
+    const lote = evento?.lotes.find((l) => l.id === ins.loteId);
     return {
       pagamento: ins.pagamento,
       eventoId: ins.eventoId,
       email: usuario.email,
-      descricao: `${evento?.nome ?? "Evento"} — ${tipo?.nome ?? "Ingresso"}`,
+      descricao: `${evento?.nome ?? "Evento"} — ${tipo?.nome ?? "Ingresso"}${lote ? ` (${lote.nome})` : ""}`,
       // Destino decidido na reserva; só vale se a conta continuar apta agora.
       contaDestino: ins.pagamento.contaDestino && contaParaRepasse(base.organizacoes.find((o) => o.id === evento?.organizacaoId)) === ins.pagamento.contaDestino
         ? ins.pagamento.contaDestino : undefined,
