@@ -18,11 +18,13 @@ import type {
 import {
   descontoCupom,
   disponibilidadeTipo,
+  precoAPartirDe,
   normalizarCodigoCupom,
   situacaoCupom,
   TEXTO_MOTIVO,
 } from "@/lib/vendas";
 import { tr } from "@/i18n/services/inscricoes";
+import { formatarBRL } from "@/lib/domain/money";
 
 /** Inscrições confirmadas (financeiro, presença). Para vagas, use inscricoesQueOcupamVaga. */
 export function inscricoesAtivasDoEvento(base: ReturnType<typeof carregarBase>, eventoId: string) {
@@ -57,14 +59,6 @@ export function ocupacaoExercito(
   return inscricoesQueOcupamVaga(base, eventoId).filter((i) => i.exercitoId === exercitoId).length;
 }
 
-export function ocupacaoTipo(
-  base: ReturnType<typeof carregarBase>,
-  eventoId: string,
-  tipoId: string,
-) {
-  return inscricoesQueOcupamVaga(base, eventoId).filter((i) => i.tipoId === tipoId).length;
-}
-
 export function ocupacaoLote(
   base: ReturnType<typeof carregarBase>,
   eventoId: string,
@@ -80,17 +74,6 @@ export function vagasRestantes(base: ReturnType<typeof carregarBase>, evento: Ev
   return evento.capacidadeTotal - inscricoesQueOcupamVaga(base, evento.id).length;
 }
 
-export function loteVigente(evento: Evento, tipoId: string) {
-  const agora = new Date();
-  return evento.lotes.find(
-    (l) =>
-      l.status === "ativo" &&
-      new Date(l.inicioVendas) <= agora &&
-      agora <= new Date(l.fimVendas) &&
-      l.itens.some((it) => it.tipoId === tipoId),
-  );
-}
-
 /** Disponibilidade do tipo considerando as inscrições confirmadas e as reservas vigentes. */
 export function disponibilidadeNaBase(
   base: ReturnType<typeof carregarBase>,
@@ -103,8 +86,12 @@ export function disponibilidadeNaBase(
     tipoId,
     (loteId, t) => ocupacaoLote(base, evento.id, loteId, t),
     agora,
-    ocupacaoTipo(base, evento.id, tipoId),
   );
+}
+
+/** Preço "a partir de" do evento, considerando o que já esgotou. */
+export function precoAPartirDeNaBase(base: ReturnType<typeof carregarBase>, evento: Evento, agora = new Date()) {
+  return precoAPartirDe(evento, (loteId, t) => ocupacaoLote(base, evento.id, loteId, t), agora);
 }
 
 export function validarCupom(
@@ -138,6 +125,11 @@ export interface DadosInscricao {
   cortesiaId?: string | undefined;
   voucherId?: string | undefined;
   origem?: Inscricao["origem"];
+  /**
+   * Preço do ingresso que a pessoa viu na tela. Se o lote virou e o preço subiu nesse meio-tempo,
+   * a inscrição é recusada e a pessoa confirma de novo já vendo o novo valor.
+   */
+  precoEsperadoCentavos?: number | undefined;
   /**
    * Chave de idempotência gerada pelo navegador para esta tentativa: repetir a mesma
    * chamada (rede caiu, duplo clique) devolve a inscrição já criada em vez de falhar.
@@ -350,9 +342,6 @@ export async function confirmarInscricao(
     if (ocupacaoExercito(base, evento.id, exercito.id) >= exercito.capacidade) {
       throw new ErroDominio("exercito_lotado", tr("o_nome_nao_possui_vagas", { nome: exercito.nome }));
     }
-    if (ocupacaoTipo(base, evento.id, tipo.id) >= tipo.quantidadeMaxima) {
-      throw new ErroDominio("tipo_lotado", tr("este_tipo_de_ingresso_esgotou"));
-    }
 
     let valorCentavos = tipo.precoBaseCentavos;
     let loteId: string | undefined;
@@ -395,6 +384,9 @@ export async function confirmarInscricao(
       const item = lote.itens.find((it) => it.tipoId === tipo.id)!;
       loteId = lote.id;
       valorCentavos = item.precoCentavos;
+      if (dados.precoEsperadoCentavos !== undefined && valorCentavos > dados.precoEsperadoCentavos) {
+        throw new ErroDominio("lote_mudou", tr("o_lote_mudou_novo_valor", { lote: lote.nome, valor: formatarBRL(valorCentavos) }));
+      }
 
       if (dados.voucherId) {
         if (dados.codigoCupom)
@@ -613,12 +605,10 @@ export type ResultadoPagamento =
 function cabeNoEvento(base: BaseDados, evento: Evento, ins: Inscricao, agora: Date): boolean {
   const outras = inscricoesQueOcupamVaga(base, evento.id, agora).filter((i) => i.id !== ins.id);
   const exercito = evento.exercitos.find((e) => e.id === ins.exercitoId);
-  const tipo = evento.tipos.find((t) => t.id === ins.tipoId);
   return (
     outras.length < evento.capacidadeTotal &&
     (!exercito ||
-      outras.filter((i) => i.exercitoId === exercito.id).length < exercito.capacidade) &&
-    (!tipo || outras.filter((i) => i.tipoId === tipo.id).length < tipo.quantidadeMaxima)
+      outras.filter((i) => i.exercitoId === exercito.id).length < exercito.capacidade)
   );
 }
 

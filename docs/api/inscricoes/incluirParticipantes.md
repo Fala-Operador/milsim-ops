@@ -25,7 +25,7 @@ Inclui manualmente pessoas com conta no evento (pagamento combinado por fora). C
 ## Regras
 
 - Para cada pessoa, cria uma cortesia em seu nome e a resgata na mesma transação (`origem` = `organizador` ou `admin`, conforme quem inclui).
-- Valem idade/autorização, inscrição única por evento, tipo e exército válidos e capacidade (evento, exército e tipo). Não exige lote aberto.
+- Valem idade/autorização, inscrição única por evento, tipo e exército válidos e capacidade (evento e exército). Não exige lote aberto.
 - Evento `publicado` ou `inscricoes_encerradas`.
 - **Tudo ou nada**: se uma pessoa não puder entrar, ninguém é incluído; com várias pessoas, a mensagem começa com o nome de quem impediu.
 - Registra `inclusao_manual` na auditoria (uma por inscrição) e notifica cada pessoa incluída; inclusão pelo admin também envia **um** aviso aos organizadores do evento, com os nomes.
@@ -52,7 +52,6 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio). Com v
 - Exército inválido.
 - Evento esgotado.
 - O {exército} não possui vagas.
-- Este tipo de ingresso esgotou.
 - Entre na sua conta para continuar.
 
 ## Exemplo

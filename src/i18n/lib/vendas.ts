@@ -7,7 +7,6 @@ export const tr = dicionario("lib/vendas", {
   "o_periodo_de_vendas_terminou": { pt: "o período de vendas terminou", en: "the sales period has ended" },
   "o_lote_de_venda_esta_inativo": { pt: "o lote de venda está inativo", en: "the sales batch is inactive" },
   "as_vagas_do_lote_esgotaram": { pt: "as vagas do lote esgotaram", en: "the batch spots are sold out" },
-  "este_tipo_de_ingresso_esgotou": { pt: "este tipo de ingresso esgotou", en: "this ticket type is sold out" },
   "informe_o_codigo_do_cupom": { pt: "Informe o código do cupom.", en: "Enter the coupon code." },
   "use_de_3_a_40_letras": { pt: "Use de 3 a 40 letras, números, hífen ou sublinhado, sem espaços.", en: "Use 3 to 40 letters, numbers, hyphens or underscores, with no spaces." },
   "ja_existe_um_cupom_com_este": { pt: "Já existe um cupom com este código nesta operação.", en: "A coupon with this code already exists in this operation." },

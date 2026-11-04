@@ -132,10 +132,19 @@ Código: `src/services/organizador.ts`, `src/lib/eventoEditor.ts`, `src/lib/cont
 
 Código: `src/lib/vendas.ts`.
 
-- Cada **tipo** de ingresso tem preço base e quantidade máxima. O preço de venda vem sempre de um
-  **lote** vigente; sem lote vigente com vagas, o tipo está **indisponível** (o preço base nunca é usado como alternativa).
+- Cada **tipo** de ingresso tem preço base. As vagas à venda são as dos **lotes** (a coluna `max_quantity` do tipo ficou sem
+  uso), limitadas pela capacidade do evento e do exército. O preço de venda vem sempre de um
+  **lote** aberto; sem lote aberto com vagas, o tipo está **indisponível** (o preço base nunca é usado como alternativa).
+- **Virada de lote** (por tipo de ingresso): os lotes ativos formam uma sequência, na ordem da lista. **Só o primeiro lote
+  ativo tem data de abertura**, que abre as vendas do evento. Cada lote seguinte abre sozinho quando o anterior **acaba**,
+  por esgotar ou pela data de fim das vendas, com o preço dele; a data de início guardada nos lotes seguintes é ignorada. Como
+  as reservas vigentes ocupam vaga, uma reserva liberada pode devolver a vaga ao lote anterior, que volta a vender.
+- O **nome do lote** aparece com o preço na página do evento, na inscrição (cartão do ingresso e resumo), no checkout do
+  Stripe e em Meus ingressos. O "a partir de" dos cartões considera só o que está à venda.
+- Se o lote virar enquanto a pessoa está na inscrição e o preço **subir**, a confirmação é recusada e a tela passa a
+  mostrar o novo lote e valor; a pessoa confirma de novo. Nada é cobrado por um valor que ela não viu.
 - Motivos de indisponibilidade: nenhum lote configurado, vendas não começaram, período terminou,
-  lote inativo, lote esgotado, tipo esgotado.
+  lote inativo, lote esgotado.
 - **Cupom**: código de 3 a 40 caracteres (letras, números, `-`, `_`), único por evento; desconto
   percentual inteiro de 1 a 100; validade com início e fim opcional; limite de usos opcional;
   vale só para os tipos escolhidos.
@@ -155,7 +164,7 @@ Tudo é verificado **na mesma transação**, sobre dados atuais:
 2. menor de idade com autorização aprovada;
 3. **uma inscrição confirmada por pessoa e evento** (reforçado por índice único no banco);
 4. tipo ativo e exército válido;
-5. capacidade do evento, do exército e do tipo (contando confirmadas + reservas vigentes);
+5. capacidade do evento e do exército (contando confirmadas + reservas vigentes);
 6. lote vigente com vagas (ou cortesia válida);
 7. cupom **ou** benefício de recompensa (nunca os dois; cortesia não aceita nenhum).
 

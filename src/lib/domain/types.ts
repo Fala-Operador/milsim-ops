@@ -145,6 +145,7 @@ export interface TipoIngresso {
   observacoes?: string | undefined;
   beneficios?: string | undefined;
   precoBaseCentavos: number;
+  /** Sem uso na venda: quem limita as vagas são os lotes. A coluna continua no banco. */
   quantidadeMaxima: number;
   arquivado?: boolean | undefined;
 }

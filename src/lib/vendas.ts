@@ -3,7 +3,7 @@
 import type { Cupom, Evento, Lote } from "@/lib/domain/types";
 import { tr } from "@/i18n/lib/vendas";
 
-export type MotivoIndisponivel = "nao_configurado" | "agendado" | "encerrado" | "inativo" | "esgotado" | "tipo_esgotado";
+export type MotivoIndisponivel = "nao_configurado" | "agendado" | "encerrado" | "inativo" | "esgotado";
 
 export type Disponibilidade =
   | { disponivel: true; lote: Lote; precoCentavos: number; restantes: number }
@@ -18,38 +18,55 @@ export const TEXTO_MOTIVO: Record<MotivoIndisponivel, string> = {
   get encerrado() { return tr("o_periodo_de_vendas_terminou"); },
   get inativo() { return tr("o_lote_de_venda_esta_inativo"); },
   get esgotado() { return tr("as_vagas_do_lote_esgotaram"); },
-  get tipo_esgotado() { return tr("este_tipo_de_ingresso_esgotou"); },
 };
+
+/** O lote que abre as vendas do evento: o único cuja data de início vale. */
+export const primeiroLoteAtivo = (evento: Pick<Evento, "lotes">) => evento.lotes.find((l) => l.status === "ativo");
 
 /**
  * Disponibilidade comercial de um tipo de ingresso. Nunca usa o preço base como
- * alternativa: sem lote vigente com vagas, o tipo está indisponível.
+ * alternativa: sem lote aberto com vagas, o tipo está indisponível.
+ *
+ * Os lotes ativos formam uma sequência, na ordem da lista. Só o primeiro tem data de abertura: ela
+ * abre as vendas do evento. Cada lote seguinte abre sozinho quando o anterior acaba, por esgotar ou
+ * pela data de fim das vendas, com o preço dele.
  */
 export function disponibilidadeTipo(
   evento: Evento,
   tipoId: string,
   ocupacao: OcupacaoLote,
   agora: Date = new Date(),
-  ocupacaoDoTipo = 0,
 ): Disponibilidade {
-  const tipo = evento.tipos.find((t) => t.id === tipoId && !t.arquivado);
-  if (tipo && ocupacaoDoTipo >= tipo.quantidadeMaxima) return { disponivel: false, motivo: "tipo_esgotado" };
   const lotes = evento.lotes.filter((l) => l.itens.some((it) => it.tipoId === tipoId));
   if (lotes.length === 0) return { disponivel: false, motivo: "nao_configurado" };
   const ativos = lotes.filter((l) => l.status === "ativo");
   if (ativos.length === 0) return { disponivel: false, motivo: "inativo" };
-  const vigentes = ativos.filter((l) => new Date(l.inicioVendas) <= agora && agora <= new Date(l.fimVendas));
-  for (const lote of vigentes) {
+  const abertura = primeiroLoteAtivo(evento)!.inicioVendas;
+  if (new Date(abertura) > agora) return { disponivel: false, motivo: "agendado", inicioVendas: abertura };
+  let algumEsgotou = false;
+  for (const lote of ativos) {
+    if (agora > new Date(lote.fimVendas)) continue;
     const item = lote.itens.find((it) => it.tipoId === tipoId)!;
     const restantes = item.quantidade - ocupacao(lote.id, tipoId);
     if (restantes > 0) return { disponivel: true, lote, precoCentavos: item.precoCentavos, restantes };
+    algumEsgotou = true;
   }
-  if (vigentes.length > 0) return { disponivel: false, motivo: "esgotado" };
-  const futuros = ativos
-    .filter((l) => new Date(l.inicioVendas) > agora)
-    .sort((a, b) => a.inicioVendas.localeCompare(b.inicioVendas));
-  if (futuros.length > 0) return { disponivel: false, motivo: "agendado", inicioVendas: futuros[0]!.inicioVendas };
-  return { disponivel: false, motivo: "encerrado" };
+  return { disponivel: false, motivo: algumEsgotou ? "esgotado" : "encerrado" };
+}
+
+/**
+ * "A partir de" dos cartões: o menor preço à venda agora (lote esgotado não conta). Sem nada à
+ * venda, o menor preço dos lotes ativos ou, sem lote, do preço base, só como referência.
+ */
+export function precoAPartirDe(evento: Evento, ocupacao: OcupacaoLote, agora: Date = new Date()): number {
+  const tipos = evento.tipos.filter((t) => !t.arquivado);
+  const aVenda = tipos.flatMap((t) => {
+    const d = disponibilidadeTipo(evento, t.id, ocupacao, agora);
+    return d.disponivel ? [d.precoCentavos] : [];
+  });
+  if (aVenda.length) return Math.min(...aVenda);
+  const dosLotes = evento.lotes.filter((l) => l.status === "ativo").flatMap((l) => l.itens.map((i) => i.precoCentavos));
+  return Math.min(...(dosLotes.length ? dosLotes : evento.tipos.map((t) => t.precoBaseCentavos)));
 }
 
 // ---------- Cupons ----------

@@ -7,7 +7,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Campo } from "@/components/ui";
 import type { Evento, Lote } from "@/lib/domain/types";
 import { situacaoIngresso, TEXTO_SITUACAO, type SituacaoIngresso } from "@/lib/eventoEditor";
-import type { OcupacaoLote } from "@/lib/vendas";
+import { primeiroLoteAtivo, type OcupacaoLote } from "@/lib/vendas";
 import { deCampoNoFuso, paraCampoNoFuso } from "@/lib/fusoHorario";
 import { inval, MsgErro, Secao, type PropsEtapa } from "./comum";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,7 +18,7 @@ const TOM: Record<SituacaoIngresso, "success" | "accent" | "warning" | "secondar
   disponivel: "success", agendado: "accent", sem_lote: "warning", encerrado: "secondary", esgotado: "destructive",
 };
 
-function CamposLote({ ev, lote, onChange, erros }: { ev: Evento; lote: Lote; onChange: (l: Lote) => void; erros: Record<string, string> }) {
+function CamposLote({ ev, lote, abreAsVendas, onChange, erros }: { ev: Evento; lote: Lote; abreAsVendas: boolean; onChange: (l: Lote) => void; erros: Record<string, string> }) {
   const m = (mud: Partial<Lote>) => onChange({ ...lote, ...mud });
   return (
     <div className="space-y-3">
@@ -33,9 +33,14 @@ function CamposLote({ ev, lote, onChange, erros }: { ev: Evento; lote: Lote; onC
             <option value="arquivado">{tr("arquivado")}</option>
           </NativeSelect>
         </Campo>
-        <Campo rotulo={tr("inicio_das_vendas")} htmlFor={`lt-ini-${lote.id}`}>
+        {abreAsVendas ? <Campo rotulo={tr("inicio_das_vendas")} htmlFor={`lt-ini-${lote.id}`}>
           <Input id={`lt-ini-${lote.id}`} type="datetime-local" value={paraCampoNoFuso(lote.inicioVendas, ev.fuso)} onChange={(e) => { const iso = deCampoNoFuso(e.target.value, ev.fuso); if (iso) m({ inicioVendas: iso }); }} />
-        </Campo>
+        </Campo> : (
+          <div>
+            <p className="text-sm font-medium">{tr("abertura")}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{tr("automatica_quando_o_lote_anterior_acabar")}</p>
+          </div>
+        )}
         <Campo rotulo={tr("fim_das_vendas")} htmlFor={`lt-fim-${lote.id}`}>
           <Input id={`lt-fim-${lote.id}`} type="datetime-local" value={paraCampoNoFuso(lote.fimVendas, ev.fuso)} onChange={(e) => { const iso = deCampoNoFuso(e.target.value, ev.fuso); if (iso) m({ fimVendas: iso }); }} {...inval(erros, `lt-fim-${lote.id}`)} />
         </Campo>
@@ -50,7 +55,7 @@ function CamposLote({ ev, lote, onChange, erros }: { ev: Evento; lote: Lote; onC
           <div key={t.id} className="grid items-end gap-2 sm:grid-cols-[minmax(0,1fr)_8rem_8rem]">
             <Label className="flex min-w-0 items-center gap-2 text-sm font-normal text-inherit">
               <Checkbox checked={!!item}
-                onCheckedChange={(marcado) => m({ itens: marcado === true ? [...lote.itens, { tipoId: t.id, precoCentavos: t.precoBaseCentavos, quantidade: t.quantidadeMaxima }] : lote.itens.filter((it) => it.tipoId !== t.id) })} />
+                onCheckedChange={(marcado) => m({ itens: marcado === true ? [...lote.itens, { tipoId: t.id, precoCentavos: t.precoBaseCentavos, quantidade: Math.max(1, ev.capacidadeTotal) }] : lote.itens.filter((it) => it.tipoId !== t.id) })} />
               <span className="truncate">{t.nome || tr("ingresso_sem_nome")}</span>
             </Label>
             {item && (
@@ -80,7 +85,7 @@ export function EtapaIngressos({ ev, set, erros, ocupacaoLote }: PropsEtapa & { 
       inicioVendas: new Date().toISOString(),
       fimVendas: (fimEvento.getTime() > Date.now() ? fimEvento : new Date(Date.now() + 30 * 86400000)).toISOString(),
       status: "ativo",
-      itens: ev.tipos.filter((t) => !t.arquivado).map((t) => ({ tipoId: t.id, precoCentavos: t.precoBaseCentavos, quantidade: t.quantidadeMaxima })),
+      itens: ev.tipos.filter((t) => !t.arquivado).map((t) => ({ tipoId: t.id, precoCentavos: t.precoBaseCentavos, quantidade: Math.max(1, ev.capacidadeTotal) })),
     };
   };
   const mudarTipo = (i: number, mud: Partial<Evento["tipos"][number]>) => set("tipos", ev.tipos.map((t, j) => (j === i ? { ...t, ...mud } : t)));
@@ -100,15 +105,12 @@ export function EtapaIngressos({ ev, set, erros, ocupacaoLote }: PropsEtapa & { 
                   <Badge variant={TOM[s]}>{TEXTO_SITUACAO[s]}</Badge>
                   <Button type="button" variant="ghost" onClick={() => set("tipos", ev.tipos.filter((_, j) => j !== i))}>{tr("remover")}</Button>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_8rem_8rem]">
+                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_8rem]">
                   <Campo rotulo={tr("nome")} htmlFor={`tp-nome-${t.id}`}>
                     <Input id={`tp-nome-${t.id}`} value={t.nome} onChange={(e) => mudarTipo(i, { nome: e.target.value })} {...inval(erros, `tp-nome-${t.id}`)} />
                   </Campo>
                   <Campo rotulo={tr("preco_base_r")} htmlFor={`tp-preco-${t.id}`}>
                     <Input id={`tp-preco-${t.id}`} type="number" min={0} step="0.01" value={t.precoBaseCentavos / 100} onChange={(e) => mudarTipo(i, { precoBaseCentavos: Math.round(Number(e.target.value) * 100) })} {...inval(erros, `tp-preco-${t.id}`)} />
-                  </Campo>
-                  <Campo rotulo={tr("quantidade")} htmlFor={`tp-qt-${t.id}`}>
-                    <Input id={`tp-qt-${t.id}`} type="number" min={1} value={t.quantidadeMaxima} onChange={(e) => mudarTipo(i, { quantidadeMaxima: Number(e.target.value) })} {...inval(erros, `tp-qt-${t.id}`)} />
                   </Campo>
                 </div>
                 <MsgErro erros={erros} id={`tp-nome-${t.id}`} />
@@ -140,7 +142,7 @@ export function EtapaIngressos({ ev, set, erros, ocupacaoLote }: PropsEtapa & { 
         {novo && (
           <fieldset className="space-y-3 rounded-md border-2 border-primary/60 p-3">
             <legend className="px-1 text-xs font-semibold uppercase">{tr("novo_lote_revise_os_valores_sugeridos")}</legend>
-            <CamposLote ev={ev} lote={novo} onChange={setNovo} erros={{}} />
+            <CamposLote ev={ev} lote={novo} abreAsVendas={!primeiroLoteAtivo(ev)} onChange={setNovo} erros={{}} />
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={() => setNovo(null)}>{tr("cancelar")}</Button>
               <Button type="button" disabled={novo.itens.length === 0 || !novo.nome.trim()} onClick={() => { set("lotes", [...ev.lotes, novo]); setNovo(null); }}>{tr("criar_lote")}</Button>
@@ -150,7 +152,7 @@ export function EtapaIngressos({ ev, set, erros, ocupacaoLote }: PropsEtapa & { 
         {ev.lotes.map((l, i) => (
           <fieldset key={l.id} className="space-y-2 rounded-md border border-border p-3">
             <legend className="px-1 text-xs font-medium">{l.nome || tr("lote_sem_nome")}</legend>
-            <CamposLote ev={ev} lote={l} erros={erros} onChange={(nl) => set("lotes", ev.lotes.map((x, j) => (j === i ? nl : x)))} />
+            <CamposLote ev={ev} lote={l} abreAsVendas={l.id === (primeiroLoteAtivo(ev) ?? ev.lotes[0])?.id} erros={erros} onChange={(nl) => set("lotes", ev.lotes.map((x, j) => (j === i ? nl : x)))} />
             <div className="flex justify-end">
               <Button type="button" variant="ghost" onClick={() => set("lotes", ev.lotes.filter((_, j) => j !== i))}>{tr("remover_lote")}</Button>
             </div>
