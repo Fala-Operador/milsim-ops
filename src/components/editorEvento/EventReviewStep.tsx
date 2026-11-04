@@ -1,3 +1,4 @@
+import { primeiroLoteAtivo } from "@/lib/vendas";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import type { Evento } from "@/lib/domain/types";
@@ -68,8 +69,8 @@ export function EtapaRevisao({ ev, erros, avisos, irPara }: { ev: Evento; erros:
           <ul className="text-muted-foreground">{ev.exercitos.map((x) => <li key={x.id}>{x.nome || tr("sem_nome")}{" "}{tr("capacidade_vagas", { capacidade: x.capacidade })}</li>)}</ul>
         </Bloco>
         <Bloco titulo={tr("ingressos_e_lotes")} etapa={4} irPara={irPara}>
-          <ul>{ev.tipos.map((t) => <li key={t.id}>{t.nome || tr("sem_nome")}{" "}{tr("base_precobasecentavos_quantidademaxima", { precoBaseCentavos: formatarBRL(t.precoBaseCentavos), quantidadeMaxima: t.quantidadeMaxima })}</li>)}</ul>
-          <ul className="text-muted-foreground">{ev.lotes.map((l) => <li key={l.id}>{l.nome} ({l.status}) · {formatarDataBR(l.inicioVendas)} → {formatarDataBR(l.fimVendas)}</li>)}</ul>
+          <ul>{ev.tipos.map((t) => <li key={t.id}>{t.nome || tr("sem_nome")}{" "}{tr("base_precobasecentavos", { precoBaseCentavos: formatarBRL(t.precoBaseCentavos) })}</li>)}</ul>
+          <ul className="text-muted-foreground">{ev.lotes.map((l) => <li key={l.id}>{l.nome} ({l.status}) · {l.id === primeiroLoteAtivo(ev)?.id ? formatarDataBR(l.inicioVendas) : tr("quando_o_anterior_acabar")} → {formatarDataBR(l.fimVendas)}</li>)}</ul>
           {ev.lotes.length === 0 && <p className="text-warning">{tr("nenhum_lote")}</p>}
         </Bloco>
         <Bloco titulo={tr("cronograma")} etapa={5} irPara={irPara}>

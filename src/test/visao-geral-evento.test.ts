@@ -9,7 +9,12 @@ const AGORA = new Date("2026-10-20T12:00:00Z");
 const evento = {
   id: "e1",
   capacidadeTotal: 10,
-  tipos: [{ id: "t1", nome: "Padrão", quantidadeMaxima: 8 }, { id: "t2", nome: "VIP", quantidadeMaxima: 2, arquivado: true }],
+  tipos: [{ id: "t1", nome: "Padrão" }, { id: "t2", nome: "VIP", arquivado: true }],
+  lotes: [
+    { id: "l1", status: "ativo", itens: [{ tipoId: "t1", quantidade: 5 }, { tipoId: "t2", quantidade: 2 }] },
+    { id: "l2", status: "ativo", itens: [{ tipoId: "t1", quantidade: 3 }] },
+    { id: "l3", status: "arquivado", itens: [{ tipoId: "t1", quantidade: 99 }] },
+  ],
   exercitos: [{ id: "a", nome: "Azul", capacidade: 5 }, { id: "v", nome: "Vermelho", capacidade: 5 }],
 } as Evento;
 

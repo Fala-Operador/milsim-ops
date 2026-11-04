@@ -1,9 +1,9 @@
 // Cupons e lotes: disponibilidade só com lote vigente, cupom separado da disponibilidade.
 import { describe, it, expect, beforeEach } from "vitest";
 import { restaurarBase } from "@/test/baseTeste";
-import { confirmarInscricao, validarCupom } from "@/services/inscricoes";
+import { confirmarInscricao, disponibilidadeNaBase, validarCupom } from "@/services/inscricoes";
 import { atualizarCupom, criarCupom } from "@/services/organizador";
-import { disponibilidadeTipo, resumoCupom, situacaoCupom, validarDadosCupom } from "@/lib/vendas";
+import { disponibilidadeTipo, precoAPartirDe, resumoCupom, situacaoCupom, validarDadosCupom, type OcupacaoLote } from "@/lib/vendas";
 import type { BaseDados, Evento } from "@/lib/domain/types";
 
 let base: BaseDados;
@@ -117,6 +117,88 @@ describe("aplicação e confirmação", () => {
     await novoCupom();
     await expect(inscrever("FALAOPERADOR")).rejects.toThrow(/esgotaram/i);
     expect(cupom().usos).toBe(0);
+  });
+
+  describe("virada de lote", () => {
+    const item = (precoCentavos: number, quantidade = 1) => [{ tipoId: "tp-a", precoCentavos, quantidade }];
+    const l1 = (extra = {}) => loteVigente({ id: "lt-1", nome: "1º lote", itens: item(10000), fimVendas: iso(1), ...extra });
+    const l2 = (extra = {}) => loteVigente({ id: "lt-2", nome: "2º lote", inicioVendas: iso(2), fimVendas: iso(5), itens: item(15000), ...extra });
+    const l3 = (extra = {}) => loteVigente({ id: "lt-3", nome: "3º lote", inicioVendas: iso(6), fimVendas: iso(8), itens: item(20000), ...extra });
+    const ocupados = (...ids: string[]): OcupacaoLote => (loteId) => (ids.includes(loteId) ? 1 : 0);
+    const nomeDoLote = (lotes: Evento["lotes"], oc: OcupacaoLote) => {
+      const d = disponibilidadeTipo(evento(lotes), "tp-a", oc);
+      return d.disponivel ? d.lote.nome : d.motivo;
+    };
+
+    it("lote esgotado abre o seguinte na hora, com o preço dele, ignorando a data de início guardada", () => {
+      const d = disponibilidadeTipo(evento([l1(), l2()]), "tp-a", ocupados("lt-1"));
+      expect(d).toMatchObject({ disponivel: true, precoCentavos: 15000, restantes: 1 });
+      expect(d.disponivel && d.lote.id).toBe("lt-2");
+    });
+
+    it("o lote com vagas continua à venda e o seguinte segue agendado", () => {
+      expect(nomeDoLote([l1(), l2()], ocupados())).toBe("1º lote");
+    });
+
+    it("vários lotes esgotados pulam até o próximo com vagas; todos esgotados dão esgotado", () => {
+      expect(nomeDoLote([l1(), l2(), l3()], ocupados("lt-1", "lt-2"))).toBe("3º lote");
+      expect(nomeDoLote([l1(), l2(), l3()], ocupados("lt-1", "lt-2", "lt-3"))).toBe("esgotado");
+    });
+
+    it("segue a ordem da lista", () => {
+      expect(nomeDoLote([l1(), l3(), l2()], ocupados("lt-1"))).toBe("3º lote");
+    });
+
+    it("lote que terminou por data abre o próximo, com ou sem vagas sobrando", () => {
+      const terminou = l1({ inicioVendas: iso(-3), fimVendas: iso(-1) });
+      expect(nomeDoLote([terminou, l2()], ocupados())).toBe("2º lote");
+      expect(nomeDoLote([terminou, l2()], ocupados("lt-1"))).toBe("2º lote");
+    });
+
+    it("só o primeiro lote ativo segura a abertura das vendas", () => {
+      const lotes = [l1({ inicioVendas: iso(0.5) }), l2({ inicioVendas: iso(-1) })];
+      expect(disponibilidadeTipo(evento(lotes), "tp-a", ocupados())).toMatchObject({ disponivel: false, motivo: "agendado" });
+      expect(nomeDoLote([l1({ status: "encerrado" }), l2({ inicioVendas: iso(-1) })], ocupados())).toBe("2º lote");
+    });
+
+    it("lote seguinte com o fim das vendas já passado não abre", () => {
+      const lotes = [l1(), l2({ inicioVendas: iso(-3), fimVendas: iso(-2) })];
+      expect(nomeDoLote(lotes, ocupados("lt-1"))).toBe("esgotado");
+    });
+
+    it("lote de outro tipo de ingresso ou inativo não entra na virada", () => {
+      const outroTipo = l2({ itens: [{ tipoId: "tp-b", precoCentavos: 15000, quantidade: 1 }] });
+      expect(nomeDoLote([l1(), outroTipo], ocupados("lt-1"))).toBe("esgotado");
+      expect(nomeDoLote([l1(), l2({ status: "encerrado" })], ocupados("lt-1"))).toBe("esgotado");
+    });
+
+    it("o \"a partir de\" ignora o lote esgotado", () => {
+      expect(precoAPartirDe(evento([l1(), l2()]), ocupados())).toBe(10000);
+      expect(precoAPartirDe(evento([l1(), l2()]), ocupados("lt-1"))).toBe(15000);
+    });
+
+    const esgotarPrimeiro = () => {
+      const ev = base.eventos.find((e) => e.id === EVT)!;
+      ev.lotes = [l1(), l2()];
+      // Valor antigo da coluna sem uso: não pode segurar a virada de lote.
+      ev.tipos[0]!.quantidadeMaxima = 1;
+      base.inscricoes.push({ ...base.inscricoes[0]!, id: "ins-x", eventoId: EVT, usuarioId: "outro", tipoId: "tp-a", loteId: "lt-1", status: "confirmada" });
+    };
+
+    it("a inscrição grava o novo lote e cobra o novo preço", async () => {
+      esgotarPrimeiro();
+      const ins = await confirmarInscricao({ eventoId: EVT, usuarioId: PART, tipoId: "tp-a", exercitoId: "ex-a", precoEsperadoCentavos: 15000 });
+      expect(ins).toMatchObject({ loteId: "lt-2", valorCentavos: 15000 });
+    });
+
+    it("preço que subiu depois de a pessoa ver a tela recusa a inscrição e informa o novo lote", async () => {
+      esgotarPrimeiro();
+      const ev = base.eventos.find((e) => e.id === EVT)!;
+      expect(disponibilidadeNaBase(base, ev, "tp-a")).toMatchObject({ disponivel: true, precoCentavos: 15000 });
+      await expect(confirmarInscricao({ eventoId: EVT, usuarioId: PART, tipoId: "tp-a", exercitoId: "ex-a", precoEsperadoCentavos: 10000 }))
+        .rejects.toThrow(/2º lote.*150,00/);
+      expect(base.inscricoes.some((i) => i.eventoId === EVT && i.usuarioId === PART)).toBe(false);
+    });
   });
 
   it("sem lote nunca usa o preço base como alternativa", () => {

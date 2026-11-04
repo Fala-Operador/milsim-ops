@@ -22,10 +22,12 @@ Inscreve a pessoa logada no evento. Sem valor a pagar (ou sem Stripe), confirma 
 | `cortesiaId?` | string | Resgate de cortesia. |
 | `voucherId?` | string | Benefício de recompensa (gamificação). |
 | `clienteId?` | string (8–64, letras, números, hífen) | Chave de idempotência: a mesma chave em todas as tentativas do mesmo envio. |
+| `precoEsperadoCentavos?` | inteiro ≥ 0 | Preço do ingresso mostrado na tela. Se o lote virou e o preço subiu, a inscrição é recusada. |
 
 ## Regras
 
-- Tudo é validado numa única transação: evento publicado, autorização de menores, inscrição única, tipo, exército, capacidades (evento, exército, tipo e lote), lote vigente e cupom/cortesia/benefício.
+- Tudo é validado numa única transação: evento publicado, autorização de menores, inscrição única, tipo, exército, capacidades (evento, exército e lote), lote aberto e cupom/cortesia/benefício.
+- O preço vem do lote aberto no momento: quando um lote acaba, por esgotar ou pela data de fim, o seguinte abre sozinho ([regra](../../regras-de-negocio.md#5-ingressos-lotes-e-cupons)).
 - **Idempotente** com `clienteId`: repetir a chamada devolve a mesma inscrição (e reabre o mesmo checkout), sem gastar o cupom de novo.
 - Uma nova tentativa substitui a reserva pendente anterior da pessoa, salvo se o pagamento dela já estiver em processamento.
 - A origem (`plataforma`/`cortesia`) e o titular são decididos pelo servidor.
@@ -50,7 +52,6 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - Exército inválido.
 - Evento esgotado.
 - O [exército] não possui vagas.
-- Este tipo de ingresso esgotou.
 - Cortesia inválida.
 - Cortesia já utilizada ou indisponível.
 - Cortesia expirada.
@@ -60,6 +61,7 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - Tipo de ingresso diferente do convite.
 - A venda de ingressos deste evento ainda não está aberta. (ingresso pago com pagamento online e organização sem conta de recebimento ativa)
 - As inscrições deste ingresso estão indisponíveis: [motivo].
+- O lote anterior esgotou. Este ingresso agora está no [lote], por [valor]. Confira o novo valor e confirme de novo.
 - O benefício não pode ser combinado com cupom.
 - Benefício indisponível ou fora da validade.
 - A campanha deste benefício não está ativa.

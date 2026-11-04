@@ -63,7 +63,7 @@ function PaginaInscricao() {
   const { evento: eventoCarregado, pagamentoOnline, taxaCompradorPercentual, vendasAbertas } = Route.useLoaderData();
   const evento = useEventoAtual(eventoCarregado);
   const { cortesia: codigoCortesia, voucher: voucherInicial, pagamento: retornoPagamento, comunidade: vemDaComunidade } = Route.useSearch();
-  const { usuario } = useAuth();
+  const { usuario, recarregar } = useAuth();
   const navigate = useNavigate();
   const base = carregarBase();
 
@@ -183,10 +183,11 @@ function PaginaInscricao() {
     }
   };
 
+  const todosEsgotados = tiposAtivos.length > 0 && [...disponibilidades.values()].every((d) => !d.disponivel && d.motivo === "esgotado");
   const impedimento = cortesia
     ? ""
     : !algumDisponivel
-      ? tr("inscricoes_indisponiveis_no_momento_nao")
+      ? (todosEsgotados ? tr("os_ingressos_desta_operacao_esgotaram") : tr("inscricoes_indisponiveis_no_momento_nao"))
       : disp && !disp.disponivel
         ? tr("as_inscricoes_deste_ingresso_estao_indis", { valor: TEXTO_MOTIVO[disp.motivo] })
         : vaiPagar && !vendasAbertas
@@ -211,12 +212,15 @@ function PaginaInscricao() {
         cortesiaId: cortesia?.id,
         voucherId: voucherId || undefined,
         clienteId: clienteId.current,
+        precoEsperadoCentavos: !cortesia && disp?.disponivel ? disp.precoCentavos : undefined,
       });
       // Reserva criada: segue para a página de pagamento do Stripe.
       if (r.urlPagamento) window.location.assign(r.urlPagamento);
       else navigate({ to: "/app/ingressos" });
     } catch (err) {
       setErro(err instanceof Error ? err.message : tr("falha_ao_confirmar_inscricao"));
+      // O lote pode ter virado: a tela passa a mostrar o lote e o preço atuais.
+      void recarregar();
       emAndamento.current = false;
       setConfirmando(false);
     }
@@ -249,7 +253,7 @@ function PaginaInscricao() {
             <div role="status" className="border-l-2 border-warning bg-warning/10 px-4 py-3 text-sm">
               <p className="font-medium text-warning">{tr("inscricoes_indisponiveis_no_momento")}</p>
               <p className="mt-0.5 text-muted-foreground">
-                {proximaAbertura ? tr("as_vendas_abrem_em_proximaabertura", { proximaAbertura: formatarDataBR(proximaAbertura) }) : tr("a_organizacao_ainda_nao_abriu_um")}
+                {todosEsgotados ? tr("os_ingressos_desta_operacao_esgotaram") : proximaAbertura ? tr("as_vendas_abrem_em_proximaabertura", { proximaAbertura: formatarDataBR(proximaAbertura) }) : tr("a_organizacao_ainda_nao_abriu_um")}
               </p>
             </div>
           )}
@@ -266,7 +270,7 @@ function PaginaInscricao() {
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold">{t.nome}</span>
                       <span className="mt-0.5 block text-xs text-muted-foreground">
-                        {cortesia ? tr("cortesia") : d.disponivel ? tr("disponivel") : tr("indisponivel_valorvalor2", { valor: TEXTO_MOTIVO[d.motivo], valor2: d.motivo === "agendado" && d.inicioVendas ? tr("abre_em", { data: formatarDataBR(d.inicioVendas) }) : "" })}
+                        {cortesia ? tr("cortesia") : d.disponivel ? `${d.lote.nome} · ${tr("disponivel")}` : tr("indisponivel_valorvalor2", { valor: TEXTO_MOTIVO[d.motivo], valor2: d.motivo === "agendado" && d.inicioVendas ? tr("abre_em", { data: formatarDataBR(d.inicioVendas) }) : "" })}
                       </span>
                     </span>
                     <span className="font-display text-2xl font-bold tabular-nums leading-none">{cortesia ? "—" : d.disponivel ? formatarBRL(d.precoCentavos) : "—"}</span>

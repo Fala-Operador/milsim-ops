@@ -40,6 +40,7 @@ export const confirmarInscricaoFn = createServerFn({ method: "POST" })
       cortesiaId: id.optional(),
       voucherId: z.string().max(200).optional(),
       clienteId: z.string().max(64).optional(),
+      precoEsperadoCentavos: z.number().int().min(0).optional(),
     }).parse,
   )
   .handler(async ({ data }) => {
@@ -131,6 +132,8 @@ export async function confirmarInscricao(d: {
   voucherId?: string | undefined;
   /** Mesma chave em todas as tentativas do mesmo envio (idempotência). */
   clienteId?: string | undefined;
+  /** Preço do ingresso mostrado na tela: se o lote virou e ele subiu, o servidor recusa. */
+  precoEsperadoCentavos?: number | undefined;
 }) {
   const r = await chamar(confirmarInscricaoFn({ data: d }));
   if (r.inscricao.status === "confirmada") registrarConfirmacao(r.inscricao);

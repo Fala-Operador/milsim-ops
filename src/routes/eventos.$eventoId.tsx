@@ -6,7 +6,8 @@ import { obterEventoFn } from "@/api/sessao.functions";
 import { dataUrlParaBlobUrl } from "@/lib/imagens";
 import { useEventoAtual } from "@/hooks/useEventoAtual";
 import { registrarCliqueInscrever, registrarVisita } from "@/services/analytics";
-import { vagasRestantes, loteVigente } from "@/services/inscricoes";
+import { disponibilidadeNaBase, vagasRestantes } from "@/services/inscricoes";
+import { TEXTO_MOTIVO } from "@/lib/vendas";
 import { formatarDataBR, formatarDataHoraBR } from "@/lib/domain/money";
 import { Preco } from "@/components/Preco";
 import { Badge } from "@/components/ui/badge";
@@ -74,10 +75,8 @@ function PaginaEvento() {
     };
   }, [regrasAbertas, evento.regras?.pdfDataUrl]);
   const inscricoesAbertas = evento.status === "publicado" && restantes > 0;
-  const precos = evento.tipos.flatMap((t) => {
-    const item = !t.arquivado ? loteVigente(evento, t.id)?.itens.find((i) => i.tipoId === t.id) : undefined;
-    return item ? [item.precoCentavos] : [];
-  });
+  const ingressos = evento.tipos.filter((t) => !t.arquivado).map((t) => ({ t, d: disponibilidadeNaBase(base, evento, t.id) }));
+  const precos = ingressos.flatMap(({ d }) => (d.disponivel ? [d.precoCentavos] : []));
   const aPartirDe = precos.length ? Math.min(...precos) : null;
   const linkInscricao = (
     <Link to="/inscricao/$eventoId" params={{ eventoId: evento.id }} search={{ cortesia: undefined, voucher: undefined }} onClick={() => registrarCliqueInscrever(evento.id)} className="block">
@@ -176,20 +175,18 @@ function PaginaEvento() {
               <p className="text-muted-foreground">{evento.endereco}, {evento.cidade}/{evento.uf}</p>
             </div>
             <ul className="divide-y divide-border border-b border-border">
-              {evento.tipos.map((t) => {
-                const lote = loteVigente(evento, t.id);
-                const preco = lote?.itens.find((i) => i.tipoId === t.id)?.precoCentavos ?? t.precoBaseCentavos;
-                return (
-                  <li key={t.id} className="p-4">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <span className="font-semibold">{t.nome}</span>
-                      <Preco centavos={preco} className="shrink-0 font-semibold" />
-                    </div>
-                    {t.beneficios && <p className="mt-0.5 text-xs text-muted-foreground">{t.beneficios}</p>}
-                    {lote && <p className="mt-1 font-mono text-[11px] uppercase text-accent">{lote.nome}</p>}
-                  </li>
-                );
-              })}
+              {ingressos.map(({ t, d }) => (
+                <li key={t.id} className="p-4">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="font-semibold">{t.nome}</span>
+                    {d.disponivel ? <Preco centavos={d.precoCentavos} className="shrink-0 font-semibold" /> : <span className="shrink-0 text-muted-foreground">—</span>}
+                  </div>
+                  {t.beneficios && <p className="mt-0.5 text-xs text-muted-foreground">{t.beneficios}</p>}
+                  {d.disponivel
+                    ? <p className="mt-1 font-mono text-[11px] uppercase text-accent">{d.lote.nome}</p>
+                    : <p className="mt-1 text-xs text-muted-foreground">{TEXTO_MOTIVO[d.motivo]}</p>}
+                </li>
+              ))}
             </ul>
             <div className="p-4">
               {inscricoesAbertas ? (
