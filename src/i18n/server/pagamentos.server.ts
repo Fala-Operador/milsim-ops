@@ -6,6 +6,7 @@ export const tr = dicionario("server/pagamentos.server", {
   "esta_reserva_nao_esta_mais_aguardando": { pt: "Esta reserva não está mais aguardando pagamento.", en: "This reservation is no longer awaiting payment." },
   "o_prazo_desta_reserva_terminou_faca": { pt: "O prazo desta reserva terminou. Faça uma nova inscrição.", en: "This reservation has expired. Register again." },
   "esta_reserva_ja_foi_concluida_ou": { pt: "Esta reserva já foi concluída ou expirou. Confira em Meus ingressos.", en: "This reservation is already completed or expired. Check My tickets." },
+  "forma_de_pagamento_indisponivel": { pt: "Esta forma de pagamento não está disponível para este valor. Escolha outra.", en: "This payment method is not available for this amount. Choose another one." },
   "nao_foi_possivel_consultar_o_pagamento": { pt: "Não foi possível consultar o pagamento agora.", en: "Could not check the payment right now." },
   "pagamento_nao_encontrado": { pt: "Pagamento não encontrado.", en: "Payment not found." },
   "pagamento_sem_identificador_no_stripe_re": { pt: "Pagamento sem identificador no Stripe; reembolse pelo painel.", en: "Payment has no Stripe identifier; refund it from the dashboard." },

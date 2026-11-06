@@ -15,7 +15,7 @@ import {
   registrarReembolsoNaBase,
   registrarResultadoEstornoNaBase,
 } from "@/services/inscricoes";
-import { estornoPendente } from "@/lib/pagamentos";
+import { estornoPendente, expiracaoLiberaReserva } from "@/lib/pagamentos";
 import {
   acaoDaSessao,
   acaoDoEvento,
@@ -28,7 +28,10 @@ import {
   intencaoDaCobranca,
   intencaoDaDisputa,
   intencaoDaSessao,
+  metodoDaSessao,
+  metodosParaValor,
   type AcaoSessao,
+  type MetodoPagamento,
   type CobrancaStripe,
   type DisputaStripe,
   type EventoStripe,
@@ -51,6 +54,7 @@ import {
   expirarSessaoCheckout,
   linkDeCadastro,
   linkDoPainel,
+  metodosDePagamentoAtivos,
   obterContaConectada,
   obterSessaoCheckout,
   saldoDaConta,
@@ -88,9 +92,11 @@ export interface ResultadoCompra {
 
 /**
  * Devolve a página de pagamento da reserva: reaproveita a sessão aberta ou cria uma nova.
+ * Com `metodo` (forma de pagamento escolhida no site), o checkout abre direto nela; se a sessão
+ * aberta for de outra forma, ela é expirada antes de abrir a nova, para que só uma possa ser paga.
  * Só o titular da reserva pode pedir.
  */
-export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<ResultadoCompra>> {
+export async function abrirCheckout(inscricaoId: string, metodoPedido?: MetodoPagamento): Promise<RespostaApi<ResultadoCompra>> {
   const { resultado: d } = await ler(({ base, usuario }) => {
     const ins = base.inscricoes.find((i) => i.id === inscricaoId);
     if (!usuario || !ins || ins.usuarioId !== usuario.id) throw new ErroDominio("inscricao", tr("reserva_nao_encontrada"));
@@ -112,14 +118,33 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
   });
   if (new Date(d.pagamento.expiraEm) <= new Date()) throw new Error(tr("o_prazo_desta_reserva_terminou_faca"));
 
+  // Forma de pagamento: só entre os meios ativos no Stripe que aceitam o total cobrado. Com uma
+  // opção só (ou sem a lista do Stripe) não há escolha e o checkout segue com os meios do painel.
+  const opcoes = metodosParaValor(await metodosDePagamentoAtivos(), d.pagamento.valorCentavos + (d.pagamento.taxaCompradorCentavos ?? 0));
+  if (metodoPedido && opcoes.length > 0 && !opcoes.includes(metodoPedido)) {
+    throw new ErroDominio("forma_pagamento", tr("forma_de_pagamento_indisponivel"));
+  }
+  const metodo = opcoes.length > 1 ? metodoPedido : undefined;
+
   let sessao: SessaoCheckout;
+  /** Sessão substituída por outra (troca da forma de pagamento ou expirada no prazo da reserva). */
+  let anterior: string | undefined;
   try {
-    const existente = d.pagamento.sessaoId ? await obterSessaoCheckout(d.pagamento.sessaoId) : undefined;
-    if (existente && existente.status !== "open") {
-      // Pago ou expirado enquanto a pessoa estava fora: aplica o estado e avisa.
+    let existente = d.pagamento.sessaoId ? await obterSessaoCheckout(d.pagamento.sessaoId) : undefined;
+    if (existente?.status === "open" && metodo && metodoDaSessao(existente) !== metodo) {
+      // Fecha a sessão antiga antes de abrir a nova. Se ela foi paga nesse meio-tempo, o estado
+      // relido abaixo vale; a expiração dela não libera a vaga (reserva ainda no prazo).
+      await expirarSessaoCheckout(existente.id);
+      existente = await obterSessaoCheckout(existente.id);
+      if (existente.status === "open") throw new ErroStripe(0, "sessao_aberta", "A sessão anterior continua aberta");
+    }
+    if (existente && existente.status !== "open" && existente.status !== "expired") {
+      // Pago (ou pagamento assíncrono enviado) enquanto a pessoa estava fora: aplica o estado e avisa.
       await aplicarSessao(existente, acaoDaSessao(existente));
       throw new Error(tr("esta_reserva_ja_foi_concluida_ou"));
     }
+    const reaproveitada = existente?.status === "open" ? existente : undefined;
+    anterior = reaproveitada ? undefined : existente?.id;
     const origem = new URL(getRequestUrl()).origin;
     const criar = () => criarSessaoCheckout({
       inscricaoId,
@@ -130,13 +155,15 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
       contaDestino: d.contaDestino,
       taxaCentavos: d.contaDestino ? d.pagamento.taxaCentavos : undefined,
       taxaCompradorCentavos: d.pagamento.taxaCompradorCentavos,
+      metodo,
+      sessaoAnterior: anterior,
       urlSucesso: `${origem}/app/ingressos?pagamento=sucesso&sessao={CHECKOUT_SESSION_ID}`,
       urlCancelamento: `${origem}/inscricao/${d.eventoId}?pagamento=cancelado`,
     });
     // Sem conta de recebimento apta (desativada ou trocada depois da reserva) não há venda.
-    if (!existente && !d.contaDestino) throw new Error(MSG_SEM_RECEBIMENTO());
+    if (!reaproveitada && !d.contaDestino) throw new Error(MSG_SEM_RECEBIMENTO());
     try {
-      sessao = existente ?? await criar();
+      sessao = reaproveitada ?? await criar();
     } catch (e) {
       // Conta de destino que o Stripe não reconhece neste modo (ex.: conta de teste com a chave
       // de produção): a venda não acontece até a organização refazer o cadastro.
@@ -151,20 +178,26 @@ export async function abrirCheckout(inscricaoId: string): Promise<RespostaApi<Re
   }
   if (!sessao.url) throw new Error(MSG_FALHA_STRIPE());
   const url = sessao.url;
-  return mutar(({ base }) => {
+  const r = await mutar(({ base }) => {
     const ins = base.inscricoes.find((i) => i.id === inscricaoId)!;
-    if (ins.pagamento && !ins.pagamento.sessaoId) {
+    if (ins.pagamento && (!ins.pagamento.sessaoId || ins.pagamento.sessaoId === anterior)) {
       // Registra o destino efetivo da cobrança (a conta pode ter deixado de estar apta).
       ins.pagamento = { ...ins.pagamento, sessaoId: sessao.id, contaDestino: d.contaDestino, taxaCentavos: d.contaDestino ? ins.pagamento.taxaCentavos : undefined };
     }
-    return { inscricao: ins, urlPagamento: url };
+    // Outra aba trocou a sessão ao mesmo tempo: esta não vale e é fechada abaixo.
+    return { inscricao: ins, urlPagamento: ins.pagamento?.sessaoId === sessao.id ? url : undefined };
   });
+  if (!r.resultado.urlPagamento) {
+    await expirarSessoes([sessao.id]);
+    throw new Error(MSG_FALHA_STRIPE());
+  }
+  return r;
 }
 
 /** Reserva recém-criada: abre o checkout; se o Stripe falhar, libera a vaga na hora. */
-export async function checkoutDaNovaReserva(inscricaoId: string): Promise<RespostaApi<ResultadoCompra>> {
+export async function checkoutDaNovaReserva(inscricaoId: string, metodo?: MetodoPagamento): Promise<RespostaApi<ResultadoCompra>> {
   try {
-    return await abrirCheckout(inscricaoId);
+    return await abrirCheckout(inscricaoId, metodo);
   } catch (e) {
     await mutar(({ base }) => {
       const ins = base.inscricoes.find((i) => i.id === inscricaoId);
@@ -183,6 +216,8 @@ export async function aplicarSessao(sessao: SessaoCheckout, acao: AcaoSessao): P
     const ins = base.inscricoes.find((i) => i.id === inscricaoId);
     // Só a sessão desta reserva decide sobre ela.
     if (!ins?.pagamento || (ins.pagamento.sessaoId && ins.pagamento.sessaoId !== sessao.id)) return "ignorada";
+    // Expirada antes do prazo da reserva: foi trocada por outra forma de pagamento.
+    if (acao === "liberar_expirada" && !expiracaoLiberaReserva(ins)) return "ignorada";
     if (acao === "confirmar") return confirmarPagamentoNaBase(base, inscricaoId, stripe);
     if (acao === "processando") {
       marcarPagamentoProcessando(base, inscricaoId, stripe);
