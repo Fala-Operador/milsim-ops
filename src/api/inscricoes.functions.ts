@@ -22,9 +22,12 @@ import {
   type ResultadoCompra,
 } from "@/server/pagamentos.server";
 import { chamar } from "@/api/cliente";
+import { METODOS_PAGAMENTO, type MetodoPagamento } from "@/lib/stripe";
 import { tr } from "@/i18n/api/inscricoes.functions";
 
 const id = z.string().min(1).max(100);
+/** Forma de pagamento escolhida no site (o checkout abre direto nela). */
+const metodoPagamento = z.enum(METODOS_PAGAMENTO).optional();
 
 /**
  * Inscrição. Sem valor a pagar (ou sem Stripe configurado) confirma na hora; com valor,
@@ -41,23 +44,25 @@ export const confirmarInscricaoFn = createServerFn({ method: "POST" })
       voucherId: z.string().max(200).optional(),
       clienteId: z.string().max(64).optional(),
       precoEsperadoCentavos: z.number().int().min(0).optional(),
+      metodoPagamento,
     }).parse,
   )
   .handler(async ({ data }) => {
     const online = stripeConfigurado();
+    const { metodoPagamento: metodo, ...dados } = data;
     // A pessoa só se inscreve a si mesma; a origem é decidida pelo servidor.
     const r = await mutar(({ usuario }) =>
-      confirmar({ ...data, usuarioId: exigirUsuario(usuario).id }, { pagamentoOnline: online }),
+      confirmar({ ...dados, usuarioId: exigirUsuario(usuario).id }, { pagamentoOnline: online }),
     );
     if (r.resultado.status !== "pendente")
       return { ...r, resultado: { inscricao: r.resultado } as ResultadoCompra };
-    return checkoutDaNovaReserva(r.resultado.id);
+    return checkoutDaNovaReserva(r.resultado.id, metodo);
   });
 
-/** Volta à página de pagamento de uma reserva ainda aberta. */
+/** Volta à página de pagamento de uma reserva ainda aberta (opcionalmente em outra forma de pagamento). */
 export const retomarPagamentoFn = createServerFn({ method: "POST" })
-  .validator(z.object({ inscricaoId: id }).parse)
-  .handler(({ data }) => abrirCheckout(data.inscricaoId));
+  .validator(z.object({ inscricaoId: id, metodoPagamento }).parse)
+  .handler(({ data }) => abrirCheckout(data.inscricaoId, data.metodoPagamento));
 
 /** Retorno do checkout: aplica o resultado consultando o Stripe (não depende do webhook). */
 export const sincronizarPagamentoFn = createServerFn({ method: "POST" })
@@ -134,13 +139,15 @@ export async function confirmarInscricao(d: {
   clienteId?: string | undefined;
   /** Preço do ingresso mostrado na tela: se o lote virou e ele subiu, o servidor recusa. */
   precoEsperadoCentavos?: number | undefined;
+  /** Forma de pagamento escolhida (só quando há mais de uma ativa). */
+  metodoPagamento?: MetodoPagamento | undefined;
 }) {
   const r = await chamar(confirmarInscricaoFn({ data: d }));
   if (r.inscricao.status === "confirmada") registrarConfirmacao(r.inscricao);
   return r;
 }
-export const retomarPagamento = (inscricaoId: string) =>
-  chamar(retomarPagamentoFn({ data: { inscricaoId } }));
+export const retomarPagamento = (inscricaoId: string, metodoPagamento?: MetodoPagamento) =>
+  chamar(retomarPagamentoFn({ data: { inscricaoId, metodoPagamento } }));
 export async function sincronizarPagamento(sessaoId: string) {
   const r = await chamar(sincronizarPagamentoFn({ data: { sessaoId } }));
   if (r.inscricao?.status === "confirmada") registrarConfirmacao(r.inscricao);

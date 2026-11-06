@@ -79,6 +79,56 @@ export interface SessaoCheckout {
   payment_intent?: string | { id: string } | null;
   client_reference_id?: string | null;
   metadata?: Record<string, string> | null;
+  /** Meios aceitos pela sessão (com um só, o checkout abre direto nele). */
+  payment_method_types?: string[] | null;
+}
+
+// ---------- Forma de pagamento escolhida no site ----------
+
+/** Meios em BRL que o comprador pode escolher antes do checkout, na ordem exibida. */
+export const METODOS_PAGAMENTO = ["card", "pix", "boleto"] as const;
+export type MetodoPagamento = (typeof METODOS_PAGAMENTO)[number];
+
+/**
+ * Limites de valor por meio, em centavos (documentação do Stripe): Boleto de R$ 5,00 a
+ * R$ 49.999,99; Pix e cartão a partir de R$ 0,50 (o teto do Pix é em dólar e fica com o Stripe).
+ */
+export const LIMITES_METODO: Record<MetodoPagamento, { min: number; max?: number }> = {
+  card: { min: 50 },
+  pix: { min: 50 },
+  boleto: { min: 500, max: 4_999_999 },
+};
+
+/** Configuração de meios de pagamento (GET /v1/payment_method_configurations): só os campos usados. */
+export interface ConfiguracaoMetodos {
+  id: string;
+  active?: boolean;
+  is_default?: boolean;
+  /** Presente nas configurações herdadas por contas conectadas. */
+  parent?: string | null;
+  [metodo: string]: unknown;
+}
+
+/**
+ * Meios que o checkout da plataforma pode oferecer: os da configuração padrão ativa marcados
+ * pelo Stripe como `available` (preferência ligada e capacidade ativa). As vendas são cobranças
+ * com destino sem `on_behalf_of`, então vale a configuração da própria plataforma.
+ */
+export function metodosDaConfiguracao(configs: ConfiguracaoMetodos[]): MetodoPagamento[] {
+  const padrao = configs.find((c) => c.is_default && c.active !== false && !c.parent);
+  if (!padrao) return [];
+  return METODOS_PAGAMENTO.filter((m) => (padrao[m] as { available?: boolean } | undefined)?.available === true);
+}
+
+/** Meios que aceitam o total cobrado (ingresso + taxa de serviço). */
+export function metodosParaValor(metodos: readonly MetodoPagamento[], totalCentavos: number): MetodoPagamento[] {
+  return metodos.filter((m) => totalCentavos >= LIMITES_METODO[m].min && totalCentavos <= (LIMITES_METODO[m].max ?? Infinity));
+}
+
+/** Meio de uma sessão criada para um só meio; `undefined` quando aceita os meios do painel. */
+export function metodoDaSessao(s: SessaoCheckout): MetodoPagamento | undefined {
+  const tipos = s.payment_method_types ?? [];
+  return tipos.length === 1 && (METODOS_PAGAMENTO as readonly string[]).includes(tipos[0]!) ? (tipos[0] as MetodoPagamento) : undefined;
 }
 
 export interface CobrancaStripe {

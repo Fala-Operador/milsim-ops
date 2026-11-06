@@ -4,7 +4,7 @@ import { z } from "zod";
 import * as auth from "@/server/auth.server";
 import { configRealtimeNavegador } from "@/server/supabase.server";
 import { consultar, contextoSomenteLeitura, ler } from "@/server/unidade.server";
-import { stripeConfigurado } from "@/server/stripe.server";
+import { metodosDePagamentoAtivos, stripeConfigurado } from "@/server/stripe.server";
 import { chaveSiteTurnstile } from "@/server/turnstile.server";
 import { contaParaRepasse, taxaDoComprador } from "@/lib/repasses";
 import { esquemaFicha } from "@/lib/fichaEmergencia";
@@ -28,7 +28,9 @@ export const obterEventoFn = createServerFn({ method: "GET" })
     const { base } = await contextoSomenteLeitura();
     // Ingresso pago só é vendido com a conta de recebimento da organização ativa.
     const org = base.organizacoes.find((o) => o.id === r.evento?.organizacaoId);
-    return { ...r, taxaCompradorPercentual: taxaDoComprador(org), vendasAbertas: !!contaParaRepasse(org) };
+    // Formas de pagamento ativas no Stripe (o comprador escolhe uma antes do checkout).
+    const metodosPagamento = r.pagamentoOnline ? await metodosDePagamentoAtivos() : [];
+    return { ...r, taxaCompradorPercentual: taxaDoComprador(org), vendasAbertas: !!contaParaRepasse(org), metodosPagamento };
   });
 
 // Token do Cloudflare Turnstile, repassado ao CAPTCHA do Supabase Auth.

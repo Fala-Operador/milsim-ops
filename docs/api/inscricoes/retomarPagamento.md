@@ -16,10 +16,12 @@ Volta à página de pagamento de uma reserva ainda aberta (botão "Concluir paga
 | Campo | Tipo | Observação |
 |---|---|---|
 | `inscricaoId` | string |  |
+| `metodoPagamento?` | `"card"` \| `"pix"` \| `"boleto"` | Outra forma de pagamento para a mesma reserva. Sem ela, reabre a sessão como está. |
 
 ## Regras
 
-- Reaproveita a sessão de checkout aberta; se ela já foi paga ou expirou, aplica o estado e avisa.
+- Reaproveita a sessão de checkout aberta; se ela já foi paga (ou o pagamento assíncrono foi enviado), aplica o estado e avisa.
+- Com `metodoPagamento` diferente do da sessão aberta, expira a sessão antiga **antes** de criar a nova no meio escolhido. Sessão expirada com a reserva ainda no prazo é substituída por outra; a vaga não é liberada.
 - Reserva vencida não pode ser retomada: faça uma nova inscrição.
 
 ## Resposta
@@ -34,6 +36,7 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - Esta reserva não está mais aguardando pagamento.
 - O prazo desta reserva terminou. Faça uma nova inscrição.
 - A venda de ingressos deste evento ainda não está aberta. (a conta de recebimento deixou de estar ativa depois da reserva)
+- Esta forma de pagamento não está disponível para este valor. Escolha outra.
 - Entre na sua conta para continuar.
 
 ## Exemplo
