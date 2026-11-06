@@ -69,7 +69,7 @@ export const tr = dicionario("routes/inscricao.$eventoId", {
   "confirmando": { pt: "Confirmando...", en: "Confirming..." },
   "ir_para_o_pagamento": { pt: "Ir para o pagamento", en: "Go to payment" },
   "confirmar_inscricao": { pt: "Confirmar inscrição", en: "Confirm registration" },
-  "o_pagamento_e_feito_no_ambiente": { pt: "O pagamento é feito no ambiente seguro do Stripe; a plataforma não recebe nem guarda dados do seu cartão. A vaga fica reservada por cerca de 30 minutos enquanto você paga.", en: "Payment happens in Stripe's secure environment; the platform never receives or stores your card details. Your spot is held for about 30 minutes while you pay." },
+  "o_pagamento_e_feito_no_ambiente": { pt: "O pagamento é feito no ambiente seguro do Stripe; a plataforma não recebe nem guarda seus dados de pagamento. A vaga fica reservada por cerca de 30 minutos enquanto você paga.", en: "Payment happens in Stripe's secure environment; the platform never receives or stores your payment details. Your spot is held for about 30 minutes while you pay." },
   "a_plataforma_nao_processa_pagamentos_nao": { pt: "A plataforma não processa pagamentos: não pedimos cartão, PIX ou dados de pagamento.", en: "The platform does not process payments: we do not ask for a card, PIX or payment details." },
   "cupom_removido_do_calculo": { pt: "Cupom removido do cálculo: {motivo}", en: "Coupon removed from the total: {motivo}" },
   "nao_vale_para_este_ingresso": { pt: "não vale para este ingresso.", en: "not valid for this ticket." },

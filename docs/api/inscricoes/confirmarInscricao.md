@@ -23,6 +23,7 @@ Inscreve a pessoa logada no evento. Sem valor a pagar (ou sem Stripe), confirma 
 | `voucherId?` | string | Benefício de recompensa (gamificação). |
 | `clienteId?` | string (8–64, letras, números, hífen) | Chave de idempotência: a mesma chave em todas as tentativas do mesmo envio. |
 | `precoEsperadoCentavos?` | inteiro ≥ 0 | Preço do ingresso mostrado na tela. Se o lote virou e o preço subiu, a inscrição é recusada. |
+| `metodoPagamento?` | `"card"` \| `"pix"` \| `"boleto"` | Forma de pagamento escolhida: o checkout abre só com ela. Enviar quando houver mais de uma opção ativa para o total. |
 
 ## Regras
 
@@ -31,6 +32,7 @@ Inscreve a pessoa logada no evento. Sem valor a pagar (ou sem Stripe), confirma 
 - **Idempotente** com `clienteId`: repetir a chamada devolve a mesma inscrição (e reabre o mesmo checkout), sem gastar o cupom de novo.
 - Uma nova tentativa substitui a reserva pendente anterior da pessoa, salvo se o pagamento dela já estiver em processamento.
 - A origem (`plataforma`/`cortesia`) e o titular são decididos pelo servidor.
+- `metodoPagamento` precisa estar entre os meios ativos no Stripe que aceitam o total (ingresso + taxa de serviço); com uma opção só, é ignorado e o checkout usa os meios do painel. Se o meio não serve, a reserva recém-criada é liberada.
 - Com reserva, cupom e benefício ficam presos até o pagamento; se a reserva for liberada, voltam.
 
 ## Resposta
@@ -73,6 +75,7 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - Este cupom ainda não está valendo.
 - Este cupom expirou.
 - Este cupom não vale para o tipo de ingresso escolhido.
+- Esta forma de pagamento não está disponível para este valor. Escolha outra.
 - Entre na sua conta para continuar.
 
 ## Exemplo
@@ -84,7 +87,7 @@ const clienteId = useRef(crypto.randomUUID()); // mesma chave em reenvios
 
 const r = await confirmarInscricao({
   eventoId: "evt-mv76xwom-mgios", tipoId: "tp-tatico", exercitoId: "ex-alfa",
-  codigoCupom: "OPERADOR15", clienteId: clienteId.current,
+  codigoCupom: "OPERADOR15", clienteId: clienteId.current, metodoPagamento: "pix",
 });
 if (r.urlPagamento) window.location.assign(r.urlPagamento);
 else navigate({ to: "/app/ingressos" });
@@ -98,7 +101,8 @@ else navigate({ to: "/app/ingressos" });
   "tipoId": "tp-tatico",
   "exercitoId": "ex-alfa",
   "codigoCupom": "OPERADOR15",
-  "clienteId": "0f8c7a1e-5b2d-4c3e-9a11-7d6e5f4a3b2c"
+  "clienteId": "0f8c7a1e-5b2d-4c3e-9a11-7d6e5f4a3b2c",
+  "metodoPagamento": "pix"
 }
 ```
 

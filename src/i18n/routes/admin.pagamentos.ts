@@ -24,4 +24,11 @@ export const tr = dicionario("routes/admin.pagamentos", {
   "nao_configurado": { pt: "Não configurado", en: "Not set up" },
   "nenhuma_organizacao_cadastrada": { pt: "Nenhuma organização cadastrada.", en: "No organizations registered." },
   "x_de_y": { pt: "{x} de {y}", en: "{x} of {y}" },
+  "formas_de_pagamento_no_checkout": { pt: "Formas de pagamento no checkout", en: "Payment methods at checkout" },
+  "formas_lidas_do_stripe": { pt: "Lidas do Stripe (Configurações → Meios de pagamento, configuração padrão da plataforma), com cache de 5 minutos. Com mais de uma, o comprador escolhe antes do checkout na inscrição, em Meus ingressos e nos impulsos.", en: "Read from Stripe (Settings → Payment methods, the platform's default configuration), cached for 5 minutes. With more than one, buyers choose before checkout on registration, My tickets and boosts." },
+  "nao_foi_possivel_ler_as_formas": { pt: "Não foi possível ler as formas de pagamento no Stripe: {erro}. Sem essa leitura não há escolha e o checkout usa os meios do painel. Se a chave do servidor for restrita (rk_…), dê a ela permissão de leitura em \"Payment Method Configurations\".", en: "Could not read payment methods from Stripe: {erro}. Without it there is no choice and checkout uses the dashboard methods. If the server key is restricted (rk_…), grant it read access to \"Payment Method Configurations\"." },
+  "nenhuma_forma_ativa": { pt: "Nenhuma forma de pagamento ativa encontrada na configuração padrão do Stripe.", en: "No active payment method found in Stripe's default configuration." },
+  "so_uma_forma_ativa": { pt: "Só {forma} está ativo: o comprador vai direto para ele, sem escolha. Ative Pix ou Boleto no painel do Stripe (no modo da chave em uso) para oferecer a escolha.", en: "Only {forma} is active: buyers go straight to it, with no choice. Turn on Pix or Boleto in the Stripe dashboard (in the mode of the key in use) to offer a choice." },
+  "consultar_de_novo": { pt: "Consultar de novo", en: "Check again" },
+  "consultando": { pt: "Consultando...", en: "Checking..." },
 });

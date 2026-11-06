@@ -81,9 +81,9 @@ sequenceDiagram
     participant S as Stripe
     participant E as Edge Function milsim-stripe-webhook
 
-    P->>App: confirmarInscricao (clienteId)
+    P->>App: confirmarInscricao (clienteId, metodoPagamento)
     App->>DB: valida tudo e cria reserva "pendente" (32 min)<br/>prende vaga, cupom e benefício
-    App->>S: cria/reabre Checkout Session
+    App->>S: cria/reabre Checkout Session (só no meio escolhido)
     App-->>P: urlPagamento
     P->>S: paga no checkout
     par Webhook
@@ -106,7 +106,10 @@ Desvios:
 - **Pagamento assíncrono** (boleto): `completed` sem pagamento marca `processando` (a vaga continua
   presa) até `async_payment_succeeded` (confirma) ou `async_payment_failed` (libera).
 - **Pagou tarde demais** e não há mais vaga: o pagamento é reembolsado automaticamente.
-- **Voltar a pagar depois**: [`retomarPagamento`](api/inscricoes/retomarPagamento.md) reabre a mesma sessão.
+- **Voltar a pagar depois**: [`retomarPagamento`](api/inscricoes/retomarPagamento.md) reabre a mesma sessão
+  ("Concluir pagamento" em Meus ingressos pergunta a forma de pagamento quando há mais de uma ativa).
+- **Trocar a forma de pagamento**: com outro `metodoPagamento`, a sessão aberta é expirada e outra é
+  criada no novo meio; a reserva (vaga, cupom, benefício e prazo) continua a mesma.
 - **Rede caiu no envio**: reenviar com o mesmo `clienteId` devolve a mesma reserva e o mesmo checkout.
 
 ## 4. Estados da inscrição

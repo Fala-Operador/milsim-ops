@@ -16,10 +16,12 @@ Volta à página de pagamento de um impulso que ainda aguarda pagamento.
 | Campo | Tipo | Observação |
 |---|---|---|
 | `impulsoId` | string |  |
+| `metodoPagamento?` | `"card"` \| `"pix"` \| `"boleto"` | Outra forma de pagamento para a mesma compra. Sem ela, reabre a sessão como está. |
 
 ## Regras
 
-- Reaproveita a Checkout Session aberta; sessão já paga ou expirada é aplicada e a chamada avisa.
+- Reaproveita a Checkout Session aberta; sessão já paga (ou com pagamento assíncrono enviado) é aplicada e a chamada avisa.
+- Com `metodoPagamento` diferente do da sessão aberta, expira a sessão antiga **antes** de criar a nova no meio escolhido. Sessão expirada ainda no prazo de pagamento (60 min) é substituída por outra; a compra não é cancelada.
 
 ## Resposta
 
@@ -32,6 +34,7 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - Impulso não encontrado.
 - Este impulso não está mais aguardando pagamento.
 - Este pagamento já foi concluído ou expirou. Confira em Impulsionar.
+- Esta forma de pagamento não está disponível para este valor. Escolha outra.
 
 ## Exemplo
 

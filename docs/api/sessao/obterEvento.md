@@ -23,10 +23,11 @@ Carrega um evento e a organização dele para os carregadores de rota (`/eventos
 - `pagamentoOnline` indica se o Stripe está configurado (inscrições pagas passam pelo checkout).
 - `taxaCompradorPercentual` é a taxa de serviço (%) da organização do evento, somada ao ingresso no checkout (0 = sem taxa).
 - `vendasAbertas` diz se a organização tem conta de recebimento ativa; sem ela, ingressos pagos não são vendidos (gratuitos e cortesias seguem normais).
+- `metodosPagamento` lista as formas de pagamento ativas no Stripe (`card`, `pix`, `boleto`), lidas da configuração padrão da plataforma com cache de 5 minutos; vazia sem Stripe ou se a leitura falhar. A página filtra pelo total com `metodosParaValor` e só mostra a escolha com mais de uma opção.
 
 ## Resposta
 
-`{ evento, organizacao, pagamentoOnline, taxaCompradorPercentual, vendasAbertas }`; `evento` é `null` quando não existe ou não é visível.
+`{ evento, organizacao, pagamentoOnline, taxaCompradorPercentual, vendasAbertas, metodosPagamento }`; `evento` é `null` quando não existe ou não é visível.
 
 ## Exemplo
 

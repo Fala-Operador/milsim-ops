@@ -11,17 +11,20 @@ import { salvarPlanosImpulsoNaBase, usarImpulsoNaBase, type DadosPlanoImpulso } 
 import { IDS_PLANO_IMPULSO, imagemPlanoValida } from "@/lib/impulsos";
 import type { PlanoImpulsoId } from "@/lib/domain/types";
 import { chamar } from "@/api/cliente";
+import { METODOS_PAGAMENTO, type MetodoPagamento } from "@/lib/stripe";
 
 const id = z.string().min(1).max(100);
 const planoId = z.enum(IDS_PLANO_IMPULSO);
+/** Forma de pagamento escolhida no site (o checkout abre direto nela). */
+const metodoPagamento = z.enum(METODOS_PAGAMENTO).optional();
 
 export const comprarImpulsoFn = createServerFn({ method: "POST" })
-  .validator(z.object({ planoId }).parse)
-  .handler(({ data }) => comprar(data.planoId));
+  .validator(z.object({ planoId, metodoPagamento }).parse)
+  .handler(({ data }) => comprar(data.planoId, data.metodoPagamento));
 
 export const retomarPagamentoImpulsoFn = createServerFn({ method: "POST" })
-  .validator(z.object({ impulsoId: id }).parse)
-  .handler(({ data }) => abrirCheckoutImpulso(data.impulsoId));
+  .validator(z.object({ impulsoId: id, metodoPagamento }).parse)
+  .handler(({ data }) => abrirCheckoutImpulso(data.impulsoId, data.metodoPagamento));
 
 export const sincronizarPagamentoImpulsoFn = createServerFn({ method: "POST" })
   .validator(z.object({ sessaoId: z.string().min(1).max(300) }).parse)
@@ -56,8 +59,8 @@ export const salvarPlanosImpulsoFn = createServerFn({ method: "POST" })
 export const sincronizarPlanosImpulsoFn = createServerFn({ method: "POST" }).handler(() => sincronizarPlanosNoStripe());
 
 // ---------- Uso no navegador ----------
-export const comprarImpulso = (p: PlanoImpulsoId) => chamar(comprarImpulsoFn({ data: { planoId: p } }));
-export const retomarPagamentoImpulso = (impulsoId: string) => chamar(retomarPagamentoImpulsoFn({ data: { impulsoId } }));
+export const comprarImpulso = (p: PlanoImpulsoId, metodoPagamento?: MetodoPagamento) => chamar(comprarImpulsoFn({ data: { planoId: p, metodoPagamento } }));
+export const retomarPagamentoImpulso = (impulsoId: string, metodoPagamento?: MetodoPagamento) => chamar(retomarPagamentoImpulsoFn({ data: { impulsoId, metodoPagamento } }));
 export const sincronizarPagamentoImpulso = (sessaoId: string) => chamar(sincronizarPagamentoImpulsoFn({ data: { sessaoId } }));
 export const usarImpulso = (impulsoId: string, eventoId: string) => chamar(usarImpulsoFn({ data: { impulsoId, eventoId } }));
 /** Salva os tipos; com Stripe ativo devolve o resultado da sincronização do catálogo. */

@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Campo, EstadoVazio, Modal } from "@/components/ui";
+import { useEscolhaFormaPagamento } from "@/components/FormaPagamento";
 import type { BaseDados, ImpulsoComprado } from "@/lib/domain/types";
 import { tr } from "@/i18n/routes/organizacao.impulsos";
 
@@ -89,6 +90,7 @@ function Impulsos() {
   const [erro, setErro] = useState("");
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [usando, setUsando] = useState<ImpulsoComprado | null>(null);
+  const { pedirForma, janela: janelaFormaPagamento } = useEscolhaFormaPagamento();
   const organizacaoId = usuario?.organizacaoId;
   if (!usuario || !organizacaoId || usuario.perfil !== "organizador") {
     return <EstadoVazio titulo={tr("impulsos_sao_da_organizacao")} descricao={tr("entre_com_a_conta_de_organizador")} />;
@@ -103,14 +105,15 @@ function Impulsos() {
     setErro(""); setOcupado(chave);
     try { await fn(); } catch (e) { setErro((e as Error).message); } finally { setOcupado(null); }
   };
-  const comprar = (planoId: (typeof planos)[number]["id"]) => executar(planoId, async () => {
-    const r = await comprarImpulso(planoId);
+  // Com mais de uma forma ativa para o valor, pergunta qual antes de abrir o checkout.
+  const comprar = (p: (typeof planos)[number]) => executar(p.id, () => pedirForma(p.precoCentavos, async (metodo) => {
+    const r = await comprarImpulso(p.id, metodo);
     if (r.urlPagamento) window.location.assign(r.urlPagamento);
-  });
-  const pagar = (i: ImpulsoComprado) => executar(i.id, async () => {
-    const r = await retomarPagamentoImpulso(i.id);
+  }));
+  const pagar = (i: ImpulsoComprado) => executar(i.id, () => pedirForma(i.precoCentavos, async (metodo) => {
+    const r = await retomarPagamentoImpulso(i.id, metodo);
     if (r.urlPagamento) window.location.assign(r.urlPagamento);
-  });
+  }));
 
   return (
     <section className="space-y-8">
@@ -170,7 +173,7 @@ function Impulsos() {
                   <p className="font-semibold">{nomeImpulso(p.duracaoHoras)}</p>
                   <p className="font-display text-4xl font-bold leading-none tabular-nums">{p.precoCentavos === 0 ? tr("gratis") : <Preco centavos={p.precoCentavos} />}</p>
                   <p className="mt-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">{tr("use_em_ate_validadedias_dias_apos", { validadeDias: p.validadeDias })}</p>
-                  <Button className="mt-4" disabled={ocupado !== null} onClick={() => void comprar(p.id)}>
+                  <Button className="mt-4" disabled={ocupado !== null} onClick={() => void comprar(p)}>
                     <Rocket className="size-4" aria-hidden />{ocupado === p.id ? tr("abrindo_pagamento") : tr("comprar")}
                   </Button>
                 </div>
@@ -181,6 +184,7 @@ function Impulsos() {
       </section>
 
       {usando && <ModalUsar base={base} impulso={usando} onFechar={() => setUsando(null)} />}
+      {janelaFormaPagamento}
     </section>
   );
 }

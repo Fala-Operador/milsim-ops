@@ -46,10 +46,11 @@ export function criarCompraImpulsoNaBase(
   return impulso;
 }
 
-export function registrarSessaoImpulsoNaBase(base: BaseDados, impulsoId: string, sessaoId: string): ImpulsoComprado {
+/** Registra a sessão do checkout; `anterior` é a sessão que ela substitui (troca da forma de pagamento). */
+export function registrarSessaoImpulsoNaBase(base: BaseDados, impulsoId: string, sessaoId: string, anterior?: string): ImpulsoComprado {
   const i = base.impulsosComprados.find((x) => x.id === impulsoId);
   if (!i) throw new ErroDominio("impulso", tr("impulso_nao_encontrado"));
-  if (!i.sessaoId) i.sessaoId = sessaoId;
+  if (!i.sessaoId || (anterior && i.sessaoId === anterior)) i.sessaoId = sessaoId;
   return i;
 }
 
