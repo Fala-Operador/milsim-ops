@@ -3,7 +3,10 @@
 // e STRIPE_WEBHOOK_FORWARD_SECRET (compartilhado com a Edge Function milsim-stripe-webhook, que guarda
 // os segredos de assinatura do Stripe). Sem a chave da API, inscrições confirmam sem cobrança.
 import "@tanstack/react-start/server-only";
-import { codificarFormulario, problemaDasChaves, type CobrancaStripe, type SessaoCheckout } from "@/lib/stripe";
+import {
+  codificarFormulario, metodosDaConfiguracao, problemaDasChaves,
+  type CobrancaStripe, type ConfiguracaoMetodos, type MetodoPagamento, type SessaoCheckout,
+} from "@/lib/stripe";
 import type { ContaStripe, PerfilComercial, SaldoStripe, SaqueStripe } from "@/lib/repasses";
 import { tr } from "@/i18n/server/stripe.server";
 
@@ -76,9 +79,17 @@ export interface DadosCheckout {
   taxaCentavos?: number | undefined;
   /** Taxa de serviço paga pelo comprador, cobrada como um item à parte; vai para a organização. */
   taxaCompradorCentavos?: number | undefined;
+  /** Forma de pagamento escolhida no site: o checkout abre direto nela. Sem ela, valem os meios do painel. */
+  metodo?: MetodoPagamento | undefined;
+  /** Sessão que esta substitui (troca da forma de pagamento): entra na chave de idempotência. */
+  sessaoAnterior?: string | undefined;
 }
 
-/** Abre uma Checkout Session em BRL; a inscrição vai em metadata e client_reference_id. */
+/**
+ * Abre uma Checkout Session em BRL; a inscrição vai em metadata e client_reference_id.
+ * Idempotente por reserva, forma de pagamento e sessão substituída: repetir a chamada devolve a
+ * mesma sessão, e cada troca de forma de pagamento gera uma sessão nova.
+ */
 export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
   const taxaComprador = d.taxaCompradorCentavos ?? 0;
   // Com destino, a plataforma retém só a sua taxa; a taxa de serviço do comprador segue para a organização.
@@ -96,6 +107,7 @@ export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
       success_url: d.urlSucesso,
       cancel_url: d.urlCancelamento,
       metadata: { inscricaoId: d.inscricaoId },
+      payment_method_types: d.metodo ? [d.metodo] : undefined,
       // Cobrança com destino: o Stripe transfere à organização o valor menos a taxa.
       payment_intent_data: {
         metadata: { inscricaoId: d.inscricaoId },
@@ -107,9 +119,43 @@ export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
         ...(taxaComprador > 0 ? [itemTaxa] : []),
       ],
     },
-    // Uma sessão por reserva: repetir a chamada devolve a mesma sessão.
-    `checkout-${d.inscricaoId}`,
+    d.metodo || d.sessaoAnterior
+      ? `checkout-${d.inscricaoId}-${d.metodo ?? "painel"}-${d.sessaoAnterior ?? "inicial"}`
+      : `checkout-${d.inscricaoId}`,
   );
+}
+
+// ---------- Meios de pagamento ativos na conta da plataforma ----------
+
+const CACHE_METODOS_MS = 5 * 60_000;
+const CACHE_METODOS_FALHA_MS = 60_000;
+let cacheMetodos: { metodos: MetodoPagamento[]; ate: number } | undefined;
+
+/** Só para testes. */
+export function limparCacheMetodos(): void {
+  cacheMetodos = undefined;
+}
+
+/**
+ * Meios que o checkout pode oferecer agora, lidos da configuração padrão da plataforma
+ * (Configurações → Meios de pagamento no painel do Stripe). Guardado por 5 minutos: ligar ou
+ * desligar um meio no painel aparece no site depois disso. Em falha devolve lista vazia (1 min),
+ * e o checkout segue com os meios do painel, sem escolha no site.
+ */
+export async function metodosDePagamentoAtivos(): Promise<MetodoPagamento[]> {
+  if (!chaveApi()) return [];
+  if (cacheMetodos && cacheMetodos.ate > Date.now()) return cacheMetodos.metodos;
+  let metodos: MetodoPagamento[] = [];
+  let validade = CACHE_METODOS_MS;
+  try {
+    const r = await chamarStripe<{ data?: ConfiguracaoMetodos[] }>("GET", "/payment_method_configurations?limit=100");
+    metodos = metodosDaConfiguracao(r.data ?? []);
+  } catch (e) {
+    console.error("Stripe: falha ao ler os meios de pagamento", e);
+    validade = CACHE_METODOS_FALHA_MS;
+  }
+  cacheMetodos = { metodos, ate: Date.now() + validade };
+  return metodos;
 }
 
 // ---------- Catálogo da plataforma: um produto por tipo de impulso ----------

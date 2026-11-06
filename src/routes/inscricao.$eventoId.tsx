@@ -12,6 +12,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { Preco } from "@/components/Preco";
 import { MSG_SEM_RECEBIMENTO, taxaPlataforma } from "@/lib/repasses";
+import { metodosParaValor, type MetodoPagamento } from "@/lib/stripe";
+import { Barcode, CreditCard, QrCode } from "lucide-react";
 import { descontoDoBeneficio, descreverBeneficio, statusVoucher } from "@/lib/participacao";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -35,9 +37,9 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
     pagamento: typeof s["pagamento"] === "string" ? s["pagamento"] : undefined,
   }),
   loader: async ({ params }) => {
-    const { evento, pagamentoOnline, taxaCompradorPercentual, vendasAbertas } = await obterEventoFn({ data: { eventoId: params.eventoId } });
+    const { evento, pagamentoOnline, taxaCompradorPercentual, vendasAbertas, metodosPagamento } = await obterEventoFn({ data: { eventoId: params.eventoId } });
     if (!evento || evento.status !== "publicado") throw notFound();
-    return { evento, pagamentoOnline, taxaCompradorPercentual, vendasAbertas };
+    return { evento, pagamentoOnline, taxaCompradorPercentual, vendasAbertas, metodosPagamento };
   },
   head: ({ loaderData }) => ({
     meta: loaderData
@@ -60,7 +62,7 @@ export const Route = createFileRoute("/inscricao/$eventoId")({
 });
 
 function PaginaInscricao() {
-  const { evento: eventoCarregado, pagamentoOnline, taxaCompradorPercentual, vendasAbertas } = Route.useLoaderData();
+  const { evento: eventoCarregado, pagamentoOnline, taxaCompradorPercentual, vendasAbertas, metodosPagamento } = Route.useLoaderData();
   const evento = useEventoAtual(eventoCarregado);
   const { cortesia: codigoCortesia, voucher: voucherInicial, pagamento: retornoPagamento, comunidade: vemDaComunidade } = Route.useSearch();
   const { usuario, recarregar } = useAuth();
@@ -83,6 +85,7 @@ function PaginaInscricao() {
   const [cupomAplicado, setCupomAplicado] = useState<{ codigo: string; percentual: number } | null>(null);
   const [erroCupom, setErroCupom] = useState("");
   const [avisoCupom, setAvisoCupom] = useState("");
+  const [metodo, setMetodo] = useState<MetodoPagamento | "">("");
   const [erro, setErro] = useState("");
   const [confirmando, setConfirmando] = useState(false);
   const emAndamento = useRef(false); // impede duplicidade por cliques repetidos
@@ -124,6 +127,10 @@ function PaginaInscricao() {
   const vaiPagar = pagamentoOnline && !cortesia && !!tipo && valorFinal > 0;
   // Taxa de serviço somada no checkout (mesma conta do servidor na reserva).
   const taxaServico = vaiPagar ? taxaPlataforma(valorFinal, taxaCompradorPercentual) : 0;
+  // Formas de pagamento ativas no Stripe que aceitam o total; com uma só, o checkout abre direto nela.
+  const opcoesPagamento = vaiPagar ? metodosParaValor(metodosPagamento, valorFinal + taxaServico) : [];
+  const escolheMetodo = opcoesPagamento.length > 1;
+  const metodoEscolhido = metodo && opcoesPagamento.includes(metodo) ? metodo : undefined;
   const reservaAberta = base.inscricoes.find(
     (i) => i.eventoId === evento.id && i.usuarioId === usuario?.id && i.pagamento?.status === "aguardando" && reservaVigente(i),
   );
@@ -201,6 +208,10 @@ function PaginaInscricao() {
       setErro(tr("selecione_o_tipo_de_ingresso_e"));
       return;
     }
+    if (escolheMetodo && !metodoEscolhido) {
+      setErro(tr("escolha_a_forma_de_pagamento"));
+      return;
+    }
     emAndamento.current = true;
     setConfirmando(true);
     try {
@@ -213,6 +224,7 @@ function PaginaInscricao() {
         voucherId: voucherId || undefined,
         clienteId: clienteId.current,
         precoEsperadoCentavos: !cortesia && disp?.disponivel ? disp.precoCentavos : undefined,
+        metodoPagamento: escolheMetodo ? metodoEscolhido : undefined,
       });
       // Reserva criada: segue para a página de pagamento do Stripe.
       if (r.urlPagamento) window.location.assign(r.urlPagamento);
@@ -338,6 +350,26 @@ function PaginaInscricao() {
               </div>
             </Etapa>
           )}
+
+          {escolheMetodo && (
+            <Etapa n={!cortesia && (vouchers.length > 0 || !voucherId) ? 4 : 3} titulo={tr("forma_de_pagamento")}>
+              <RadioGroup value={metodoEscolhido ?? ""} onValueChange={(v) => { setMetodo(v as MetodoPagamento); setErro(""); }} aria-label={tr("forma_de_pagamento")} className="grid gap-2 sm:grid-cols-2">
+                {opcoesPagamento.map((m) => {
+                  const Icone = ICONE_METODO[m];
+                  return (
+                    <Label key={m} htmlFor={`metodo-${m}`}
+                      className="flex cursor-pointer items-start gap-3 rounded-md border p-4 font-normal transition-colors hover:bg-secondary/60 has-[[data-state=checked]]:border-accent has-[[data-state=checked]]:bg-accent/5">
+                      <RadioGroupItem id={`metodo-${m}`} value={m} className="mt-0.5" />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2 font-semibold"><Icone className="size-4 shrink-0" aria-hidden />{rotuloMetodo(m)}</span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">{detalheMetodo(m)}</span>
+                      </span>
+                    </Label>
+                  );
+                })}
+              </RadioGroup>
+            </Etapa>
+          )}
         </div>
 
         <aside aria-label={tr("resumo_do_pedido")} className="overflow-hidden rounded-lg border border-border lg:sticky lg:top-24">
@@ -360,6 +392,9 @@ function PaginaInscricao() {
                 <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tr("cupom_codigo_percentual", { codigo: cupomAplicado.codigo, percentual: cupomAplicado.percentual })}</dt><dd className="font-mono tabular-nums text-success">−<Preco centavos={desconto} /></dd></div>
               )}
               {tipo && descontoVoucher > 0 && <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tr("beneficio")}</dt><dd className="font-mono tabular-nums text-success">−<Preco centavos={descontoVoucher} /></dd></div>}
+              {escolheMetodo && metodoEscolhido && !impedimento && (
+                <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tr("forma_de_pagamento")}</dt><dd className="text-right">{rotuloMetodo(metodoEscolhido)}</dd></div>
+              )}
               {tipo && !impedimento && taxaServico > 0 && (
                 <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tr("taxa_de_servico_valor", { valor: String(taxaCompradorPercentual).replace(".", ",") })}</dt><dd className="font-mono tabular-nums">+<Preco centavos={taxaServico} /></dd></div>
               )}
@@ -391,6 +426,16 @@ function PaginaInscricao() {
       </div>
     </div>
   );
+}
+
+const ICONE_METODO: Record<MetodoPagamento, typeof CreditCard> = { card: CreditCard, pix: QrCode, boleto: Barcode };
+
+function rotuloMetodo(m: MetodoPagamento): string {
+  return m === "pix" ? tr("metodo_pix") : m === "boleto" ? tr("metodo_boleto") : tr("metodo_card");
+}
+
+function detalheMetodo(m: MetodoPagamento): string {
+  return m === "pix" ? tr("metodo_pix_detalhe") : m === "boleto" ? tr("metodo_boleto_detalhe") : tr("metodo_card_detalhe");
 }
 
 function Etapa({ n, titulo, detalhe, children }: { n: number; titulo: string; detalhe?: string | undefined; children: React.ReactNode }) {

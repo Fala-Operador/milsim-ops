@@ -25,6 +25,15 @@ export function reservaVigente(i: Pick<Inscricao, "status" | "pagamento">, agora
   return i.pagamento.status === "aguardando" && new Date(i.pagamento.expiraEm) > agora;
 }
 
+/**
+ * Sessão de checkout expirada só libera a vaga quando o prazo da reserva acabou. Antes disso a
+ * expiração veio da troca da forma de pagamento (a sessão antiga é fechada antes de abrir a
+ * nova) e a reserva continua com a pessoa. A sessão expira no mesmo instante da reserva.
+ */
+export function expiracaoLiberaReserva(i: Pick<Inscricao, "status" | "pagamento">, agora = new Date()): boolean {
+  return !(i.status === "pendente" && i.pagamento?.status === "aguardando" && new Date(i.pagamento.expiraEm) > agora);
+}
+
 /** Inscrição que consome vaga: confirmada ou com reserva de pagamento vigente. */
 export function ocupaVaga(i: Pick<Inscricao, "status" | "pagamento">, agora = new Date()): boolean {
   return i.status === "confirmada" || reservaVigente(i, agora);
