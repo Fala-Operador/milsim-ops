@@ -17,6 +17,7 @@ import { EstadoVazio, Modal } from "@/components/ui";
 import { StatusInscricao } from "@/components/StatusInscricao";
 import type { Inscricao } from "@/lib/domain/types";
 import { IngressoQr } from "@/components/IngressoQr";
+import { useEscolhaFormaPagamento } from "@/components/FormaPagamento";
 import { CreditCard, QrCode, Users } from "lucide-react";
 import { tr } from "@/i18n/routes/app.ingressos";
 import { localeAtual } from "@/i18n/dicionario";
@@ -129,6 +130,7 @@ function MeusIngressos() {
   const [qrDe, setQrDe] = useState<Inscricao | null>(null);
   const [abrindoPagamento, setAbrindoPagamento] = useState<string | null>(null);
   const [erroPagamento, setErroPagamento] = useState("");
+  const { pedirForma, janela: janelaFormaPagamento } = useEscolhaFormaPagamento();
   const { sessao } = Route.useSearch();
   const aviso = useRetornoDoCheckout(sessao, usuario?.id);
   const base = carregarBase();
@@ -141,13 +143,18 @@ function MeusIngressos() {
   const concluirPagamento = async (ins: Inscricao) => {
     setErroPagamento("");
     setAbrindoPagamento(ins.id);
+    let indo = false;
     try {
-      const r = await retomarPagamento(ins.id);
-      if (r.urlPagamento) window.location.assign(r.urlPagamento);
+      // Com mais de uma forma ativa para o total, pergunta qual antes de abrir o checkout.
+      const total = (ins.pagamento?.valorCentavos ?? 0) + (ins.pagamento?.taxaCompradorCentavos ?? 0);
+      await pedirForma(total, async (metodo) => {
+        const r = await retomarPagamento(ins.id, metodo);
+        if (r.urlPagamento) { indo = true; window.location.assign(r.urlPagamento); }
+      });
     } catch (err) {
       setErroPagamento(err instanceof Error ? err.message : tr("nao_foi_possivel_abrir_o_pagamento"));
-      setAbrindoPagamento(null);
     }
+    if (!indo) setAbrindoPagamento(null);
   };
 
   const cancelarReserva = async (ins: Inscricao) => {
@@ -324,6 +331,7 @@ function MeusIngressos() {
           <Button variant="destructive" onClick={aoCancelar}>{tr("confirmar_cancelamento")}</Button>
         </div>
       </Modal>
+      {janelaFormaPagamento}
     </div>
   );
 }

@@ -4,7 +4,7 @@
 // os segredos de assinatura do Stripe). Sem a chave da API, inscrições confirmam sem cobrança.
 import "@tanstack/react-start/server-only";
 import {
-  codificarFormulario, metodosDaConfiguracao, problemaDasChaves,
+  codificarFormulario, metodosDaConfiguracao, ocultarChaves, problemaDasChaves,
   type CobrancaStripe, type ConfiguracaoMetodos, type MetodoPagamento, type SessaoCheckout,
 } from "@/lib/stripe";
 import type { ContaStripe, PerfilComercial, SaldoStripe, SaqueStripe } from "@/lib/repasses";
@@ -119,9 +119,7 @@ export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
         ...(taxaComprador > 0 ? [itemTaxa] : []),
       ],
     },
-    d.metodo || d.sessaoAnterior
-      ? `checkout-${d.inscricaoId}-${d.metodo ?? "painel"}-${d.sessaoAnterior ?? "inicial"}`
-      : `checkout-${d.inscricaoId}`,
+    chaveCheckout(d.inscricaoId, d.metodo, d.sessaoAnterior),
   );
 }
 
@@ -129,7 +127,7 @@ export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
 
 const CACHE_METODOS_MS = 5 * 60_000;
 const CACHE_METODOS_FALHA_MS = 60_000;
-let cacheMetodos: { metodos: MetodoPagamento[]; ate: number } | undefined;
+let cacheMetodos: { metodos: MetodoPagamento[]; erro?: string | undefined; ate: number } | undefined;
 
 /** Só para testes. */
 export function limparCacheMetodos(): void {
@@ -143,19 +141,27 @@ export function limparCacheMetodos(): void {
  * e o checkout segue com os meios do painel, sem escolha no site.
  */
 export async function metodosDePagamentoAtivos(): Promise<MetodoPagamento[]> {
-  if (!chaveApi()) return [];
-  if (cacheMetodos && cacheMetodos.ate > Date.now()) return cacheMetodos.metodos;
+  return (await diagnosticoMetodosPagamento()).metodos;
+}
+
+/**
+ * Meios lidos do Stripe e, se a leitura falhou, o motivo (sem chaves), para a administração ver
+ * por que a escolha não aparece. `atualizar` ignora o cache.
+ */
+export async function diagnosticoMetodosPagamento(atualizar = false): Promise<{ metodos: MetodoPagamento[]; erro?: string | undefined }> {
+  if (!chaveApi()) return { metodos: [] };
+  if (!atualizar && cacheMetodos && cacheMetodos.ate > Date.now()) return cacheMetodos;
   let metodos: MetodoPagamento[] = [];
-  let validade = CACHE_METODOS_MS;
+  let erro: string | undefined;
   try {
     const r = await chamarStripe<{ data?: ConfiguracaoMetodos[] }>("GET", "/payment_method_configurations?limit=100");
     metodos = metodosDaConfiguracao(r.data ?? []);
   } catch (e) {
     console.error("Stripe: falha ao ler os meios de pagamento", e);
-    validade = CACHE_METODOS_FALHA_MS;
+    erro = ocultarChaves(e instanceof Error ? e.message : String(e));
   }
-  cacheMetodos = { metodos, ate: Date.now() + validade };
-  return metodos;
+  cacheMetodos = { metodos, erro, ate: Date.now() + (erro ? CACHE_METODOS_FALHA_MS : CACHE_METODOS_MS) };
+  return cacheMetodos;
 }
 
 // ---------- Catálogo da plataforma: um produto por tipo de impulso ----------
@@ -226,6 +232,15 @@ export interface DadosCheckoutImpulso {
   precoId?: string | undefined;
   produtoId?: string | undefined;
   imagens?: string[] | undefined;
+  /** Forma de pagamento escolhida no site; sem ela, valem os meios do painel. */
+  metodo?: MetodoPagamento | undefined;
+  /** Sessão que esta substitui (troca da forma de pagamento): entra na chave de idempotência. */
+  sessaoAnterior?: string | undefined;
+}
+
+/** Chave de idempotência do checkout: uma sessão por compra, forma de pagamento e sessão substituída. */
+function chaveCheckout(id: string, metodo?: MetodoPagamento, sessaoAnterior?: string): string {
+  return metodo || sessaoAnterior ? `checkout-${id}-${metodo ?? "painel"}-${sessaoAnterior ?? "inicial"}` : `checkout-${id}`;
 }
 
 /** Checkout Session da compra de um impulso: o valor fica todo com a plataforma (sem destino). */
@@ -242,6 +257,7 @@ export function criarSessaoCheckoutImpulso(d: DadosCheckoutImpulso): Promise<Ses
       success_url: d.urlSucesso,
       cancel_url: d.urlCancelamento,
       metadata: { impulsoId: d.impulsoId },
+      payment_method_types: d.metodo ? [d.metodo] : undefined,
       payment_intent_data: { metadata: { impulsoId: d.impulsoId } },
       line_items: [
         d.precoId
@@ -255,7 +271,7 @@ export function criarSessaoCheckoutImpulso(d: DadosCheckoutImpulso): Promise<Ses
             },
       ],
     },
-    `checkout-${d.impulsoId}`,
+    chaveCheckout(d.impulsoId, d.metodo, d.sessaoAnterior),
   );
 }
 
