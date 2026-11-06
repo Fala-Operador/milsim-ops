@@ -210,11 +210,13 @@ Código: `src/lib/pagamentos.ts`, `src/lib/stripe.ts`, `src/server/pagamentos.se
 - **Forma de pagamento**: o site lê do Stripe os meios ativos na configuração padrão da plataforma
   (Configurações → Meios de pagamento; campo `available`), com cache de 5 minutos. Entre Cartão, Pix
   e Boleto, mostra os que aceitam o total (Boleto de R$ 5,00 a R$ 49.999,99; Cartão e Pix a partir de
-  R$ 0,50). Com mais de uma opção, o comprador escolhe na inscrição e o checkout abre só com ela;
-  com uma só (ou se a leitura falhar), não há escolha e o checkout usa os meios do painel.
+  R$ 0,50). Com mais de uma opção, o comprador escolhe antes do checkout em **todos** os pontos que
+  o abrem (inscrição, "Concluir pagamento" em Meus ingressos, compra e retomada de impulsos) e o
+  checkout abre só com ela; com uma só (ou se a leitura falhar), não há escolha e o checkout usa os
+  meios do painel. Admin → Pagamentos mostra o que o site enxerga no Stripe (ou o erro da leitura).
 - O servidor confere de novo o meio escolhido. Trocar de meio numa reserva aberta **expira a sessão
   antiga antes** de abrir a nova (só uma pode ser paga); a expiração dessa sessão não libera a vaga
-  enquanto a reserva estiver no prazo.
+  enquanto a reserva estiver no prazo, nem cancela o impulso dentro dos 60 minutos de pagamento.
 - **Boleto não tem reembolso pelo Stripe**: estornos automáticos (cancelamento, pagamento tardio
   sem vaga) de vendas pagas por Boleto falham e ficam registrados para devolução por fora.
 - Chamadas ao Stripe nunca acontecem dentro da transação do banco (que pode ser repetida).

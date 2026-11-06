@@ -13,7 +13,7 @@ import { formatarBRL, formatarDataBR } from "@/lib/domain/money";
 import { Preco } from "@/components/Preco";
 import { MSG_SEM_RECEBIMENTO, taxaPlataforma } from "@/lib/repasses";
 import { metodosParaValor, type MetodoPagamento } from "@/lib/stripe";
-import { Barcode, CreditCard, QrCode } from "lucide-react";
+import { OpcoesFormaPagamento, avisoEscolhaFormaPagamento, rotuloFormaPagamento, tituloFormaPagamento } from "@/components/FormaPagamento";
 import { descontoDoBeneficio, descreverBeneficio, statusVoucher } from "@/lib/participacao";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -209,7 +209,7 @@ function PaginaInscricao() {
       return;
     }
     if (escolheMetodo && !metodoEscolhido) {
-      setErro(tr("escolha_a_forma_de_pagamento"));
+      setErro(avisoEscolhaFormaPagamento());
       return;
     }
     emAndamento.current = true;
@@ -352,22 +352,8 @@ function PaginaInscricao() {
           )}
 
           {escolheMetodo && (
-            <Etapa n={!cortesia && (vouchers.length > 0 || !voucherId) ? 4 : 3} titulo={tr("forma_de_pagamento")}>
-              <RadioGroup value={metodoEscolhido ?? ""} onValueChange={(v) => { setMetodo(v as MetodoPagamento); setErro(""); }} aria-label={tr("forma_de_pagamento")} className="grid gap-2 sm:grid-cols-2">
-                {opcoesPagamento.map((m) => {
-                  const Icone = ICONE_METODO[m];
-                  return (
-                    <Label key={m} htmlFor={`metodo-${m}`}
-                      className="flex cursor-pointer items-start gap-3 rounded-md border p-4 font-normal transition-colors hover:bg-secondary/60 has-[[data-state=checked]]:border-accent has-[[data-state=checked]]:bg-accent/5">
-                      <RadioGroupItem id={`metodo-${m}`} value={m} className="mt-0.5" />
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2 font-semibold"><Icone className="size-4 shrink-0" aria-hidden />{rotuloMetodo(m)}</span>
-                        <span className="mt-0.5 block text-xs text-muted-foreground">{detalheMetodo(m)}</span>
-                      </span>
-                    </Label>
-                  );
-                })}
-              </RadioGroup>
+            <Etapa n={!cortesia && (vouchers.length > 0 || !voucherId) ? 4 : 3} titulo={tituloFormaPagamento()}>
+              <OpcoesFormaPagamento opcoes={opcoesPagamento} valor={metodoEscolhido} onChange={(m) => { setMetodo(m); setErro(""); }} />
             </Etapa>
           )}
         </div>
@@ -393,7 +379,7 @@ function PaginaInscricao() {
               )}
               {tipo && descontoVoucher > 0 && <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tr("beneficio")}</dt><dd className="font-mono tabular-nums text-success">−<Preco centavos={descontoVoucher} /></dd></div>}
               {escolheMetodo && metodoEscolhido && !impedimento && (
-                <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tr("forma_de_pagamento")}</dt><dd className="text-right">{rotuloMetodo(metodoEscolhido)}</dd></div>
+                <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tituloFormaPagamento()}</dt><dd className="text-right">{rotuloFormaPagamento(metodoEscolhido)}</dd></div>
               )}
               {tipo && !impedimento && taxaServico > 0 && (
                 <div className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{tr("taxa_de_servico_valor", { valor: String(taxaCompradorPercentual).replace(".", ",") })}</dt><dd className="font-mono tabular-nums">+<Preco centavos={taxaServico} /></dd></div>
@@ -426,16 +412,6 @@ function PaginaInscricao() {
       </div>
     </div>
   );
-}
-
-const ICONE_METODO: Record<MetodoPagamento, typeof CreditCard> = { card: CreditCard, pix: QrCode, boleto: Barcode };
-
-function rotuloMetodo(m: MetodoPagamento): string {
-  return m === "pix" ? tr("metodo_pix") : m === "boleto" ? tr("metodo_boleto") : tr("metodo_card");
-}
-
-function detalheMetodo(m: MetodoPagamento): string {
-  return m === "pix" ? tr("metodo_pix_detalhe") : m === "boleto" ? tr("metodo_boleto_detalhe") : tr("metodo_card_detalhe");
 }
 
 function Etapa({ n, titulo, detalhe, children }: { n: number; titulo: string; detalhe?: string | undefined; children: React.ReactNode }) {

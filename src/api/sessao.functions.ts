@@ -14,6 +14,12 @@ import type { DadosCadastro, DadosPerfil } from "@/services/auth";
 // ---------- Server functions ----------
 export const obterVisaoFn = createServerFn({ method: "GET" }).handler(() => ler(() => null));
 
+/**
+ * Formas de pagamento ativas no Stripe (cache de 5 min no servidor), para a escolha antes do
+ * checkout nas telas que não carregam o evento (Meus ingressos, impulsos). Vazia sem Stripe.
+ */
+export const metodosPagamentoFn = createServerFn({ method: "GET" }).handler(() => metodosDePagamentoAtivos());
+
 export const obterEventoFn = createServerFn({ method: "GET" })
   .validator(z.object({ eventoId: z.string().min(1) }).parse)
   .handler(async ({ data }) => {

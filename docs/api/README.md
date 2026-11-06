@@ -104,6 +104,7 @@ Login, cadastro, recuperação de senha e a visão da pessoa. Arquivo: [`src/api
 | API | Método | Acesso | O que faz |
 |---|---|---|---|
 | [`recarregarVisao`](sessao/recarregarVisao.md) | GET | Pública (visitante recebe a visão de visitante) | Devolve a visão da pessoa: o recorte da base que ela pode ver (eventos, inscrições, notificações etc.). |
+| [`metodosPagamento`](sessao/metodosPagamento.md) | GET | Pública | Lista as formas de pagamento ativas no Stripe para a escolha antes do checkout (Meus ingressos e Impulsionar). |
 | [`obterEvento`](sessao/obterEvento.md) | GET | Pública | Carrega um evento e a organização dele para os carregadores de rota (`/eventos/$eventoId`, `/inscricao/$eventoId`, `/comunidade/$eventoId`), inclusive no SSR (título e metatags reais). |
 | [`entrar`](sessao/entrar.md) | POST | Pública | Login com e-mail e senha (Supabase Auth). |
 | [`sair`](sessao/sair.md) | POST | Pública | Encerra a sessão (`signOut`) e limpa os cookies. |
@@ -187,6 +188,7 @@ Conta de recebimento das organizações e taxa da plataforma. Arquivo: [`src/api
 | API | Método | Acesso | O que faz |
 |---|---|---|---|
 | [`configuracaoRepasse`](repasses/configuracaoRepasse.md) | GET | Pública | Informa se os pagamentos online (Stripe) e os painéis embutidos do Stripe estão ativos. |
+| [`metodosPagamentoStripe`](repasses/metodosPagamentoStripe.md) | GET | Somente admin | Mostra as formas de pagamento que o site enxerga no Stripe ou o motivo da falha na leitura. |
 | [`definirTaxaPlataforma`](repasses/definirTaxaPlataforma.md) | POST | Somente admin | Define a taxa da plataforma (%) retida em cada venda repassada às organizações. |
 | [`definirTaxaComprador`](repasses/definirTaxaComprador.md) | POST | Organizador da própria organização ou admin | Define a taxa de serviço (%) que a organização cobra do comprador, somada ao ingresso e repassada a ela (padrão 0%). |
 | [`cadastrarRecebimento`](repasses/cadastrarRecebimento.md) | POST | Quem gere a organização (organizador dela ou admin) | Cria (ou reaproveita) a conta Stripe Connect Express da organização e devolve o link do cadastro hospedado pelo Stripe. |

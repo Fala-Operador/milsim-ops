@@ -75,7 +75,7 @@ import {
 } from "@/services/impulsos";
 import {
   PRAZO_PAGAMENTO_MIN, gereImpulsos, imagemAbsoluta, planosDeImpulso, precoStripeEmDia, produtoStripeDoPlano, rotuloDuracao,
-  statusDoImpulso, type PlanoExibido,
+  expiracaoCancelaImpulso, statusDoImpulso, type PlanoExibido,
 } from "@/lib/impulsos";
 import type { ImpulsoComprado, Inscricao, PlanoImpulsoId } from "@/lib/domain/types";
 import { tr } from "@/i18n/server/pagamentos.server";
@@ -88,6 +88,39 @@ export interface ResultadoCompra {
   inscricao: Inscricao;
   /** Página de pagamento do Stripe; ausente quando a inscrição já foi confirmada. */
   urlPagamento?: string | undefined;
+}
+
+/**
+ * Forma de pagamento que vale para a sessão: só entre os meios ativos no Stripe que aceitam o
+ * total. Com uma opção só (ou sem a lista do Stripe) não há escolha e o checkout usa os meios do
+ * painel; um meio fora da lista é recusado.
+ */
+async function metodoParaCheckout(pedido: MetodoPagamento | undefined, totalCentavos: number): Promise<MetodoPagamento | undefined> {
+  const opcoes = metodosParaValor(await metodosDePagamentoAtivos(), totalCentavos);
+  if (pedido && opcoes.length > 0 && !opcoes.includes(pedido)) {
+    throw new ErroDominio("forma_pagamento", tr("forma_de_pagamento_indisponivel"));
+  }
+  return opcoes.length > 1 ? pedido : undefined;
+}
+
+/**
+ * Situação da sessão já registrada numa compra, diante da forma de pagamento pedida: `aberta`
+ * para reaproveitar; `anterior` quando ela foi (ou acabou de ser) expirada e outra deve ser
+ * criada; `concluida` quando foi paga ou teve o pagamento assíncrono enviado. Numa troca de
+ * forma, a sessão antiga é expirada antes de existir a nova, para que só uma possa ser paga.
+ */
+async function situacaoDaSessao(sessaoId: string | undefined, metodo: MetodoPagamento | undefined): Promise<{ aberta?: SessaoCheckout; anterior?: string; concluida?: SessaoCheckout }> {
+  if (!sessaoId) return {};
+  let s = await obterSessaoCheckout(sessaoId);
+  if (s.status === "open" && metodo && metodoDaSessao(s) !== metodo) {
+    await expirarSessaoCheckout(s.id);
+    // Relida: se foi paga nesse meio-tempo, vale o estado do Stripe.
+    s = await obterSessaoCheckout(s.id);
+    if (s.status === "open") throw new ErroStripe(0, "sessao_aberta", "A sessão anterior continua aberta");
+  }
+  if (s.status === "open") return { aberta: s };
+  if (s.status === "expired") return { anterior: s.id };
+  return { concluida: s };
 }
 
 /**
@@ -118,33 +151,20 @@ export async function abrirCheckout(inscricaoId: string, metodoPedido?: MetodoPa
   });
   if (new Date(d.pagamento.expiraEm) <= new Date()) throw new Error(tr("o_prazo_desta_reserva_terminou_faca"));
 
-  // Forma de pagamento: só entre os meios ativos no Stripe que aceitam o total cobrado. Com uma
-  // opção só (ou sem a lista do Stripe) não há escolha e o checkout segue com os meios do painel.
-  const opcoes = metodosParaValor(await metodosDePagamentoAtivos(), d.pagamento.valorCentavos + (d.pagamento.taxaCompradorCentavos ?? 0));
-  if (metodoPedido && opcoes.length > 0 && !opcoes.includes(metodoPedido)) {
-    throw new ErroDominio("forma_pagamento", tr("forma_de_pagamento_indisponivel"));
-  }
-  const metodo = opcoes.length > 1 ? metodoPedido : undefined;
+  const metodo = await metodoParaCheckout(metodoPedido, d.pagamento.valorCentavos + (d.pagamento.taxaCompradorCentavos ?? 0));
 
   let sessao: SessaoCheckout;
   /** Sessão substituída por outra (troca da forma de pagamento ou expirada no prazo da reserva). */
   let anterior: string | undefined;
   try {
-    let existente = d.pagamento.sessaoId ? await obterSessaoCheckout(d.pagamento.sessaoId) : undefined;
-    if (existente?.status === "open" && metodo && metodoDaSessao(existente) !== metodo) {
-      // Fecha a sessão antiga antes de abrir a nova. Se ela foi paga nesse meio-tempo, o estado
-      // relido abaixo vale; a expiração dela não libera a vaga (reserva ainda no prazo).
-      await expirarSessaoCheckout(existente.id);
-      existente = await obterSessaoCheckout(existente.id);
-      if (existente.status === "open") throw new ErroStripe(0, "sessao_aberta", "A sessão anterior continua aberta");
-    }
-    if (existente && existente.status !== "open" && existente.status !== "expired") {
+    const atual = await situacaoDaSessao(d.pagamento.sessaoId, metodo);
+    if (atual.concluida) {
       // Pago (ou pagamento assíncrono enviado) enquanto a pessoa estava fora: aplica o estado e avisa.
-      await aplicarSessao(existente, acaoDaSessao(existente));
+      await aplicarSessao(atual.concluida, acaoDaSessao(atual.concluida));
       throw new Error(tr("esta_reserva_ja_foi_concluida_ou"));
     }
-    const reaproveitada = existente?.status === "open" ? existente : undefined;
-    anterior = reaproveitada ? undefined : existente?.id;
+    const reaproveitada = atual.aberta;
+    anterior = atual.anterior;
     const origem = new URL(getRequestUrl()).origin;
     const criar = () => criarSessaoCheckout({
       inscricaoId,
@@ -336,34 +356,44 @@ export interface ResultadoCompraImpulso {
   urlPagamento?: string | undefined;
 }
 
-/** Compra um impulso: registra a compra e abre o checkout (tipo gratuito já fica disponível). */
-export async function comprarImpulso(planoId: PlanoImpulsoId): Promise<RespostaApi<ResultadoCompraImpulso>> {
+/**
+ * Compra um impulso: registra a compra e abre o checkout (tipo gratuito já fica disponível),
+ * já na forma de pagamento escolhida, se houver.
+ */
+export async function comprarImpulso(planoId: PlanoImpulsoId, metodo?: MetodoPagamento): Promise<RespostaApi<ResultadoCompraImpulso>> {
   const online = stripeConfigurado();
   const r = await mutar(({ base, usuario }) => criarCompraImpulsoNaBase(base, usuario, planoId, { pagamentoOnline: online }));
   if (r.resultado.status !== "aguardando_pagamento") return { ...r, resultado: { impulso: r.resultado } };
   try {
-    return await abrirCheckoutImpulso(r.resultado.id);
+    return await abrirCheckoutImpulso(r.resultado.id, metodo);
   } catch (e) {
     await mutar(({ base }) => cancelarImpulsoNaBase(base, r.resultado.id));
     throw e;
   }
 }
 
-/** Devolve a página de pagamento do impulso: reaproveita a sessão aberta ou cria uma nova. */
-export async function abrirCheckoutImpulso(impulsoId: string): Promise<RespostaApi<ResultadoCompraImpulso>> {
+/**
+ * Devolve a página de pagamento do impulso: reaproveita a sessão aberta ou cria uma nova. Com
+ * `metodo` diferente do da sessão aberta, ela é expirada antes de abrir outra nessa forma.
+ */
+export async function abrirCheckoutImpulso(impulsoId: string, metodoPedido?: MetodoPagamento): Promise<RespostaApi<ResultadoCompraImpulso>> {
   const { resultado: d } = await ler(({ base, usuario }) => {
     const i = base.impulsosComprados.find((x) => x.id === impulsoId);
     if (!i || !gereImpulsos(usuario, i.organizacaoId)) throw new ErroDominio("impulso", tr("impulso_nao_encontrado"));
     if (statusDoImpulso(i, new Date()) !== "aguardando_pagamento") throw new ErroDominio("impulso", tr("este_impulso_nao_esta_mais_aguardando"));
     return { impulso: i, email: usuario?.email, plano: planosDeImpulso(base).find((p) => p.id === i.planoId) };
   });
+  const metodo = await metodoParaCheckout(metodoPedido, d.impulso.precoCentavos);
   let sessao: SessaoCheckout;
+  let anterior: string | undefined;
   try {
-    const existente = d.impulso.sessaoId ? await obterSessaoCheckout(d.impulso.sessaoId) : undefined;
-    if (existente && existente.status !== "open") {
-      await aplicarSessaoImpulso(existente, acaoDaSessao(existente));
+    const atual = await situacaoDaSessao(d.impulso.sessaoId, metodo);
+    if (atual.concluida) {
+      await aplicarSessaoImpulso(atual.concluida, acaoDaSessao(atual.concluida));
       throw new Error(tr("este_pagamento_ja_foi_concluido_ou"));
     }
+    const existente = atual.aberta;
+    anterior = atual.anterior;
     const origem = new URL(getRequestUrl()).origin;
     // Produto do catálogo da plataforma; tipo ainda não sincronizado é sincronizado agora.
     const catalogo = d.plano ? await produtoDoPlano(d.plano, origem) : undefined;
@@ -378,6 +408,8 @@ export async function abrirCheckoutImpulso(impulsoId: string): Promise<RespostaA
       email: d.email,
       urlSucesso: `${origem}/organizacao/impulsos?pagamento=sucesso&sessao={CHECKOUT_SESSION_ID}`,
       urlCancelamento: `${origem}/organizacao/impulsos?pagamento=cancelado`,
+      metodo,
+      sessaoAnterior: anterior,
     });
   } catch (e) {
     if (!(e instanceof ErroStripe || e instanceof TypeError)) throw e;
@@ -386,7 +418,16 @@ export async function abrirCheckoutImpulso(impulsoId: string): Promise<RespostaA
   }
   if (!sessao.url) throw new Error(MSG_FALHA_STRIPE());
   const url = sessao.url;
-  return mutar(({ base }) => ({ impulso: registrarSessaoImpulsoNaBase(base, impulsoId, sessao.id), urlPagamento: url }));
+  const r = await mutar(({ base }) => {
+    const impulso = registrarSessaoImpulsoNaBase(base, impulsoId, sessao.id, anterior);
+    // Outra aba trocou a sessão ao mesmo tempo: esta não vale e é fechada abaixo.
+    return { impulso, urlPagamento: impulso.sessaoId === sessao.id ? url : undefined };
+  });
+  if (!r.resultado.urlPagamento) {
+    await expirarSessoes([sessao.id]);
+    throw new Error(MSG_FALHA_STRIPE());
+  }
+  return r;
 }
 
 const dadosDoProduto = (p: PlanoExibido, origem: string) => ({
@@ -457,6 +498,8 @@ export async function aplicarSessaoImpulso(sessao: SessaoCheckout, acao: AcaoSes
     const i = base.impulsosComprados.find((x) => x.id === impulsoId);
     // Só a sessão desta compra decide sobre ela.
     if (!i || (i.sessaoId && i.sessaoId !== sessao.id)) return;
+    // Expirada no prazo de pagamento: foi trocada por outra forma de pagamento.
+    if (acao === "liberar_expirada" && !expiracaoCancelaImpulso(i)) return;
     if (acao === "confirmar") confirmarImpulsoNaBase(base, impulsoId, stripe);
     else if (acao === "processando") marcarImpulsoProcessando(base, impulsoId, stripe);
     else cancelarImpulsoNaBase(base, impulsoId);
