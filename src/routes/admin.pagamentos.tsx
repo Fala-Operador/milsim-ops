@@ -2,7 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Clock, TriangleAlert } from "lucide-react";
 import { carregarBase } from "@/services/db";
-import { configuracaoRepasse, definirTaxaPlataforma } from "@/api/repasses.functions";
+import { configuracaoRepasse, definirTaxaPlataforma, metodosPagamentoStripe } from "@/api/repasses.functions";
+import { rotuloFormaPagamento } from "@/components/FormaPagamento";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { MetodoPagamento } from "@/lib/stripe";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVersaoBase } from "@/hooks/useVersaoBase";
 import { ROTULO_RECEBIMENTO, taxaDaPlataforma, taxaPlataforma } from "@/lib/repasses";
@@ -73,6 +77,8 @@ function Pagamentos() {
       />
       {config && <p className="text-xs text-muted-foreground">{tr("ultima_alteracao_da_taxa")}{" "}{formatarDataHoraBR(config.atualizadoEm)}{tr("a_taxa_de_servico_do_comprador")}</p>}
 
+      {pagamentoOnline && <FormasDePagamento usuarioId={usuario.id} />}
+
       <section aria-labelledby="t-contas" className="border-t border-border pt-6">
         <h3 id="t-contas" className="text-lg font-semibold">{tr("contas_de_recebimento_das_organizacoes")}</h3>
         <ul className="mt-3 divide-y divide-border border-y border-border">
@@ -96,6 +102,50 @@ function Pagamentos() {
           {organizacoes.length === 0 && <li className="py-3 text-sm text-muted-foreground">{tr("nenhuma_organizacao_cadastrada")}</li>}
         </ul>
       </section>
+    </section>
+  );
+}
+
+/** O que o site enxerga no Stripe para a escolha da forma de pagamento (ou por que não enxerga). */
+function FormasDePagamento({ usuarioId }: { usuarioId: string }) {
+  const [formas, setFormas] = useState<{ metodos: MetodoPagamento[]; erro?: string | undefined } | null>(null);
+  const [consultando, setConsultando] = useState(false);
+  const consultar = (atualizar: boolean) => {
+    setConsultando(true);
+    metodosPagamentoStripe(atualizar)
+      .then(setFormas)
+      .catch((e: unknown) => setFormas({ metodos: [], erro: e instanceof Error ? e.message : String(e) }))
+      .finally(() => setConsultando(false));
+  };
+  useEffect(() => consultar(false), [usuarioId]);
+
+  return (
+    <section aria-labelledby="t-formas" className="border-t border-border pt-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 id="t-formas" className="text-lg font-semibold">{tr("formas_de_pagamento_no_checkout")}</h3>
+          <p className="mt-1 text-sm text-muted-foreground">{tr("formas_lidas_do_stripe")}</p>
+        </div>
+        <Button variant="outline" size="sm" disabled={consultando} onClick={() => consultar(true)}>{consultando ? tr("consultando") : tr("consultar_de_novo")}</Button>
+      </div>
+      <div className="mt-3">
+        {formas === null ? (
+          <Skeleton className="h-6 w-48" />
+        ) : formas.erro ? (
+          <p role="alert" className="border-l-2 border-destructive bg-destructive/10 px-4 py-3 text-sm">{tr("nao_foi_possivel_ler_as_formas", { erro: formas.erro })}</p>
+        ) : formas.metodos.length === 0 ? (
+          <p role="status" className="border-l-2 border-warning bg-warning/10 px-4 py-3 text-sm">{tr("nenhuma_forma_ativa")}</p>
+        ) : (
+          <div className="surgir space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {formas.metodos.map((m) => <Badge key={m} variant="success"><Check aria-hidden="true" />{rotuloFormaPagamento(m)}</Badge>)}
+            </div>
+            {formas.metodos.length === 1 && (
+              <p role="status" className="border-l-2 border-warning bg-warning/10 px-4 py-3 text-sm">{tr("so_uma_forma_ativa", { forma: rotuloFormaPagamento(formas.metodos[0]!) })}</p>
+            )}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

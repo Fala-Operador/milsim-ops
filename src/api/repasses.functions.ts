@@ -14,7 +14,8 @@ import {
   sincronizarRecebimento,
   stripeConfigurado,
 } from "@/server/pagamentos.server";
-import { exigirAdmin, mutar } from "@/server/unidade.server";
+import { exigirAdmin, ler, mutar } from "@/server/unidade.server";
+import { diagnosticoMetodosPagamento } from "@/server/stripe.server";
 import { definirTaxaCompradorNaBase, definirTaxaPlataformaNaBase } from "@/services/repasses";
 import { chamar } from "@/api/cliente";
 
@@ -27,6 +28,17 @@ export const configuracaoRepasseFn = createServerFn({ method: "GET" }).handler((
   // Chaves do Stripe que não combinam (mostrado na página de pagamentos da administração).
   avisoChaves: problemaChavesStripe() || undefined,
 }));
+
+/**
+ * Formas de pagamento que o site enxerga no Stripe e, se a leitura falhou, o motivo (sem chaves).
+ * Só administração; `atualizar` consulta o Stripe de novo, sem o cache de 5 minutos.
+ */
+export const metodosPagamentoStripeFn = createServerFn({ method: "GET" })
+  .validator(z.object({ atualizar: z.boolean().optional() }).parse)
+  .handler(async ({ data }) => {
+    await ler(({ usuario }) => exigirAdmin(usuario));
+    return diagnosticoMetodosPagamento(data.atualizar ?? false);
+  });
 
 export const definirTaxaPlataformaFn = createServerFn({ method: "POST" })
   .validator(z.object({ percentual: z.number().min(0).max(100) }).parse)
@@ -62,6 +74,7 @@ export const sessaoComponentesStripeFn = createServerFn({ method: "POST" })
 
 // ---------- Uso no navegador ----------
 export const configuracaoRepasse = () => configuracaoRepasseFn();
+export const metodosPagamentoStripe = (atualizar = false) => metodosPagamentoStripeFn({ data: { atualizar } });
 export const cadastrarRecebimento = (organizacaoId: string) => chamar(iniciarCadastroRecebimentoFn({ data: { organizacaoId } }));
 export const atualizarRecebimento = (organizacaoId: string) => chamar(sincronizarRecebimentoFn({ data: { organizacaoId } }));
 export const definirTaxaPlataforma = (percentual: number) => chamar(definirTaxaPlataformaFn({ data: { percentual } }));

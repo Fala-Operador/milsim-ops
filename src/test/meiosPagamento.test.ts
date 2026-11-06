@@ -3,8 +3,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { metodoDaSessao, metodosDaConfiguracao, metodosParaValor, type ConfiguracaoMetodos } from "@/lib/stripe";
 import { expiracaoLiberaReserva } from "@/lib/pagamentos";
-import { criarSessaoCheckout, limparCacheMetodos, metodosDePagamentoAtivos } from "@/server/stripe.server";
-import type { Inscricao } from "@/lib/domain/types";
+import { expiracaoCancelaImpulso } from "@/lib/impulsos";
+import { registrarSessaoImpulsoNaBase } from "@/services/impulsos";
+import {
+  criarSessaoCheckout, criarSessaoCheckoutImpulso, diagnosticoMetodosPagamento, limparCacheMetodos, metodosDePagamentoAtivos,
+} from "@/server/stripe.server";
+import type { BaseDados, ImpulsoComprado, Inscricao } from "@/lib/domain/types";
 
 const pref = (on: boolean, disponivel = on) => ({ available: disponivel, display_preference: { preference: on ? "on" : "off", value: on ? "on" : "off" } });
 
@@ -50,6 +54,25 @@ describe("sessão expirada pela troca da forma de pagamento", () => {
   });
 });
 
+describe("impulso: troca da forma de pagamento", () => {
+  const impulso = (criadoEm: string, extra: Partial<ImpulsoComprado> = {}) =>
+    ({ id: "imp-1", status: "aguardando_pagamento", criadoEm, precoCentavos: 1000, ...extra }) as ImpulsoComprado;
+
+  it("sessão expirada no prazo de pagamento não cancela a compra; depois do prazo, cancela", () => {
+    const agora = new Date("2026-11-06T12:00:00Z");
+    expect(expiracaoCancelaImpulso(impulso("2026-11-06T11:30:00Z"), agora)).toBe(false);
+    expect(expiracaoCancelaImpulso(impulso("2026-11-06T10:59:00Z"), agora)).toBe(true);
+    expect(expiracaoCancelaImpulso(impulso("2026-11-06T11:30:00Z", { status: "processando" }), agora)).toBe(true);
+  });
+
+  it("a sessão nova só substitui a que ela trocou", () => {
+    const base = { impulsosComprados: [impulso("2026-11-06T11:30:00Z", { sessaoId: "cs_velha" })] } as unknown as BaseDados;
+    expect(registrarSessaoImpulsoNaBase(base, "imp-1", "cs_outra").sessaoId).toBe("cs_velha");
+    expect(registrarSessaoImpulsoNaBase(base, "imp-1", "cs_nova", "cs_velha").sessaoId).toBe("cs_nova");
+    expect(registrarSessaoImpulsoNaBase(base, "imp-1", "cs_x", "cs_velha").sessaoId).toBe("cs_nova");
+  });
+});
+
 interface Chamada { metodo: string; caminho: string; corpo: string; idempotencia?: string | undefined }
 
 function stripeFalso(resposta: (caminho: string) => Response) {
@@ -81,6 +104,18 @@ describe("Stripe: meios e checkout", () => {
     expect(await metodosDePagamentoAtivos()).toEqual([]);
   });
 
+  it("o diagnóstico mostra o motivo da falha sem a chave e reconsulta quando pedido", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const chamadas = stripeFalso(() => new Response(JSON.stringify({ error: { message: "The provided key 'rk_live_****abcd' does not have the required permissions" } }), { status: 403 }));
+    const d = await diagnosticoMetodosPagamento();
+    expect(d.metodos).toEqual([]);
+    expect(d.erro).toContain("[chave oculta]");
+    expect(d.erro).not.toContain("rk_live");
+    await diagnosticoMetodosPagamento();
+    await diagnosticoMetodosPagamento(true);
+    expect(chamadas).toHaveLength(2);
+  });
+
   const dados = {
     inscricaoId: "ins-1", descricao: "Op", valorCentavos: 15000, expiraEm: "2026-11-06T12:32:00Z",
     urlSucesso: "https://s", urlCancelamento: "https://c",
@@ -100,5 +135,15 @@ describe("Stripe: meios e checkout", () => {
     await criarSessaoCheckout(dados);
     expect(chamadas[0]!.corpo).not.toContain("payment_method_types");
     expect(chamadas[0]!.idempotencia).toBe("checkout-ins-1");
+  });
+
+  it("checkout do impulso aceita só o meio escolhido, com chave própria da troca", async () => {
+    const chamadas = stripeFalso(() => ok({ id: "cs", url: "https://checkout" }));
+    await criarSessaoCheckoutImpulso({ impulsoId: "imp-1", descricao: "Impulso", valorCentavos: 1000, expiraEm: "2026-11-06T13:00:00Z", urlSucesso: "https://s", urlCancelamento: "https://c", metodo: "boleto", sessaoAnterior: "cs_velha" });
+    await criarSessaoCheckoutImpulso({ impulsoId: "imp-2", descricao: "Impulso", valorCentavos: 1000, expiraEm: "2026-11-06T13:00:00Z", urlSucesso: "https://s", urlCancelamento: "https://c" });
+    expect(chamadas[0]!.corpo).toContain("payment_method_types[0]=boleto");
+    expect(chamadas[0]!.idempotencia).toBe("checkout-imp-1-boleto-cs_velha");
+    expect(chamadas[1]!.corpo).not.toContain("payment_method_types");
+    expect(chamadas[1]!.idempotencia).toBe("checkout-imp-2");
   });
 });

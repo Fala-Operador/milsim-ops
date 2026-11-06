@@ -120,6 +120,14 @@ export const ROTULO_STATUS_IMPULSO: Record<StatusExibidoImpulso, string> = {
 export const pagamentoVencido = (i: ImpulsoComprado, agora: Date) =>
   i.status === "aguardando_pagamento" && ms(i.criadoEm) + PRAZO_PAGAMENTO_MIN * 60_000 <= agora.getTime();
 
+/**
+ * Sessão do impulso expirada ainda no prazo de pagamento: foi trocada por outra forma de
+ * pagamento (a antiga é fechada antes de abrir a nova) e a compra continua aguardando.
+ */
+export function expiracaoCancelaImpulso(i: ImpulsoComprado, agora = new Date()): boolean {
+  return !(i.status === "aguardando_pagamento" && !pagamentoVencido(i, agora));
+}
+
 export function statusDoImpulso(i: ImpulsoComprado, agora: Date): StatusExibidoImpulso {
   if (pagamentoVencido(i, agora)) return "cancelado";
   if (i.status === "disponivel" && i.expiraEm && ms(i.expiraEm) <= agora.getTime()) return "expirado";
