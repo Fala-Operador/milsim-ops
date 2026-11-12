@@ -1031,7 +1031,10 @@ export interface ImpulsoComprado {
   status: StatusImpulso;
   criadoEm: string;
   pagoEm?: string | undefined;
-  /** Prazo para usar: pagamento + validade. */
+  /**
+   * Prazo para usar: pagamento + validade. Antes do pagamento, guarda o prazo para pagar quando
+   * ele passou de 60 minutos (ver prazoPagamentoImpulso).
+   */
   expiraEm?: string | undefined;
   /** Checkout Session e PaymentIntent no Stripe (só a administração vê). */
   sessaoId?: string | undefined;

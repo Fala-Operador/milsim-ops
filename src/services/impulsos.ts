@@ -4,7 +4,7 @@
 import { ErroDominio, gerarId } from "./db";
 import type { BaseDados, ImpulsoComprado, Impulsionamento, PlanoImpulsoId, Usuario } from "@/lib/domain/types";
 import {
-  ABRANGENCIA_IMPULSO, erroPlano, expiracaoDoImpulso, imagemPlanoValida, gereImpulsos, pendenciasUso, periodoDoImpulso,
+  ABRANGENCIA_IMPULSO, erroPlano, expiracaoDoImpulso, imagemPlanoValida, gereImpulsos, pendenciasUso, periodoDoImpulso, prazoPagamentoImpulso,
   planosDeImpulso, posicoesDoImpulso, rotuloDuracao,
 } from "@/lib/impulsos";
 import { formatarBRL } from "@/lib/domain/money";
@@ -46,11 +46,21 @@ export function criarCompraImpulsoNaBase(
   return impulso;
 }
 
-/** Registra a sessão do checkout; `anterior` é a sessão que ela substitui (troca da forma de pagamento). */
-export function registrarSessaoImpulsoNaBase(base: BaseDados, impulsoId: string, sessaoId: string, anterior?: string): ImpulsoComprado {
+/**
+ * Registra a sessão do checkout; `anterior` é a sessão que ela substitui (troca da forma de
+ * pagamento) e `prazo`, quando passa dos 60 minutos da compra, é o novo prazo para pagar.
+ * Só vale enquanto a compra aguarda o pagamento.
+ */
+export function registrarSessaoImpulsoNaBase(
+  base: BaseDados, impulsoId: string, sessaoId: string, anterior?: string, prazo?: string,
+): ImpulsoComprado {
   const i = base.impulsosComprados.find((x) => x.id === impulsoId);
   if (!i) throw new ErroDominio("impulso", tr("impulso_nao_encontrado"));
-  if (!i.sessaoId || (anterior && i.sessaoId === anterior)) i.sessaoId = sessaoId;
+  if (i.status !== "aguardando_pagamento") return i;
+  if (!i.sessaoId || (anterior && i.sessaoId === anterior)) {
+    i.sessaoId = sessaoId;
+    if (prazo && prazo > prazoPagamentoImpulso(i)) i.expiraEm = prazo;
+  }
   return i;
 }
 
