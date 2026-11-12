@@ -302,6 +302,17 @@ export function criarReembolso(inscricaoId: string, intencaoId: string, repassad
   );
 }
 
+/**
+ * Reembolso já feito para o PaymentIntent (o mais recente). Usado quando o Stripe responde
+ * "charge_already_refunded": o reembolso aconteceu antes (ex.: resposta perdida, ou feito no painel).
+ */
+export async function reembolsoExistente(intencaoId: string): Promise<{ id: string } | undefined> {
+  const r = await chamarStripe<{ data?: { id: string; status?: string }[] }>(
+    "GET", `/refunds?payment_intent=${encodeURIComponent(intencaoId)}&limit=10`,
+  );
+  return (r.data ?? []).find((x) => x.status !== "failed" && x.status !== "canceled");
+}
+
 // ---------- Stripe Connect (contas das organizações, painel Express) ----------
 
 /** Versão da API v2 do Stripe (Accounts v2); a v1 segue a versão padrão da conta. */

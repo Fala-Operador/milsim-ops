@@ -231,6 +231,8 @@ function PaginaInscricao() {
       else navigate({ to: "/app/ingressos" });
     } catch (err) {
       setErro(err instanceof Error ? err.message : tr("falha_ao_confirmar_inscricao"));
+      // A próxima tentativa é nova: a chave anterior pode ter ficado com uma reserva já liberada.
+      clienteId.current = novoId();
       // O lote pode ter virado: a tela passa a mostrar o lote e o preço atuais.
       void recarregar();
       emAndamento.current = false;

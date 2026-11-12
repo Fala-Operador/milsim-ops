@@ -285,6 +285,11 @@ export async function confirmarInscricao(
         if (repetida.usuarioId !== dados.usuarioId || repetida.eventoId !== dados.eventoId) {
           throw new ErroDominio("chave", tr("chave_de_operacao_invalida"));
         }
+        // Tentativa que já terminou sem vaga (checkout falhou ou a reserva foi liberada): a
+        // pessoa precisa de uma tentativa nova, e não de voltar para a lista como se tivesse dado certo.
+        if (repetida.status === "cancelada") {
+          throw new ErroDominio("tentativa_encerrada", tr("esta_tentativa_de_inscricao_foi_encerrada"));
+        }
         return repetida;
       }
     }

@@ -9,6 +9,7 @@ export const tr = dicionario("services/inscricoes", {
   "este_cupom_expirou": { pt: "Este cupom expirou.", en: "This coupon has expired." },
   "este_cupom_nao_vale_para_o": { pt: "Este cupom não vale para o tipo de ingresso escolhido.", en: "This coupon does not apply to the chosen ticket type." },
   "chave_de_operacao_invalida": { pt: "Chave de operação inválida.", en: "Invalid operation key." },
+  "esta_tentativa_de_inscricao_foi_encerrada": { pt: "Esta tentativa de inscrição foi encerrada. Tente de novo.", en: "This registration attempt has ended. Please try again." },
   "evento_nao_encontrado": { pt: "Evento não encontrado.", en: "Event not found." },
   "evento_nao_esta_disponivel_para_inscrica": { pt: "Evento não está disponível para inscrição.", en: "The event is not available for registration." },
   "usuario_nao_encontrado": { pt: "Usuário não encontrado.", en: "User not found." },
