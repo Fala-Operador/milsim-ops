@@ -91,6 +91,10 @@ export interface DadosCheckout {
  * mesma sessão, e cada troca de forma de pagamento gera uma sessão nova.
  */
 export function criarSessaoCheckout(d: DadosCheckout): Promise<SessaoCheckout> {
+  return comMetodoOuPainel(d, criarSessaoCheckoutCom);
+}
+
+function criarSessaoCheckoutCom(d: DadosCheckout): Promise<SessaoCheckout> {
   const taxaComprador = d.taxaCompradorCentavos ?? 0;
   // Com destino, a plataforma retém só a sua taxa; a taxa de serviço do comprador segue para a organização.
   const retido = d.taxaCentavos ?? 0;
@@ -238,6 +242,23 @@ export interface DadosCheckoutImpulso {
   sessaoAnterior?: string | undefined;
 }
 
+/**
+ * Cria a sessão na forma de pagamento escolhida. Se o Stripe recusar o pedido (400) por causa da
+ * forma escolhida, cria de novo sem ela: o checkout abre com os meios do painel, como antes da
+ * escolha no site. Assim uma forma recusada pelo Stripe não impede a venda.
+ */
+async function comMetodoOuPainel<T extends { metodo?: MetodoPagamento | undefined }>(
+  d: T, criar: (d: T) => Promise<SessaoCheckout>,
+): Promise<SessaoCheckout> {
+  try {
+    return await criar(d);
+  } catch (e) {
+    if (!d.metodo || !(e instanceof ErroStripe) || e.status !== 400) throw e;
+    console.warn(`Stripe: checkout recusado com a forma ${d.metodo}; nova tentativa com os meios do painel.`, e.codigo, ocultarChaves(e.message));
+    return criar({ ...d, metodo: undefined });
+  }
+}
+
 /** Chave de idempotência do checkout: uma sessão por compra, forma de pagamento e sessão substituída. */
 function chaveCheckout(id: string, metodo?: MetodoPagamento, sessaoAnterior?: string): string {
   return metodo || sessaoAnterior ? `checkout-${id}-${metodo ?? "painel"}-${sessaoAnterior ?? "inicial"}` : `checkout-${id}`;
@@ -245,6 +266,10 @@ function chaveCheckout(id: string, metodo?: MetodoPagamento, sessaoAnterior?: st
 
 /** Checkout Session da compra de um impulso: o valor fica todo com a plataforma (sem destino). */
 export function criarSessaoCheckoutImpulso(d: DadosCheckoutImpulso): Promise<SessaoCheckout> {
+  return comMetodoOuPainel(d, criarSessaoCheckoutImpulsoCom);
+}
+
+function criarSessaoCheckoutImpulsoCom(d: DadosCheckoutImpulso): Promise<SessaoCheckout> {
   return chamarStripe<SessaoCheckout>(
     "POST",
     "/checkout/sessions",
