@@ -15,7 +15,7 @@ import {
   registrarReembolsoNaBase,
   registrarResultadoEstornoNaBase,
 } from "@/services/inscricoes";
-import { estornoPendente, expiracaoLiberaReserva } from "@/lib/pagamentos";
+import { estornoPendente, expiracaoLiberaReserva, prazoDaNovaSessao } from "@/lib/pagamentos";
 import {
   acaoDaSessao,
   acaoDoEvento,
@@ -46,6 +46,7 @@ import {
   listarContasConectadas,
   obterContaDaPlataforma,
   criarReembolso,
+  reembolsoExistente,
   criarSessaoCheckout,
   criarSessaoCheckoutImpulso,
   sincronizarProdutoImpulso,
@@ -74,8 +75,8 @@ import {
   registrarSincronizacaoPlanoNaBase,
 } from "@/services/impulsos";
 import {
-  PRAZO_PAGAMENTO_MIN, gereImpulsos, imagemAbsoluta, planosDeImpulso, precoStripeEmDia, produtoStripeDoPlano, rotuloDuracao,
-  expiracaoCancelaImpulso, statusDoImpulso, type PlanoExibido,
+  gereImpulsos, imagemAbsoluta, planosDeImpulso, precoStripeEmDia, produtoStripeDoPlano, rotuloDuracao,
+  expiracaoCancelaImpulso, prazoPagamentoImpulso, statusDoImpulso, type PlanoExibido,
 } from "@/lib/impulsos";
 import type { ImpulsoComprado, Inscricao, PlanoImpulsoId } from "@/lib/domain/types";
 import { tr } from "@/i18n/server/pagamentos.server";
@@ -156,6 +157,8 @@ export async function abrirCheckout(inscricaoId: string, metodoPedido?: MetodoPa
   let sessao: SessaoCheckout;
   /** Sessão substituída por outra (troca da forma de pagamento ou expirada no prazo da reserva). */
   let anterior: string | undefined;
+  /** Prazo da reserva com a sessão nova (igual ao atual quando ainda falta mais de 30 min). */
+  let prazo = d.pagamento.expiraEm;
   try {
     const atual = await situacaoDaSessao(d.pagamento.sessaoId, metodo);
     if (atual.concluida) {
@@ -165,12 +168,14 @@ export async function abrirCheckout(inscricaoId: string, metodoPedido?: MetodoPa
     }
     const reaproveitada = atual.aberta;
     anterior = atual.anterior;
+    // Sessão nova no meio da reserva: o prazo cresce até o mínimo do Stripe (30 min).
+    prazo = prazoDaNovaSessao(d.pagamento.expiraEm);
     const origem = new URL(getRequestUrl()).origin;
     const criar = () => criarSessaoCheckout({
       inscricaoId,
       descricao: d.descricao,
       valorCentavos: d.pagamento.valorCentavos,
-      expiraEm: d.pagamento.expiraEm,
+      expiraEm: prazo,
       email: d.email,
       contaDestino: d.contaDestino,
       taxaCentavos: d.contaDestino ? d.pagamento.taxaCentavos : undefined,
@@ -200,12 +205,21 @@ export async function abrirCheckout(inscricaoId: string, metodoPedido?: MetodoPa
   const url = sessao.url;
   const r = await mutar(({ base }) => {
     const ins = base.inscricoes.find((i) => i.id === inscricaoId)!;
-    if (ins.pagamento && (!ins.pagamento.sessaoId || ins.pagamento.sessaoId === anterior)) {
-      // Registra o destino efetivo da cobrança (a conta pode ter deixado de estar apta).
-      ins.pagamento = { ...ins.pagamento, sessaoId: sessao.id, contaDestino: d.contaDestino, taxaCentavos: d.contaDestino ? ins.pagamento.taxaCentavos : undefined };
+    // A reserva pode ter sido liberada ou paga enquanto o Stripe respondia: aí esta sessão não vale.
+    const aguardando = ins.status === "pendente" && ins.pagamento?.status === "aguardando";
+    if (aguardando && ins.pagamento && (!ins.pagamento.sessaoId || ins.pagamento.sessaoId === anterior)) {
+      // Registra o destino efetivo da cobrança (a conta pode ter deixado de estar apta) e o
+      // prazo da sessão nova, para a vaga não ser liberada antes de a sessão expirar.
+      ins.pagamento = {
+        ...ins.pagamento,
+        sessaoId: sessao.id,
+        expiraEm: prazo > ins.pagamento.expiraEm ? prazo : ins.pagamento.expiraEm,
+        contaDestino: d.contaDestino,
+        taxaCentavos: d.contaDestino ? ins.pagamento.taxaCentavos : undefined,
+      };
     }
     // Outra aba trocou a sessão ao mesmo tempo: esta não vale e é fechada abaixo.
-    return { inscricao: ins, urlPagamento: ins.pagamento?.sessaoId === sessao.id ? url : undefined };
+    return { inscricao: ins, urlPagamento: aguardando && ins.pagamento?.sessaoId === sessao.id ? url : undefined };
   });
   if (!r.resultado.urlPagamento) {
     await expirarSessoes([sessao.id]);
@@ -221,7 +235,8 @@ export async function checkoutDaNovaReserva(inscricaoId: string, metodo?: Metodo
   } catch (e) {
     await mutar(({ base }) => {
       const ins = base.inscricoes.find((i) => i.id === inscricaoId);
-      if (ins) liberarReservaNaBase(base, ins, "Falha ao abrir o pagamento", "falhou");
+      // Pagamento já enviado (Pix, boleto) ou aprovado: a reserva fica até o Stripe responder.
+      if (ins?.pagamento?.status === "aguardando") liberarReservaNaBase(base, ins, "Falha ao abrir o pagamento", "falhou");
     });
     throw e;
   }
@@ -303,6 +318,14 @@ export async function processarEstornos(): Promise<RespostaApi<string> | undefin
       const re = await criarReembolso(ins.id, intencao, !!ins.pagamento?.contaDestino);
       resultados.push({ id: ins.id, r: { reembolsoId: re.id } });
     } catch (e) {
+      // Já reembolsado antes (a chave de idempotência do Stripe vale só 24 h): registra o reembolso
+      // existente, em vez de deixar o estorno preso com erro para sempre.
+      const anterior = e instanceof ErroStripe && e.codigo === "charge_already_refunded"
+        ? await reembolsoExistente(intencao).catch(() => undefined) : undefined;
+      if (anterior) {
+        resultados.push({ id: ins.id, r: { reembolsoId: anterior.id } });
+        continue;
+      }
       console.error("Stripe: falha no reembolso", ins.id, e);
       resultados.push({ id: ins.id, r: { erro: e instanceof Error ? e.message.slice(0, 300) : tr("falha_no_reembolso") } });
     }
@@ -386,6 +409,8 @@ export async function abrirCheckoutImpulso(impulsoId: string, metodoPedido?: Met
   const metodo = await metodoParaCheckout(metodoPedido, d.impulso.precoCentavos);
   let sessao: SessaoCheckout;
   let anterior: string | undefined;
+  /** Prazo para pagar com a sessão nova: cresce até o mínimo do Stripe (30 min) numa troca tardia. */
+  let prazo = prazoPagamentoImpulso(d.impulso);
   try {
     const atual = await situacaoDaSessao(d.impulso.sessaoId, metodo);
     if (atual.concluida) {
@@ -394,6 +419,7 @@ export async function abrirCheckoutImpulso(impulsoId: string, metodoPedido?: Met
     }
     const existente = atual.aberta;
     anterior = atual.anterior;
+    prazo = prazoDaNovaSessao(prazo);
     const origem = new URL(getRequestUrl()).origin;
     // Produto do catálogo da plataforma; tipo ainda não sincronizado é sincronizado agora.
     const catalogo = d.plano ? await produtoDoPlano(d.plano, origem) : undefined;
@@ -404,7 +430,7 @@ export async function abrirCheckoutImpulso(impulsoId: string, metodoPedido?: Met
       impulsoId,
       descricao: `Impulso de ${rotuloDuracao(d.impulso.duracaoHoras)} — MilSim Ops`,
       valorCentavos: d.impulso.precoCentavos,
-      expiraEm: new Date(new Date(d.impulso.criadoEm).getTime() + PRAZO_PAGAMENTO_MIN * 60_000).toISOString(),
+      expiraEm: prazo,
       email: d.email,
       urlSucesso: `${origem}/organizacao/impulsos?pagamento=sucesso&sessao={CHECKOUT_SESSION_ID}`,
       urlCancelamento: `${origem}/organizacao/impulsos?pagamento=cancelado`,
@@ -419,9 +445,11 @@ export async function abrirCheckoutImpulso(impulsoId: string, metodoPedido?: Met
   if (!sessao.url) throw new Error(MSG_FALHA_STRIPE());
   const url = sessao.url;
   const r = await mutar(({ base }) => {
-    const impulso = registrarSessaoImpulsoNaBase(base, impulsoId, sessao.id, anterior);
-    // Outra aba trocou a sessão ao mesmo tempo: esta não vale e é fechada abaixo.
-    return { impulso, urlPagamento: impulso.sessaoId === sessao.id ? url : undefined };
+    const impulso = registrarSessaoImpulsoNaBase(base, impulsoId, sessao.id, anterior, prazo);
+    // Outra aba trocou a sessão ao mesmo tempo, ou a compra deixou de aguardar o pagamento:
+    // esta sessão não vale e é fechada abaixo.
+    const vale = impulso.sessaoId === sessao.id && statusDoImpulso(impulso, new Date()) === "aguardando_pagamento";
+    return { impulso, urlPagamento: vale ? url : undefined };
   });
   if (!r.resultado.urlPagamento) {
     await expirarSessoes([sessao.id]);

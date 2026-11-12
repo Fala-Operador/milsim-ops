@@ -2,8 +2,8 @@
 // meio de uma sessão aberta e checkout criado só com o meio escolhido.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { metodoDaSessao, metodosDaConfiguracao, metodosParaValor, type ConfiguracaoMetodos } from "@/lib/stripe";
-import { expiracaoLiberaReserva } from "@/lib/pagamentos";
-import { expiracaoCancelaImpulso } from "@/lib/impulsos";
+import { expiracaoLiberaReserva, prazoDaNovaSessao } from "@/lib/pagamentos";
+import { expiracaoCancelaImpulso, prazoPagamentoImpulso, statusDoImpulso } from "@/lib/impulsos";
 import { registrarSessaoImpulsoNaBase } from "@/services/impulsos";
 import {
   criarSessaoCheckout, criarSessaoCheckoutImpulso, diagnosticoMetodosPagamento, limparCacheMetodos, metodosDePagamentoAtivos,
@@ -54,6 +54,17 @@ describe("sessão expirada pela troca da forma de pagamento", () => {
   });
 });
 
+describe("prazo da sessão nova (o Stripe exige 30 minutos)", () => {
+  const agora = new Date("2026-11-06T12:00:00Z");
+  it("mantém o prazo quando ainda falta mais de 31 minutos", () => {
+    expect(prazoDaNovaSessao("2026-11-06T12:32:00Z", agora)).toBe("2026-11-06T12:32:00Z");
+  });
+  it("estende o prazo numa troca tardia da forma de pagamento", () => {
+    expect(prazoDaNovaSessao("2026-11-06T12:10:00Z", agora)).toBe("2026-11-06T12:32:00.000Z");
+    expect(prazoDaNovaSessao("2026-11-06T12:30:59Z", agora)).toBe("2026-11-06T12:32:00.000Z");
+  });
+});
+
 describe("impulso: troca da forma de pagamento", () => {
   const impulso = (criadoEm: string, extra: Partial<ImpulsoComprado> = {}) =>
     ({ id: "imp-1", status: "aguardando_pagamento", criadoEm, precoCentavos: 1000, ...extra }) as ImpulsoComprado;
@@ -70,6 +81,21 @@ describe("impulso: troca da forma de pagamento", () => {
     expect(registrarSessaoImpulsoNaBase(base, "imp-1", "cs_outra").sessaoId).toBe("cs_velha");
     expect(registrarSessaoImpulsoNaBase(base, "imp-1", "cs_nova", "cs_velha").sessaoId).toBe("cs_nova");
     expect(registrarSessaoImpulsoNaBase(base, "imp-1", "cs_x", "cs_velha").sessaoId).toBe("cs_nova");
+  });
+
+  it("troca tardia estende o prazo para pagar; a compra não vence antes da sessão nova", () => {
+    const base = { impulsosComprados: [impulso("2026-11-06T11:20:00Z", { sessaoId: "cs_velha" })] } as unknown as BaseDados;
+    const i = base.impulsosComprados[0]!;
+    expect(prazoPagamentoImpulso(i)).toBe("2026-11-06T12:20:00.000Z");
+    registrarSessaoImpulsoNaBase(base, "imp-1", "cs_nova", "cs_velha", "2026-11-06T12:32:00.000Z");
+    expect(prazoPagamentoImpulso(i)).toBe("2026-11-06T12:32:00.000Z");
+    expect(statusDoImpulso(i, new Date("2026-11-06T12:25:00Z"))).toBe("aguardando_pagamento");
+    expect(statusDoImpulso(i, new Date("2026-11-06T12:33:00Z"))).toBe("cancelado");
+  });
+
+  it("compra que deixou de aguardar o pagamento não aceita sessão nova", () => {
+    const base = { impulsosComprados: [impulso("2026-11-06T11:30:00Z", { status: "cancelado", sessaoId: "cs_velha" })] } as unknown as BaseDados;
+    expect(registrarSessaoImpulsoNaBase(base, "imp-1", "cs_nova", "cs_velha").sessaoId).toBe("cs_velha");
   });
 });
 

@@ -51,12 +51,21 @@ export const confirmarInscricaoFn = createServerFn({ method: "POST" })
     const online = stripeConfigurado();
     const { metodoPagamento: metodo, ...dados } = data;
     // A pessoa só se inscreve a si mesma; a origem é decidida pelo servidor.
-    const r = await mutar(({ usuario }) =>
-      confirmar({ ...dados, usuarioId: exigirUsuario(usuario).id }, { pagamentoOnline: online }),
-    );
-    if (r.resultado.status !== "pendente")
-      return { ...r, resultado: { inscricao: r.resultado } as ResultadoCompra };
-    return checkoutDaNovaReserva(r.resultado.id, metodo);
+    const r = await mutar(async ({ base, usuario }) => {
+      const usuarioId = exigirUsuario(usuario).id;
+      // Reservas abertas da pessoa neste evento: uma nova tentativa as substitui.
+      const abertas = base.inscricoes.filter(
+        (i) => i.eventoId === dados.eventoId && i.usuarioId === usuarioId && i.status === "pendente" && !!i.pagamento?.sessaoId,
+      );
+      const inscricao = await confirmar({ ...dados, usuarioId }, { pagamentoOnline: online });
+      // Checkouts das reservas substituídas: fechados abaixo, para não serem pagos depois.
+      const substituidas = abertas.filter((i) => i.id !== inscricao.id && i.status === "cancelada").map((i) => i.pagamento?.sessaoId);
+      return { inscricao, substituidas };
+    });
+    await expirarSessoes(r.resultado.substituidas);
+    const inscricao = r.resultado.inscricao;
+    if (inscricao.status !== "pendente") return { ...r, resultado: { inscricao } as ResultadoCompra };
+    return checkoutDaNovaReserva(inscricao.id, metodo);
   });
 
 /** Volta à página de pagamento de uma reserva ainda aberta (opcionalmente em outra forma de pagamento). */

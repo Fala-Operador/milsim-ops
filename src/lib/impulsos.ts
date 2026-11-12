@@ -116,9 +116,19 @@ export const ROTULO_STATUS_IMPULSO: Record<StatusExibidoImpulso, string> = {
   get reembolsado() { return tr("reembolsado"); },
 };
 
+/**
+ * Prazo para pagar a compra: `criadoEm` + 60 minutos. Enquanto a compra aguarda o pagamento,
+ * `expiraEm` guarda um prazo maior, se a troca da forma de pagamento precisou de uma sessão nova
+ * (o Stripe exige 30 minutos por sessão). Depois do pagamento, `expiraEm` é o prazo de uso.
+ */
+export function prazoPagamentoImpulso(i: Pick<ImpulsoComprado, "criadoEm" | "expiraEm">): string {
+  const base = new Date(ms(i.criadoEm) + PRAZO_PAGAMENTO_MIN * 60_000).toISOString();
+  return i.expiraEm && i.expiraEm > base ? i.expiraEm : base;
+}
+
 /** Compra aguardando pagamento passou do prazo do checkout (o Stripe expira a sessão). */
 export const pagamentoVencido = (i: ImpulsoComprado, agora: Date) =>
-  i.status === "aguardando_pagamento" && ms(i.criadoEm) + PRAZO_PAGAMENTO_MIN * 60_000 <= agora.getTime();
+  i.status === "aguardando_pagamento" && ms(prazoPagamentoImpulso(i)) <= agora.getTime();
 
 /**
  * Sessão do impulso expirada ainda no prazo de pagamento: foi trocada por outra forma de
