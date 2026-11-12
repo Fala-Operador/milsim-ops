@@ -1,6 +1,6 @@
 # Reset dos dados de teste do banco, só manual (Actions → Reset do banco → Run workflow).
-# Primeiro salva um backup completo (esquema + dados) como artefato desta execução, por 30
-# dias, e só então roda supabase/scripts/reset_mantendo_contas_e_vendas_stripe.sql, que
+# Primeiro salva um backup completo (esquema + dados), cifrado, como artefato desta execução,
+# por 7 dias, e só então roda supabase/scripts/reset_mantendo_contas_e_vendas_stripe.sql, que
 # mantém contas, organizações (com a conta Stripe vinculada), configurações do site e as
 # vendas pagas pelo Stripe, e apaga o resto. Nada é apagado no Stripe nem no Storage.
 #
@@ -62,12 +62,29 @@ jobs:
           supabase db dump --linked --data-only --use-copy -f backup/dados.sql
           test -s backup/dados.sql
 
+      # O artefato fica visível para todos com leitura do repositório: o backup sobe cifrado
+      # (AES-256, senha no segredo BACKUP_PASSPHRASE do ambiente). Sem a senha, o reset não roda.
+      # Para abrir: gpg --decrypt backup.tar.gz.gpg > backup.tar.gz (pede a senha).
+      - name: Cifrar o backup
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::error::Crie o segredo BACKUP_PASSPHRASE no ambiente $AMBIENTE (Settings → Environments) antes do reset."
+            exit 1
+          fi
+          tar -czf backup.tar.gz backup
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --symmetric --cipher-algo AES256 \
+            -o backup.tar.gz.gpg backup.tar.gz <<< "$BACKUP_PASSPHRASE"
+          rm -rf backup backup.tar.gz
+          test -s backup.tar.gz.gpg
+
       - name: Guardar o backup
         uses: actions/upload-artifact@v4
         with:
           name: backup-banco-${{ inputs.ambiente }}-${{ github.run_id }}
-          path: backup/
-          retention-days: 30
+          path: backup.tar.gz.gpg
+          retention-days: 7
           if-no-files-found: error
 
       - name: Reset mantendo contas e vendas Stripe

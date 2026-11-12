@@ -21,6 +21,9 @@ async function campanhasDe(eventoIds?: string[]): Promise<Campanha[]> {
   return (data ?? []).map((l) => daLinha<Campanha>(CAMPANHAS_METRICAS, l));
 }
 
+/** Tipos que contam como venda/inscrição: exigem a inscrição confirmada de quem envia. */
+const TIPOS_DE_CONVERSAO = new Set<RegistroAnalytics["tipo"]>(["inscricao_confirmada", "cortesia_resgatada", "inclusao_administrativa"]);
+
 /** Grava registros vindos do navegador, descartando inválidos e acessos excluídos. */
 export async function registrar(registros: RegistroAnalytics[]): Promise<number> {
   const { base, usuario } = await contextoSomenteLeitura();
@@ -31,6 +34,11 @@ export async function registrar(registros: RegistroAnalytics[]): Promise<number>
     const evento = eventos.get(r.eventoId);
     // Admin e a própria organização não entram na coleta.
     if (!evento || gereEvento(usuario, evento)) return [];
+    // Conversões só valem com a inscrição confirmada da própria pessoa (visitante não forja métricas).
+    if (TIPOS_DE_CONVERSAO.has(r.tipo)) {
+      const ins = r.inscricaoId ? base.inscricoes.find((i) => i.id === r.inscricaoId) : undefined;
+      if (!usuario || !ins || ins.usuarioId !== usuario.id || ins.eventoId !== r.eventoId || ins.status !== "confirmada") return [];
+    }
     const campanhaOk = !!r.campanhaId && (campanhas.get(r.campanhaId)?.eventoId === r.eventoId ||
       base.impulsionamentos.some((c) => c.id === r.campanhaId && c.eventoId === r.eventoId));
     const reg: RegistroAnalytics = {

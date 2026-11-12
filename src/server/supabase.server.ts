@@ -6,7 +6,7 @@
 import "@tanstack/react-start/server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
-import { getCookies, setCookie, setResponseHeader } from "@tanstack/react-start/server";
+import { getCookies, getRequestUrl, setCookie, setResponseHeader } from "@tanstack/react-start/server";
 import { papelDaChave } from "@/lib/chavesSupabase";
 
 // Nomes alternativos usados pelos segredos do projeto (o prefixo SUPABASE_ é reservado lá).
@@ -59,14 +59,27 @@ export function supabaseAdmin(): SupabaseClient {
   return admin;
 }
 
+/** Fora do ambiente local o site é sempre https (atrás do Cloudflare/proxy a requisição chega como http). */
+function cookieSeguro(): boolean {
+  try {
+    return !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(getRequestUrl({ xForwardedHost: true }).hostname);
+  } catch {
+    return true;
+  }
+}
+
 export function supabaseSessao(): SupabaseClient {
+  const seguro = cookieSeguro();
   return createServerClient(variavel("SUPABASE_URL"), variavel("SUPABASE_PUBLISHABLE_KEY"), {
+    // A sessão só é lida no servidor: o cookie fica fora do alcance do JavaScript da página
+    // (httpOnly), para que um XSS não consiga roubar o token.
+    cookieOptions: { httpOnly: true, secure: seguro, sameSite: "lax", path: "/" },
     cookies: {
       getAll() {
         return Object.entries(getCookies()).map(([name, value]) => ({ name, value }));
       },
       setAll(cookies, cabecalhos) {
-        for (const c of cookies) setCookie(c.name, c.value, c.options);
+        for (const c of cookies) setCookie(c.name, c.value, { ...c.options, httpOnly: true, secure: seguro, sameSite: "lax", path: "/" });
         // Respostas que gravam cookies de sessão não podem ficar em cache de CDN.
         for (const [nome, valor] of Object.entries(cabecalhos ?? {})) setResponseHeader(nome as never, valor);
       },

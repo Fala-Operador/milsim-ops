@@ -33,8 +33,7 @@ Cria a conta de participante: valida os dados, cria o usuário no Supabase Auth 
 
 - CPF e e-mail são únicos.
 - Menores de 18 anos (15 a 17) ficam com `autorizacaoResponsavel = "pendente"` e só se inscrevem depois da aprovação do admin.
-- Antes de criar, confere duplicidade de e-mail e CPF na base (quem já tem conta não recebe e-mail de confirmação).
-- A conta é criada pelo cadastro do Supabase Auth (`signUp`), que valida o CAPTCHA e envia o e-mail de confirmação (modelo `supabase/templates/confirmar-email.html`). A pessoa só entra depois de abrir o link ([`confirmarEmail`](confirmarEmail.md)).
+- A conta é criada pelo cadastro do Supabase Auth (`signUp`), que valida o CAPTCHA. Só **depois** do CAPTCHA a duplicidade de e-mail e CPF é conferida na base (assim um robô não testa e-mails e CPFs); se já existir, a conta recém-criada no Auth é apagada e a mensagem de duplicidade é devolvida. O Supabase envia o e-mail de confirmação (modelo `supabase/templates/confirmar-email.html`). A pessoa só entra depois de abrir o link ([`confirmarEmail`](confirmarEmail.md)).
 - Projeto sem confirmação obrigatória (ex.: local): a conta já entra logada.
 - Se a gravação do perfil falhar, a conta criada no Auth é apagada (não fica conta órfã).
 - Perfil, papel e organização ficam na tabela `usuarios`, nunca em `user_metadata`.

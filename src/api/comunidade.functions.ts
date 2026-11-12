@@ -5,12 +5,19 @@ import { z } from "zod";
 import { ErroDominio } from "@/services/db";
 import * as c from "@/services/comunidade";
 import { exigirUsuario, mutar } from "@/server/unidade.server";
+import { imagemPermitida } from "@/server/midia";
+import { tr } from "@/i18n/api/comunidade.functions";
 import { chamar } from "@/api/cliente";
 import type { DadosForum } from "@/services/comunidade";
 import type { ImagemPost, MotivoDenuncia, Usuario } from "@/lib/domain/types";
 
 const id = z.string().min(1).max(100);
 const imagem = z.object({ url: z.string().max(15_000_000), alt: z.string().max(300).optional() });
+
+/** Só imagens enviadas agora ou já guardadas no Storage do site (nunca URL externa). */
+function exigirImagensProprias(imagens: (ImagemPost | undefined)[]): void {
+  if (imagens.some((i) => i && !imagemPermitida(i.url))) throw new ErroDominio("imagem", tr("imagem_invalida"));
+}
 const textoPost = z.string().max(c.LIMITE_TEXTO + 100);
 const permissao = z.enum(["membros", "gestao"]);
 const dadosForum = z.object({
@@ -37,11 +44,11 @@ export const registrarVisitaFn = createServerFn({ method: "POST" })
 
 export const criarPublicacaoFn = createServerFn({ method: "POST" })
   .validator(z.object({ forumId: id, texto: textoPost, imagens: z.array(imagem).max(c.LIMITE_IMAGENS), importante: z.boolean().optional() }).parse)
-  .handler(op((u, d: { forumId: string; texto: string; imagens: ImagemPost[]; importante?: boolean | undefined }) => c.criarPublicacao(u, d)));
+  .handler(op((u, d: { forumId: string; texto: string; imagens: ImagemPost[]; importante?: boolean | undefined }) => (exigirImagensProprias(d.imagens), c.criarPublicacao(u, d))));
 
 export const editarPublicacaoFn = createServerFn({ method: "POST" })
   .validator(z.object({ pubId: id, texto: textoPost, imagens: z.array(imagem).max(c.LIMITE_IMAGENS) }).parse)
-  .handler(op((u, d: { pubId: string; texto: string; imagens: ImagemPost[] }) => c.editarPublicacao(u, d.pubId, d.texto, d.imagens)));
+  .handler(op((u, d: { pubId: string; texto: string; imagens: ImagemPost[] }) => (exigirImagensProprias(d.imagens), c.editarPublicacao(u, d.pubId, d.texto, d.imagens))));
 
 export const excluirPublicacaoFn = createServerFn({ method: "POST" })
   .validator(z.object({ pubId: id }).parse)
@@ -53,11 +60,11 @@ export const alternarCurtidaFn = createServerFn({ method: "POST" })
 
 export const responderFn = createServerFn({ method: "POST" })
   .validator(z.object({ pubId: id, texto: textoPost, imagem: imagem.optional() }).parse)
-  .handler(op((u, d: { pubId: string; texto: string; imagem?: ImagemPost | undefined }) => c.responder(u, d.pubId, d.texto, d.imagem)));
+  .handler(op((u, d: { pubId: string; texto: string; imagem?: ImagemPost | undefined }) => (exigirImagensProprias([d.imagem]), c.responder(u, d.pubId, d.texto, d.imagem))));
 
 export const editarRespostaFn = createServerFn({ method: "POST" })
   .validator(z.object({ respostaId: id, texto: textoPost, imagem: imagem.optional() }).parse)
-  .handler(op((u, d: { respostaId: string; texto: string; imagem?: ImagemPost | undefined }) => c.editarResposta(u, d.respostaId, d.texto, d.imagem)));
+  .handler(op((u, d: { respostaId: string; texto: string; imagem?: ImagemPost | undefined }) => (exigirImagensProprias([d.imagem]), c.editarResposta(u, d.respostaId, d.texto, d.imagem))));
 
 export const excluirRespostaFn = createServerFn({ method: "POST" })
   .validator(z.object({ respostaId: id }).parse)

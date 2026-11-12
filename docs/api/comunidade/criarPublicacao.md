@@ -17,7 +17,7 @@ Publica no fórum (texto e até 4 imagens). A gestão pode marcar como **importa
 |---|---|---|
 | `forumId` | string |  |
 | `texto` | string (até 2000) | Texto ou imagem é obrigatório. |
-| `imagens` | { url, alt? }[] (até 4) | `url` em data URL; vai para o Storage. |
+| `imagens`
 | `importante?` | boolean | Só tem efeito para a gestão. |
 
 ## Regras
@@ -39,6 +39,7 @@ Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 - O texto pode ter no máximo 2000 caracteres.
 - Envie no máximo [limite] imagem(ns).
 - Escreva um texto ou adicione uma imagem.
+- Imagem inválida. Envie a foto pelo próprio site. (URL externa: só data URL de imagem ou URL do bucket `midia` do site)
 
 ## Exemplo
 

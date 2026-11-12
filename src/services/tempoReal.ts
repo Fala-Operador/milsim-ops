@@ -9,6 +9,11 @@ import { obterConfigRealtime } from "@/api/sessao.functions";
 /** Espera aleatória antes de buscar a visão: espalha as requisições de quem recebeu o mesmo sinal. */
 const ESPERA_MIN_MS = 300;
 const ESPERA_VARIACAO_MS = 1200;
+/**
+ * Intervalo mínimo entre duas buscas da visão disparadas pelo sinal. O canal é privado (só o
+ * banco envia), mas o limite protege o servidor mesmo que sinais cheguem em rajada.
+ */
+export const INTERVALO_MINIMO_MS = 5_000;
 /** Aba escondida por mais que isso solta a conexão (libera vaga no limite de conexões do Realtime). */
 const DESLIGAR_ESCONDIDA_MS = 60_000;
 
@@ -41,6 +46,7 @@ export function iniciarTempoReal(atualizar: () => Promise<void>): () => void {
   let desligarTimer: ReturnType<typeof setTimeout> | undefined;
   let buscando = false;
   let pendente = false;
+  let ultimaBusca = 0;
 
   const escondida = () => document.visibilityState === "hidden";
 
@@ -53,6 +59,7 @@ export function iniciarTempoReal(atualizar: () => Promise<void>): () => void {
     }
     buscando = true;
     pendente = false;
+    ultimaBusca = Date.now();
     try {
       await atualizar();
     } finally {
@@ -67,7 +74,8 @@ export function iniciarTempoReal(atualizar: () => Promise<void>): () => void {
       pendente = true;
       return;
     }
-    timer = setTimeout(buscar, ESPERA_MIN_MS + Math.random() * ESPERA_VARIACAO_MS);
+    const espera = ESPERA_MIN_MS + Math.random() * ESPERA_VARIACAO_MS;
+    timer = setTimeout(buscar, Math.max(espera, ultimaBusca + INTERVALO_MINIMO_MS - Date.now()));
   };
 
   const conectar = async () => {
@@ -83,7 +91,8 @@ export function iniciarTempoReal(atualizar: () => Promise<void>): () => void {
     }
     if (canal || !ativo) return;
     canal = cliente
-      .channel("base", { config: { broadcast: { self: false }, private: false } })
+      // Canal privado: só o banco publica o sinal (policy em realtime.messages dá apenas leitura).
+      .channel("base", { config: { broadcast: { self: false }, private: true } })
       .on("broadcast", { event: "versao" }, ({ payload }) => {
         const versao = (payload as { version?: unknown } | undefined)?.version;
         if (!sinalPedeAtualizacao(versao, versaoDaVisao())) return;
