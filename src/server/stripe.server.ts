@@ -111,7 +111,9 @@ function criarSessaoCheckoutCom(d: DadosCheckout): Promise<SessaoCheckout> {
       success_url: d.urlSucesso,
       cancel_url: d.urlCancelamento,
       metadata: { inscricaoId: d.inscricaoId },
-      payment_method_types: d.metodo ? [d.metodo] : undefined,
+      // O Stripe não aceita mais `payment_method_types` na criação (desde 11/2026): os meios vêm do
+      // painel, e `allowed_payment_method_types` só filtra entre eles. Com um só, o checkout abre nele.
+      allowed_payment_method_types: d.metodo ? [d.metodo] : undefined,
       // Cobrança com destino: o Stripe transfere à organização o valor menos a taxa.
       payment_intent_data: {
         metadata: { inscricaoId: d.inscricaoId },
@@ -282,7 +284,9 @@ function criarSessaoCheckoutImpulsoCom(d: DadosCheckoutImpulso): Promise<SessaoC
       success_url: d.urlSucesso,
       cancel_url: d.urlCancelamento,
       metadata: { impulsoId: d.impulsoId },
-      payment_method_types: d.metodo ? [d.metodo] : undefined,
+      // O Stripe não aceita mais `payment_method_types` na criação (desde 11/2026): os meios vêm do
+      // painel, e `allowed_payment_method_types` só filtra entre eles. Com um só, o checkout abre nele.
+      allowed_payment_method_types: d.metodo ? [d.metodo] : undefined,
       payment_intent_data: { metadata: { impulsoId: d.impulsoId } },
       line_items: [
         d.precoId
