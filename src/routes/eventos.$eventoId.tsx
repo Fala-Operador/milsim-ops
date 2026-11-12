@@ -216,11 +216,6 @@ function PaginaEvento() {
           ) : (
             <p className="text-sm text-muted-foreground">{tr("carregando_pdf")}</p>
           )
-        ) : evento.regras?.conteudoHtml ? (
-          <div
-            className="prose-sm max-h-[60vh] overflow-y-auto text-sm leading-relaxed [&_h2]:mt-4 [&_h2]:font-display [&_h2]:text-base [&_h2]:font-semibold [&_p]:mt-1 [&_p]:text-muted-foreground"
-            dangerouslySetInnerHTML={{ __html: evento.regras.conteudoHtml }}
-          />
         ) : (
           <p className="text-sm text-muted-foreground">{tr("este_arquivo_nao_pode_ser_exibido")}{" "}
             {evento.regras?.arquivoUrl && <a className="underline" href={evento.regras.arquivoUrl} download={evento.regras.nomeArquivo}>{tr("baixar_valor", { valor: evento.regras.nomeArquivo ?? "arquivo" })}</a>}

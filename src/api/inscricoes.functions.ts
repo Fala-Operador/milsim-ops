@@ -129,7 +129,8 @@ export const incluirParticipantesFn = createServerFn({ method: "POST" })
 export const previsualizarCupomFn = createServerFn({ method: "POST" })
   .validator(z.object({ eventoId: id, codigo: z.string().max(40), tipoId: id }).parse)
   .handler(({ data }) =>
-    ler(({ base }) => {
+    ler(({ base, usuario }) => {
+      exigirUsuario(usuario); // sem login não há prévia: evita testar códigos de cupom à vontade
       const c = validarCupom(base, data.eventoId, data.codigo, data.tipoId);
       return { codigo: c.codigo, descontoPercentual: c.descontoPercentual };
     }),

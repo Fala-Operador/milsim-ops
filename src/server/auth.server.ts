@@ -86,10 +86,8 @@ export async function cadastrar(dados: DadosCadastro, captchaToken?: string): Pr
   } catch (e) {
     mensagem(e);
   }
-  const { base } = await contextoSomenteLeitura();
-  if (base.usuarios.some((u) => u.email === email)) throw new Error(tr("ja_existe_um_cadastro_com_este"));
-  if (base.usuarios.some((u) => u.cpf === somenteDigitos(dados.cpf))) throw new Error(tr("ja_existe_um_cadastro_com_este_2"));
-
+  // O CAPTCHA é validado pelo Supabase no signUp. A conferência de e-mail e CPF na base vem
+  // DEPOIS dele: antes, um robô sem CAPTCHA podia testar e-mails e CPFs à vontade.
   const sessao = supabaseSessao();
   const { data, error } = await sessao.auth.signUp({
     // idioma vai para user_metadata: os modelos de e-mail do Supabase escolhem PT ou EN por ele.
@@ -107,6 +105,16 @@ export async function cadastrar(dados: DadosCadastro, captchaToken?: string): Pr
   // é uma conta nova — nunca apagar.
   if (!data.user.identities?.length) throw new Error(tr("ja_existe_um_cadastro_com_este"));
   const id = data.user.id;
+  // Conta nova no Auth, mas e-mail ou CPF já cadastrados na base: desfaz a conta nova.
+  const { base } = await contextoSomenteLeitura();
+  const duplicado = base.usuarios.some((u) => u.email === email)
+    ? tr("ja_existe_um_cadastro_com_este")
+    : base.usuarios.some((u) => u.cpf === somenteDigitos(dados.cpf)) ? tr("ja_existe_um_cadastro_com_este_2") : null;
+  if (duplicado) {
+    if (data.session) await sessao.auth.signOut();
+    await supabaseAdmin().auth.admin.deleteUser(id);
+    throw new Error(duplicado);
+  }
   try {
     await mutar(() => registrarPerfil(id, dados), { exigirLogin: false });
   } catch (e) {

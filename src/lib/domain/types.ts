@@ -177,8 +177,8 @@ export interface DocumentoRegras {
   titulo: string;
   versao: string;
   atualizadoEm: string;
-  formato: "pdf" | "docx" | "html"; // html = demonstrativo renderizável
-  conteudoHtml?: string | undefined; // usado no leitor interno demonstrativo
+  formato: "pdf" | "docx" | "html"; // html = legado (não é mais exibido nem aceito)
+  conteudoHtml?: string | undefined; // legado: nunca exibido (XSS); o servidor descarta ao gravar
   nomeArquivo?: string | undefined;
   pdfDataUrl?: string | undefined; // PDF enviado pelo organizador (data URL, persistência local demo)
   arquivoUrl?: string | undefined; // DOCX enviado (sem leitor interno; oferecido para download)

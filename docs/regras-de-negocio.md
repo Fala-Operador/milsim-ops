@@ -192,6 +192,11 @@ Código: `incluirParticipantes` em `src/services/inscricoes.ts`. → [API](api/i
   aberto e também vale com o evento em `inscricoes_encerradas`.
 - Origem `organizador` ("Inclusão manual") ou `admin` ("Inclusão pela administração"); a ação vai
   para a auditoria (com a observação opcional). Inclusão pelo admin notifica os organizadores do evento.
+- **Dados que a gestão recebe** (`inscricaoConsentida`/`perfilInscrito` em `src/lib/visao.ts`): o
+  cadastro completo (CPF, nascimento, endereço, WhatsApp) só de quem se inscreveu por conta própria
+  (origem `plataforma` ou `cortesia`) com inscrição **confirmada**. Inclusão manual (`organizador`/`admin`),
+  reservas abertas e inscrições canceladas/estornadas mostram só nome completo e e-mail. Assim, localizar
+  uma conta por e-mail ou CPF não entrega os dados pessoais dela (LGPD, minimização).
 
 ## 7. Pagamento online (Stripe)
 
