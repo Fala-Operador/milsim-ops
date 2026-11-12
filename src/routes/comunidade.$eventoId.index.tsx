@@ -257,10 +257,9 @@ function ComunidadeInicio() {
               <CollapsibleTrigger className="group flex w-full cursor-pointer items-center justify-between gap-1 text-left font-semibold">{tr("caderno_de_regras")}<ChevronRight aria-hidden="true" className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                {evento.regras.pdfDataUrl ? (
+                {/* Só o PDF enviado é exibido: HTML vindo do evento nunca é interpretado (risco de XSS). */}
+                {evento.regras.pdfDataUrl && (
                   <LeitorPdf titulo={evento.regras.titulo} dataUrl={evento.regras.pdfDataUrl} />
-                ) : (
-                  <div className="mt-2 max-h-64 overflow-y-auto [&_h2]:font-semibold [&_p]:text-muted-foreground" dangerouslySetInnerHTML={{ __html: evento.regras.conteudoHtml ?? "" }} />
                 )}
               </CollapsibleContent>
             </Collapsible>

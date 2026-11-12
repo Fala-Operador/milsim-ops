@@ -5,6 +5,7 @@ import { ErroDominio } from "@/services/db";
 import * as org from "@/services/organizador";
 import { garantirForuns } from "@/services/comunidade";
 import { gereEvento } from "@/lib/visao";
+import { regrasRecebidas } from "@/lib/regras";
 import { exigirUsuario, mutar, type Contexto } from "@/server/unidade.server";
 import { expirarSessoes, processarEstornos } from "@/server/pagamentos.server";
 import { chamar } from "@/api/cliente";
@@ -52,7 +53,8 @@ export const salvarEventoFn = createServerFn({ method: "POST" })
   .handler(({ data }) =>
     mutar(({ base, usuario }) => {
       const u = exigirUsuario(usuario);
-      const evento: Evento = { ...data };
+      // HTML livre no manual de regras nunca é aceito (seria XSS na página pública).
+      const evento: Evento = { ...data, regras: regrasRecebidas(data.regras) };
       const existente = base.eventos.find((e) => e.id === evento.id);
       if (existente) {
         if (!gereEvento(u, existente)) throw new ErroDominio("permissao", tr("voce_so_pode_gerenciar_eventos_da"));

@@ -99,3 +99,30 @@ describe("admin", () => {
     expect(visaoParaUsuario(base, admin).auditoria).toEqual([]);
   });
 });
+
+describe("organizador: minimização dos dados dos inscritos", () => {
+  const inscricaoDe = (usuarioId: string, origem: "plataforma" | "organizador", status: "confirmada" | "cancelada") => ({
+    ...structuredClone(base.inscricoes.find((i) => i.eventoId === "evt-serra-verde") ?? base.inscricoes[0]!),
+    id: `ins-${usuarioId}-${origem}-${status}`, eventoId: "evt-serra-verde", usuarioId, origem, status,
+  });
+
+  it("inclusão manual mostra só nome e e-mail, sem CPF, endereço nem WhatsApp", () => {
+    const alvo = usuario("usr-ana");
+    base.inscricoes = base.inscricoes.filter((i) => i.usuarioId !== alvo.id);
+    base.inscricoes.push(inscricaoDe(alvo.id, "organizador", "confirmada"));
+    const u = visaoParaUsuario(base, usuario("usr-organizador")).usuarios.find((x) => x.id === alvo.id)!;
+    expect(u.nomeCompleto).toBe(alvo.nomeCompleto);
+    expect(u.email).toBe(alvo.email);
+    expect(u.cpf).toBe("");
+    expect(u.whatsapp).toBe("");
+    expect(u.endereco.logradouro).toBe("");
+  });
+
+  it("inscrição cancelada não dá mais o cadastro completo", () => {
+    const alvo = usuario("usr-ana");
+    base.inscricoes = base.inscricoes.filter((i) => i.usuarioId !== alvo.id);
+    base.inscricoes.push(inscricaoDe(alvo.id, "plataforma", "cancelada"));
+    const u = visaoParaUsuario(base, usuario("usr-organizador")).usuarios.find((x) => x.id === alvo.id)!;
+    expect(u.cpf).toBe("");
+  });
+});

@@ -7,7 +7,7 @@
 | Server function | `previsualizarCupomFn` em [`src/api/inscricoes.functions.ts`](../../../src/api/inscricoes.functions.ts) |
 | Uso no navegador | `previsualizarCupom(…)` |
 | Método | `POST` |
-| Acesso | Pública |
+| Acesso | Conta logada (sem login não há prévia, para ninguém testar códigos à vontade) |
 
 Valida um cupom para mostrar o desconto na tela de inscrição. Os cupons nunca vão para o navegador; esta é a única forma de consultá-los.
 
@@ -32,6 +32,7 @@ Valida um cupom para mostrar o desconto na tela de inscrição. Os cupons nunca 
 
 Mensagens que chegam ao navegador em `error.message` (regras de negócio):
 
+- Entre na sua conta para continuar.
 - Cupom não encontrado para esta operação.
 - Este cupom está inativo.
 - Este cupom atingiu o limite de utilizações.

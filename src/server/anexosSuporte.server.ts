@@ -13,10 +13,12 @@ const BUCKET = "documentos";
 export async function gravarAnexo(chamadoId: string, clienteId: string, nome: string, dataUrl: string): Promise<AnexoChamado> {
   const arq = lerArquivoNota(dataUrl); // PDF/JPEG/PNG/WebP, ≤ 5 MB, assinatura real conferida
   const seguro = nome.replace(/[^\p{L}\p{N} ._-]/gu, "").slice(0, 100) || `anexo.${arq.ext}`;
-  // Caminho determinístico por mensagem: reenvio sobrescreve em vez de duplicar.
+  // Caminho determinístico por mensagem, sem sobrescrever: um reenvio (mesmo clienteId) reaproveita
+  // o arquivo já gravado, e ninguém troca o anexo de outra mensagem informando o clienteId dela.
   const caminho = `suporte/${chamadoId}/${clienteId}.${arq.ext}`;
-  const { error } = await supabaseAdmin().storage.from(BUCKET).upload(caminho, arq.bytes, { contentType: arq.tipo, upsert: true });
-  if (error) throw new Error(tr("falha_ao_enviar_anexo_message", { message: error.message }));
+  const { error } = await supabaseAdmin().storage.from(BUCKET).upload(caminho, arq.bytes, { contentType: arq.tipo, upsert: false });
+  const jaExiste = !!error && (/already exists|duplicate/i.test(error.message) || (error as { statusCode?: string }).statusCode === "409");
+  if (error && !jaExiste) throw new Error(tr("falha_ao_enviar_anexo_message", { message: error.message }));
   return { caminho, nome: seguro, tipo: arq.tipo, tamanho: arq.bytes.byteLength };
 }
 
