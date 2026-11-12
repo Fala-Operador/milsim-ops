@@ -56,6 +56,16 @@ export function perfilPublico(u: Usuario): Usuario {
   };
 }
 
+/** Inscrito sem consentimento para o cadastro completo: perfil público + nome completo e e-mail. */
+export function perfilInscrito(u: Usuario): Usuario {
+  return { ...perfilPublico(u), nomeCompleto: u.nomeCompleto, email: u.email };
+}
+
+/** A pessoa se inscreveu por conta própria (ou resgatou a cortesia) e a inscrição está confirmada. */
+export function inscricaoConsentida(i: Inscricao): boolean {
+  return i.status === "confirmada" && (i.origem === "plataforma" || i.origem === "cortesia");
+}
+
 /** Inscrição de terceiros: mantém só o que as contagens de vagas e ocupação precisam. */
 /** Titular e organização veem a situação do pagamento; os ids do Stripe só a administração. */
 function comPagamentoVisivel(i: Inscricao, admin: boolean, gestor: boolean): Inscricao {
@@ -226,8 +236,16 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null, agora
   v.correcoesParticipacao = admin ? base.correcoesParticipacao : [];
 
   // ----- Usuários: completo para si, admin e gestão dos inscritos; público para autores -----
+  // Gestão do evento: cadastro completo só de quem se inscreveu por conta própria (inscrição ou
+  // resgate de cortesia) e está confirmado. Inclusão manual (feita pela gestão com e-mail/CPF),
+  // reservas abertas e inscrições canceladas mostram só nome e e-mail (minimização, LGPD).
   const completos = new Set<string>([meuId]);
-  for (const i of base.inscricoes) if (geridos.has(i.eventoId)) completos.add(i.usuarioId);
+  const resumidos = new Set<string>();
+  for (const i of base.inscricoes) {
+    if (!geridos.has(i.eventoId)) continue;
+    if (inscricaoConsentida(i)) completos.add(i.usuarioId);
+    else resumidos.add(i.usuarioId);
+  }
   for (const s of v.solicitacoes) completos.add(s.usuarioId);
   const referenciados = new Set<string>();
   for (const p of v.publicacoes) referenciados.add(p.autorId);
@@ -242,6 +260,7 @@ export function visaoParaUsuario(base: BaseDados, usuario: Usuario | null, agora
     !u.fichaEmergencia || podeVerFicha(base, eu, u, agora) ? u : { ...u, fichaEmergencia: undefined };
   v.usuarios = base.usuarios.flatMap((u) => {
     if (admin || completos.has(u.id)) return [comFicha(u)];
+    if (resumidos.has(u.id)) return [perfilInscrito(u)];
     if (referenciados.has(u.id)) return [perfilPublico(u)];
     return [];
   });

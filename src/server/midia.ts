@@ -7,12 +7,15 @@ import { tr } from "@/i18n/server/midia";
 
 const BUCKET = "midia";
 const DATA_URL = /^data:([a-z]+\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/;
-const LIMITES: Record<string, { ext: string; max: number }> = {
-  "image/jpeg": { ext: "jpg", max: 10 * 1024 * 1024 },
-  "image/png": { ext: "png", max: 10 * 1024 * 1024 },
-  "image/webp": { ext: "webp", max: 10 * 1024 * 1024 },
-  "image/gif": { ext: "gif", max: 10 * 1024 * 1024 },
-  "application/pdf": { ext: "pdf", max: 5 * 1024 * 1024 },
+const texto = (b: Uint8Array, de: number, ate: number) => String.fromCharCode(...b.slice(de, ate));
+// `assinatura`: o conteúdo real precisa ser do tipo declarado (o bucket é público: nada de
+// HTML, executável ou outro arquivo disfarçado de imagem/PDF).
+const LIMITES: Record<string, { ext: string; max: number; assinatura: (b: Uint8Array) => boolean }> = {
+  "image/jpeg": { ext: "jpg", max: 10 * 1024 * 1024, assinatura: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  "image/png": { ext: "png", max: 10 * 1024 * 1024, assinatura: (b) => b[0] === 0x89 && texto(b, 1, 4) === "PNG" },
+  "image/webp": { ext: "webp", max: 10 * 1024 * 1024, assinatura: (b) => texto(b, 0, 4) === "RIFF" && texto(b, 8, 12) === "WEBP" },
+  "image/gif": { ext: "gif", max: 10 * 1024 * 1024, assinatura: (b) => texto(b, 0, 4) === "GIF8" },
+  "application/pdf": { ext: "pdf", max: 5 * 1024 * 1024, assinatura: (b) => texto(b, 0, 5) === "%PDF-" },
 };
 
 /** Envia um data URL ao bucket público "midia" e devolve a URL pública. */
@@ -23,6 +26,7 @@ export async function enviarArquivo(admin: SupabaseClient, dataUrl: string): Pro
   if (!m || !regra) throw new Error(tr("tipo_de_arquivo_nao_permitido_valor", { valor: tipo || "desconhecido" }));
   const bytes = Uint8Array.from(atob(m[2]!), (c) => c.charCodeAt(0));
   if (bytes.byteLength > regra.max) throw new Error(tr("arquivo_acima_do_tamanho_permitido"));
+  if (!regra.assinatura(bytes)) throw new Error(tr("tipo_de_arquivo_nao_permitido_valor", { valor: tipo }));
   const caminho = `${new Date().toISOString().slice(0, 7)}/${crypto.randomUUID()}.${regra.ext}`;
   const storage = admin.storage.from(BUCKET);
   const { error } = await storage.upload(caminho, bytes, { contentType: tipo, upsert: false });
@@ -46,4 +50,21 @@ export async function enviarMidia(admin: SupabaseClient, registros: object[]): P
   };
   registros.forEach((r) => visitar(r as Record<string, unknown>));
   await Promise.all(pendentes);
+}
+
+/**
+ * Imagem de publicação aceita: data URL de imagem (vai para o Storage ao gravar) ou URL pública
+ * do próprio bucket "midia" (imagem já enviada, reenviada numa edição). URL externa não: ela
+ * rastrearia quem vê e mostraria conteúdo que não passou pela moderação.
+ */
+export function imagemPermitida(url: string): boolean {
+  if (/^data:image\/(jpeg|png|webp|gif);base64,/.test(url)) return true;
+  const base = process.env["SUPABASE_URL"] || process.env["BANCO_URL"];
+  if (!base) return false;
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && u.origin === new URL(base).origin && u.pathname.startsWith(`/storage/v1/object/public/${BUCKET}/`);
+  } catch {
+    return false;
+  }
 }

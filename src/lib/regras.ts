@@ -61,3 +61,35 @@ export function htmlParaTexto(html: string): string {
   t = limparTags(t);
   return t.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 }
+
+// ---------- Manual de regras recebido do navegador ----------
+
+/** Endereço aceito para o PDF/arquivo do manual: PDF enviado agora (data URL) ou URL https já gravada. */
+function arquivoAceito(url: string | undefined, tiposDataUrl: readonly string[]): string | undefined {
+  if (!url) return undefined;
+  if (/^https:\/\//i.test(url)) return url;
+  return tiposDataUrl.some((t) => url.startsWith(`data:${t};base64,`)) ? url : undefined;
+}
+
+const TIPOS_ARQUIVO_REGRAS = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+] as const;
+
+/**
+ * Manual de regras vindo do editor (servidor): o HTML livre (`conteudoHtml`) nunca é aceito,
+ * porque seria mostrado como código na página pública (XSS). Só ficam o PDF e o arquivo,
+ * com endereço https ou data URL de tipo conhecido.
+ */
+export function regrasRecebidas<T extends { conteudoHtml?: string | undefined; pdfDataUrl?: string | undefined; arquivoUrl?: string | undefined; formato?: string }>(
+  regras: T | undefined,
+): T | undefined {
+  if (!regras || typeof regras !== "object") return undefined;
+  const { conteudoHtml: _html, ...resto } = regras;
+  const limpo = { ...resto } as T;
+  limpo.pdfDataUrl = arquivoAceito(regras.pdfDataUrl, ["application/pdf"]);
+  limpo.arquivoUrl = arquivoAceito(regras.arquivoUrl, TIPOS_ARQUIVO_REGRAS);
+  if (limpo.formato === "html") limpo.formato = "pdf";
+  return limpo;
+}
