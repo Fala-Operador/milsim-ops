@@ -15,6 +15,20 @@ export function fimDaReserva(agora = new Date()): string {
   return new Date(agora.getTime() + RESERVA_MINUTOS * 60_000).toISOString();
 }
 
+/** Menor prazo que o Stripe aceita para uma Checkout Session (30 min) mais 1 minuto de folga. */
+export const PRAZO_MINIMO_SESSAO_MS = 31 * 60_000;
+
+/**
+ * Prazo de uma Checkout Session nova para um pagamento que vence em `prazo`. O Stripe recusa
+ * sessão que expira em menos de 30 minutos. Por isso, quando falta menos que isso (troca da forma
+ * de pagamento no meio da reserva), o prazo passa a ser `agora + minutos`. Sem esta regra, a
+ * troca falhava com "Não foi possível abrir o pagamento agora".
+ */
+export function prazoDaNovaSessao(prazo: string, agora = new Date(), minutos = RESERVA_MINUTOS): string {
+  if (new Date(prazo).getTime() - agora.getTime() >= PRAZO_MINIMO_SESSAO_MS) return prazo;
+  return new Date(agora.getTime() + minutos * 60_000).toISOString();
+}
+
 /**
  * Reserva ainda segura a vaga: aguardando dentro do prazo, ou pagamento assíncrono
  * (boleto) já enviado — este só se resolve pelo webhook, nunca expira por tempo aqui.
