@@ -23,6 +23,7 @@ import {
   impulsoDaSessao,
   destinoInvalido,
   mensagemDeFalhaStripe,
+  ocultarChaves,
   disputaDoStripe,
   inscricaoDaSessao,
   intencaoDaCobranca,
@@ -84,6 +85,16 @@ import { tr } from "@/i18n/server/pagamentos.server";
 export { stripeConfigurado };
 
 const MSG_FALHA_STRIPE = () => tr("nao_foi_possivel_abrir_o_pagamento_agora");
+
+/**
+ * Mensagem de falha ao abrir o checkout. Quando o Stripe recusa o pedido (4xx), o motivo dele vai
+ * junto (sem chaves): sem isso, uma configuração errada parecia uma falha passageira e não havia
+ * como saber a causa sem o log do servidor.
+ */
+function falhaAoAbrirCheckout(e: unknown): string {
+  if (!(e instanceof ErroStripe) || e.status < 400 || e.status >= 500 || !e.message) return MSG_FALHA_STRIPE();
+  return `${MSG_FALHA_STRIPE()} (Stripe${e.codigo ? ` ${e.codigo}` : ""}: ${ocultarChaves(e.message).slice(0, 300)})`;
+}
 
 export interface ResultadoCompra {
   inscricao: Inscricao;
@@ -199,7 +210,7 @@ export async function abrirCheckout(inscricaoId: string, metodoPedido?: MetodoPa
   } catch (e) {
     if (!(e instanceof ErroStripe || e instanceof TypeError)) throw e;
     console.error("Stripe: falha ao abrir checkout", e);
-    throw new Error(MSG_FALHA_STRIPE());
+    throw new Error(falhaAoAbrirCheckout(e));
   }
   if (!sessao.url) throw new Error(MSG_FALHA_STRIPE());
   const url = sessao.url;
@@ -440,7 +451,7 @@ export async function abrirCheckoutImpulso(impulsoId: string, metodoPedido?: Met
   } catch (e) {
     if (!(e instanceof ErroStripe || e instanceof TypeError)) throw e;
     console.error("Stripe: falha ao abrir checkout do impulso", e);
-    throw new Error(MSG_FALHA_STRIPE());
+    throw new Error(falhaAoAbrirCheckout(e));
   }
   if (!sessao.url) throw new Error(MSG_FALHA_STRIPE());
   const url = sessao.url;
