@@ -151,9 +151,27 @@ describe("Stripe: meios e checkout", () => {
     const chamadas = stripeFalso(() => ok({ id: "cs_novo", url: "https://checkout" }));
     await criarSessaoCheckout({ ...dados, metodo: "pix", sessaoAnterior: "cs_velho" });
     const c = chamadas[0]!;
-    expect(c.corpo).toContain("payment_method_types[0]=pix");
-    expect(c.corpo).not.toContain("payment_method_types[1]");
+    expect(c.corpo).toContain("allowed_payment_method_types[0]=pix");
+    expect(c.corpo).not.toContain("allowed_payment_method_types[1]");
     expect(c.idempotencia).toBe("checkout-ins-1-pix-cs_velho");
+  });
+
+  it("nunca envia payment_method_types, que o Stripe recusa na criação da sessão", async () => {
+    const chamadas = stripeFalso(() => ok({ id: "cs", url: "https://checkout" }));
+    await criarSessaoCheckout({ ...dados, metodo: "card" });
+    expect(chamadas[0]!.corpo).not.toMatch(/(^|&)payment_method_types/);
+  });
+
+  it("forma recusada pelo Stripe (400) abre o checkout com os meios do painel", async () => {
+    let n = 0;
+    const chamadas = stripeFalso(() => (n++ === 0
+      ? new Response(JSON.stringify({ error: { code: "parameter_unknown", message: "recusado" } }), { status: 400 })
+      : ok({ id: "cs", url: "https://checkout" })));
+    const s = await criarSessaoCheckout({ ...dados, metodo: "pix" });
+    expect(s.id).toBe("cs");
+    expect(chamadas).toHaveLength(2);
+    expect(chamadas[1]!.corpo).not.toContain("payment_method_types");
+    expect(chamadas[1]!.idempotencia).toBe("checkout-ins-1");
   });
 
   it("sem meio escolhido mantém a sessão com os meios do painel e a chave de sempre", async () => {
@@ -167,7 +185,7 @@ describe("Stripe: meios e checkout", () => {
     const chamadas = stripeFalso(() => ok({ id: "cs", url: "https://checkout" }));
     await criarSessaoCheckoutImpulso({ impulsoId: "imp-1", descricao: "Impulso", valorCentavos: 1000, expiraEm: "2026-11-06T13:00:00Z", urlSucesso: "https://s", urlCancelamento: "https://c", metodo: "boleto", sessaoAnterior: "cs_velha" });
     await criarSessaoCheckoutImpulso({ impulsoId: "imp-2", descricao: "Impulso", valorCentavos: 1000, expiraEm: "2026-11-06T13:00:00Z", urlSucesso: "https://s", urlCancelamento: "https://c" });
-    expect(chamadas[0]!.corpo).toContain("payment_method_types[0]=boleto");
+    expect(chamadas[0]!.corpo).toContain("allowed_payment_method_types[0]=boleto");
     expect(chamadas[0]!.idempotencia).toBe("checkout-imp-1-boleto-cs_velha");
     expect(chamadas[1]!.corpo).not.toContain("payment_method_types");
     expect(chamadas[1]!.idempotencia).toBe("checkout-imp-2");
